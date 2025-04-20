@@ -1,0 +1,19 @@
+include "std/str"
+include "std/io"
+[q,c] := [str.chr(34), str.chr(44)]
+l := list[str]{
+"include ",
+"std/str",
+"std/io",
+"[q,c] := [str.chr(34), str.chr(44)]",
+"l := list[str]{",
+"};",
+"for (i:=1; i<3 ; i++) io.println(l[0]+q+l[i]+q);",
+"for (i:=3; i<5 ; i++) io.println(l[i]);",
+"for (i:=0; i<10; i++) io.println(q+l[i]+q+c);",
+"for (i:=5; i<10; i++) io.println(l[i]);",
+};
+for (i:=1; i<3 ; i++) io.println(l[0]+q+l[i]+q);
+for (i:=3; i<5 ; i++) io.println(l[i]);
+for (i:=0; i<10; i++) io.println(q+l[i]+q+c);
+for (i:=5; i<10; i++) io.println(l[i]);

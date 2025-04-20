@@ -1,0 +1,76 @@
+include "std/math"
+include "std/list"
+
+namespace Noise {
+  PERLIN_YWRAPB := 4; PERLIN_YWRAP := 1<<PERLIN_YWRAPB;
+  PERLIN_ZWRAPB := 8; PERLIN_ZWRAP := 1<<PERLIN_ZWRAPB;
+  PERLIN_SIZE := 4095;
+
+  perlin_octaves := 4; perlin_amp_falloff := 0.5;
+
+  func scaled_cosine(i:f32):f32{
+    return 0.5*(1.0-math.cos(i*math.pi));
+  }
+
+  perlin := list[f32]{};
+  func noise(x:f32,y:f32,z:f32):f32 {
+    if (perlin.length()==0) {
+      for (i := 0; i < PERLIN_SIZE + 1; i++) {
+        perlin.push(math.random());
+      }
+    }
+    if (x<0) { x=-x; } if (y<0) { y=-y; } if (z<0) { z=-z; }
+    xi:i32=x; yi:i32=y; zi:i32=z;
+    xf := x - xi; yf := y - yi; zf := z - zi;
+    rxf:f32; ryf:f32;
+    r:=0.0; ampl:=0.5;
+    n1:f32;n2:f32;n3:f32;
+    for (o:=0; o<perlin_octaves; o++) {
+      of:=xi+(yi<<PERLIN_YWRAPB)+(zi<<PERLIN_ZWRAPB);
+      rxf = scaled_cosine(xf); ryf = scaled_cosine(yf);
+      n1  = perlin[of&PERLIN_SIZE];
+      n1 += rxf*(perlin[(of+1)&PERLIN_SIZE]-n1);
+      n2  = perlin[(of+PERLIN_YWRAP)&PERLIN_SIZE];
+      n2 += rxf*(perlin[(of+PERLIN_YWRAP+1)&PERLIN_SIZE]-n2);
+      n1 += ryf*(n2-n1);
+      of += PERLIN_ZWRAP;
+      n2  = perlin[of&PERLIN_SIZE];
+      n2 += rxf*(perlin[(of+1)&PERLIN_SIZE]-n2);
+      n3  = perlin[(of+PERLIN_YWRAP)&PERLIN_SIZE];
+      n3 += rxf*(perlin[(of+PERLIN_YWRAP+1)&PERLIN_SIZE]-n3);
+      n2 += ryf*(n3-n2);
+      n1 += scaled_cosine(zf)*(n2-n1);
+      r += n1*ampl;
+      ampl *= perlin_amp_falloff;
+      xi<<=1; xf*=2; yi<<=1; yf*=2; zi<<=1; zf*=2;
+      if (xf>=1.0) { xi++; xf-=1.; }
+      if (yf>=1.0) { yi++; yf-=1.; }
+      if (zf>=1.0) { zi++; zf-=1.; }
+    }
+    return r;
+  }
+}
+
+
+include "std/gx"
+w := 64
+h := 64
+scl := 8
+
+gx.size(w*scl,h*scl);
+gx.stroke_weight(scl);
+
+while (1){
+  for (i := 0; i < h; i++){
+    for (j := 0; j < w; j++){
+      z := Noise.noise(i*0.1,j*0.1,0.0);
+      gx.stroke(z,z,z);
+      gx.point((j+0.5)*scl,(i+0.5)*scl);
+    }
+  }
+  gx.poll();
+}
+
+
+
+

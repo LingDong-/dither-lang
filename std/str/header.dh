@@ -1,0 +1,5 @@
+namespace str {
+  func length[T](a:list[T]): i32;
+  func chr(i:u32) : str;
+  func ord(s:str) : u32;
+}

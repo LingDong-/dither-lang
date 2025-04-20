@@ -1,0 +1,85 @@
+include "std/list"
+include "std/math"
+include "std/gx"
+
+W := 64;
+H := 64;
+scl := 4;
+
+brd := list[i32]{}
+msk := 1
+
+for (i := 0; i < W*H; i++){
+  brd.push(math.random()>0.5);
+}
+
+func step(){
+  for (i := 0; i < H; i++){
+    for (j := 0; j < W; j++){
+      s := 0
+      jl := j > 0
+      jr := j < W-1;
+      if (i > 0){
+        if (brd[(i-1)*W+j] & msk) s++;
+        if (jl) if (brd[(i-1)*W+(j-1)] & msk) s++;
+        if (jr) if (brd[(i-1)*W+(j+1)] & msk) s++;
+      }
+      if (i < H-1){
+        if (brd[(i+1)*W+j] & msk) s++;
+        if (jl) if (brd[(i+1)*W+(j-1)] & msk) s++;
+        if (jr) if (brd[(i+1)*W+(j+1)] & msk) s++;
+      }
+      if (jl) if (brd[i*W+(j-1)] & msk) s++;
+      if (jr) if (brd[i*W+(j+1)] & msk) s++;
+      
+      brd[i*W+j] &= ~(3-msk);
+      
+      if (brd[i*W+j] & msk){
+        if (s == 2 || s == 3){
+          brd[i*W+j] |= (3-msk);
+        }
+      }else if (s == 3){
+        brd[i*W+j] |= (3-msk);
+      }
+    }
+  }
+}
+
+gx.size(W*scl,H*scl);
+gx.stroke_weight(scl);
+gx.stroke(0.9,0.8,0.7);
+
+md := 0
+
+while (1){
+  gx.background(0.1,0.2,0.3);
+  for (i := 0; i < H; i++){
+    for (j := 0; j < H; j++){
+      if (brd[i*W+j] & msk){
+        gx.point(j*scl,i*scl);
+      }
+    }
+  }
+  step();
+  msk = 3-msk;
+
+  e := gx.poll();
+  if (e.type==gx.MOUSE_PRESSED || (e.type==gx.MOUSE_MOVED && md)){
+    md = 1;
+    j : i32 = e.x / scl;
+    i : i32 = e.y / scl;
+    for (ii : i32 = math.max(i-2,0); ii < math.min(i+3,H); ii++){
+      for (jj : i32 = math.max(j-2,0); jj < math.min(j+3,W); jj++){
+        if (math.random()>0.5){
+          brd[ii*W+jj] |= msk;
+        }
+      }
+    }
+  }else if (e.type == gx.MOUSE_RELEASED){
+    md = 0;
+  }
+}
+
+
+
+

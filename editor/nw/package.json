@@ -1,0 +1,9 @@
+{
+  "name": "ide",
+  "main": "index.html",
+  "window": {
+    "width": 640,
+    "height": 720
+  }
+}
+

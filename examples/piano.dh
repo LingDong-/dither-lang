@@ -1,0 +1,90 @@
+include "std/snd"
+include "std/gx"
+include "std/list"
+include "std/math"
+include "std/io"
+include "std/str"
+
+rate := 16000
+
+typedef Key = {
+  state : i32 = 0;
+  t     : f32 = 0;
+  freq  : f32 = 0;
+  qwerty: i32 = 0;
+}
+
+keys := list[Key]{};
+qwerty := list[i32]{'a','w','s','e','d','f','t','g','y','h','u','j','k','o','l','p',';'};
+
+for (i := 0; i < qwerty.length(); i++){
+  f := 261.63 * 2**(i/12.0);
+  k := qwerty[i];
+  keys.push(Key{freq:f, qwerty:k});
+}
+
+W := 480
+H := 144
+
+snd.init(rate,1);
+gx.size(W,H);
+
+font := gx.load_font("7x13bold");
+gx.text_font(font);
+
+
+while (1){
+  while (!snd.buffer_full()){
+    v := 0.0;
+    for (i := 0; i < keys.length(); i++){
+      if (keys[i].state){
+       // x := math.sin( keys[i].t * 2.0 * math.pi * keys[i].freq ) 
+        x := (keys[i].t * keys[i].freq ) % 1.0;
+        v += x*0.5;
+        keys[i].t += 1.0/rate;
+      }
+    }
+    snd.put_sample(v);
+    
+  }
+  
+  gx.background(1);
+  xw := 0;
+  for ( i:=0; i < keys.length(); i++){
+    j := i % 12;
+    if ( j==1 || j==3 || j==6 || j==8 || j==10 ){
+      gx.fill(0);
+      gx.rect(i*28,0,28,H/2);
+      gx.fill(1,1,1,1-keys[i].state*0.5);
+      gx.text(str.chr(keys[i].qwerty), i*28+2, H/2-2);
+    }else{
+      gx.fill(0,0,0, keys[i].state*0.5);
+      gx.rect(xw,0,48,H);
+      gx.fill(0);
+      gx.text(str.chr(keys[i].qwerty), xw+2, H-2);
+      xw += 48;
+    }
+  }
+  
+
+  e := gx.poll();
+  if (e.type == gx.KEY_PRESSED){
+    for ( i:= 0; i < keys.length(); i++){
+      if (keys[i].qwerty == e.key){
+        keys[i].state = 1;
+        keys[i].t = 0;
+        break;
+      }
+    }
+  }else if (e.type == gx.KEY_RELEASED){
+    
+    for ( i:= 0; i < keys.length(); i++){
+      if (keys[i].qwerty == e.key){
+        keys[i].state = 0;
+        break;
+      }
+    }
+  }  
+
+}
+

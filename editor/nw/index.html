@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sketchpad</title>
+  <style>
+    html{
+      height:100%;
+      overflow:hidden;
+    }
+    .bigbtn{
+      display: inline-block; 
+      width: 24px; 
+      height: 24px; 
+      text-align: center; 
+      background: #444;
+      margin: 3px;
+      margin-right: 0px;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .bigbtn:hover{
+      background: #555;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
+  <style>
+    .cm-s-theme.CodeMirror, .cm-s-theme .CodeMirror-gutters {
+      background-color: #252627!important;
+      color: #f8f8f8 !important;
+      border: none;
+      filter: saturate(80%) hue-rotate(10deg);
+    }
+    .cm-s-theme .CodeMirror-gutters { color: #222; }
+    .cm-s-theme .CodeMirror-cursor { border-left: solid thin #f8f8f0; }
+    .cm-s-theme .CodeMirror-linenumber { color: #6D8A88; }
+    .cm-s-theme .CodeMirror-selected { background: rgba(255, 255, 255, 0.10); }
+    .cm-s-theme .CodeMirror-line::selection, .cm-s-theme .CodeMirror-line > span::selection, .cm-s-theme .CodeMirror-line > span > span::selection { background: rgba(255, 255, 255, 0.10); }
+    .cm-s-theme .CodeMirror-line::-moz-selection, .cm-s-theme .CodeMirror-line > span::-moz-selection, .cm-s-theme .CodeMirror-line > span > span::-moz-selection { background: rgba(255, 255, 255, 0.10); }
+    .cm-s-theme span.cm-comment { color:  #777; }
+    .cm-s-theme span.cm-string { color:  #ffb; }
+    .cm-s-theme span.cm-number { color:  #b9f; }
+    .cm-s-theme span.cm-variable { color:  #6fdfcf; }
+    .cm-s-theme span.cm-operator { color: #fa6; }
+    .cm-s-theme span.cm-keyword { color: #f6a; }
+    .cm-s-theme span.cm-type { color:  #1bf; }
+    .cm-s-theme span.cm-bracket { color: #ccc; }
+    .cm-s-theme .CodeMirror-activeline-background { background: rgba(255,255,255,0.1); }
+    .cm-s-theme .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/simple.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"></script>
+  <style>.CodeMirror { height: 100%; }</style>
+</head>
+
+  <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
+    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:hidden">
+      
+      <div class="bigbtn" id="btn-compile">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <rect x="8" y="3" width="8" height="4"  />
+            <rect x="10" y="3" width="4" height="16"/>
+            <rect x="9" y="14" width="6" height="8" />
+            <rect x="3" y="2" width="5" height="6"  />
+            <polygon points="16,3 22,7, 22,10, 16,7"/>
+          </g>
+        </svg>
+      </div>
+    
+      <div class="bigbtn" id="btn-rundbg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <polygon points="5,4 21,12 5,20" fill="none" stroke="#111" stroke-dasharray="4 2" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="bigbtn" id="btn-run">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <polygon points="5,4 21,12 5,20" fill="#111"/>
+        </svg>
+      </div>
+
+      <div class="bigbtn" id="btn-stop">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <rect x="6" y="6" width="12" height="12" fill="#111"/>
+        </svg>
+      </div>
+
+      <select id="sel-eg" class="bigbtn" style="display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
+        
+      </select>
+
+    </div>
+    <div id="cl" style="position:absolute;left:0px;top:30px;width:100%;height:calc(75% - 34px);"></div>
+    <div id="cr" style="position:absolute;left:0px;top:75%;width:100%;height:25%;"></div>
+  </body>
+
+  <script>
+
+const fs = require('fs');
+const path = require('path');
+const child_process = require('child_process');
+
+eval(fs.readFileSync("../../src/parser.js").toString());
+
+CodeMirror.defineSimpleMode("ldcc", {
+  meta:{
+    lineComment: "//",
+    comment: "//",
+  },
+  start: [
+    {regex: /"(?:[^\\]|\\.)*?(?:"|$)/mi, token: "string"},
+    {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as)\b/,
+      token: "keyword"},
+    {regex: /(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func)\b/,
+      token: "type"},
+    {regex: /0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i,
+      token: "number"},
+    {regex: /\/\*.*?\*\//, token: "comment"},
+    {regex: /\/\/.*/, token: "comment"},
+    {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;]+/, token: "operator"},
+    {regex: /[\{\[\(]/, indent: true, token: "bracket"},
+    {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
+    {regex: /[A-Za-z$][\w$]*/, token: "variable"},
+  ],
+});
+
+CodeMirror.defineSimpleMode("ansiesc", {
+  start: [
+    {regex: /(?:mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|argf)\b/,
+      token: "keyword"},
+    {regex: /(?:i8|i08|u8|u08|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|lst|arr|dict|dic|str|func|fun|void)\b/i,
+      token: "type"},
+  ],
+});
+
+var CML = CodeMirror(document.getElementById("cl"), {
+  lineNumbers:true,
+  matchBrackets: true,
+  theme:"theme",
+  mode:  "ldcc",
+  indentWithTabs: false,
+  indentUnit: 2,
+  tabSize: 2,
+  extraKeys:{
+    'Ctrl-/': 'toggleComment',
+    'Cmd-/': 'toggleComment',
+    "Tab": function(cm) {
+      cm.replaceSelection("  ", "end");
+    }
+  }
+});
+CML.setSize(null,null);
+
+let egs = fs.readdirSync("../../examples").filter(x=>x.endsWith(".dh"))
+for (let i = 0; i < egs.length; i++){
+  let opt = document.createElement("option");
+  opt.value = opt.innerHTML = egs[i];
+  document.getElementById("sel-eg").appendChild(opt);
+}
+CML.setValue(fs.readFileSync("../../examples/"+egs[0]).toString())
+document.getElementById("sel-eg").onchange = function(){
+  CML.setValue(fs.readFileSync("../../examples/"+document.getElementById("sel-eg").value).toString())
+}
+
+var CMR = CodeMirror(document.getElementById("cr"), {
+  theme:"theme",
+  mode:  "ansiesc",
+});
+
+document.getElementById("btn-compile").onclick = function(){
+  CMR.setValue("");
+
+  let pro = Object.assign({},process);
+  pro = Object.assign(pro,{
+    exit: function(){
+      throw 'up';
+    }
+  });
+  let parser = new PARSER({fs,path,process:pro,search_paths:['../../']});
+
+  fs.writeFileSync("/tmp/source.txt",CML.getValue());
+  
+  let olderror = console.error;
+  console.error=(x)=>CMR.replaceRange(x+'\n', CodeMirror.Pos(CMR.lastLine()))
+  
+  let bad = 0;
+  try{
+    let toks = parser.tokenize("/tmp/source.txt");
+
+    let cst = parser.parse(toks);
+
+    let ast = parser.abstract(cst);
+
+    let scopes = parser.infertypes(ast);
+    let [instrs,layout] = parser.compile(ast,scopes);
+
+    let irtxt = parser.writeir(instrs);
+    let lotxt = parser.writelayout(layout);
+
+    let irlo = irtxt+lotxt;
+
+    fs.writeFileSync("../../build/ir.dsm",irlo);
+
+    CMR.setValue(irlo);
+  }catch(e){
+    bad = 1;
+  }
+  console.error = olderror;
+  return bad;
+}
+
+let childProcess = null;
+
+function runbin(pth, args=[]){
+  if (childProcess){
+    childProcess.kill('SIGKILL');
+    childProcess = null;
+  }
+  let firsttime = 1;
+  
+  childProcess = child_process.spawn(pth, args);
+  childProcess.stdout.on('data', (data) => {
+    if (firsttime){
+      CMR.setValue("");
+      firsttime = 0;
+    }
+    let txt = data.toString();
+    // txt = txt.replace(/\x1B/g, '$@$');
+    txt = txt.replace(/\x1B\[[0-9;]*[mK]/g, '');
+    txt = txt.replace(/\0/g, '');
+    CMR.replaceRange(txt, CodeMirror.Pos(CMR.lastLine()));
+    CMR.scrollTo(null, CMR.getScrollInfo().height);
+  });
+  childProcess.stderr.on('data', (data) => {
+    console.error(`stderr: ${data.toString()}`);
+  });
+  childProcess.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+  });
+}
+
+document.getElementById("btn-rundbg").onclick = function(){
+  document.getElementById("btn-stop").onclick()
+
+  if (!document.getElementById("btn-compile").onclick()){
+    runbin('../../build/vm_dbg',['../../build/ir.dsm'])
+  }
+}
+
+document.getElementById("btn-run").onclick = function(){
+  document.getElementById("btn-stop").onclick()
+
+  if (!document.getElementById("btn-compile").onclick()){
+    runbin('../../build/vm',['../../build/ir.dsm'])
+  }
+}
+
+document.getElementById("btn-stop").onclick = function(){
+  if (childProcess){
+    childProcess.kill('SIGKILL');
+    childProcess = null;
+  }
+}
+
+  </script>
+  
+
+</html>

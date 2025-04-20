@@ -1,0 +1,6 @@
+namespace snd {
+  func init(rate:i32,chan:i32);
+  func exit();
+  func put_sample(x:f32);
+  func buffer_full():i32;
+}

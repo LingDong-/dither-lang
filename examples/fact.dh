@@ -1,0 +1,15 @@
+include "std/io"
+
+func fact[T](a:T):T{
+  if (a){
+    return a * fact(a-1);
+  }
+  return 1;
+}
+
+x : i32 = 4
+y : f32 = 4.0
+
+io.println("factorial of %{x} is %{fact(x)}");
+io.println("factorial of %{y} is %{fact(y)}");
+

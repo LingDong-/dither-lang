@@ -1,0 +1,14 @@
+
+namespace list {
+  func slice[T](a:list[T],i:i32,j:i32) : list[T];
+  func insert[T](a:list[T],i:i32,x:T) : i32;
+  func erase[T](a:list[T],i:i32,j:i32) : i32;
+  func length[T](a:list[T]): i32;
+  func make[T](n:i32,a:T): list[T];
+  func push[T](a:list[T],x:T) : i32 {
+    return a.insert(a.length(),x);
+  }
+  func pop[T](a:list[T]) : T {
+    x := a[a.length()-1]; a.erase(a.length()-1,a.length()); return x;
+  }
+}

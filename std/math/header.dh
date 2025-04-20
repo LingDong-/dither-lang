@@ -1,0 +1,12 @@
+namespace math {
+  func sin(x:f32):f32;
+  func cos(x:f32):f32;
+  func random():f32;
+  func abs(x:f32):f32;
+  func floor(x:f32):f32;
+  func min(x:f32,y:f32):f32;
+  func max(x:f32,y:f32):f32;
+  func atan2(x:f32,y:f32):f32;
+  func hypot(x:f32,y:f32):f32;
+  pi : f32 = 3.141592653589793;
+}

@@ -1,0 +1,46 @@
+include "std/list"
+include "std/math"
+include "std/vec"
+include "std/gx"
+
+W := 400
+H := 400
+thresh := 60.0;
+
+dots := list[vec[f32,4]]{};
+
+for (i:=0; i<100; i++){
+  dots.push({
+    math.random()*W, math.random()*H, 
+    (math.random()-0.5)*4, 
+    (math.random()-0.5)*4
+  });
+}
+
+gx.size(W,H);
+
+while (1){
+  gx.poll();
+  
+  gx.background(0);
+  gx.stroke_weight(1);
+  for (i := 0; i < dots.length(); i++){
+    for (j := i+1; j < dots.length(); j++){
+      d := (dots[i].xy-dots[j].xy).mag();
+      if (d < thresh){
+        gx.stroke(1-d*0.8/thresh);
+        gx.line(...dots[i].xy,...dots[j].xy);
+      }
+    }
+  }
+  
+  gx.stroke(1);
+  gx.stroke_weight(3);
+  for (i := 0; i < dots.length(); i++){
+    gx.point(...dots[i].xy); 
+    ({x,y,vx,vy}) := dots[i];
+    x = (x + vx + W)%W;
+    y = (y + vy + H)%H;
+    dots[i] = {x,y,vx,vy};
+  } 
+}

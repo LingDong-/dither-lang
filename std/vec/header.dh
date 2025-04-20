@@ -1,0 +1,4 @@
+namespace vec {
+  func mag[f32,U](v:vec[f32,U]) : f32;
+  func dir[f32,U](v:vec[f32,U]) : vec[f32,U];
+}

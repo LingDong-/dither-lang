@@ -1,0 +1,31 @@
+include "std/snd"
+include "std/math"
+include "std/io"
+
+rate := 44100
+
+snd.init(rate,2);
+
+func note(freq:f32, sec:f32){
+  t := 0.0;
+  while (t < sec){
+    if (!snd.buffer_full()){
+      x := math.sin( t * 2.0 * math.pi * freq ) 
+      env := math.sin( t * math.pi / sec);
+      snd.put_sample(x);
+      snd.put_sample(x);
+      t += 1.0/rate;
+    }
+  }
+}
+
+for (i:=0; i< 12; i++){
+  freq := 440 * 2**(i/12.0);
+  note(freq, 0.25);
+}
+for (i:=0; i<=12; i++){
+  freq := 880 / 2**(i/12.0);
+  note(freq, 0.125);
+}
+ 
+snd.exit();

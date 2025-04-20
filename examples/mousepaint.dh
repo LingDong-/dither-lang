@@ -1,0 +1,16 @@
+include "std/math"
+include "std/gx"
+
+gx.size(480,120);
+
+moux := 0
+mouy := 0
+
+while (1){
+  gx.circle(moux,mouy,80);
+  e := gx.poll();
+  if (e.type == gx.MOUSE_MOVED){
+    moux = e.x;
+    mouy = e.y;
+  }
+}

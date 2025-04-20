@@ -1,0 +1,77 @@
+include "std/io"
+include "std/str"
+include "std/list"
+
+STAY := 0
+LEFT := 1
+RIGHT:= 2
+
+typedef transition = {
+  q_curr : i32 = 0;
+  q_targ : i32 = 0;
+  sym_r : i32 = 0;
+  sym_w : i32 = 0;
+  shift : i32 = 0;
+}
+
+typedef machine = {
+  state : i32 = 0;
+  head  : i32 = 0;
+  tape  : dict[i32,i32];
+  tmin  : i32 = 0;
+  tmax  : i32 = 0;
+}
+
+func step(M:machine, D:list[transition]){
+  tape := M.tape;
+  for (i := 0; i < D.length(); i++){
+    if ((M.state==D[i].q_curr)&&(tape[M.head]==D[i].sym_r)){
+      tape[M.head] = D[i].sym_w;
+      M.state = D[i].q_targ;
+      if (D[i].shift == LEFT){
+        M.head --;
+      }else if (D[i].shift == RIGHT){
+        M.head ++;
+      }
+      break;
+    }
+  }
+  M.tmin <?= M.head;
+  M.tmax >?= M.head;
+}
+
+func draw(M:machine){
+  for (i := M.tmin; i <= M.tmax; i++){
+    io.print(str.chr((i == M.head) ? M.state : ' '));
+    io.print(str.chr((M.tape[i])   ? '1'     : '_'));
+    io.print("  ")
+  }
+  io.print("\n");
+}
+
+q0 := 'A'
+q1 := 'H'
+
+D := list[transition]{
+  transition{q_curr:'A', q_targ:'B', sym_r:0, sym_w:1, shift:RIGHT},
+  transition{q_curr:'A', q_targ:'B', sym_r:1, sym_w:1, shift:LEFT },
+  transition{q_curr:'B', q_targ:'A', sym_r:0, sym_w:1, shift:LEFT },
+  transition{q_curr:'B', q_targ:'C', sym_r:1, sym_w:0, shift:LEFT },
+  transition{q_curr:'C', q_targ:'H', sym_r:0, sym_w:1, shift:RIGHT},
+  transition{q_curr:'C', q_targ:'D', sym_r:1, sym_w:1, shift:LEFT },
+  transition{q_curr:'D', q_targ:'D', sym_r:0, sym_w:1, shift:RIGHT},
+  transition{q_curr:'D', q_targ:'A', sym_r:1, sym_w:0, shift:RIGHT},
+}
+
+M := machine{tape:(dict[i32,i32]{}), state:q0};
+draw(M);
+while (1){
+  step(M,D);
+  draw(M);
+  if (M.state == q1){
+    break;
+  }
+}
+
+
+

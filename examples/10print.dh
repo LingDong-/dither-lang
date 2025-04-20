@@ -1,0 +1,9 @@
+include "std/math"
+include "std/io"
+
+while (1){
+  for (i := 0; i < 80; i++){
+    io.print((math.random()<0.5) ? "/" : "\\");
+  }
+  io.print("\n");
+}

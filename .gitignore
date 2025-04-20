@@ -1,0 +1,9 @@
+.DS_Store
+**/.DS_Store
+.vscode/
+build/*
+!build/.gitignore
+*.so
+**/*.so
+**/node_modules/
+**/__pycache__/
