@@ -22,9 +22,9 @@ build/vm: $(wildcard src/*)
 build/vm_dbg: $(wildcard src/*)
 	gcc -DDBG src/run.c -lm -o build/vm_dbg;
 ir:
-	node src/parser.js $(src) -o build/ir.dsm;
+	node src/parser.js $(src) -o build/ir.dsm --map build/ir.map;
 run_vm: build/vm build/vm_dbg ir
-	build/$(VM_CHOICE) build/ir.dsm;
+	build/$(VM_CHOICE) build/ir.dsm --map build/ir.map;
 to_c: ir
 	node src/to_c.js build/ir.dsm -o build/out.c;
 run_c: to_c

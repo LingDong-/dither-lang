@@ -104,13 +104,20 @@ typedef struct opran_st{
   uint8_t tag;
 } opran_t;
 
+typedef struct loc_st{
+  int file;
+  int pos;
+  char* pth;
+} loc_t;
+
+
 typedef struct instr_st{
   uint64_t op;
   opran_t* a;
   opran_t* b;
   opran_t* c;
+  loc_t* loc;
 } instr_t;
-
 
 typedef struct layout_field_st{
   uint32_t offs;
@@ -695,6 +702,14 @@ void print_opran(opran_t* a){
 void print_instr(instr_t* ins){
   // printf("%p\n",ins);
   // printf("%llu",ins->op);
+
+  if (ins->loc){
+    begin_color(2);
+    printf("(%d:%d)",ins->loc->file, ins->loc->pos);
+    end_color(); 
+    printf("\t");
+  }
+
   for (int i = 7; i >= 0; i--){
     printf("%c",(char)((ins->op)>>(i*8)));
   }
@@ -704,8 +719,9 @@ void print_instr(instr_t* ins){
   if (ins->b) print_opran(ins->b);
   printf("\t");
   if (ins->c) print_opran(ins->c);
-  printf("\n");
+  
 
+  printf("\n");
 }
 
 void print_instrs(list_t* l){
@@ -764,10 +780,7 @@ instr_t* read_ir_line(FILE* fd){
 
         state++;
         if (ins == NULL){
-          ins = (instr_t*)malloc(sizeof(instr_t));
-          ins->a = NULL;
-          ins->b = NULL;
-          ins->c = NULL;
+          ins = (instr_t*)calloc(sizeof(instr_t),1);
         }
         ungetc(c,fd);
       }
@@ -1038,6 +1051,68 @@ map_t read_layout(FILE* fd){
   return layout;
 }
 
+loc_t* read_srcmap_line(FILE* fd){
+  char c0 = fgetc(fd);
+  if (c0 == EOF) return NULL;
+  int mode = 0;
+  char buf[32];
+  int bui = 0;
+  loc_t* ll = NULL;
+  while (1){
+    char c = fgetc(fd);
+    if (c == ' ' || c == '\n' || c == EOF){
+      if (bui){
+        if (ll == NULL) ll = (loc_t*)malloc(sizeof(loc_t));
+        buf[bui] = 0;
+        if (mode == 0){
+          ll->file = atoi(buf);
+        }else{
+          if (c0 == 'P'){
+            ll->pos = atoi(buf);
+          }else if (c0 == 'F'){
+            ll->pth = malloc(strlen(buf)+1);
+            strcpy(ll->pth, buf);
+            ll->pos = -1;
+          }
+        }
+        bui = 0;
+        mode++;
+      }
+      if (c != ' '){
+        return ll;
+      }
+    }else{
+      buf[bui++] = c;
+    }
+  }
+}
+
+void read_srcmap(list_t* instrs, FILE* fd){
+
+  uintptr_t_arr_t fmap;
+  ARR_INIT(uintptr_t, fmap);
+
+  list_node_t* node = instrs->head;
+
+  char c;
+  while ((c=fgetc(fd)) != EOF){
+    ungetc(c,fd);
+    loc_t* ll = read_srcmap_line(fd);
+    if (ll){
+      if (ll->pos == -1){
+        while (fmap.len <= ll->file){
+          ARR_PUSH(uintptr_t, fmap, NULL);
+        }
+        fmap.data[ll->file] = (uintptr_t)(ll->pth);
+      }else{
+        ll->pth = (char*)(fmap.data[ll->file]);
+        ((instr_t*)(node->data))->loc = ll;
+        node = node->next;
+      }
+    }
+  }
+  free(fmap.data);
+}
 
 void print_layouts(map_t* m){
   for (int k = 0; k < NUM_MAP_SLOTS; k++){

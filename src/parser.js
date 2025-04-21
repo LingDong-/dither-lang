@@ -799,10 +799,11 @@ var PARSER = function(sys){
           let diropts = [mydir, sys.process.cwd(), ...(sys.search_paths??[])];
           
           let ok = 0;
+          let urfil = stmt.val.val.slice(1,-1);
           for (let mydir of diropts){
             
             try{
-              let urfil = stmt.val.val.slice(1,-1);
+              
               let urpth = sys.path.resolve(sys.path.join(mydir,urfil));
               // console.log(urpth);
               
@@ -827,12 +828,10 @@ var PARSER = function(sys){
               }else{
                 let pth = sys.path.join(urpth,"header.dh");
                 // let pth2 = sys.path.join(urpth,"dynamic.so");
-                let s = reader(pth);
                 let rpath = sys.path.relative(sys.process.cwd(), urpth);
                 stmt.val.val = '"'+rpath+'"'
                 cst.val.push(stmt);
-                let hdpth = "/tmp/lib_header_"+sys.path.basename(urfil,sys.path.extname(urfil))+(~~(Math.random()*10000)).toString().padStart(4,'0')+".dh";
-                sys.fs.writeFileSync(hdpth,s);
+                let hdpth = pth;
                 let tks = tokenize(sys.path.resolve(hdpth));
                 let xst = parse(tks);
                 xst.val.forEach(x=>cst.val.push(x));
@@ -3634,6 +3633,18 @@ var PARSER = function(sys){
     return o.join('\n')+'\n';
   }
 
+  function writesrcmap(instrs){
+    let o = [];
+    for (let i = 0; i < state.src.length; i++){
+      // o.push(`F ${i} ${state.src[i].pth}`);
+      o.push(`F ${i} ${sys.path.relative(sys.process.cwd(), state.src[i].pth)}`);
+    }
+    for (let i = 0; i < instrs.length; i++){
+      o.push(`P ${instrs[i][1][0]} ${instrs[i][1][1]}`);
+    }
+    return o.join('\n')+'\n';
+  }
+
   this.tokenize = tokenize;
   this.parse = parse;
   this.abstract = abstract;
@@ -3641,7 +3652,8 @@ var PARSER = function(sys){
   this.compile = compile;
   this.writeir = writeir;
   this.writelayout = writelayout;
-
+  this.writesrcmap = writesrcmap;
+  this.state = state;
 }
 
 
@@ -3655,6 +3667,7 @@ if (typeof module !== 'undefined'){
   let cst_pth;
   let tok_pth;
   let ast_pth;
+  let map_pth;
   let out_pth = "ir.dsm";
   for (let i = 2; i < process.argv.length; i++){
     if (process.argv[i] == '-o' || process.argv[i] == '--output'){
@@ -3665,6 +3678,8 @@ if (typeof module !== 'undefined'){
       cst_pth = process.argv[++i];
     }else if (process.argv[i] == '--tok'){
       tok_pth = process.argv[++i];
+    }else if (process.argv[i] == '--map'){
+      map_pth = process.argv[++i];
     }else{
       inp_pth = process.argv[i];
     }
@@ -3689,8 +3704,10 @@ if (typeof module !== 'undefined'){
   let scopes = parser.infertypes(ast);
 
   let [instrs,layout] = parser.compile(ast,scopes);
- 
+
   let lo = parser.writelayout(layout);
+
+  if (map_pth) fs.writeFileSync(map_pth,parser.writesrcmap(instrs));
 
   fs.writeFileSync(out_pth,parser.writeir(instrs)+lo);
 }
