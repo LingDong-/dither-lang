@@ -828,6 +828,7 @@ var PARSER = function(sys){
               }else{
                 let pth = sys.path.join(urpth,"header.dh");
                 // let pth2 = sys.path.join(urpth,"dynamic.so");
+                let _ = reader(pth);
                 let rpath = sys.path.relative(sys.process.cwd(), urpth);
                 stmt.val.val = '"'+rpath+'"'
                 cst.val.push(stmt);
@@ -3640,7 +3641,9 @@ var PARSER = function(sys){
       o.push(`F ${i} ${sys.path.relative(sys.process.cwd(), state.src[i].pth)}`);
     }
     for (let i = 0; i < instrs.length; i++){
-      o.push(`P ${instrs[i][1][0]} ${instrs[i][1][1]}`);
+      let pos = instrs[i][1];
+      if (!pos) pos = [0,0];
+      o.push(`P ${pos[0]} ${pos[1]}`);
     }
     return o.join('\n')+'\n';
   }
@@ -3661,7 +3664,7 @@ if (typeof module !== 'undefined'){
 
   const fs = require('fs');
   const path = require('path');
-  let parser = new PARSER({fs,path,process});
+  let parser = new PARSER({fs,path,process,search_paths:[process.env.DITHER_ROOT??""].filter(x=>x.length)});
 
   let inp_pth;
   let cst_pth;

@@ -1,4 +1,4 @@
-//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL -I/opt/X11/include -L/opt/X11/lib -lX11 -lXext -lGl" || echo "-lGLEW -lGL -I/usr/include/X11 -L/usr/lib -lX11 -lXext")
+//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lGLEW -lGL")
 
 #include <stdio.h>
 // #include <unistd.h>

@@ -1,8 +1,13 @@
-//CFLAGS+=$(echo "-lportaudio")
+//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework CoreAudio -framework AudioToolbox -framework CoreServices -framework Foundation" || echo "-lportaudio")
+
 
 #include <stdint.h>
 
+#ifdef __APPLE__
+#include "impl_coreaudio.c"
+#else
 #include "impl_portaudio.c"
+#endif
 
 void snd__init(){
   int32_t __ARG(chan);

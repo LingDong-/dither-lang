@@ -1,3 +1,5 @@
+export DITHER_ROOT := $(shell pwd)
+
 ifeq ($(dbg),1)
 	OPT = -DDBG
 	VM_CHOICE = vm_dbg
@@ -34,4 +36,9 @@ run_c: to_c
 	gcc -I. -O3 build/out.c $$CFLAGS -o build/a.out && build/a.out;
 nwedit:
 	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
-	
+gledit:
+	gcc editor/gl/main.c $$([ "$$(uname)" == "Darwin" ] && echo "-framework OpenGL -framework GLUT" || echo "-lgl -lglut") -lm -o build/gledit && build/gledit;
+.PHONY:windowing
+windowing:
+	cd windowing;\
+	make $(backend)

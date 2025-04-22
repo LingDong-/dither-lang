@@ -1,18 +1,23 @@
-//CFLAGS=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL -I/opt/X11/include -L/opt/X11/lib -lX11 -lXext -lGl" || echo "-lGLEW -lGL -I/usr/include/X11 -L/usr/lib -lX11 -lXext")
+//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lGLEW -lGL")
 
 #include <math.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <stdio.h>
+#include <libgen.h>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <GL/glu.h>
 //#include <GL/glext.h>
 #endif
+
+#include "../../windowing/windowing.h"
 
 #if !defined(_WIN32)
 #ifndef CALLBACK
@@ -53,22 +58,8 @@
 #undef ARR_CLEAR
 #define ARR_CLEAR(dtype,name) {name.len = 0;}
 
-
-#include <GL/glu.h>
-#include <GL/glx.h>
-
 int width;
 int height;
-
-Display *display;
-Window root;
-XVisualInfo *vi;
-Colormap cmap;
-XSetWindowAttributes swa;
-Window win;
-GLXContext glxContext;
-XEvent event;
-GLuint fontBase = -1;
 
 typedef struct color_st{
   float r;
@@ -84,27 +75,18 @@ int is_stroke=1;
 int is_fill=1;
 
 void gx_impl_size(int w, int h){
+  const char* dir = getenv("DITHER_ROOT");
+  if (!dir) dir = ".";
+  char full_path[512];
+  snprintf(full_path, sizeof(full_path), "%s/%s", dir, "windowing/windowing.so");
 
-  display = XOpenDisplay(NULL);
-  root = DefaultRootWindow(display);
-  static int visual_attribs[] = {
-    GLX_RGBA, GLX_DOUBLEBUFFER,
-    GLX_ALPHA_SIZE, 8,
-    // GLX_SAMPLE_BUFFERS, 1,
-    // GLX_SAMPLES, 4,
-    None
-  };
-  vi = glXChooseVisual(display, 0, visual_attribs);
-  // vi = glXChooseVisual(display, 0, (int[]) {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_ALPHA_SIZE, 8, None});
-  cmap = XCreateColormap(display, root, vi->visual, AllocNone);
-  swa.colormap = cmap;
-  swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask;
-  win = XCreateWindow(display, root, 0, 0, w, h, 0, vi->depth, InputOutput, vi->visual,
-                      CWColormap | CWEventMask, &swa);
+  void *lib = dlopen(full_path, RTLD_NOW);
+  windowing_init = dlsym(lib, "window_init");
+  windowing_poll = dlsym(lib, "window_poll");
+  windowing_exit = dlsym(lib, "window_exit");
 
-  glxContext = glXCreateContext(display, vi, NULL, GL_TRUE);
-  glXMakeCurrent(display, win, glxContext);
-  // glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
+  windowing_init(w,h);
+
   glViewport(0, 0, w, h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -120,94 +102,18 @@ void gx_impl_size(int w, int h){
   color_fill.r=1, color_fill.g=1, color_fill.b=1, color_fill.a=1;
   color_stroke.r=0, color_stroke.g=0, color_stroke.b=0, color_stroke.a=1;
 
-  XMapWindow(display, win);
   width = w;
   height = h;
-
 }
-
-int get_key_code(){
-  char keybuf[32];
-  KeySym keysym;
-  int len = XLookupString(&event.xkey, keybuf, sizeof(keybuf), &keysym, NULL);
-  if (len == 1){
-    return keybuf[0];
-  }
-  return (int)keysym;
-}
-
-int kig = 0; //defeat autorepeat
 
 void gx_impl_poll(void* data){
-
-  char keybuf[16];
-  int n;
-  if ((n = XPending(display)) > 0) {
-    XNextEvent(display, &event);
-    if (event.type == ConfigureNotify || event.type == MotionNotify){
-      while (XEventsQueued(display, QueuedAfterReading)){
-        XEvent nev;
-        XPeekEvent(display, &nev);
-        if (nev.type == event.type){
-          XNextEvent(display, &event);
-        }else{
-          break;
-        }
-      }
-    }
-    if (event.type == ButtonPress) {
-      ((int32_t*)(data))[2] = 1;
-      ((int32_t*)(data))[3] = event.xbutton.button;
-      ((float*  )(data))[4] = event.xbutton.x;
-      ((float*  )(data))[5] = event.xbutton.y;
-    }else if (event.type == ButtonRelease) {
-      ((int32_t*)(data))[2] = 2;
-      ((int32_t*)(data))[3] = event.xbutton.button;
-      ((float*  )(data))[4] = event.xbutton.x;
-      ((float*  )(data))[5] = event.xbutton.y;
-    }else if (event.type == MotionNotify) {
-      ((int32_t*)(data))[2] = 3;
-      ((int32_t*)(data))[3] = 0;
-      ((float*  )(data))[4] = event.xmotion.x;
-      ((float*  )(data))[5] = event.xmotion.y;
-    }else if (event.type == KeyPress) {
-      if (kig){
-        kig = 0;
-      }else{
-        ((int32_t*)(data))[2] = 4;
-        ((int32_t*)(data))[3] = get_key_code();
-        ((float*  )(data))[4] = event.xkey.x;
-        ((float*  )(data))[5] = event.xkey.y;
-      }
-    }else if (event.type == KeyRelease) {
-      if (XEventsQueued(display, QueuedAfterReading)){
-        XEvent nev;
-        XPeekEvent(display, &nev);
-        if (nev.type == KeyPress && nev.xkey.time == event.xkey.time &&
-            nev.xkey.keycode == event.xkey.keycode){
-          kig = 1;
-        }
-      }
-      if (!kig){
-        ((int32_t*)(data))[2] = 5;
-        ((int32_t*)(data))[3] = get_key_code();
-        ((float*  )(data))[4] = event.xkey.x;
-        ((float*  )(data))[5] = event.xkey.y;
-      }
-    }else if (event.type == ConfigureNotify){
-      width = event.xconfigure.width;
-      height = event.xconfigure.height;
-
-      glViewport(0, 0, width, height);
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      glOrtho(0, width, height, 0, -1, 1);
-      glMatrixMode(GL_MODELVIEW);
-    }
+  int n_events = 1;
+  event_t* event = windowing_poll(&n_events);
+  if (n_events){
+    memcpy(data+8, event, sizeof(event_t));
+  }else{
+    memset(data+8, 0, sizeof(event_t));
   }
-
-  glXSwapBuffers(display, win);
-
 }
 
 
@@ -617,34 +523,17 @@ void gx_impl_point(float x, float y){
 
 void gx_impl_text(char* s, float x, float y){
 
-  if (is_fill && color_fill.a){
-    if (fontBase == -1){
-      fontBase = glGenLists(96);
-      XFontStruct *font = XLoadQueryFont(display, "fixed");
-      glXUseXFont(font->fid, 32, 96, fontBase);
-      XFreeFont(display, font);
-    }
-    glColor4f(color_fill.r, color_fill.g, color_fill.b, color_fill.a);
-    glRasterPos2f(x, y);
-    glPushAttrib(GL_LIST_BIT);
-    glListBase(fontBase - 32);
-    glCallLists(strlen(s), GL_UNSIGNED_BYTE, s);
-    glPopAttrib();
-  }
-  
+
 }
 
 
 int gx_impl_load_font(char* s){
 
   int fb = glGenLists(96);
-  XFontStruct *font = XLoadQueryFont(display, s);
-  glXUseXFont(font->fid, 32, 96, fb);
-  XFreeFont(display, font);
 
   return fb;
 }
 
 void gx_impl_text_font(int x){
-  fontBase = x;
+
 }

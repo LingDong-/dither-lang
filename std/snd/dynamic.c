@@ -1,4 +1,5 @@
-//CFLAGS+=$(echo "-lportaudio")
+//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework CoreAudio -framework AudioToolbox -framework CoreServices -framework Foundation" || echo "-lportaudio")
+
 
 #include "../../src/interp.c"
 #include <math.h>
@@ -14,7 +15,11 @@
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "snd." QUOTE(name), snd_ ## name);
 
+#ifdef __APPLE__
+#include "impl_coreaudio.c"
+#else
 #include "impl_portaudio.c"
+#endif
 
 EXPORTED void snd_init(var_t* ret,  gstate_t* _g){
   int chan = ARG_POP(_g,i32);
