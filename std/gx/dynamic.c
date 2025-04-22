@@ -10,24 +10,11 @@
 #define QUOTED(x) QUOTE(x)
 #define QUOTE(x) #x
 
-EXPORTED void gx_size(var_t* ret, gstate_t* _g){
+EXPORTED void gx__size(var_t* ret, gstate_t* _g){
   int h = ARG_POP(_g,i32);
   int w = ARG_POP(_g,i32);
 
-  gx_impl_size(w,h);
-}
-
-EXPORTED void gx_poll(var_t* ret, gstate_t* _g){
-
-  obj_t* o = gc_alloc_(_g, sizeof(obj_t));
-  o->type = ret->type;
-  o->data = calloc(24,1);
-  ((obj_t**)(o->data))[0] = o;
-
-  gx_impl_poll(o->data);
-
-  ret->u.obj = o;
-  _g->flags |= GFLG_TRGC;
+  gx_impl__size(w,h);
 }
 
 
@@ -199,22 +186,10 @@ EXPORTED void gx_text(var_t* ret, gstate_t* _g){
 }
 
 
-EXPORTED void gx_load_font(var_t* ret, gstate_t* _g){
-  stn_t* s = ARG_POP(_g,str);
-  int fb = gx_impl_load_font(s->data);
-  ret->u.i32 = fb;
-}
-
-EXPORTED void gx_text_font(var_t* ret, gstate_t* _g){
-  int x = ARG_POP(_g,i32);
-  gx_impl_text_font(x);
-}
-
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "gx." QUOTE(name), gx_ ## name);
 
 EXPORTED void lib_init_gx(gstate_t* _g){
-  QK_REG(size)
-  QK_REG(poll)
+  QK_REG(_size)
   QK_REG(background)
   QK_REG(fill)
   QK_REG(stroke)
@@ -230,8 +205,6 @@ EXPORTED void lib_init_gx(gstate_t* _g){
   QK_REG(rect)
   QK_REG(point)
   QK_REG(text)
-  QK_REG(text_font)
-  QK_REG(load_font)
 
   QK_REG(_init_graphics)
 

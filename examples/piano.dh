@@ -1,5 +1,6 @@
 include "std/snd"
 include "std/gx"
+include "std/win"
 include "std/list"
 include "std/math"
 include "std/io"
@@ -28,9 +29,6 @@ H := 144
 
 snd.init(rate,1);
 gx.size(W,H);
-
-font := gx.load_font("7x13bold");
-gx.text_font(font);
 
 
 while (1){
@@ -68,7 +66,7 @@ while (1){
   
 
   e := gx.poll();
-  if (e.type == gx.KEY_PRESSED){
+  if (e.type == win.KEY_PRESSED){
     for ( i:= 0; i < keys.length(); i++){
       if (keys[i].qwerty == e.key){
         keys[i].state = 1;
@@ -76,7 +74,7 @@ while (1){
         break;
       }
     }
-  }else if (e.type == gx.KEY_RELEASED){
+  }else if (e.type == win.KEY_RELEASED){
     
     for ( i:= 0; i < keys.length(); i++){
       if (keys[i].qwerty == e.key){

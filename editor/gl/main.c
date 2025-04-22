@@ -13,7 +13,14 @@
 #include <stdlib.h>
 
 #include "../../src/interp.c"
-#include "../../windowing/windowing.h"
+#include "../../std/win/platform/windowing.h"
+
+char* keywords[] = {
+  "namespace","continue","typedef","include","return","break","while","const",
+  "else","func","func","dict","list",
+  "for","i16","u16","i32","u32","i64","u64","f32","f64","tup","vec","arr","str",
+  "if","do","as","i8","u8"
+};
 
 #define FONT_W 8
 #define FONT_H 16
@@ -38,6 +45,14 @@
 #define TOP_ROWS 1
 #define MID_ROWS 43
 #define BOT_ROWS 1
+
+#define HL_COMMENT 0x6d6d6d
+#define HL_KEYWORD 0xff00ff
+#define HL_SIGIL   0xffff00
+#define HL_NUMBER  0x00ff00
+#define HL_STRING  0xff6d00
+#define HL_BASE    0xffffff
+#define HL_FUNC    0x00ffff
 
 #include "font_bitmap.c"
 
@@ -64,7 +79,7 @@ void build_font_texture() {
       unsigned char bits = font_bitmap[ch*FONT_H+row];
       for (int col = 0; col < FONT_W; ++col) {
         if (bits & (1 << (7 - col))) {
-          tex_data[gy + row][gx + col] = 255;
+          tex_data[gy + row][gx + col] = 0xff;
           tex_data[gy + row + FONT_TEX_H][gx + col] = 0;
         }
       }
@@ -218,7 +233,42 @@ char** lines;
 
 void handle_event(event_t* e){
   if (e->type == KEY_PRESSED){
-    
+    if (e->key == 13){
+      int l = strlen(lines[cur_y])+1;
+      char* nl = malloc(l-cur_x);
+      strcpy(nl,lines[cur_y]+cur_x);
+      lines[cur_y][cur_x] = 0;
+      n_lines++;
+      lines = realloc(lines, n_lines*sizeof(char*));
+      memmove(lines+cur_y+2,lines+cur_y+1,(n_lines-cur_y-2)*sizeof(char*));
+      lines[cur_y+1] = nl;
+      cur_y++;
+      cur_x=0;
+    }else if (e->key >= ' ' && e->key <= '~'){
+      int l = strlen(lines[cur_y])+1;
+      lines[cur_y] = realloc(lines[cur_y], l+1);
+      memmove(lines[cur_y]+cur_x+1, lines[cur_y]+cur_x, l-cur_x);
+      lines[cur_y][cur_x] = e->key;
+      cur_x++;
+    }else if (e->key == 127){
+      int l = strlen(lines[cur_y])+1;
+      if (cur_x){
+        memmove(lines[cur_y]+cur_x-1, lines[cur_y]+cur_x, l-cur_x);
+        cur_x--;
+      }else if (cur_y){
+        int l0 = strlen(lines[cur_y-1]);
+        int l1 = strlen(lines[cur_y]);
+        lines[cur_y] = realloc(lines[cur_y], l0+l1+1);
+        memcpy(lines[cur_y-1]+l0, lines[cur_y], l1+1);
+        free(lines[cur_y]);
+        memmove(lines+cur_y, lines+cur_y+1, (n_lines-cur_y-1)*sizeof(char*) );
+        n_lines --;
+        cur_y--;
+        cur_x = l0;
+      }
+    }
+
+
     if (e->key == KEY_RARR){
       cur_x ++;
     }else if (e->key == KEY_LARR){
@@ -246,42 +296,193 @@ void handle_event(event_t* e){
     if (cur_x > len){
       cur_x = len;
     }
-    if (cur_y - roll_y >= MID_ROWS){
+    while (cur_y - roll_y >= MID_ROWS){
       roll_y++;
     }
-    if (cur_y - roll_y < 0){
+    while (cur_y - roll_y < 0){
       roll_y--;
     }
+
+
+    
+  }else if (e->type == WHEEL_SCROLLED){
+    roll_y -= e->y;
+    if (roll_y < 0) roll_y = 0;
+    if (roll_y > n_lines - MID_ROWS) roll_y = n_lines-MID_ROWS;
+    roll_x -= e->x;
+    if (roll_x < 0) roll_x = 0;
+    if (e->x < 0){
+      int maxlen = 0;
+      for (int i = 0; i < n_lines; i++){
+        maxlen = MAX(maxlen,strlen(lines[i]));
+      }
+      if (roll_x > maxlen-EDT_COLS) roll_x = maxlen-EDT_COLS;
+    }
+  }else if (e->type == MOUSE_PRESSED){
+    int col = e->x / FONT_W;
+    int row = e->y / FONT_H;
+    int tx = roll_x + col - LIN_COLS;
+    int ty = roll_y + row - TOP_ROWS;
+    cur_x = tx;
+    cur_y = ty;
+    int len = strlen(lines[cur_y]);
+    while (cur_x > len) cur_x--;
   }
 }
+#define IS_SIGIL(c) ((c)<'0' || ((c)>'9'&&(c)<'A') || ((c)>'Z'&&(c)<'_') || (c)>'z')
+
+int frame = 0;
 
 void update(){
   memset(cons,0,sizeof(cons));
   memset(cons_rgb,0,sizeof(cons_rgb));
+
+  int blcm = 0;
+
   for (int i = 0; i < MID_ROWS; i++){
     int ty = roll_y+i;
     int cy = TOP_ROWS+i;
     if (ty >= n_lines) continue;
     int len = strlen(lines[ty]);
+
+    char s[16];
+    sprintf(s,"%d    ",ty);
+
+    for (int j = 0; j < LIN_COLS; j++){
+      cons[cy][j] = s[j];
+      cons_rgb[cy][j] = 0xff6d6d6d;
+    }
+
     for (int j = 0; j < EDT_COLS; j++){
       int tx = roll_x+j;
       int cx = LIN_COLS + j;
       if (tx > len) continue;
       char c = lines[ty][tx];
       cons[cy][cx] = c;
-      cons_rgb[cy][cx] = 0xffffff;
+      if (cons_rgb[cy][cx] == 0){
+        if (blcm){
+          cons_rgb[cy][cx] = HL_COMMENT;
+          if (c == '*' && lines[ty][tx+1] == '/'){
+            cons_rgb[cy][cx+1] = HL_COMMENT;
+            blcm = 0;
+          }
+        }else if (c == '/' && lines[ty][tx+1] == '*'){
+          blcm = 1;
+          cons_rgb[cy][cx] = HL_COMMENT;
+        }else if (c == '/' && lines[ty][tx+1] == '/'){
+          int q = 0;
+          do{
+            cons_rgb[cy][cx+q] = HL_COMMENT;
+          }while (lines[ty][tx+(q++)]);
+        }else if(c == '"'){
+          int q = 0;
+          int esc = 0;
+          do{
+            cons_rgb[cy][cx+q] = HL_STRING;
+            if (lines[ty][tx+q] == '\\'){
+              esc = 1;
+            }else{
+              if (q && lines[ty][tx+q] == '"' && !esc){
+                break;
+              }
+              esc = 0;
+            }
+          }while (lines[ty][tx+(q++)]);
+        }else if ('0'<=c && c<='9'){
+          if (!tx || IS_SIGIL(lines[ty][tx-1])){
+            int q = 0;
+            do{
+              
+              int b = lines[ty][tx+q];
+              if (b == 'x' || b == 'X' || b == 'b' || b == 'B' || b == 'e' || b == 'E' ||
+                  b == '.' || b == '+' || b == '-' ||
+                  ('0'<=b && b<='9')){
+              }else{
+                cons_rgb[cy][cx+q] = HL_BASE;
+                break;
+              }
+              cons_rgb[cy][cx+q] = HL_NUMBER;
+            }while (lines[ty][tx+(q++)]);
+          }else{
+            cons_rgb[cy][cx] = HL_BASE;
+          }
+        }else if (c == '(' && tx > 0){
+          cons_rgb[cy][cx] = HL_SIGIL;
+          int q = 0;
+          int sp = 0;
+          while (tx+(--q) >= 0){
+            int b = lines[ty][tx+q];
+            if (b == ' '){
+              if (q == -1 || sp){
+                sp = 1;
+              }else{
+                break;
+              }
+            }else{
+              sp = 0;
+              if ((cons_rgb[cy][cx+q]&0xffffff) != 0xffffff){
+                break;
+              }
+              if (IS_SIGIL(b)){
+                break;
+              }
+            }
+            cons_rgb[cy][cx+q] = (cons_rgb[cy][cx+q]&0xff000000) | HL_FUNC;
+          }
+        }else if (IS_SIGIL(c)){
+          cons_rgb[cy][cx] = HL_SIGIL;
+        }else{ 
+          
+          for (int k = 0; k < sizeof(keywords)/sizeof(char*); k++){
+            int ok = 1;
+            int l = strlen(keywords[k]);
+            for (int q = 0; q < l; q++){
+              int a = keywords[k][q];
+              int b = lines[ty][tx+q];
+              if (a != b){
+                ok = 0;
+                break;
+              }
+            }
+            if (ok){
+              int b = lines[ty][tx+l];
+              if (! IS_SIGIL(b)){
+                ok = 0;
+              }
+              if (tx > 0){
+                b = lines[ty][tx-1];
+                if (!IS_SIGIL(b)){
+                  ok = 0;
+                }
+              }
+            }
+            if (ok){
+              for (int q = 0; q < l; q++){
+                cons_rgb[cy][cx+q] = HL_KEYWORD;
+              }
+              break;
+            }
+          }
+          if (cons_rgb[cy][cx] == 0){
+            cons_rgb[cy][cx] = HL_BASE;
+          }
+        }
+      }
       if (ty == cur_y && tx == cur_x){
-        cons_rgb[cy][cx] |= 0xff000000;
+        if ((frame>>9)&1){
+          cons_rgb[cy][cx] |= 0xff000000;
+        }
       }
     }
   }
+  frame++;
 }
 
 
 
 int main(int argc, char** argv) {
 
-  void *lib = dlopen("windowing/windowing.so", RTLD_NOW);
+  void *lib = dlopen("std/win/platform/windowing.so", RTLD_NOW);
   windowing_init = dlsym(lib, "window_init");
   windowing_poll = dlsym(lib, "window_poll");
   windowing_exit = dlsym(lib, "window_exit");
@@ -293,7 +494,7 @@ int main(int argc, char** argv) {
   build_text_buffer();
 
   FILE* fd;
-  fd = fopen("examples/life.dh","r");
+  fd = fopen("examples/boids.dh","r");
 
   lines = read_file_lines(fd,&n_lines);
 

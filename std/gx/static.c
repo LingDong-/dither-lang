@@ -5,31 +5,12 @@
 
 #include "impl.c"
 
-void gx__size(){
+void gx___size(){
   int32_t __ARG(h);
   int32_t __ARG(w);
 
-  gx_impl_size(w,h);
+  gx_impl__size(w,h);
 }
-
-void gx__poll(){
-  __push_stack();
-  void* o = __gc_alloc(VART_STT,28);
-  __put_var(0,o);
-  void* oo = o+4;
-
-  ((void**)(oo))[0] = o;
-
-  gx_impl_poll(oo);
-
-  // usleep(16667);
-
-  __put_ret(&(o));
-
-  __gc_run();
-  __pop_stack();
-}
-
 
 void gx___init_graphics(){
   int32_t __ARG(h);
@@ -199,18 +180,5 @@ void gx__text(){
   char* __ARG(s);
 
   gx_impl_text(s,x,y);
-}
-
-
-void gx__load_font(){
-  char* __ARG(s);
-
-  int32_t fb = gx_impl_load_font(s);
-  __put_ret(&fb);
-}
-
-void gx__text_font(){
-  int __ARG(x);
-  gx_impl_text_font(x);
 }
 

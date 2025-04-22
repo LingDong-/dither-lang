@@ -2,6 +2,7 @@ include "std/math"
 include "std/list"
 include "std/vec"
 include "std/gx"
+include "std/win"
 
 width := 300
 height := 300
@@ -176,7 +177,7 @@ while (1){
   
 
   e := gx.poll();
-  if (e.type == gx.MOUSE_PRESSED){
+  if (e.type == win.MOUSE_PRESSED){
     b := Boid{};
     b.init(e.x, e.y);
     boids.push(b);

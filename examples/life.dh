@@ -1,6 +1,7 @@
 include "std/list"
 include "std/math"
 include "std/gx"
+include "std/win"
 
 W := 64;
 H := 64;
@@ -64,7 +65,7 @@ while (1){
   msk = 3-msk;
 
   e := gx.poll();
-  if (e.type==gx.MOUSE_PRESSED || (e.type==gx.MOUSE_MOVED && md)){
+  if (e.type==win.MOUSE_PRESSED || (e.type==win.MOUSE_MOVED && md)){
     md = 1;
     j : i32 = e.x / scl;
     i : i32 = e.y / scl;
@@ -75,7 +76,7 @@ while (1){
         }
       }
     }
-  }else if (e.type == gx.MOUSE_RELEASED){
+  }else if (e.type == win.MOUSE_RELEASED){
     md = 0;
   }
 }

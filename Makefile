@@ -38,7 +38,3 @@ nwedit:
 	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
 gledit:
 	gcc editor/gl/main.c $$([ "$$(uname)" == "Darwin" ] && echo "-framework OpenGL -framework GLUT" || echo "-lgl -lglut") -lm -o build/gledit && build/gledit;
-.PHONY:windowing
-windowing:
-	cd windowing;\
-	make $(backend)

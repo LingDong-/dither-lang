@@ -1,0 +1,42 @@
+namespace win {
+  KEY_F1    := 0xffbe;
+  KEY_F2    := 0xffbf;
+  KEY_F3    := 0xffc0;
+  KEY_F4    := 0xffc1;
+  KEY_F5    := 0xffc2;
+  KEY_F6    := 0xffc3;
+  KEY_F7    := 0xffc4;
+  KEY_F8    := 0xffc5;
+  KEY_F9    := 0xffc6;
+  KEY_F10   := 0xffc7;
+  KEY_F11   := 0xffc8;
+  KEY_F12   := 0xffc9;
+  KEY_LARR  := 0xff51;
+  KEY_UARR  := 0xff52;
+  KEY_RARR  := 0xff53;
+  KEY_DARR  := 0xff54;
+  KEY_LSHIFT:= 0xffe1;
+  KEY_RSHIFT:= 0xffe2;
+  KEY_LCTRL := 0xffe3;
+  KEY_RCTRL := 0xffe4;
+  KEY_LALT  := 0xffe9;
+  KEY_RALT  := 0xffea;
+  KEY_LCMD  := 0xffeb;
+  KEY_RCMD  := 0xffec;
+  MOUSE_LEFT     := 1;
+  MOUSE_RIGHT    := 2;
+  MOUSE_PRESSED  := 1;
+  MOUSE_RELEASED := 2;
+  MOUSE_MOVED    := 3;
+  KEY_PRESSED    := 4;
+  KEY_RELEASED   := 5;
+  typedef Event = {
+    type : i32;
+    key  : i32;
+    x    : f32;
+    y    : f32;
+  };
+  func init(w:i32,h:i32);
+  func poll():Event;
+  func exit();
+}

@@ -1,41 +1,6 @@
+include "std/win"
+
 namespace gx {
-  KEY_F1    := 0xffbe;
-  KEY_F2    := 0xffbf;
-  KEY_F3    := 0xffc0;
-  KEY_F4    := 0xffc1;
-  KEY_F5    := 0xffc2;
-  KEY_F6    := 0xffc3;
-  KEY_F7    := 0xffc4;
-  KEY_F8    := 0xffc5;
-  KEY_F9    := 0xffc6;
-  KEY_F10   := 0xffc7;
-  KEY_F11   := 0xffc8;
-  KEY_F12   := 0xffc9;
-  KEY_LARR  := 0xff51;
-  KEY_UARR  := 0xff52;
-  KEY_RARR  := 0xff53;
-  KEY_DARR  := 0xff54;
-  KEY_LSHIFT:= 0xffe1;
-  KEY_RSHIFT:= 0xffe2;
-  KEY_LCTRL := 0xffe3;
-  KEY_RCTRL := 0xffe4;
-  KEY_LALT  := 0xffe9;
-  KEY_RALT  := 0xffea;
-  KEY_LCMD  := 0xffeb;
-  KEY_RCMD  := 0xffec;
-  MOUSE_LEFT     := 1;
-  MOUSE_RIGHT    := 2;
-  MOUSE_PRESSED  := 1;
-  MOUSE_RELEASED := 2;
-  MOUSE_MOVED    := 3;
-  KEY_PRESSED    := 4;
-  KEY_RELEASED   := 5;
-  typedef Event = {
-    type : i32;
-    key  : i32;
-    x    : f32;
-    y    : f32;
-  };
   func _begin_fbo(fbo:i32);
   func _end_fbo();
   func _draw_texture(tex:i32,x:f32,y:f32,w:f32,h:f32);
@@ -50,7 +15,8 @@ namespace gx {
     func draw(x:f32,y:f32)    {_draw_texture(this.tex,x,y,this.w,this.h);};
   };
   typedef Font = i32;
-  func size(w:i32,h:i32);
+  func _size(w:i32,h:i32);
+  func size(w:i32,h:i32){win.init(w,h);_size(w,h);}
   func begin_shape();
   func end_shape(close:i32);
   func vertex(x:f32,y:f32);
@@ -79,10 +45,8 @@ namespace gx {
   func translate(x:f32,y:f32);
   func scale(x:f32,y:f32);
   func apply_matrix(x:vec[f32,3,3]);
-  func load_font(s:str):i32;
-  func text_font(i:i32);
   func text(s:str,x:f32,y:f32);
-  func poll():Event;
+  func poll():win.Event{return win.poll()};
   func _init_graphics(pg:Graphics,w:i32,h:i32);
   func create_graphics(w:i32,h:i32):Graphics{pg:=Graphics{};_init_graphics(pg,w,h);return pg;};
 }
