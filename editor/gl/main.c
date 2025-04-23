@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+// #include <time.h>
 
 #include "../../src/interp.c"
 #include "../../std/win/platform/windowing.h"
@@ -22,17 +23,25 @@ char* keywords[] = {
   "if","do","as","i8","u8"
 };
 
+char* asm_keywords[] = {
+  "matmul","ccall","rcall",
+  "cast","bnot","lnot","decl","argr","argw","alloc","call","jeqz","fpak","incl","band","bloc","dcap","eoir",
+  "mov","cap","ret","jmp","add","sub","mul","div","mod","pow","shl","shr","bor","xor","geq","leq","eq","neq","nop","end",
+  "gt","lt",
+  "I08","U08","I16","U16","I32","U32","I64","U64","F32","F64","TUP","LST","VEC","ARR","DIC","STR","FUN","NUL","VOD",
+};
+
 #define FONT_W 8
 #define FONT_H 16
-#define FONT_COLS 16
+#define FONT_COLS 32
 #define FONT_ROWS 8
-#define FONT_N 128
+#define FONT_N 256
 #define FONT_TEX_W (FONT_COLS * FONT_W)
 #define FONT_TEX_H (FONT_ROWS * FONT_H)
 #define FONT_TEX_HH (FONT_TEX_H*2)
 
 #define WIN_COLS 160
-#define WIN_ROWS 45
+#define WIN_ROWS 50
 
 #define WIN_W (FONT_W*WIN_COLS)
 #define WIN_H (FONT_H*WIN_ROWS)
@@ -43,20 +52,23 @@ char* keywords[] = {
 #define VAR_COLS 46
 
 #define TOP_ROWS 1
-#define MID_ROWS 43
+#define MID_ROWS 40
 #define BOT_ROWS 1
+#define OUT_ROWS 8
 
-#define HL_COMMENT 0x6d6d6d
-#define HL_KEYWORD 0xff00ff
-#define HL_SIGIL   0xffff00
-#define HL_NUMBER  0x00ff00
-#define HL_STRING  0xff6d00
-#define HL_BASE    0xffffff
-#define HL_FUNC    0x00ffff
+#define HL_COMMENT 0x6d6daa
+#define HL_KEYWORD 0xff6dff
+#define HL_SIGIL   0xffdb00
+#define HL_NUMBER  0x6ddb55
+#define HL_STRING  0xdb6d55
+#define HL_BASE    0xdbffff
+#define HL_FUNC    0x00dbff
+#define HL_ADDR    0xb64955
+
 
 #include "font_bitmap.c"
 
-char cons[WIN_H][WIN_W] = {0};
+uint8_t cons[WIN_H][WIN_W] = {0};
 int cons_rgb[WIN_H][WIN_W] = {0};
 
 GLuint font_texture;
@@ -85,6 +97,13 @@ void build_font_texture() {
       }
     }
   }
+  // for (int i = 0; i < FONT_TEX_HH; i++){
+  //   for (int j = 0; j < FONT_TEX_W; j++){
+  //     printf("%c",tex_data[i][j]?'#':'.');
+  //   }
+  //   printf("\n");
+  // }
+
   glGenTextures(1, &font_texture);
   glBindTexture(GL_TEXTURE_2D, font_texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, FONT_TEX_W, FONT_TEX_HH, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, tex_data);
@@ -124,7 +143,7 @@ void render_text() {
 
   for (int i = 0; i < WIN_ROWS; ++i) {
     for (int j = 0; j < WIN_COLS; ++j){
-      char ch = cons[i][j];
+      int ch = cons[i][j];
       int inv = !!(cons_rgb[i][j]>>24);
 
       float r = ((cons_rgb[i][j]>>16)&0xff)/255.0;
@@ -190,10 +209,13 @@ void reshape(int w, int h) {
   glLoadIdentity();
 }
 
-char** read_file_lines(FILE* fd, int* out_num_lines) {
-  int lines_cap = 64;
-  char** lines = malloc(lines_cap * sizeof(char*));
-  int num_lines = 0;
+char** read_file_lines(FILE* fd, char** lines, int* out_num_lines) {
+  int lines_cap = *out_num_lines;
+  if (!lines){
+    lines_cap = 64;
+    lines = malloc(lines_cap * sizeof(char*));
+  }
+  int num_lines = *out_num_lines;
   while (!feof(fd)) {
     int line_cap = 16;
     int line_len = 0;
@@ -216,65 +238,420 @@ char** read_file_lines(FILE* fd, int* out_num_lines) {
       lines = realloc(lines, lines_cap * sizeof(char*));
     }
     lines[num_lines++] = line;
+    
   }
   *out_num_lines = num_lines;
   return lines;
 }
 
-int roll_y = 0;
-int roll_x = 0;
+void write_lines_file(FILE* fd, char** lines, int n_lines){
+  for (int i = 0; i < n_lines; i++){
+    fputs(lines[i],fd);
+    fputc('\n',fd);
+  }
+}
+
+
+typedef struct{
+  int left;
+  int top;
+  int right;
+  int bottom;
+  int roll_x;
+  int roll_y;
+  int n_lines;
+  char** lines;
+} textarea_t;
+
+textarea_t ta_edt = {LIN_COLS,TOP_ROWS,LIN_COLS+EDT_COLS-1,TOP_ROWS+MID_ROWS};
+textarea_t ta_asm = {LIN_COLS+EDT_COLS,TOP_ROWS,LIN_COLS+EDT_COLS+ASM_COLS-1,TOP_ROWS+MID_ROWS};
+textarea_t ta_out = {0,TOP_ROWS+MID_ROWS+BOT_ROWS,WIN_COLS-1,WIN_ROWS};
 
 int cur_x = 0;
 int cur_y = 0;
 
-int n_lines;
-char** lines;
+int mouse_x = 0;
+int mouse_y = 0;
+
+int in_textarea(textarea_t* ta, int x, int y){
+  return ta->left <= x && x < ta->right && ta->top <= y && y < ta->bottom;
+}
+
+void scroll_textarea(textarea_t* ta, int x, int y){
+  ta->roll_y -= y;
+  if (ta->roll_y > ta->n_lines - (ta->bottom-ta->top)) ta->roll_y = ta->n_lines-(ta->bottom-ta->top);
+  if (ta->roll_y < 0) ta->roll_y = 0;
+  ta->roll_x -= x;
+  if (x < 0){
+    int maxlen = 0;
+    for (int i = 0; i < ta->n_lines; i++){
+      maxlen = MAX(maxlen,strlen(ta->lines[i]));
+    }
+    if (ta->roll_x > maxlen-(ta->right-ta->left)) ta->roll_x = maxlen-(ta->right-ta->left);
+  }
+  if (ta->roll_x < 0) ta->roll_x = 0;
+}
+
+#define IS_SIGIL(c) ((c)<'0' || ((c)>'9'&&(c)<'A') || ((c)>'Z'&&(c)<'_') || (c)>'z')
+
+
+void draw_textarea(textarea_t* ta, char** keywords, int n_keywords, int plain){
+  int blcm = 0;
+  for (int i = ta->top; i < ta->bottom; i++){
+    for (int j = ta->left; j < ta->right; j++){
+      cons_rgb[i][j] = 0;
+    }
+  }
+  for (int i = 0; i < ta->bottom-ta->top; i++){
+    int ty = ta->roll_y+i;
+    int cy = ta->top+i;
+    if (ty >= ta->n_lines) continue;
+    int len = strlen(ta->lines[ty]);
+
+    for (int j = 0; j < ta->right-ta->left; j++){
+      int tx = ta->roll_x+j;
+      int cx = ta->left + j;
+      if (tx > len) continue;
+      char c = ta->lines[ty][tx];
+      cons[cy][cx] = c;
+
+      if (plain){
+        cons_rgb[cy][cx] = HL_BASE;
+      }else{
+        if (cons_rgb[cy][cx] == 0){
+          if (blcm){
+            cons_rgb[cy][cx] = HL_COMMENT;
+            if (c == '*' && ta->lines[ty][tx+1] == '/'){
+              cons_rgb[cy][cx+1] = HL_COMMENT;
+              blcm = 0;
+            }
+          }else if (c == '/' && ta->lines[ty][tx+1] == '*'){
+            blcm = 1;
+            cons_rgb[cy][cx] = HL_COMMENT;
+          }else if (c == '/' && ta->lines[ty][tx+1] == '/'){
+            int q = 0;
+            do{
+              cons_rgb[cy][cx+q] = HL_COMMENT;
+            }while (ta->lines[ty][tx+(q++)]);
+          }else if(c == '"'){
+            int q = 0;
+            int esc = 0;
+            do{
+              cons_rgb[cy][cx+q] = HL_STRING;
+              if (ta->lines[ty][tx+q] == '\\'){
+                esc = 1;
+              }else{
+                if (q && ta->lines[ty][tx+q] == '"' && !esc){
+                  break;
+                }
+                esc = 0;
+              }
+            }while (ta->lines[ty][tx+(q++)]);
+          }else if(c == '\''){
+            int q = 0;
+            int esc = 0;
+            do{
+              cons_rgb[cy][cx+q] = HL_STRING;
+              if (ta->lines[ty][tx+q] == '\\'){
+                esc = 1;
+              }else{
+                if (q && ta->lines[ty][tx+q] == '\'' && !esc){
+                  break;
+                }
+                esc = 0;
+              }
+            }while (ta->lines[ty][tx+(q++)]);
+          }else if (c == '@'){
+            int q = 0;
+            cons_rgb[cy][cx] = HL_ADDR;
+            do{
+              if (q && IS_SIGIL(ta->lines[ty][tx+q])){
+                break;
+              }
+              cons_rgb[cy][cx+q] = HL_ADDR;
+            }while (ta->lines[ty][tx+(q++)]);
+          }else if ('0'<=c && c<='9'){
+            if (!tx || IS_SIGIL(ta->lines[ty][tx-1])){
+              int q = 0;
+              do{
+                
+                int b = ta->lines[ty][tx+q];
+                if (
+                    b == 'x' || b == 'X' || b == 'b' || b == 'B' || b == 'e' || b == 'E' ||
+                    
+                    // ('0'<=b && b<='9') ||
+                    !IS_SIGIL(b) ||
+                    b == '.' || b == '+' || b == '-'
+                    
+                    ){
+                }else{
+                  cons_rgb[cy][cx+q] = 0;
+                  break;
+                }
+                cons_rgb[cy][cx+q] = HL_NUMBER;
+              }while (ta->lines[ty][tx+(q++)]);
+            }else{
+              cons_rgb[cy][cx] = HL_BASE;
+            }
+          }else if (c == '(' && tx > 0){
+            cons_rgb[cy][cx] = HL_SIGIL;
+            int q = 0;
+            int sp = 0;
+            while (tx+(--q) >= 0){
+              int b = ta->lines[ty][tx+q];
+              if (b == ' '){
+                if (q == -1 || sp){
+                  sp = 1;
+                }else{
+                  break;
+                }
+              }else{
+                sp = 0;
+                if ((cons_rgb[cy][cx+q]&0xffffff) != HL_BASE){
+                  break;
+                }
+                if (IS_SIGIL(b)){
+                  break;
+                }
+              }
+              cons_rgb[cy][cx+q] = (cons_rgb[cy][cx+q]&0xff000000) | HL_FUNC;
+            }
+          }else if (IS_SIGIL(c)){
+            cons_rgb[cy][cx] = HL_SIGIL;
+          }else{ 
+            
+            for (int k = 0; k < n_keywords; k++){
+              int ok = 1;
+              int l = strlen(keywords[k]);
+              for (int q = 0; q < l; q++){
+                int a = keywords[k][q];
+                int b = ta->lines[ty][tx+q];
+                if (a != b){
+                  ok = 0;
+                  break;
+                }
+              }
+              if (ok){
+                int b = ta->lines[ty][tx+l];
+                if (! IS_SIGIL(b)){
+                  ok = 0;
+                }
+                if (tx > 0){
+                  b = ta->lines[ty][tx-1];
+                  if (!IS_SIGIL(b)){
+                    ok = 0;
+                  }
+                }
+              }
+              if (ok){
+                for (int q = 0; q < l; q++){
+                  cons_rgb[cy][cx+q] = HL_KEYWORD;
+                }
+                break;
+              }
+            }
+            if (cons_rgb[cy][cx] == 0){
+              cons_rgb[cy][cx] = HL_BASE;
+            }
+          }
+        }
+      }
+    }
+  }
+  float pct_top = (float)ta->roll_y / (float) ta->n_lines;
+  float pct_bot = fmin(1,(float)(ta->roll_y+(ta->bottom-ta->top)) / (float) ta->n_lines);
+  int i_top = ta->top + (ta->bottom-ta->top) * pct_top;
+  int i_bot = ta->top + (ta->bottom-ta->top) * pct_bot;
+  if (i_bot == i_top) i_bot++;
+  if (i_bot > ta->bottom){
+    i_top--;
+    i_bot--;
+  }
+  for (int i = ta->top; i < ta->bottom; i++){
+    int y = i-ta->top;
+    if (i_top <= i && i < i_bot){
+      cons[i][ta->right]= 178;
+      cons_rgb[i][ta->right] = HL_BASE;
+    }else{
+      cons[i][ta->right]= 176;
+      cons_rgb[i][ta->right] = HL_COMMENT;
+    }
+    
+  }
+}
+
+char** put_line(char** lines, int* n_lines, char* line){
+  line = strdup(line);
+  if (lines){
+    lines = realloc(lines,(*n_lines+1)*sizeof(char**));
+  }else{
+    lines = malloc((*n_lines+1)*sizeof(char**));
+  }
+  lines[*n_lines] = line;
+  *n_lines = *n_lines+1;
+  return lines;
+}
+
+list_t instrs;
+
+
+int sprint_type(char* str, type_t* a){
+  if (!a) return 0;
+  if (a->mode == TYPM_VOID){
+    return sprintf(str, "VOD");
+  }else if (a->mode == TYPM_NUMB){
+    return sprintf(str,"%.03s",vart_names + (a->vart*3));
+  }else if (a->mode == TYPM_SIMP){
+    if (a->vart == VART_STR){
+      return sprintf(str,"%.03s",vart_names + (a->vart*3));
+    }else{
+      return sprintf(str,"%s",a->u.str.data);
+    }
+  }else if (a->mode == TYPM_CONT){
+    int cnt = sprintf(str,"%.03s[",vart_names + (a->vart*3));
+    list_node_t* n = a->u.elem.head;
+    while (n){
+      type_t* t = (type_t*)n->data;
+      cnt += sprint_type(str+cnt,t);
+      n = n->next;
+      if (n){
+        cnt += sprintf(str+cnt,",");
+      }
+    }
+    cnt += sprintf(str+cnt,"]");
+    return cnt;
+  }else{
+    return 0;
+  }
+}
+
+int sprint_opran(char* str, opran_t* a){
+  uint32_t tag = a->tag;
+  if (tag == OPRD_TERM){
+    if (((term_t*)a)->mode == TERM_IDEN){
+      return sprintf(str,"%s",((term_t*)a)->u.str.data);
+    }else if (((term_t*)a)->mode == TERM_STRL){
+      return sprintf(str,"\"%s\"",((term_t*)a)->u.str.data);
+    }else if (((term_t*)a)->mode == TERM_ADDR){
+      return sprintf(str,"%s+%s",((term_t*)a)->u.addr.base.data,((term_t*)a)->u.addr.offs.data);
+    }else if (((term_t*)a)->mode == TERM_NUMI){
+      return sprintf(str,"%" PRId64,((term_t*)a)->u.i);
+    }else if (((term_t*)a)->mode == TERM_NUMU){
+      return sprintf(str,"%" PRIu64,((term_t*)a)->u.u);
+    }else if (((term_t*)a)->mode == TERM_NUMF){
+      return sprintf(str,"%f",((term_t*)a)->u.f);
+    }
+  }else if (tag == OPRD_TYPE){
+    return sprint_type(str,(type_t*)a);
+  }else if (tag == OPRD_LABL){
+    return sprintf(str,"%s=@%05lx",((label_t*)a)->str.data,(uintptr_t)(((label_t*)a)->ptr)&0xfffff);
+  }
+  return 0;
+}
+
+void btn_asm(){
+  FILE* fd;
+  fd = fopen("/tmp/source.dh","w");
+  write_lines_file(fd, ta_edt.lines, ta_edt.n_lines);
+  fclose(fd);
+
+  if (ta_out.lines){
+    for (int i = 0; i < ta_out.n_lines; i++){
+      free(ta_out.lines[i]);
+    }
+    free(ta_out.lines);
+    ta_out.n_lines = 0;
+    ta_out.lines = NULL;
+  }
+  ta_out.lines = put_line(ta_out.lines, &(ta_out.n_lines), "running parser...");
+  fd = popen("node src/parser.js /tmp/source.dh -o build/ir.dsm --map build/ir.map 2>&1; echo parser exited with status $?", "r");
+  ta_out.lines = read_file_lines(fd, ta_out.lines, &(ta_out.n_lines));
+  pclose(fd);
+
+  global_init();
+  fd = fopen("build/ir.dsm","r");
+  instrs = read_ir(fd);
+  _G.layouts = read_layout(fd);
+  fclose(fd);
+
+  list_node_t* n = instrs.head;
+  while (n){
+    instr_t* ins = (instr_t*)n->data;
+    char line[256] = {0};
+    int cnt = 0;
+
+    cnt += sprintf(line+cnt,"@%05lx ",((uintptr_t)n)&0xfffff );
+
+    for (int i = 7; i >= 0; i--){
+      int c = (char)((ins->op)>>(i*8));
+      if (c){
+        cnt += sprintf(line+cnt,"%c",c);
+      }
+    }
+    while (cnt < 14){
+      cnt += sprintf(line+cnt," ");
+    }
+    if (ins->a){
+      cnt += sprint_opran(line+cnt,ins->a);
+      cnt += sprintf(line+cnt,"  ");
+    }
+    if (ins->b){
+      cnt += sprint_opran(line+cnt,ins->b);
+      cnt += sprintf(line+cnt,"  ");
+    }
+    if (ins->c){
+      cnt += sprint_opran(line+cnt,ins->b);
+      cnt += sprintf(line+cnt,"  ");
+    }
+    ta_asm.lines = put_line(ta_asm.lines,&ta_asm.n_lines,line);
+    n = n->next;
+  }
+}
+
 
 
 void handle_event(event_t* e){
   if (e->type == KEY_PRESSED){
     if (e->key == 13){
-      int l = strlen(lines[cur_y])+1;
+      int l = strlen(ta_edt.lines[cur_y])+1;
       char* nl = malloc(l-cur_x);
-      strcpy(nl,lines[cur_y]+cur_x);
-      lines[cur_y][cur_x] = 0;
-      n_lines++;
-      lines = realloc(lines, n_lines*sizeof(char*));
-      memmove(lines+cur_y+2,lines+cur_y+1,(n_lines-cur_y-2)*sizeof(char*));
-      lines[cur_y+1] = nl;
+      strcpy(nl,ta_edt.lines[cur_y]+cur_x);
+      ta_edt.lines[cur_y][cur_x] = 0;
+      ta_edt.n_lines++;
+      ta_edt.lines = realloc(ta_edt.lines, ta_edt.n_lines*sizeof(char*));
+      memmove(ta_edt.lines+cur_y+2,ta_edt.lines+cur_y+1,(ta_edt.n_lines-cur_y-2)*sizeof(char*));
+      ta_edt.lines[cur_y+1] = nl;
       cur_y++;
       cur_x=0;
     }else if (e->key >= ' ' && e->key <= '~'){
-      int l = strlen(lines[cur_y])+1;
-      lines[cur_y] = realloc(lines[cur_y], l+1);
-      memmove(lines[cur_y]+cur_x+1, lines[cur_y]+cur_x, l-cur_x);
-      lines[cur_y][cur_x] = e->key;
+      int l = strlen(ta_edt.lines[cur_y])+1;
+      ta_edt.lines[cur_y] = realloc(ta_edt.lines[cur_y], l+1);
+      memmove(ta_edt.lines[cur_y]+cur_x+1, ta_edt.lines[cur_y]+cur_x, l-cur_x);
+      ta_edt.lines[cur_y][cur_x] = e->key;
       cur_x++;
     }else if (e->key == 127){
-      int l = strlen(lines[cur_y])+1;
+      int l = strlen(ta_edt.lines[cur_y])+1;
       if (cur_x){
-        memmove(lines[cur_y]+cur_x-1, lines[cur_y]+cur_x, l-cur_x);
+        memmove(ta_edt.lines[cur_y]+cur_x-1, ta_edt.lines[cur_y]+cur_x, l-cur_x);
         cur_x--;
       }else if (cur_y){
-        int l0 = strlen(lines[cur_y-1]);
-        int l1 = strlen(lines[cur_y]);
-        lines[cur_y] = realloc(lines[cur_y], l0+l1+1);
-        memcpy(lines[cur_y-1]+l0, lines[cur_y], l1+1);
-        free(lines[cur_y]);
-        memmove(lines+cur_y, lines+cur_y+1, (n_lines-cur_y-1)*sizeof(char*) );
-        n_lines --;
+        int l0 = strlen(ta_edt.lines[cur_y-1]);
+        int l1 = strlen(ta_edt.lines[cur_y]);
+        ta_edt.lines[cur_y] = realloc(ta_edt.lines[cur_y], l0+l1+1);
+        memcpy(ta_edt.lines[cur_y-1]+l0, ta_edt.lines[cur_y], l1+1);
+        free(ta_edt.lines[cur_y]);
+        memmove(ta_edt.lines+cur_y, ta_edt.lines+cur_y+1, (ta_edt.n_lines-cur_y-1)*sizeof(char*) );
+        ta_edt.n_lines --;
         cur_y--;
         cur_x = l0;
       }
     }
-
-
     if (e->key == KEY_RARR){
       cur_x ++;
     }else if (e->key == KEY_LARR){
       cur_x --;
     }
-    int len = strlen(lines[cur_y]);
+    int len = strlen(ta_edt.lines[cur_y]);
     if (cur_x > len){
       cur_x = 0;
       cur_y ++;
@@ -282,7 +659,7 @@ void handle_event(event_t* e){
     if (cur_x < 0){
       if (cur_y){
         cur_y --;
-        cur_x = strlen(lines[cur_y]);
+        cur_x = strlen(ta_edt.lines[cur_y]);
       }else{
         cur_x = 0;
       }
@@ -290,195 +667,110 @@ void handle_event(event_t* e){
     if (e->key == KEY_UARR){
       if (cur_y > 0) cur_y --;
     }else if (e->key == KEY_DARR){
-      if (cur_y < n_lines-1) cur_y ++;
+      if (cur_y < ta_edt.n_lines-1) cur_y ++;
     }
-    len = strlen(lines[cur_y]);
+    len = strlen(ta_edt.lines[cur_y]);
     if (cur_x > len){
       cur_x = len;
     }
-    while (cur_y - roll_y >= MID_ROWS){
-      roll_y++;
+    while (cur_y - ta_edt.roll_y >= MID_ROWS){
+      ta_edt.roll_y++;
     }
-    while (cur_y - roll_y < 0){
-      roll_y--;
+    while (cur_y - ta_edt.roll_y < 0){
+      ta_edt.roll_y--;
     }
-
-
     
   }else if (e->type == WHEEL_SCROLLED){
-    roll_y -= e->y;
-    if (roll_y < 0) roll_y = 0;
-    if (roll_y > n_lines - MID_ROWS) roll_y = n_lines-MID_ROWS;
-    roll_x -= e->x;
-    if (roll_x < 0) roll_x = 0;
-    if (e->x < 0){
-      int maxlen = 0;
-      for (int i = 0; i < n_lines; i++){
-        maxlen = MAX(maxlen,strlen(lines[i]));
-      }
-      if (roll_x > maxlen-EDT_COLS) roll_x = maxlen-EDT_COLS;
+    if (in_textarea(&ta_edt,mouse_x,mouse_y)){
+      scroll_textarea(&ta_edt,e->x,e->y);
+    }else if (in_textarea(&ta_out,mouse_x,mouse_y)){
+      scroll_textarea(&ta_out,e->x,e->y);
+    }else if (in_textarea(&ta_asm,mouse_x,mouse_y)){
+      scroll_textarea(&ta_asm,e->x,e->y);
     }
   }else if (e->type == MOUSE_PRESSED){
-    int col = e->x / FONT_W;
-    int row = e->y / FONT_H;
-    int tx = roll_x + col - LIN_COLS;
-    int ty = roll_y + row - TOP_ROWS;
-    cur_x = tx;
-    cur_y = ty;
-    int len = strlen(lines[cur_y]);
-    while (cur_x > len) cur_x--;
+    if (in_textarea(&ta_edt,mouse_x,mouse_y)){
+      int col = e->x / FONT_W;
+      int row = e->y / FONT_H;
+      int tx = ta_edt.roll_x + col - LIN_COLS;
+      int ty = ta_edt.roll_y + row - TOP_ROWS;
+      cur_x = tx;
+      cur_y = ty;
+      int len = strlen(ta_edt.lines[cur_y]);
+      while (cur_x > len) cur_x--;
+    }else{
+      int col = e->x / FONT_W;
+      int row = e->y / FONT_H;
+      if (row == 0){
+        if (col < 8){
+          btn_asm();
+        }
+      }
+    }
+  }else if (e->type == MOUSE_MOVED){
+    mouse_x = e->x / FONT_W;
+    mouse_y = e->y / FONT_H;
   }
 }
-#define IS_SIGIL(c) ((c)<'0' || ((c)>'9'&&(c)<'A') || ((c)>'Z'&&(c)<'_') || (c)>'z')
 
 int frame = 0;
 
 void update(){
   memset(cons,0,sizeof(cons));
   memset(cons_rgb,0,sizeof(cons_rgb));
+  for (int i = 0; i < WIN_COLS; i++){
+    cons_rgb[0][i] = 0xffb6b6aa;
+  }
+  for (int i = 0; i < WIN_COLS; i++){
+    cons_rgb[TOP_ROWS+MID_ROWS][i] = 0xff242455;
+  }
 
-  int blcm = 0;
+  strcpy( (void*)(cons[0]   ),"[\x1a ASM ]");
+  strcpy( (void*)(cons[0]+8 ),"[\x10 RUN ]");
+  strcpy( (void*)(cons[0]+16),"[\xfeSTOP ]");
+  strcpy( (void*)(cons[0]+24),"[\xafSTEP ]");
 
-  for (int i = 0; i < MID_ROWS; i++){
-    int ty = roll_y+i;
-    int cy = TOP_ROWS+i;
-    if (ty >= n_lines) continue;
-    int len = strlen(lines[ty]);
-
-    char s[16];
-    sprintf(s,"%d    ",ty);
-
-    for (int j = 0; j < LIN_COLS; j++){
-      cons[cy][j] = s[j];
-      cons_rgb[cy][j] = 0xff6d6d6d;
-    }
-
-    for (int j = 0; j < EDT_COLS; j++){
-      int tx = roll_x+j;
-      int cx = LIN_COLS + j;
-      if (tx > len) continue;
-      char c = lines[ty][tx];
-      cons[cy][cx] = c;
-      if (cons_rgb[cy][cx] == 0){
-        if (blcm){
-          cons_rgb[cy][cx] = HL_COMMENT;
-          if (c == '*' && lines[ty][tx+1] == '/'){
-            cons_rgb[cy][cx+1] = HL_COMMENT;
-            blcm = 0;
-          }
-        }else if (c == '/' && lines[ty][tx+1] == '*'){
-          blcm = 1;
-          cons_rgb[cy][cx] = HL_COMMENT;
-        }else if (c == '/' && lines[ty][tx+1] == '/'){
-          int q = 0;
-          do{
-            cons_rgb[cy][cx+q] = HL_COMMENT;
-          }while (lines[ty][tx+(q++)]);
-        }else if(c == '"'){
-          int q = 0;
-          int esc = 0;
-          do{
-            cons_rgb[cy][cx+q] = HL_STRING;
-            if (lines[ty][tx+q] == '\\'){
-              esc = 1;
-            }else{
-              if (q && lines[ty][tx+q] == '"' && !esc){
-                break;
-              }
-              esc = 0;
-            }
-          }while (lines[ty][tx+(q++)]);
-        }else if ('0'<=c && c<='9'){
-          if (!tx || IS_SIGIL(lines[ty][tx-1])){
-            int q = 0;
-            do{
-              
-              int b = lines[ty][tx+q];
-              if (b == 'x' || b == 'X' || b == 'b' || b == 'B' || b == 'e' || b == 'E' ||
-                  b == '.' || b == '+' || b == '-' ||
-                  ('0'<=b && b<='9')){
-              }else{
-                cons_rgb[cy][cx+q] = HL_BASE;
-                break;
-              }
-              cons_rgb[cy][cx+q] = HL_NUMBER;
-            }while (lines[ty][tx+(q++)]);
-          }else{
-            cons_rgb[cy][cx] = HL_BASE;
-          }
-        }else if (c == '(' && tx > 0){
-          cons_rgb[cy][cx] = HL_SIGIL;
-          int q = 0;
-          int sp = 0;
-          while (tx+(--q) >= 0){
-            int b = lines[ty][tx+q];
-            if (b == ' '){
-              if (q == -1 || sp){
-                sp = 1;
-              }else{
-                break;
-              }
-            }else{
-              sp = 0;
-              if ((cons_rgb[cy][cx+q]&0xffffff) != 0xffffff){
-                break;
-              }
-              if (IS_SIGIL(b)){
-                break;
-              }
-            }
-            cons_rgb[cy][cx+q] = (cons_rgb[cy][cx+q]&0xff000000) | HL_FUNC;
-          }
-        }else if (IS_SIGIL(c)){
-          cons_rgb[cy][cx] = HL_SIGIL;
-        }else{ 
-          
-          for (int k = 0; k < sizeof(keywords)/sizeof(char*); k++){
-            int ok = 1;
-            int l = strlen(keywords[k]);
-            for (int q = 0; q < l; q++){
-              int a = keywords[k][q];
-              int b = lines[ty][tx+q];
-              if (a != b){
-                ok = 0;
-                break;
-              }
-            }
-            if (ok){
-              int b = lines[ty][tx+l];
-              if (! IS_SIGIL(b)){
-                ok = 0;
-              }
-              if (tx > 0){
-                b = lines[ty][tx-1];
-                if (!IS_SIGIL(b)){
-                  ok = 0;
-                }
-              }
-            }
-            if (ok){
-              for (int q = 0; q < l; q++){
-                cons_rgb[cy][cx+q] = HL_KEYWORD;
-              }
-              break;
-            }
-          }
-          if (cons_rgb[cy][cx] == 0){
-            cons_rgb[cy][cx] = HL_BASE;
-          }
+  if (mouse_y == 0){
+    for (int i = 0; i < WIN_COLS/8; i++){
+      if (mouse_x < i*8+8){
+        for (int j = 0; j < 8; j++){
+          cons_rgb[0][i*8+j] &= ~0xff000000;
         }
-      }
-      if (ty == cur_y && tx == cur_x){
-        if ((frame>>9)&1){
-          cons_rgb[cy][cx] |= 0xff000000;
-        }
+        break;
       }
     }
   }
+
+  for (int i = 0; i < MID_ROWS; i++){
+    int ty = ta_edt.roll_y+i;
+    int cy = TOP_ROWS+i;
+    if (ty >= ta_edt.n_lines) continue;
+    char s[16];
+    sprintf(s,"%d    ",ty);
+    for (int j = 0; j < LIN_COLS; j++){
+      cons[cy][j] = s[j];
+      cons_rgb[cy][j] = 0xff494955;
+    }
+  }
+  draw_textarea(&ta_edt,keywords,sizeof(keywords)/sizeof(char*),0);
+
+  int cy = TOP_ROWS + cur_y - ta_edt.roll_y;
+  int cx = LIN_COLS + cur_x - ta_edt.roll_x;
+  if (in_textarea(&ta_edt,cx,cy)){
+    if ((frame>>9)&1){
+      cons_rgb[cy][cx] |= 0xff000000;
+    }else{
+      cons_rgb[cy][cx] &= ~0xff000000;
+    }
+  }
+
+
+  draw_textarea(&ta_asm,asm_keywords,sizeof(asm_keywords)/sizeof(char*),0);
+
+  draw_textarea(&ta_out,NULL,0,1);
+
   frame++;
 }
-
-
 
 int main(int argc, char** argv) {
 
@@ -494,21 +786,39 @@ int main(int argc, char** argv) {
   build_text_buffer();
 
   FILE* fd;
+
   fd = fopen("examples/boids.dh","r");
 
-  lines = read_file_lines(fd,&n_lines);
+  ta_edt.lines = read_file_lines(fd, ta_edt.lines,&ta_edt.n_lines);
+
+  // fd = fopen("build/ir.dsm","r");
+  // ta_asm.lines = read_file_lines(fd,&ta_asm.n_lines);
+
 
   while (1){
+    // clock_t start_time = clock();
+
     int n_events = 0;
     event_t* events = windowing_poll(&n_events);
 
     for (int i = 0; i < n_events; i++){
       handle_event(events+i);
     }
-    
+
     update();
+    // for (int i = 0; i < 8; i++){
+    //   for (int j = 0; j < 32; j++){
+    //     cons[i][j] = i*32+j;
+    //     cons_rgb[i][j] = 0xffffff;
+    //   }
+    // }
     render_text();
-    
+
+    // clock_t end_time = clock();
+    // double elapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    // double fps = 1.0/elapsed_time;
+    // printf("FPS:%.2f\n", fps);
+      
   }
 
   return 0;

@@ -60,7 +60,7 @@ var PARSER = function(sys){
     console.error(`[${tag} error] ${msg} at file "${state.src[pthidx].pth}" line ${lino} column ${chno}`);
     console.error((lns.at(-1)+rest).replace(/\t/g,' '));
     console.error(' '.repeat(chno-1)+'^');
-    console.trace();
+    // console.trace();
     sys.process.exit(1);
   }
 
@@ -625,7 +625,7 @@ var PARSER = function(sys){
       let out7 = dobinary(out6,['sigil:,']);
 
       if (out7.length != 1){
-        console.dir(out7,{depth:100000})
+        // console.dir(out7,{depth:100000})
         mkerr('parse',`extra elements in expression`,roughpos);
       }
       return out7[0];
