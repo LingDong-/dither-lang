@@ -555,8 +555,8 @@ function vart(x){
   }
   let z = {
     void:"VART_NUL",
-    u08:"VART_U08",
-    i08:"VART_I08",
+    u8:"VART_U08",
+    i8:"VART_I08",
     u16:"VART_U16",
     i16:"VART_I16",
     u32:"VART_U32",

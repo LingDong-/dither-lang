@@ -796,7 +796,7 @@ var PARSER = function(sys){
         if (stmt.key == 'incl'){
           let mypth = state.src[stmt.pos[0]].pth;
           let mydir = sys.path.dirname(mypth);
-          let diropts = [mydir, sys.process.cwd(), ...(sys.search_paths??[])];
+          let diropts = [...(sys.search_paths??[]), mydir, sys.process.cwd()];
           
           let ok = 0;
           let urfil = stmt.val.val.slice(1,-1);
@@ -3664,14 +3664,15 @@ if (typeof module !== 'undefined'){
 
   const fs = require('fs');
   const path = require('path');
-  let parser = new PARSER({fs,path,process,search_paths:[process.env.DITHER_ROOT??""].filter(x=>x.length)});
-
+  
   let inp_pth;
   let cst_pth;
   let tok_pth;
   let ast_pth;
   let map_pth;
   let out_pth = "ir.dsm";
+  let inc_pth = [];
+
   for (let i = 2; i < process.argv.length; i++){
     if (process.argv[i] == '-o' || process.argv[i] == '--output'){
       out_pth = process.argv[++i];
@@ -3683,6 +3684,8 @@ if (typeof module !== 'undefined'){
       tok_pth = process.argv[++i];
     }else if (process.argv[i] == '--map'){
       map_pth = process.argv[++i];
+    }else if (process.argv[i] == '-I' || process.argv[i] == '--include'){
+      inc_pth.push(process.argv[++i]);
     }else{
       inp_pth = process.argv[i];
     }
@@ -3691,6 +3694,8 @@ if (typeof module !== 'undefined'){
     console.log("no input file.");
     process.exit(0);
   }
+
+  let parser = new PARSER({fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)});
 
   let toks = parser.tokenize(path.resolve(inp_pth));
 

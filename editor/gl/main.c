@@ -48,8 +48,10 @@ char* asm_keywords[] = {
 
 #define LIN_COLS 4
 #define EDT_COLS 60
-#define ASM_COLS 50
-#define VAR_COLS 46
+#define ASM_COLS 48
+#define VAR_COLS 48
+#define USR_COLS 48
+#define USR_ROWS 24
 
 #define TOP_ROWS 1
 #define MID_ROWS 40
@@ -493,7 +495,9 @@ char** put_line(char** lines, int* n_lines, char* line){
 }
 
 list_t instrs;
+uintptr_t* line_to_instr = NULL;
 
+list_node_t* ins_node = NULL;
 
 int sprint_type(char* str, type_t* a){
   if (!a) return 0;
@@ -549,24 +553,29 @@ int sprint_opran(char* str, opran_t* a){
   return 0;
 }
 
+void clear_textarea(textarea_t* ta){
+  if (ta->lines){
+    for (int i = 0; i < ta->n_lines; i++){
+      free(ta->lines[i]);
+    }
+    free(ta->lines);
+    ta->n_lines = 0;
+    ta->lines = NULL;
+  }
+}
+
 void btn_asm(){
   FILE* fd;
   fd = fopen("/tmp/source.dh","w");
   write_lines_file(fd, ta_edt.lines, ta_edt.n_lines);
   fclose(fd);
 
-  if (ta_out.lines){
-    for (int i = 0; i < ta_out.n_lines; i++){
-      free(ta_out.lines[i]);
-    }
-    free(ta_out.lines);
-    ta_out.n_lines = 0;
-    ta_out.lines = NULL;
-  }
+  clear_textarea(&ta_out);
   ta_out.lines = put_line(ta_out.lines, &(ta_out.n_lines), "running parser...");
-  fd = popen("node src/parser.js /tmp/source.dh -o build/ir.dsm --map build/ir.map 2>&1; echo parser exited with status $?", "r");
+  fd = popen("node src/parser.js /tmp/source.dh -I editor/gl -o build/ir.dsm --map build/ir.map 2>&1; echo parser exited with status $?", "r");
   ta_out.lines = read_file_lines(fd, ta_out.lines, &(ta_out.n_lines));
   pclose(fd);
+
 
   global_init();
   fd = fopen("build/ir.dsm","r");
@@ -574,6 +583,14 @@ void btn_asm(){
   _G.layouts = read_layout(fd);
   fclose(fd);
 
+  clear_textarea(&ta_asm);
+  if (line_to_instr){
+    line_to_instr = realloc(line_to_instr,instrs.len*sizeof(uintptr_t));
+  }else{
+    line_to_instr = malloc(instrs.len*sizeof(uintptr_t));
+  }
+
+  int idx = 0;
   list_node_t* n = instrs.head;
   while (n){
     instr_t* ins = (instr_t*)n->data;
@@ -604,10 +621,23 @@ void btn_asm(){
       cnt += sprintf(line+cnt,"  ");
     }
     ta_asm.lines = put_line(ta_asm.lines,&ta_asm.n_lines,line);
+
+    line_to_instr[idx] = (uintptr_t)n;
     n = n->next;
+    idx++;
   }
 }
+int is_running = 0;
+void btn_run(){
+  clear_textarea(&ta_out);
+  is_running = 1;
+  frame_start();
+  ins_node = instrs.head;
+}
 
+void btn_stop(){
+  is_running = 0;
+}
 
 
 void handle_event(event_t* e){
@@ -696,14 +726,21 @@ void handle_event(event_t* e){
       int ty = ta_edt.roll_y + row - TOP_ROWS;
       cur_x = tx;
       cur_y = ty;
+      while (cur_y >= ta_edt.n_lines) cur_y--;
       int len = strlen(ta_edt.lines[cur_y]);
+      
       while (cur_x > len) cur_x--;
+      
     }else{
       int col = e->x / FONT_W;
       int row = e->y / FONT_H;
       if (row == 0){
         if (col < 8){
           btn_asm();
+        }else if (col < 16){
+          btn_run();
+        }else if (col < 24){
+          btn_stop();
         }
       }
     }
@@ -744,9 +781,11 @@ void update(){
   for (int i = 0; i < MID_ROWS; i++){
     int ty = ta_edt.roll_y+i;
     int cy = TOP_ROWS+i;
-    if (ty >= ta_edt.n_lines) continue;
-    char s[16];
-    sprintf(s,"%d    ",ty);
+    
+    char s[16]={0};
+    if (ty < ta_edt.n_lines){
+      sprintf(s,"%d    ",ty);
+    }
     for (int j = 0; j < LIN_COLS; j++){
       cons[cy][j] = s[j];
       cons_rgb[cy][j] = 0xff494955;
@@ -757,7 +796,7 @@ void update(){
   int cy = TOP_ROWS + cur_y - ta_edt.roll_y;
   int cx = LIN_COLS + cur_x - ta_edt.roll_x;
   if (in_textarea(&ta_edt,cx,cy)){
-    if ((frame>>9)&1){
+    if ((frame>>0)&1){
       cons_rgb[cy][cx] |= 0xff000000;
     }else{
       cons_rgb[cy][cx] &= ~0xff000000;
@@ -765,12 +804,153 @@ void update(){
   }
 
 
+  int cur_line = -1;
+  for (int i = 0; i < ta_asm.n_lines; i++){
+    if ((uintptr_t)ins_node == line_to_instr[i]){
+      cur_line = i;
+    }
+  }
+  if (cur_line >= 0){
+    while (cur_line < ta_asm.roll_y){
+      ta_asm.roll_y--;
+    }
+    while (cur_line > ta_asm.roll_y + MID_ROWS){
+      ta_asm.roll_y++;
+    }
+  }
+
   draw_textarea(&ta_asm,asm_keywords,sizeof(asm_keywords)/sizeof(char*),0);
+
+  if (cur_line >= 0){
+    for (int j = 0; j < ASM_COLS-1; j++){
+      int cx = LIN_COLS+EDT_COLS+j;
+      int cy = cur_line - ta_asm.roll_y + TOP_ROWS;
+      cons_rgb[cy][cx] |= 0xff000000;
+    }
+  }
 
   draw_textarea(&ta_out,NULL,0,1);
 
   frame++;
 }
+
+GLuint usr_fbo=0, usr_tex, usr_w, usr_h;
+int poll_flag = 0;
+
+void usr_enter(){
+  
+  if (usr_fbo){
+    glBindFramebuffer(GL_FRAMEBUFFER, usr_fbo);
+    GLint tex = 0;
+    glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+    glViewport(0, 0, usr_w, usr_h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, usr_w, usr_h, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+  }
+
+
+}
+
+void usr_exit(){
+
+  if (usr_fbo){
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    reshape(WIN_W,WIN_H);
+
+    glBindTexture(GL_TEXTURE_2D, usr_tex);
+    glEnable(GL_TEXTURE_2D);
+    // glClearColor(1.0,1.0,1.0,1.0);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glColor4f(1,1,1,1);
+    glBegin(GL_QUADS);
+    // glTexCoord2f(0.0f, 1.0f); glVertex2f(0,0);
+    // glTexCoord2f(1.0f, 1.0f); glVertex2f(0+usr_w,0);
+    // glTexCoord2f(1.0f, 0.0f); glVertex2f(0+usr_w,0+usr_h);
+    // glTexCoord2f(0.0f, 0.0f); glVertex2f(0,0+usr_h);
+    float x = (WIN_COLS-USR_COLS)*FONT_W;
+    float y = TOP_ROWS*FONT_H;
+    float w = usr_w;
+    float h = usr_h;
+    if (w > h){
+      if (w > USR_COLS*FONT_W){
+        h *= (USR_COLS*FONT_W)/w;
+        w = USR_COLS*FONT_W;
+      }
+    }else{
+      if (h > USR_ROWS*FONT_H){
+        w *= (USR_ROWS*FONT_H)/h;
+        h = USR_ROWS*FONT_H;
+      }
+    }
+
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(x,y);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(x+w,y);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(x+w,y+h);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(x,y+h);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+  }
+}
+
+void cb_init_(int w, int h){
+  poll_flag = 1;
+  glEnable(GL_TEXTURE_2D);
+  glGenFramebuffers(1, &usr_fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, usr_fbo);
+  glGenTextures(1, &usr_tex);
+  glBindTexture(GL_TEXTURE_2D, usr_tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, usr_tex, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  usr_w = w;
+  usr_h = h;
+
+}
+
+void cb_poll_(void* data){
+  poll_flag = 2;
+}
+
+void cb_print_(char* s){
+  // printf("%s",s);
+  if (!ta_out.lines){
+    ta_out.lines = malloc(sizeof(char**));
+    ta_out.lines[0] = calloc(1,1);
+    ta_out.n_lines = 1;
+  }
+  char c;
+  while ((c=*s)){
+    if (c == '\n'){
+      ta_out.lines = realloc(ta_out.lines,(ta_out.n_lines+1)*sizeof(char**));
+      ta_out.lines[ta_out.n_lines] = calloc(1,1);
+      ta_out.n_lines++;
+      scroll_textarea(&ta_out, 0, -1);
+    }else{
+      int l = strlen(ta_out.lines[ta_out.n_lines-1])+1;
+      ta_out.lines[ta_out.n_lines-1] = realloc(ta_out.lines[ta_out.n_lines-1],l+1);
+      ta_out.lines[ta_out.n_lines-1][l-1] = c;
+      ta_out.lines[ta_out.n_lines-1][l] = 0;
+    }
+    s++;
+  }
+}
+
+__attribute__((visibility("default")))
+void (*__win_intern_hook_init)(int, int) = cb_init_;
+__attribute__((visibility("default")))
+void (*__win_intern_hook_poll)(void*) = cb_poll_;
+
+__attribute__((visibility("default")))
+void (*__io_intern_hook_print)(char*) = cb_print_;
+
+
 
 int main(int argc, char** argv) {
 
@@ -780,6 +960,7 @@ int main(int argc, char** argv) {
   windowing_exit = dlsym(lib, "window_exit");
 
   windowing_init(WIN_W, WIN_H);
+
   reshape(WIN_W,WIN_H);
 
   build_font_texture();
@@ -787,32 +968,57 @@ int main(int argc, char** argv) {
 
   FILE* fd;
 
-  fd = fopen("examples/boids.dh","r");
+  fd = fopen("examples/10print.dh","r");
+  // fd = fopen("../ldcc/tests/test231.txt","r");
 
   ta_edt.lines = read_file_lines(fd, ta_edt.lines,&ta_edt.n_lines);
 
   // fd = fopen("build/ir.dsm","r");
   // ta_asm.lines = read_file_lines(fd,&ta_asm.n_lines);
-
+  
+  // cb_init_(100,100);
 
   while (1){
     // clock_t start_time = clock();
 
+ 
     int n_events = 0;
     event_t* events = windowing_poll(&n_events);
+    render_text();
 
     for (int i = 0; i < n_events; i++){
       handle_event(events+i);
     }
-
     update();
+
+
     // for (int i = 0; i < 8; i++){
     //   for (int j = 0; j < 32; j++){
     //     cons[i][j] = i*32+j;
     //     cons_rgb[i][j] = 0xffffff;
     //   }
     // }
-    render_text();
+
+    usr_enter();
+    // for (int i = 0; i < 1; i++){
+    while (is_running){
+      if (ins_node){
+        // print_instr(ins_node->data);
+        ins_node = execute_instr(ins_node);
+      }else{
+        is_running = 0;
+      }
+      if (poll_flag == 0){
+        break;
+      }else if (poll_flag == 2){
+        poll_flag = 1;
+        break;
+      }
+      break;
+    }
+    // }
+    usr_exit();
+    
 
     // clock_t end_time = clock();
     // double elapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;

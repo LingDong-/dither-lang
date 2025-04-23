@@ -1,0 +1,50 @@
+//
+
+#include "../../../../src/interp.c"
+#include "impl.c"
+
+#ifndef EXPORTED
+#define EXPORTED __attribute__ ((visibility ("default")))
+#endif
+
+#define QUOTED(x) QUOTE(x)
+#define QUOTE(x) #x
+
+EXPORTED void win_init(var_t* ret, gstate_t* _g){
+  int h = ARG_POP(_g,i32);
+  int w = ARG_POP(_g,i32);
+
+  win_impl_init(w,h);
+}
+
+EXPORTED void win_poll(var_t* ret, gstate_t* _g){
+
+  obj_t* o = gc_alloc_(_g, sizeof(obj_t));
+  o->type = ret->type;
+  o->data = calloc(24,1);
+  ((obj_t**)(o->data))[0] = o;
+
+  win_impl_poll(o->data);
+
+  ret->u.obj = o;
+  _g->flags |= GFLG_TRGC;
+}
+
+EXPORTED void win_exit(var_t* ret, gstate_t* _g){
+
+  win_impl_exit();
+
+}
+
+
+#define QK_REG(name) register_cfunc(&(_g->cfuncs), "win." QUOTE(name), win_ ## name);
+
+EXPORTED void lib_init_win(gstate_t* _g){
+  QK_REG(init)
+  QK_REG(poll)
+  QK_REG(exit)
+}
+
+
+
+

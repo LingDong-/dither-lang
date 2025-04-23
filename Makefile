@@ -9,6 +9,10 @@ else
 endif
 std_one:
 	cd std/$(lib);\
+	DEADSTRIP="-fdata-sections -ffunction-sections -Wl,--gc-sections";\
+	if [ "$$(uname)" == "Darwin" ]; then\
+		DEADSTRIP="-dead_strip";\
+	fi;\
 	f=dynamic.c;\
 	CFLAGS="";\
 	eval $$(head -n 1 "$$f" | cut -c 3-);\

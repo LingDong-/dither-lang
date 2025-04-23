@@ -8,8 +8,8 @@
 
 #include "windowing.h"
 
-static NSWindow *g_window = nil;
-static NSOpenGLView *g_glView = nil;
+NSWindow *g_window = nil;
+NSOpenGLView *g_glView = nil;
 
 #define MAX_EVENTS 64 
 
@@ -206,6 +206,7 @@ static NSEventModifierFlags prev_modifiers = 0;
 }
 @end
 
+
 EXPORTED void window_init(int width, int height) {
   @autoreleasepool {
     [NSApplication sharedApplication];
@@ -243,12 +244,11 @@ EXPORTED void window_init(int width, int height) {
     [[g_glView openGLContext] makeCurrentContext];
     GLint sync = 0;
     [[g_glView openGLContext] setValues:&sync forParameter:NSOpenGLContextParameterSwapInterval];
-
   }
 }
 
+
 EXPORTED event_t* window_poll(int* out_count) {
- 
   @autoreleasepool {
     [[g_glView openGLContext] flushBuffer];
     NSEvent *event;
@@ -270,6 +270,7 @@ EXPORTED event_t* window_poll(int* out_count) {
       *out_count = 0;
     }
     glViewport(0, 0, g_glView.frame.size.width, g_glView.frame.size.height);
+
   }
   return out_buffer;
 }

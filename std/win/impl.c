@@ -8,6 +8,7 @@
 
 #include "platform/windowing.h"
 
+
 void win_impl_init(int w, int h){
   const char* dir = getenv("DITHER_ROOT");
   if (!dir) dir = ".";
@@ -20,6 +21,7 @@ void win_impl_init(int w, int h){
   windowing_exit = dlsym(lib, "window_exit");
 
   windowing_init(w,h);
+
 }
 
 void win_impl_poll(void* data){
