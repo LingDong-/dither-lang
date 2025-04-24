@@ -85,7 +85,7 @@ int map_unichar_to_keycode(unichar key) {
   NSRect bounds = [self bounds];
   int new_width = (int)bounds.size.width;
   int new_height = (int)bounds.size.height;
-  glViewport(0, 0, g_glView.frame.size.width, g_glView.frame.size.height);
+  // glViewport(0, 0, g_glView.frame.size.width, g_glView.frame.size.height);
   add_event(WINDOW_RESIZED, 0, new_width, new_height);
 }
 
@@ -211,7 +211,13 @@ EXPORTED void window_init(int width, int height) {
   @autoreleasepool {
     [NSApplication sharedApplication];
 
-    NSRect frame = NSMakeRect(100, 100, width, height);
+    // NSRect frame = NSMakeRect(0, 0, width, height);
+    NSScreen *mainScreen = [NSScreen mainScreen];
+    NSRect screenRect = [mainScreen frame];
+    CGFloat x = NSMidX(screenRect) - width / 2;
+    CGFloat y = NSMidY(screenRect) - height / 2;
+    NSRect frame = NSMakeRect(x, y, width, height);
+
     NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable;
 
     NSOpenGLPixelFormatAttribute attrs[] = {
@@ -269,7 +275,7 @@ EXPORTED event_t* window_poll(int* out_count) {
     }else{
       *out_count = 0;
     }
-    glViewport(0, 0, g_glView.frame.size.width, g_glView.frame.size.height);
+    // glViewport(0, 0, g_glView.frame.size.width, g_glView.frame.size.height);
 
   }
   return out_buffer;

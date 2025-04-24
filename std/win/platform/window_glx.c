@@ -63,8 +63,26 @@ EXPORTED void window_init(int w, int h){
   cmap = XCreateColormap(display, root, vi->visual, AllocNone);
   swa.colormap = cmap;
   swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask;
-  win = XCreateWindow(display, root, 0, 0, w, h, 0, vi->depth, InputOutput, vi->visual,
+
+
+  int screen = DefaultScreen(display);
+  int screen_width = XDisplayWidth(display, screen);
+  int screen_height = XDisplayHeight(display, screen);
+  int x = (screen_width - w) / 2;
+  int y = (screen_height - h) / 2;
+  win = XCreateWindow(display, root, x, y, w, h, 0, vi->depth, InputOutput, vi->visual,
                       CWColormap | CWEventMask, &swa);
+  XSizeHints *size_hints = XAllocSizeHints();
+  if (size_hints) {
+      size_hints->flags = PPosition;
+      size_hints->x = x;
+      size_hints->y = y;
+      XSetNormalHints(display, win, size_hints);
+      XFree(size_hints);
+  }
+
+  // win = XCreateWindow(display, root, 0, 0, w, h, 0, vi->depth, InputOutput, vi->visual,
+  //                     CWColormap | CWEventMask, &swa);
 
   glxContext = glXCreateContext(display, vi, NULL, GL_TRUE);
   glXMakeCurrent(display, win, glxContext);
@@ -128,7 +146,8 @@ EXPORTED event_t* window_poll(int* out_count){
     }else if (event.type == KeyPress) {
       if (kig){
         kig = 0;
-      }else{
+      }//else
+      {
         add_event(
           KEY_PRESSED,
           get_key_code(),

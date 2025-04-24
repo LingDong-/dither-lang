@@ -1,11 +1,9 @@
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
-#include <GLUT/glut.h>
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <GL/glut.h>
 #endif
 
 #include <string.h>
@@ -77,6 +75,16 @@ char* asm_keywords[] = {
 
 #include "font_bitmap.c"
 
+
+float real_w = WIN_W;
+float real_h = WIN_H;
+
+float scl_x = 1;
+float scl_y = 1;
+float ofs_x = 0;
+float ofs_y = 0;
+
+
 uint8_t cons[WIN_H][WIN_W] = {0};
 int cons_rgb[WIN_H][WIN_W] = {0};
 
@@ -146,7 +154,12 @@ void build_text_buffer() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+
 void render_text() {
+  // glViewport(0,0,real_w,real_h);
+  // glClearColor(0,0,0,1.0);
+  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  // glViewport(ofs_x, ofs_y, WIN_W*scl_x, WIN_H*scl_y);
   int uv_idx = 0;
   int rg_idx = 0;
 
@@ -166,6 +179,11 @@ void render_text() {
       float v0 = cy * (FONT_H / (float)FONT_TEX_HH);
       float u1 = u0 + (FONT_W / (float)FONT_TEX_W);
       float v1 = v0 + (FONT_H / (float)FONT_TEX_HH);
+
+      u0+=0.0000001;
+      v0+=0.0000001;
+      u1-=0.0000001;
+      v1-=0.0000001;
 
       text_uv[uv_idx++] = u0; text_uv[uv_idx++] = v0;
       text_uv[uv_idx++] = u1; text_uv[uv_idx++] = v0;
@@ -209,11 +227,11 @@ void render_text() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void reshape(int w, int h) {
-  glViewport(0, 0, w, h);
+void reshape() {
+  glViewport(ofs_x, ofs_y, WIN_W*scl_x, WIN_H*scl_y);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluOrtho2D(0, w, h, 0);
+  glOrtho(0, WIN_W, WIN_H, 0, -1, 1);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 }
@@ -754,10 +772,10 @@ void btn_step(){
 }
 
 
-void btn_file(){
+void btn_file(int n){
   btn_stop();
   clear_textarea(&ta_edt);
-  file_index = (file_index+1) % ta_fle.n_lines;
+  file_index = (n+ta_fle.n_lines) % ta_fle.n_lines;
   char* pth = ta_fle.lines[file_index];
   // printf("%d %s\n",file_index,pth);
   FILE* fd = fopen(pth,"r");
@@ -861,7 +879,24 @@ void btn_asm(){
    }
 }
 
+float remap_x(float x){
+  return (x-ofs_x)/scl_x;
+}
+float remap_y(float y){
+  return (y-ofs_y)/scl_y;
+}
 
+void handle_scroll(int dx,int dy){
+  if (in_textarea(&ta_edt,mouse_x,mouse_y)){
+    scroll_textarea(&ta_edt,dx,dy);
+  }else if (in_textarea(&ta_out,mouse_x,mouse_y)){
+    scroll_textarea(&ta_out,dx,dy);
+  }else if (in_textarea(&ta_asm,mouse_x,mouse_y)){
+    scroll_textarea(&ta_asm,dx,dy);
+  }else if (in_textarea(&ta_var,mouse_x,mouse_y)){
+    scroll_textarea(&ta_var,dx,dy);
+  }
+}
 
 void handle_event(event_t* e){
   if (e->type == KEY_PRESSED){
@@ -882,7 +917,7 @@ void handle_event(event_t* e){
       memmove(ta_edt.lines[cur_y]+cur_x+1, ta_edt.lines[cur_y]+cur_x, l-cur_x);
       ta_edt.lines[cur_y][cur_x] = e->key;
       cur_x++;
-    }else if (e->key == 127){
+    }else if (e->key == 127 || e->key == 8){
       int l = strlen(ta_edt.lines[cur_y])+1;
       if (cur_x){
         memmove(ta_edt.lines[cur_y]+cur_x-1, ta_edt.lines[cur_y]+cur_x, l-cur_x);
@@ -934,50 +969,76 @@ void handle_event(event_t* e){
     }
     
   }else if (e->type == WHEEL_SCROLLED){
-    if (in_textarea(&ta_edt,mouse_x,mouse_y)){
-      scroll_textarea(&ta_edt,e->x,e->y);
-    }else if (in_textarea(&ta_out,mouse_x,mouse_y)){
-      scroll_textarea(&ta_out,e->x,e->y);
-    }else if (in_textarea(&ta_asm,mouse_x,mouse_y)){
-      scroll_textarea(&ta_asm,e->x,e->y);
-    }else if (in_textarea(&ta_var,mouse_x,mouse_y)){
-      scroll_textarea(&ta_var,e->x,e->y);
-    }
+    handle_scroll(e->x,e->y);
   }else if (e->type == MOUSE_PRESSED){
-    if (in_textarea(&ta_edt,mouse_x,mouse_y)){
-      int col = e->x / FONT_W;
-      int row = e->y / FONT_H;
-      int tx = ta_edt.roll_x + col - LIN_COLS;
-      int ty = ta_edt.roll_y + row - TOP_ROWS;
-      cur_x = tx;
-      cur_y = ty;
-      while (cur_y >= ta_edt.n_lines) cur_y--;
-      int len = strlen(ta_edt.lines[cur_y]);
-      
-      while (cur_x > len) cur_x--;
-      
-    }else{
-      int col = e->x / FONT_W;
-      int row = e->y / FONT_H;
-      if (row == 0){
-        if (col < 8){
-          btn_file();
-        }else if (col < 16){
-          btn_asm();
-        }else if (col < 24){
-          btn_run();
-        }else if (col < 32){
-          btn_atom();
-        }else if (col < 40){
-          btn_stop();
-        }else if (col < 48){
-          btn_step();
+    if (e->key == MOUSE_LEFT){
+      if (in_textarea(&ta_edt,mouse_x,mouse_y)){
+        int col = remap_x(e->x) / FONT_W;
+        int row = remap_y(e->y) / FONT_H;
+        int tx = ta_edt.roll_x + col - LIN_COLS;
+        int ty = ta_edt.roll_y + row - TOP_ROWS;
+        cur_x = tx;
+        cur_y = ty;
+        while (cur_y >= ta_edt.n_lines) cur_y--;
+        int len = strlen(ta_edt.lines[cur_y]);
+        
+        while (cur_x > len) cur_x--;
+        
+      }else{
+        int col = remap_x(e->x) / FONT_W;
+        int row = remap_y(e->y) / FONT_H;
+        if (row == 0){
+          if (col < 8){
+            btn_asm();
+          }else if (col < 16){
+            btn_run();
+          }else if (col < 24){
+            btn_atom();
+          }else if (col < 32){
+            btn_stop();
+          }else if (col < 40){
+            btn_step();
+          }
+        }else if (row == TOP_ROWS+MID_ROWS){
+          if (col < 8){
+            btn_file(file_index-1);
+          }else if (col < 16){
+            btn_file(file_index+1);
+          }
         }
       }
+    }else if (e->key == 4){
+      handle_scroll(0,1);
+    }else if (e->key == 5){
+      handle_scroll(0,-1);
+    }else if (e->key == 6){
+      handle_scroll(1,0);
+    }else if (e->key == 7){
+      handle_scroll(-1,0);
     }
   }else if (e->type == MOUSE_MOVED){
-    mouse_x = e->x / FONT_W;
-    mouse_y = e->y / FONT_H;
+    mouse_x = remap_x(e->x) / FONT_W;
+    mouse_y = remap_y(e->y) / FONT_H;
+  }else if (e->type == WINDOW_RESIZED){
+
+    real_w = e->x;
+    real_h = e->y;
+    
+    // scl_x = real_w / (float)WIN_W;
+    // scl_y = real_h / (float)WIN_H;
+
+    // float scl = fmin(scl_x,scl_y);
+
+    float scl = 1;
+    scl_x = scl;
+    scl_y = scl;
+
+    float w = WIN_W*scl_x;
+    float h = WIN_H*scl_y;
+    ofs_x = (real_w-w)/2.0;
+    ofs_y = (real_h-h)/2.0;
+
+    reshape();
   }
 }
 
@@ -990,24 +1051,35 @@ void update(){
     cons_rgb[0][i] = 0xffb6b6aa;
   }
   for (int i = 0; i < OUT_COLS; i++){
-    cons_rgb[TOP_ROWS+MID_ROWS][i] = 0xff242455;//0xff000000|HL_COMMENT;
+    cons_rgb[TOP_ROWS+MID_ROWS][i] = 0xff000000|HL_COMMENT;//0xff242455;
   }
   char finf[128];
   sprintf(finf,"%s:%d:%d",ta_fle.lines[file_index],cur_y+1,cur_x+1);
-  strcpy((char*)(cons[TOP_ROWS+MID_ROWS]), finf);
+  strcpy((char*)(cons[TOP_ROWS+MID_ROWS]+17), finf);
 
-  strcpy( (void*)(cons[0]+0 ),"[\x15\x46ILE ]");
-  strcpy( (void*)(cons[0]+8 ),"[\x1a ASM ]");
-  strcpy( (void*)(cons[0]+16),"[\x10 RUN ]");
-  strcpy( (void*)(cons[0]+24),"[\7ATOM ]");
-  strcpy( (void*)(cons[0]+32),"[\xfeSTOP ]");
-  strcpy( (void*)(cons[0]+40),"[\xafSTEP ]");
+  strcpy( (void*)(cons[TOP_ROWS+MID_ROWS]+0 ),"[\x1bPREV ]");
+  strcpy( (void*)(cons[TOP_ROWS+MID_ROWS]+8 ),"[\x1aNEXT ]");
+  strcpy( (void*)(cons[0]+0),"[\x1a ASM ]");
+  strcpy( (void*)(cons[0]+8),"[\x10 RUN ]");
+  strcpy( (void*)(cons[0]+16),"[\7ATOM ]");
+  strcpy( (void*)(cons[0]+24),"[\xfeSTOP ]");
+  strcpy( (void*)(cons[0]+32),"[\xafSTEP ]");
 
   if (mouse_y == 0){
     for (int i = 0; i < WIN_COLS/8; i++){
       if (mouse_x < i*8+8){
         for (int j = 0; j < 8; j++){
           cons_rgb[0][i*8+j] &= ~0xff000000;
+        }
+        break;
+      }
+    }
+  }
+  if (mouse_y == TOP_ROWS+MID_ROWS){
+    for (int i = 0; i < 2; i++){
+      if (mouse_x < i*8+8){
+        for (int j = 0; j < 8; j++){
+          cons_rgb[TOP_ROWS+MID_ROWS][i*8+j] &= ~0xff000000;
         }
         break;
       }
@@ -1110,6 +1182,7 @@ void update(){
   for (int i = 0; i < USR_ROWS; i++){
     for (int j = 0; j < USR_COLS; j++){
       cons_rgb[TOP_ROWS+i][LIN_COLS+EDT_COLS+ASM_COLS+j] = 0xff494955;
+      cons[TOP_ROWS+i][LIN_COLS+EDT_COLS+ASM_COLS+j] = 176;
     }
   }
 
@@ -1144,7 +1217,7 @@ void usr_exit(){
 
   if (usr_fbo){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    reshape(WIN_W,WIN_H);
+    reshape();
 
     glBindTexture(GL_TEXTURE_2D, usr_tex);
     glEnable(GL_TEXTURE_2D);
@@ -1214,9 +1287,11 @@ void share_events(event_t* events, int n_events){
     event_t e = events[i];
 
     if (e.type == MOUSE_PRESSED || e.type == MOUSE_RELEASED || e.type == MOUSE_MOVED){
-      if (view_x <= e.x && e.x < view_x+view_w && view_y <= e.y && e.y < view_y+view_h){
-        e.x = (e.x-view_x) * usr_w / (float)view_w;
-        e.y = (e.y-view_y) * usr_h / (float)view_h;
+      float ex = remap_x(e.x);
+      float ey = remap_y(e.y);
+      if (view_x <= ex && ex < view_x+view_w && view_y <= ey && ey < view_y+view_h){
+        e.x = (ex-view_x) * usr_w / (float)view_w;
+        e.y = (ey-view_y) * usr_h / (float)view_h;
       }else{
         continue;
       }
@@ -1272,7 +1347,7 @@ int main(int argc, char** argv) {
 
   windowing_init(WIN_W, WIN_H);
 
-  reshape(WIN_W,WIN_H);
+  reshape();
 
   build_font_texture();
   build_text_buffer();
@@ -1331,15 +1406,8 @@ int main(int argc, char** argv) {
     // clock_t start_time = clock();
 
  
-    int n_events = 0;
-    event_t* events = windowing_poll(&n_events);
-    render_text();
-
-    share_events(events,n_events);
-    for (int i = 0; i < n_events; i++){
-      handle_event(events+i);
-    }
     update();
+    render_text();
 
 
     // for (int i = 0; i < 8; i++){
@@ -1382,7 +1450,14 @@ int main(int argc, char** argv) {
     // }
     usr_exit();
     
+    int n_events = 0;
+    event_t* events = windowing_poll(&n_events);
+    
 
+    share_events(events,n_events);
+    for (int i = 0; i < n_events; i++){
+      handle_event(events+i);
+    }
     // clock_t end_time = clock();
     // double elapsed_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
     // double fps = 1.0/elapsed_time;

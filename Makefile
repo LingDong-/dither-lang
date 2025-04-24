@@ -43,4 +43,4 @@ nwedit:
 gledit:
 	rm -rf /tmp/examples;\
 	cp -r examples /tmp/examples;\
-	gcc editor/gl/main.c $$([ "$$(uname)" == "Darwin" ] && echo "-framework OpenGL -framework GLUT" || echo "-lgl -lglut") -lm -o build/gledit && build/gledit /tmp/examples;
+	gcc editor/gl/main.c $$([ "$$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lgl") -lm -o build/gledit && build/gledit /tmp/examples/boids.dh;
