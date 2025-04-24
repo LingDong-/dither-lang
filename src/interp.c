@@ -1055,7 +1055,7 @@ loc_t* read_srcmap_line(FILE* fd){
   char c0 = fgetc(fd);
   if (c0 == EOF) return NULL;
   int mode = 0;
-  char buf[32];
+  char buf[512];
   int bui = 0;
   loc_t* ll = NULL;
   while (1){

@@ -72,7 +72,10 @@ color_t color_stroke;
 int is_stroke=1;
 int is_fill=1;
 
+GLint fbo_zero;
+
 void gx_impl__size(int w, int h){
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
 
   glViewport(0, 0, w, h);
   glMatrixMode(GL_PROJECTION);
@@ -110,7 +113,7 @@ void gx_impl__init_graphics(void* data, int w, int h){
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
 
   ((int32_t*)(data))[2] = fbo;
   ((int32_t*)(data))[3] = fboTexture;
@@ -138,7 +141,7 @@ void gx_impl__begin_fbo(int fbo){
 }
 
 void gx_impl__end_fbo(){
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
   glViewport(0, 0, width, height);
 
   glMatrixMode(GL_PROJECTION);

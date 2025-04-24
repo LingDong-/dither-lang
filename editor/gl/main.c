@@ -11,6 +11,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <libgen.h>
 // #include <time.h>
 
 #include "../../src/interp.c"
@@ -273,12 +276,15 @@ textarea_t ta_edt = {LIN_COLS,TOP_ROWS,LIN_COLS+EDT_COLS-1,TOP_ROWS+MID_ROWS};
 textarea_t ta_asm = {LIN_COLS+EDT_COLS,TOP_ROWS,LIN_COLS+EDT_COLS+ASM_COLS-1,TOP_ROWS+MID_ROWS};
 textarea_t ta_out = {0,TOP_ROWS+MID_ROWS+BOT_ROWS,OUT_COLS-1,WIN_ROWS};
 textarea_t ta_var = {LIN_COLS+EDT_COLS+ASM_COLS,TOP_ROWS+USR_ROWS,WIN_COLS-1,WIN_ROWS};
+textarea_t ta_fle = {0};
 
 int cur_x = 0;
 int cur_y = 0;
 
 int mouse_x = 0;
 int mouse_y = 0;
+
+int file_index = 0;
 
 int in_textarea(textarea_t* ta, int x, int y){
   return ta->left <= x && x < ta->right && ta->top <= y && y < ta->bottom;
@@ -748,92 +754,111 @@ void btn_step(){
 }
 
 
+void btn_file(){
+  btn_stop();
+  clear_textarea(&ta_edt);
+  file_index = (file_index+1) % ta_fle.n_lines;
+  char* pth = ta_fle.lines[file_index];
+  // printf("%d %s\n",file_index,pth);
+  FILE* fd = fopen(pth,"r");
+  ta_edt.lines = read_file_lines(fd, ta_edt.lines,&ta_edt.n_lines);
+  fclose(fd);
+  cur_x = 0;
+  cur_y = 0;
+}
+
 void btn_asm(){
   if (is_started){
     btn_stop();
   }
+  char* inp_pth = "/tmp/source.dh";//ta_fle.lines[file_index];
+
   FILE* fd;
-  fd = fopen("/tmp/source.dh","w");
+  fd = fopen(inp_pth,"w");
   write_lines_file(fd, ta_edt.lines, ta_edt.n_lines);
   fclose(fd);
 
   clear_textarea(&ta_out);
   textarea_putln(&ta_out, "running parser...");
-  fd = popen("node src/parser.js /tmp/source.dh -I editor/gl -o build/ir.dsm --map build/ir.map 2>&1; echo parser exited with status $?", "r");
+  char cmd[512];
+  
+  sprintf(cmd,"node src/parser.js %s -I editor/gl -o build/ir.dsm --map build/ir.map 2>&1; echo parser exited with status $?",inp_pth);
+  printf("%s\n",cmd);
+  fd = popen(cmd, "r");
   ta_out.lines = read_file_lines(fd, ta_out.lines, &(ta_out.n_lines));
   pclose(fd);
 
 
-  global_init();
-  fd = fopen("build/ir.dsm","r");
-  instrs = read_ir(fd);
-  _G.layouts = read_layout(fd);
-  fclose(fd);
-  
-  fd = fopen("build/ir.map","r");
-  read_srcmap(&instrs, fd);
-  fclose(fd);
-
-  clear_textarea(&ta_asm);
-  if (line_to_instr){
-    line_to_instr = realloc(line_to_instr,instrs.len*sizeof(uintptr_t));
-  }else{
-    line_to_instr = malloc(instrs.len*sizeof(uintptr_t));
-  }
-
-  int idx = 0;
-  list_node_t* n = instrs.head;
-  while (n){
-    instr_t* ins = (instr_t*)n->data;
-
-    int lf = ins->loc->file;
-    int lp = ins->loc->pos;
-    int lsum = 0;
-    int li;
-    for (li = 0; li < ta_edt.n_lines; li++){
-      int l = strlen(ta_edt.lines[li]);
-      lsum += l+1;
-      if (lsum > lp){
-        break;
-      }
-    }
-    ins->loc->pos = li;
-
-    char line[256] = {0};
-    int cnt = 0;
-
-    cnt += sprintf(line+cnt,"@%05lx ",((uintptr_t)n)&0xfffff );
-
-    for (int i = 7; i >= 0; i--){
-      int c = (char)((ins->op)>>(i*8));
-      if (c){
-        cnt += sprintf(line+cnt,"%c",c);
-      }
-    }
-    if (ins->a){
-      while (cnt < 14){
-        cnt += sprintf(line+cnt," ");
-      }
-      cnt += sprint_opran(line+cnt,ins->a); 
-    }
-    if (ins->b){
-      cnt += sprintf(line+cnt,"  ");
-      cnt += sprint_opran(line+cnt,ins->b);
-      
-    }
-    if (ins->c){
-      cnt += sprintf(line+cnt,"  ");
-      cnt += sprint_opran(line+cnt,ins->c);
-    }
-    textarea_putln(&ta_asm,line);
-
-    line_to_instr[idx] = (uintptr_t)n;
-    n = n->next;
-    idx++;
-
-
-  
-  }
+   global_init();
+   fd = fopen("build/ir.dsm","r");
+   instrs = read_ir(fd);
+   _G.layouts = read_layout(fd);
+   fclose(fd);
+   
+   fd = fopen("build/ir.map","r");
+   read_srcmap(&instrs, fd);
+   fclose(fd);
+ 
+   clear_textarea(&ta_asm);
+   if (line_to_instr){
+     line_to_instr = realloc(line_to_instr,instrs.len*sizeof(uintptr_t));
+   }else{
+     line_to_instr = malloc(instrs.len*sizeof(uintptr_t));
+   }
+ 
+   int idx = 0;
+   list_node_t* n = instrs.head;
+   while (n){
+     instr_t* ins = (instr_t*)n->data;
+ 
+     int lf = ins->loc->file;
+     int lp = ins->loc->pos;
+     int lsum = 0;
+     int li;
+     for (li = 0; li < ta_edt.n_lines; li++){
+       int l = strlen(ta_edt.lines[li]);
+       lsum += l+1;
+       if (lsum > lp){
+         break;
+       }
+     }
+     ins->loc->pos = li;
+ 
+     char line[256] = {0};
+     int cnt = 0;
+ 
+     cnt += sprintf(line+cnt,"@%05lx ",((uintptr_t)n)&0xfffff );
+ 
+     for (int i = 7; i >= 0; i--){
+       int c = (char)((ins->op)>>(i*8));
+       if (c){
+         cnt += sprintf(line+cnt,"%c",c);
+       }
+     }
+     if (ins->a){
+       while (cnt < 14){
+         cnt += sprintf(line+cnt," ");
+       }
+       cnt += sprint_opran(line+cnt,ins->a); 
+     }
+     if (ins->b){
+       cnt += sprintf(line+cnt,"  ");
+       cnt += sprint_opran(line+cnt,ins->b);
+       
+     }
+     if (ins->c){
+       cnt += sprintf(line+cnt,"  ");
+       cnt += sprint_opran(line+cnt,ins->c);
+     }
+     textarea_putln(&ta_asm,line);
+ 
+     line_to_instr[idx] = (uintptr_t)n;
+     n = n->next;
+     idx++;
+ 
+ 
+   
+   }
 }
 
 
@@ -936,12 +961,14 @@ void handle_event(event_t* e){
       int row = e->y / FONT_H;
       if (row == 0){
         if (col < 8){
-          btn_asm();
+          btn_file();
         }else if (col < 16){
-          btn_run();
+          btn_asm();
         }else if (col < 24){
-          btn_atom();
+          btn_run();
         }else if (col < 32){
+          btn_atom();
+        }else if (col < 40){
           btn_stop();
         }else if (col < 48){
           btn_step();
@@ -963,14 +990,18 @@ void update(){
     cons_rgb[0][i] = 0xffb6b6aa;
   }
   for (int i = 0; i < OUT_COLS; i++){
-    cons_rgb[TOP_ROWS+MID_ROWS][i] = 0xff242455;
+    cons_rgb[TOP_ROWS+MID_ROWS][i] = 0xff242455;//0xff000000|HL_COMMENT;
   }
+  char finf[128];
+  sprintf(finf,"%s:%d:%d",ta_fle.lines[file_index],cur_y+1,cur_x+1);
+  strcpy((char*)(cons[TOP_ROWS+MID_ROWS]), finf);
 
-  strcpy( (void*)(cons[0]+0 ),"[\x1a ASM ]");
-  strcpy( (void*)(cons[0]+8 ),"[\x10 RUN ]");
-  strcpy( (void*)(cons[0]+16),"[\7ATOM ]");
-  strcpy( (void*)(cons[0]+24),"[\xfeSTOP ]");
-  strcpy( (void*)(cons[0]+32),"[\xafSTEP ]");
+  strcpy( (void*)(cons[0]+0 ),"[\x15\x46ILE ]");
+  strcpy( (void*)(cons[0]+8 ),"[\x1a ASM ]");
+  strcpy( (void*)(cons[0]+16),"[\x10 RUN ]");
+  strcpy( (void*)(cons[0]+24),"[\7ATOM ]");
+  strcpy( (void*)(cons[0]+32),"[\xfeSTOP ]");
+  strcpy( (void*)(cons[0]+40),"[\xafSTEP ]");
 
   if (mouse_y == 0){
     for (int i = 0; i < WIN_COLS/8; i++){
@@ -1213,6 +1244,11 @@ void cb_poll_(void* data){
 
 void cb_print_(char* s){
   // printf("%s",s);
+  char* s1 = s;
+  char c;
+  while ((c= *(s1++) )){
+    if (c == '\n') poll_flag = 2;
+  }
   textarea_putstr(&ta_out,s,1);
 }
 
@@ -1223,6 +1259,7 @@ void (*__win_intern_hook_poll)(void*) = cb_poll_;
 
 __attribute__((visibility("default")))
 void (*__io_intern_hook_print)(char*) = cb_print_;
+
 
 
 
@@ -1240,12 +1277,50 @@ int main(int argc, char** argv) {
   build_font_texture();
   build_text_buffer();
 
-  FILE* fd;
+  char inp_pth[512];
+  char dir_pth[512];
+  strcpy(inp_pth,argv[1]);
 
-  fd = fopen("examples/mousepaint.dh","r");
-  // fd = fopen("../ldcc/tests/test231.txt","r");
+  int is_folder = 0;
+  struct stat path_stat;
+  stat(inp_pth, &path_stat);
+  
+  if (S_ISDIR(path_stat.st_mode)) {
+    is_folder = 1;
+    strcpy(dir_pth,inp_pth);
+  } else {
+    char path_copy[512];
+    strcpy(path_copy,inp_pth);
+    char* dn = dirname(path_copy);
+    strcpy(dir_pth,dn);
+  }
+  DIR *dir = opendir(dir_pth);
+  struct dirent *entry;
+  file_index = 0;
+  int idx = 0;
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry->d_type == DT_REG) {
+      char* d_name = entry->d_name;
+      int l = strlen(d_name);
+      if (l >= 4 && d_name[l-3] == '.' && d_name[l-2] == 'd' && d_name[l-1] == 'h'){
+        // printf("%s/%s\n", dir_path, entry->d_name);
+        char s[512];
+        sprintf(s,"%s/%s",dir_pth,entry->d_name);
+        if (is_folder){
+          is_folder = 0;
+          strcpy(inp_pth,s);
+        }else if (strcmp(s,inp_pth)==0){
+          file_index = idx;
+        }
+        textarea_putln(&ta_fle, s);
+        idx++;
+      }
+    }
+  }
 
+  FILE* fd = fopen(inp_pth,"r");
   ta_edt.lines = read_file_lines(fd, ta_edt.lines,&ta_edt.n_lines);
+  fclose(fd);
 
   // fd = fopen("build/ir.dsm","r");
   // ta_asm.lines = read_file_lines(fd,&ta_asm.n_lines);
