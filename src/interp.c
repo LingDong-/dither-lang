@@ -1197,13 +1197,16 @@ void to_str(int vart, void* u, str_t* s){
     return;
   }else if (vart == VART_STR){
     stn_t* q = (*((stn_t**)u));
+    if (!q) goto null_case;
     str_add(s,q->data);
     return;
   }else if (vart == VART_VEC){
     vec_t* v = (*((vec_t**)u));
+    if (!v) goto null_case;
     str_addch(s,'{');
     char* ptr = v->data;
     for (int i = 0; i < v->n; i++){
+      
       to_str(elem_vart(v), ptr, s);
       ptr += v->w;
       if (i<v->n-1)str_addch(s,',');
@@ -1224,7 +1227,7 @@ void to_str(int vart, void* u, str_t* s){
     return;
   }else if (vart == VART_TUP){
     tup_t* tup = (*((tup_t**)u));
-
+    if (!tup) goto null_case;
     list_node_t* q = tup->type->u.elem.head;
     str_addch(s,'[');
     int ofs = 0;

@@ -2695,9 +2695,14 @@ var PARSER = function(sys){
     function printtypeser(t){
       return printtype(t);
     }
+    let cache_pos = null;
     function _pushins(){
       let ins = Array.from(arguments);
       ins[0] = somepos(ins);
+      if (ins[0] == null){
+        ins[0] = cache_pos;
+      }
+      cache_pos = ins[0];
       if (pendmark == null) pendmark = ''//'_'+shortid();
       let inn = [pendmark,...ins]
       instrs.push(inn);
@@ -2707,7 +2712,7 @@ var PARSER = function(sys){
     let pendmark = null;
     function mkmark(s,dorand=true){
       if (pendmark != null){
-        _pushins(ast,'nop');
+        _pushins({},'nop');
       }
       pendmark = (s??'');
       if (dorand) pendmark+='_'+shortid();
@@ -2765,7 +2770,7 @@ var PARSER = function(sys){
                   _pushins(scopes[i][k].val[j].ipl.arg,'argr',ori+'.'+l,scopes[scopes[i][k].val[j].agt][l].typ);
                 }
                 if (scopes[i][k].val[j].ipl.mbr){
-                  _pushins(scopes[i][k].val[j].ipl.arg,'argr','__'+i+'.this',scopes[i].this.typ);
+                  _pushins(scopes[i][k].val[j].ipl,'argr','__'+i+'.this',scopes[i].this.typ);
                 }
               }
               // compilefunc(scopes[i][k].val[j].ipl, scopes[scopes[i][k].val[j].ctx.at(-1)].__names.slice(2))
@@ -2849,12 +2854,12 @@ var PARSER = function(sys){
       }
 
       function compiletype(tctx,tnom,tcpy){
-
+        
         let typ = tcpy.elt?({con:tnom,elt:tcpy.elt}):tnom;
         let uid = printtypeser(typ);
         let id = '__typd_'+uid;
 
-        pushins('jmp','end'+id);
+        _pushins(tcpy,'jmp','end'+id);
 
         mkmark(id,false);
 
@@ -2863,7 +2868,7 @@ var PARSER = function(sys){
         layout[uid] = [];
 
         let tmp = '.this';
-        pushins('alloc',tmp,typ,1);
+        _pushins(tcpy,'alloc',tmp,typ,1);
         for (let k in ctx){
           if (k.startsWith('__'))continue;
           if (typeof ctx[k].typ == 'string' && ctx[k].typ.startsWith('__func_ovld_')){
@@ -2891,10 +2896,10 @@ var PARSER = function(sys){
               val = docast(val,...needcast);
             }
           
-            pushins('mov',[tmp,k],val);
+            _pushins(tcpy,'mov',[tmp,k],val);
           }
         }
-        pushins('ret',tmp);
+        _pushins(tcpy,'ret',tmp);
         mkmark('end'+id,false);
       }
 
