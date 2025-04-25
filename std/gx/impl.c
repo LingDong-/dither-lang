@@ -89,6 +89,9 @@ void gx_impl__size(int w, int h){
 
   // glEnable(GL_MULTISAMPLE);
 
+  glLineWidth(1);
+  glPointSize(1);
+
   color_fill.r=1, color_fill.g=1, color_fill.b=1, color_fill.a=1;
   color_stroke.r=0, color_stroke.g=0, color_stroke.b=0, color_stroke.a=1;
 

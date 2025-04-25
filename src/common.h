@@ -186,7 +186,7 @@ void list_nuke(list_t* l){
     free(it);
     it = nxt;
   }
-  free(l);
+  // free(l);
 }
 
 str_t str_new(){

@@ -84,6 +84,11 @@ float scl_y = 1;
 float ofs_x = 0;
 float ofs_y = 0;
 
+GLuint usr_fbo=0, usr_tex, usr_w, usr_h;
+int poll_flag = 0;
+
+float view_x, view_y, view_w, view_h;
+
 
 uint8_t cons[WIN_H][WIN_W] = {0};
 int cons_rgb[WIN_H][WIN_W] = {0};
@@ -626,6 +631,8 @@ void clear_textarea(textarea_t* ta){
     ta->n_lines = 0;
     ta->lines = NULL;
   }
+  ta->roll_x = 0;
+  ta->roll_y = 0;
 }
 
 void shrink_string(char* out, char* inp, int n){
@@ -744,6 +751,11 @@ void btn_run(){
     frame_start();
     ins_node = instrs.head;
     is_started = 1;
+    if (usr_fbo){
+      glDeleteFramebuffers(1, &usr_fbo);
+      glDeleteTextures(1, &usr_tex);
+      usr_fbo = 0;
+    }
   } 
 }
 
@@ -760,6 +772,7 @@ void btn_stop(){
   is_running = 0;
   is_started = 0;
   ins_node = NULL;
+
 }
 
 void btn_step(){
@@ -769,12 +782,17 @@ void btn_step(){
   is_stepping = 1;
   is_running = 1;
   is_atomic = 0;
+
+
 }
 
-
+void update();
 void btn_file(int n){
   btn_stop();
+  clear_textarea(&ta_asm);
+  clear_textarea(&ta_out);
   clear_textarea(&ta_edt);
+
   file_index = (n+ta_fle.n_lines) % ta_fle.n_lines;
   char* pth = ta_fle.lines[file_index];
   // printf("%d %s\n",file_index,pth);
@@ -783,7 +801,11 @@ void btn_file(int n){
   fclose(fd);
   cur_x = 0;
   cur_y = 0;
+
+  update();
 }
+
+int did_asm = 0;
 
 void btn_asm(){
   if (is_started){
@@ -806,77 +828,82 @@ void btn_asm(){
   ta_out.lines = read_file_lines(fd, ta_out.lines, &(ta_out.n_lines));
   pclose(fd);
 
-
-   global_init();
-   fd = fopen("build/ir.dsm","r");
-   instrs = read_ir(fd);
-   _G.layouts = read_layout(fd);
-   fclose(fd);
-   
-   fd = fopen("build/ir.map","r");
-   read_srcmap(&instrs, fd);
-   fclose(fd);
+  if (did_asm){
+    global_exit();
+    free_instrs(&instrs);
+    memset(&instrs,0,sizeof(list_t));
+  }
+  did_asm = 1;
+  global_init();
+  fd = fopen("build/ir.dsm","r");
+  instrs = read_ir(fd);
+  _G.layouts = read_layout(fd);
+  fclose(fd);
+  
+  fd = fopen("build/ir.map","r");
+  read_srcmap(&instrs, fd);
+  fclose(fd);
  
-   clear_textarea(&ta_asm);
-   if (line_to_instr){
-     line_to_instr = realloc(line_to_instr,instrs.len*sizeof(uintptr_t));
-   }else{
-     line_to_instr = malloc(instrs.len*sizeof(uintptr_t));
-   }
+  clear_textarea(&ta_asm);
+  if (line_to_instr){
+    line_to_instr = realloc(line_to_instr,instrs.len*sizeof(uintptr_t));
+  }else{
+    line_to_instr = malloc(instrs.len*sizeof(uintptr_t));
+  }
  
-   int idx = 0;
-   list_node_t* n = instrs.head;
-   while (n){
-     instr_t* ins = (instr_t*)n->data;
+  int idx = 0;
+  list_node_t* n = instrs.head;
+  while (n){
+    instr_t* ins = (instr_t*)n->data;
  
-     int lf = ins->loc->file;
-     int lp = ins->loc->pos;
-     int lsum = 0;
-     int li;
-     for (li = 0; li < ta_edt.n_lines; li++){
-       int l = strlen(ta_edt.lines[li]);
-       lsum += l+1;
-       if (lsum > lp){
-         break;
-       }
-     }
-     ins->loc->pos = li;
+    int lf = ins->loc->file;
+    int lp = ins->loc->pos;
+    int lsum = 0;
+    int li;
+    for (li = 0; li < ta_edt.n_lines; li++){
+      int l = strlen(ta_edt.lines[li]);
+      lsum += l+1;
+      if (lsum > lp){
+        break;
+      }
+    }
+    ins->loc->pos = li;
  
-     char line[256] = {0};
-     int cnt = 0;
+    char line[256] = {0};
+    int cnt = 0;
  
-     cnt += sprintf(line+cnt,"@%05lx ",((uintptr_t)n)&0xfffff );
+    cnt += sprintf(line+cnt,"@%05lx ",((uintptr_t)n)&0xfffff );
  
-     for (int i = 7; i >= 0; i--){
-       int c = (char)((ins->op)>>(i*8));
-       if (c){
-         cnt += sprintf(line+cnt,"%c",c);
-       }
-     }
-     if (ins->a){
-       while (cnt < 14){
-         cnt += sprintf(line+cnt," ");
-       }
-       cnt += sprint_opran(line+cnt,ins->a); 
-     }
-     if (ins->b){
-       cnt += sprintf(line+cnt,"  ");
-       cnt += sprint_opran(line+cnt,ins->b);
-       
-     }
-     if (ins->c){
-       cnt += sprintf(line+cnt,"  ");
-       cnt += sprint_opran(line+cnt,ins->c);
-     }
-     textarea_putln(&ta_asm,line);
+    for (int i = 7; i >= 0; i--){
+      int c = (char)((ins->op)>>(i*8));
+      if (c){
+        cnt += sprintf(line+cnt,"%c",c);
+      }
+    }
+    if (ins->a){
+      while (cnt < 14){
+        cnt += sprintf(line+cnt," ");
+      }
+      cnt += sprint_opran(line+cnt,ins->a); 
+    }
+    if (ins->b){
+      cnt += sprintf(line+cnt,"  ");
+      cnt += sprint_opran(line+cnt,ins->b);
+      
+    }
+    if (ins->c){
+      cnt += sprintf(line+cnt,"  ");
+      cnt += sprint_opran(line+cnt,ins->c);
+    }
+    textarea_putln(&ta_asm,line);
  
-     line_to_instr[idx] = (uintptr_t)n;
-     n = n->next;
-     idx++;
+    line_to_instr[idx] = (uintptr_t)n;
+    n = n->next;
+    idx++;
  
  
-   
-   }
+  
+  }
 }
 
 float remap_x(float x){
@@ -1192,10 +1219,6 @@ void update(){
   frame++;
 }
 
-GLuint usr_fbo=0, usr_tex, usr_w, usr_h;
-int poll_flag = 0;
-
-float view_x, view_y, view_w, view_h;
 
 void usr_enter(){
   

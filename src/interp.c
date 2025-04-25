@@ -283,6 +283,8 @@ typedef struct{
 gstate_t _G = {0};
 
 void global_init(){
+  memset(&_G,0,sizeof(_G));
+
   list_init(&_G.vars);
   ARR_INIT(uintptr_t, _G.args);
   ARR_INIT(retp_t, _G.ret_pts);
@@ -436,10 +438,29 @@ cleanup2:
     typ->u.str = word;
   }
   
+  if (typ->vart != VART_STT){
+    free(typ->u.str.data);
+  }
   // print_type(typ);
   // printf("\n");
   return (opran_t*)typ;
 }
+void free_type(type_t* typ){
+  if (typ->vart == VART_STT){
+    free(typ->u.str.data);
+  }else if (typ->mode == TYPM_CONT){
+    list_node_t* n = typ->u.elem.head;
+    while (n){
+      list_node_t* next = n->next;
+      type_t* t = n->data;
+      free_type(t);
+      free(n);
+      n = next;
+    }
+  }
+  free(typ);
+}
+
 
 
 int parse_num_maybe(char* s, int64_t* n, uint64_t* u, double* f){
@@ -642,6 +663,8 @@ void print_type(type_t* a){
     printf("?%d?",a->mode);
   }
 }
+
+
 
 
 void print_opran(opran_t* a){
@@ -1600,11 +1623,6 @@ type_t* strl_type(){
   return &_strl_type;
 }
 
-type_t* type_new(int mode){
-  type_t* t = calloc(sizeof(type_t),1);
-  t->mode = mode;
-  return t;
-}
 
 stn_t* stn_copy_(gstate_t* _g, stn_t* u){
   stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+u->n+1);
@@ -3022,9 +3040,6 @@ list_node_t* execute_instr(list_node_t* ins_node){
 void execute(list_t* instrs){
   map_t* frame = frame_start();
 
-  list_t args = {0};
-  list_t ret_pts = {0};
-
   list_node_t* n = instrs->head;
   while (n){
     n = execute_instr(n);
@@ -3058,7 +3073,97 @@ void register_cfunc(map_t* g_cfuncs, char* name, void (*fun)(var_t* ret, gstate_
 }
 
 
+void free_opran(opran_t* a){
+  uint32_t tag = a->tag;  
+  if (tag == OPRD_TERM){
+    if (((term_t*)a)->mode == TERM_IDEN || ((term_t*)a)->mode == TERM_STRL){
+      free(((term_t*)a)->u.str.data);
+    }else if (((term_t*)a)->mode == TERM_ADDR){
+      free(((term_t*)a)->u.addr.base.data);
+      free(((term_t*)a)->u.addr.offs.data);
+    }
+    free(a);
+  }else if (tag == OPRD_TYPE){
+    free_type((type_t*)a);
+  }else if (tag == OPRD_LABL){
+    free(((label_t*)a)->str.data);
+    free(a);
+  }else{
+    free(a);
+  }
+}
 
+void free_instrs(list_t* instrs){
+  list_node_t* it = instrs->head;
+  while (it){
+    list_node_t* next = it->next;
+    instr_t* ins = it->data;
+    if (ins->a){
+      free_opran(ins->a);
+    }
+    if (ins->b){
+      free_opran(ins->b);
+    }
+    if (ins->c){
+      free_opran(ins->c);
+    }
+    if (ins->loc){
+      free(ins->loc);
+    }
+    free(ins);
+    free(it);
+    it = next;
+  }
+}
+
+void global_exit(){
+  // uint64_t flags;
+  // list_t vars;
+  // map_t layouts;
+  // mem_list_t objs;
+  // map_t cfuncs;
+  // retp_t_arr_t ret_pts;
+  // uintptr_t_arr_t args;
+
+  while (_G.vars.len){
+    frame_end();
+  }
+  gc_sweep();
+
+  map_t* m = &(_G.layouts);
+  for (int k = 0; k < NUM_MAP_SLOTS; k++){
+    for (int i = 0; i < m->slots[k].len;i++){
+      pair_t p = m->slots[k].data[i];
+      lost_t* layout = (lost_t*)p.val;
+      list_node_t* it = layout->fields.head;
+      while(it){
+        list_node_t* next = it->next;
+        lofd_t* l = (lofd_t*)(it->data);
+        free(l->name.data);
+        free_type(l->type);
+        free(it);
+        it = next;
+      }
+    }
+  }
+  map_nuke(m);
+
+  m = &(_G.cfuncs);
+  for (int k = 0; k < NUM_MAP_SLOTS; k++){
+    if (m->slots[k].cap){
+      for (int i = 0; i < m->slots[k].len;i++){
+        pair_t p = m->slots[k].data[i];
+        free(p.key);
+      }
+      free(m->slots[k].data);
+    }
+  }
+
+  free(_G.ret_pts.data);
+  free(_G.args.data);
+
+  memset(&_G,0,sizeof(_G));
+}
 
 
 #endif
