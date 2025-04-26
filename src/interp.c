@@ -439,7 +439,7 @@ cleanup2:
   }
   
   if (typ->vart != VART_STT){
-    free(typ->u.str.data);
+    free(word.data);
   }
   // print_type(typ);
   // printf("\n");
@@ -3114,6 +3114,7 @@ void free_instrs(list_t* instrs){
     free(it);
     it = next;
   }
+  memset(instrs,0,sizeof(list_t));
 }
 
 void global_exit(){

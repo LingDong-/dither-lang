@@ -60,7 +60,7 @@ var PARSER = function(sys){
     console.error(`[${tag} error] ${msg} at file "${state.src[pthidx].pth}" line ${lino} column ${chno}`);
     console.error((lns.at(-1)+rest).replace(/\t/g,' '));
     console.error(' '.repeat(chno-1)+'^');
-    // console.trace();
+    console.trace();
     sys.process.exit(1);
   }
 
@@ -419,13 +419,19 @@ var PARSER = function(sys){
 
           // console.log(',',out0.at(prv), g.val);
 
-          if (g.val.length <= 1 && 
+          if ( /*g.val.length <= 1 && */
             out0.at(prv) && (gtok(out0.at(prv)).tag == 'ident' || gtok(out0.at(prv)).key == 'subs' || gtok(out0.at(prv)).key == 'a.b') &&
             
             (!out0.at(pprv) || (!tokis(out0.at(pprv),'sigil::') && !tokis(out0.at(pprv),'sigil:]')  ))
           ){
-            
-            out0.push({key:'olit',lhs:out0.pop(),rhs:g.val[0]});
+            if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='vec' || gtok(out0.at(prv)).lhs.val=='arr')){
+              
+              out0.push({key:gtok(out0.at(prv)).lhs.val[0]+'lit',ano:out0.pop(),val:g.val});
+            }else if (g.val.length <= 1){
+              out0.push({key:'olit',lhs:out0.pop(),rhs:g.val[0]});
+            }else{
+              out0.push(g);
+            }
           }else{
             
             out0.push(g);
@@ -954,7 +960,7 @@ var PARSER = function(sys){
     }else if (cst.key == '[]'){
       ast.key = 'tlit';
       ast.val = untree(cst.val).map(abstract);
-    }else if (cst.key == '{}'){
+    }else if (cst.key == '{}' || cst.key == 'vlit' || cst.key == 'alit'){
       let val = [];
       for (let i = 0; i < cst.val.length; i++){
         let vv = untree(cst.val[i]);
@@ -963,8 +969,13 @@ var PARSER = function(sys){
         }
         val.push(vv);
       }
-      ast.key = 'vlit';
+      if (cst.key == '{}'){
+        ast.key = 'vlit';
+      }else{
+        ast.key = cst.key;
+      }
       ast.val = val;
+      ast.ano = cst.ano?abstype(cst.ano):null;
 
     }else if (cst.key == 'olit'){
       let val = untree(cst.rhs);
@@ -972,7 +983,7 @@ var PARSER = function(sys){
       ast.lhs = abstype(cst.lhs);
       ast.rhs = [];
       for (let i = 0; i < val.length; i++){
-        if (ast.lhs.con && ['list','arr','vec'].includes(ast.lhs.con.val)){
+        if (ast.lhs.con && ['list'].includes(ast.lhs.con.val)){
           val[i] = abstract(val[i]);
           ast.rhs.push(val[i]);
         }else{
@@ -2030,7 +2041,11 @@ var PARSER = function(sys){
           }
           ast.typ = {con:'tup',elt:typs};
         }else if (ast.key == 'vlit'){
-          let w=1,h=1,t='auto';
+          let w=1,h=1;
+          let t = 'auto';
+          if (ast.ano){
+            t = shrinktype(ast.ano.elt[0]);
+          }
           h = ast.val.length;
           for (let i = 0; i < ast.val.length; i++){
             w = Math.max(w,ast.val[i].length);
@@ -2044,18 +2059,24 @@ var PARSER = function(sys){
           }else{
             ast.typ = {con:'vec',elt:[t,w]};
           }
-          
+          if (ast.ano){
+            ast.typ = maxtype(shrinktype(ast.ano),ast.typ);
+          }
+        }else if (ast.key == 'alit'){
+          let t = shrinktype(ast.ano);
+
+          for (let i = 0; i < ast.val.length; i++){
+            for (let j = 0; j < ast.val[i].length; j++){
+              doinfer(ast.val[i][j]);
+            }
+          }
+          ast.typ = t;
+
         }else if (ast.key == 'olit'){
 
           let lht = shrinktype(ast.lhs);
 
-          if (lht.con && lht.con == 'arr'){
-            ast.key = 'alit';
-            for (let i = 0; i < ast.rhs.length; i++){
-              doinfer(ast.rhs[i]);
-              maxtype(ast.rhs[i].typ, lht.elt[0]);
-            }
-          }else if (lht.con && lht.con == 'list'){
+          if (lht.con && lht.con == 'list'){
             ast.key = 'llit';
             for (let i = 0; i < ast.rhs.length; i++){
               doinfer(ast.rhs[i]);
@@ -2069,15 +2090,6 @@ var PARSER = function(sys){
               maxtype(ast.rhs[i].lhs.typ, lht.elt[0]);
               maxtype(ast.rhs[i].rhs.typ, lht.elt[1]);
             }
-          }else if (lht.con && lht.con == 'vec'){
-            
-            for (let i = 0; i < ast.rhs.length; i++){
-              doinfer(ast.rhs[i]);
-              maxtype(ast.rhs[i].typ, lht.elt[0]);
-            }
-            ast.key = 'vlit';
-            ast.typ = ast.lhs;
-            ast.val = ast.rhs;
           }else{
             for (let i = 0; i < ast.rhs.length; i++){
               let fdnom = ast.rhs[i].lhs;
@@ -2358,6 +2370,13 @@ var PARSER = function(sys){
             ast.idx = ast.idx[0];
             
             maxtype(ast.con.typ.elt[0],ast.idx.typ);
+          }else if (ast.con.typ.con == 'arr'){
+            ast.typ = ast.con.typ.elt[0];
+            ast.idx = {
+              key:'tlit',
+              val:ast.idx
+            }
+            doinfer(ast.idx);
           }else if (ast.con.typ.con){
             ast.typ = ast.con.typ.elt[0];
             if (ast.idx.length >= Math.max(2,ast.con.typ.elt.length)){
@@ -2468,11 +2487,17 @@ var PARSER = function(sys){
             }else{
               mkerr('typecheck',`${printtype(ast.lhs.typ.con)} does not expect field '${ast.rhs.val}'`,somepos(ast));
             }
-          }else if (ast.lhs.typ.con == 'arr' && ast.rhs.val == 'shape'){
-            let elts = ast.lhs.typ.elt.slice(1);
-            ast.key = 'tlit';
-            ast.val = elts.map(x=>({key:'term',tag:'numbr',val:x.toString(),pos:somepos(ast)}));
-            doinfer(ast);
+          }else if (ast.lhs.typ.con == 'arr' && ast.rhs.val == 'ndim'){
+            // let elts = ast.lhs.typ.elt.slice(1);
+            // ast.key = 'tlit';
+            // ast.val = elts.map(x=>({key:'term',tag:'numbr',val:x.toString(),pos:somepos(ast)}));
+            // doinfer(ast);
+            // typ = ast.typ;
+            let elt = ast.lhs.typ.elt[1];
+            ast.key = 'term';
+            ast.tag = 'numbr';
+            ast.val = elt.toString();
+            ast.typ = 'i32';
             typ = ast.typ;
           }else if (ast.lhs.typ.con == 'tup' && ast.rhs.val == 'shape'){
             let elts = ast.lhs.typ.elt;
@@ -3011,8 +3036,20 @@ var PARSER = function(sys){
             // }
           }
         }
-      }else if (ast.key == 'vlit'){
-        let tmp = mktmpvar(ast.typ);
+      }else if (ast.key == 'vlit' || ast.key == 'alit'){
+        let tmp;
+        if (ast.key == 'vlit'){
+          tmp = mktmpvar(ast.typ);
+        }else{
+          let d0 = ast.val.length;
+          let d1 = Math.max(...ast.val.map(x=>x.length));
+          let dd = [d0,d1];
+          let n = ast.typ.elt[1];
+          while (dd.length < n){
+            dd.push(1);
+          }
+          tmp = alloctmpvar(ast.typ, '"'+dd.slice(0,n).join(",")+'"');
+        }
         let vals = ast.val.flat();
         for (let i = 0; i < vals.length; i++){
           let ni = docompile(vals[i]);
@@ -3033,7 +3070,7 @@ var PARSER = function(sys){
           pushins('mov',[tmp,i],ni);
         }
         return tmp;
-      }else if (ast.key == 'alit' || ast.key == 'llit'){
+      }else if (ast.key == 'llit'){
         let tmp = alloctmpvar(ast.typ,ast.rhs.length);
         for (let i = 0; i < ast.rhs.length; i++){
           let ni = docompile(ast.rhs[i]);
@@ -3100,6 +3137,7 @@ var PARSER = function(sys){
           }
         }
       }else if (ast.key == 'subs'){
+        // console.log(ast);
         // return [docompile(ast.con),ast.idx.map(docompile)];
         if (islval){
           return [docompile(ast.con),docompile(ast.idx)];
@@ -3715,7 +3753,7 @@ if (typeof module !== 'undefined'){
   if (ast_pth) fs.writeFileSync(ast_pth,JSON.stringify(ast,null,2));
 
   let scopes = parser.infertypes(ast);
-
+  // console.dir(ast,{depth:10000});
   let [instrs,layout] = parser.compile(ast,scopes);
 
   let lo = parser.writelayout(layout);

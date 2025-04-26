@@ -766,7 +766,9 @@ void btn_atom(){
 
 void btn_stop(){
   if (is_started){
-    frame_end();
+    while (_G.vars.len){
+      frame_end();
+    }
     gc_run();
   }
   is_running = 0;
@@ -786,6 +788,8 @@ void btn_step(){
 
 }
 
+int did_asm = 0;
+
 void update();
 void btn_file(int n){
   btn_stop();
@@ -803,9 +807,15 @@ void btn_file(int n){
   cur_y = 0;
 
   update();
+
+  if (did_asm){
+    global_exit();
+    free_instrs(&instrs);
+    did_asm = 0;
+  }
 }
 
-int did_asm = 0;
+
 
 void btn_asm(){
   if (is_started){
@@ -831,7 +841,6 @@ void btn_asm(){
   if (did_asm){
     global_exit();
     free_instrs(&instrs);
-    memset(&instrs,0,sizeof(list_t));
   }
   did_asm = 1;
   global_init();
