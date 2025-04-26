@@ -1586,6 +1586,7 @@ var PARSER = function(sys){
     
 
     function unalias(x){
+      
       let vars = get_scope();
       for (let i = vars.length-1; i >= 0; i--){
         if (vars[i].__alias[x]){
@@ -1826,7 +1827,9 @@ var PARSER = function(sys){
         fi.did = true;
         let n = fi.ctx.length;
         scostk.push(...fi.ctx);
-        
+        if (!fi.agt){
+          mkerr('typecheck',`using unmatched function template ${fi.ipl.typ} as value is not supported`,somepos(ast));
+        }
         scostk.push(fi.agt);
         retyps.push(ft)
         if (fi.ipl.bdy)
@@ -2269,6 +2272,7 @@ var PARSER = function(sys){
               if (i || !skipfirst){
                 doinfer(ast.arg[i]);
               }
+              
               realizefunc(ast.arg[i]);
 
 
@@ -3313,7 +3317,9 @@ var PARSER = function(sys){
             if (!typeeq(ast.arg[i].typ,ast.fun.rty.elt[0].elt[idx])){
               // console.log(ast.arg[i],ni);
               // process.exit();
-              ni = docast(ni,ast.arg[i].typ,ast.fun.rty.elt[0].elt[idx])
+              let src = ast.arg[i].typ;
+              let trg = ast.fun.rty.elt[0].elt[idx];
+              ni = docast(ni,src,trg)
             }
             argw(ni,ast.fun.rty.elt[0].elt[idx++]);
           }

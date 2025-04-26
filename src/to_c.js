@@ -171,6 +171,15 @@ typedef struct{
   __dict_slot_t slots[__NUM_DICT_SLOTS];
 } __dict_t;
 
+
+typedef struct{
+  char* name;
+  void (*funptr)(void);
+  void* captr;
+  int cnt;
+  int siz;
+} __func_t;
+
 uintptr_t* __vars;
 int __vars_cap = 256;
 int __vars_top = 0;
@@ -774,6 +783,8 @@ function transpile_c(instrs,layout){
       o.push(`${typ.elt[0]} ${nom}[${typ.elt[1]}];`)
     }else if (typ.con == 'tup'){
       o.push(`void* ${nom};`);
+    }else if (typ.con == 'func'){
+      o.push(`__func_t* ${nom};`);
     }else{
       o.push(`${typ} ${nom};`);
     }
@@ -831,6 +842,11 @@ function transpile_c(instrs,layout){
     // console.log(lbl,ins)
     if (lbl.length){
       if (lbl == '__main__'){
+        for (let j = 0; j < tmpdefs.length; j++){
+          o.push(`#undef ${tmpdefs[j]}`);
+        }
+        tmpdefs.splice(0,Infinity);
+
         varcnt = 0;
         if (infun){
           o.push(`}`)
@@ -1034,6 +1050,36 @@ function transpile_c(instrs,layout){
       lookup[nom] = typ;
       write_decl(typ,nom)
       o.push(`__pop_arg(&(${clean(ins[1])}),${type_size(read_type(ins[2]))});`);
+    }else if (ins[0] == 'fpak'){
+      let nom = clean(ins[1]);
+      let ptr = clean(ins[3]);
+      
+      let {dcap} = funcs[ptr];
+      let n = "0";
+      for (let i = 0; i < dcap.length; i++){
+        n += "+5+" + type_size(dcap[i].typ);
+      }
+      o.push(`__func_t* ${nom} = __gc_alloc(VART_FUN,sizeof(__func_t));`);
+      o.push(`${nom}->name = "${ptr}";`);
+      o.push(`${nom}->funptr = ${ptr};`);
+      o.push(`${nom}->captr = malloc(${n});`);
+      o.push(`${nom}->cnt = ${dcap.length};`);
+      o.push(`${nom}->siz = ${n};`);
+      o.push(`__put_var(${varcnt++},${nom});`);
+
+      n = "0";
+      for (let i = 0; i < dcap.length; i++){
+        let tmp = shortid();
+        o.push(`int ${tmp} = ${type_size(dcap[i].typ)};`);
+        o.push(`memcpy(${nom}->captr+(${n}), &(${dcap[i].nom}), ${tmp});`);
+        n += "+"+type_size(dcap[i].typ);
+        o.push(`memcpy(${nom}->captr+(${n}), &${tmp}, 4);`);
+        n += "+4";
+        o.push(`((char*)(${nom}->captr))[${n}] = ${vart(dcap[i].typ)};`);
+        n += "+1";
+      }
+    }else if (ins[0] == 'cap'){
+
     }else if (ins[0] == 'call'){
       // let mk= `__retpt_${shortid()}`
       let v = clean(ins[1])
@@ -1073,6 +1119,28 @@ function transpile_c(instrs,layout){
         UNIMPL();
       }
       
+    }else if (ins[0] == 'rcall'){
+      let v = clean(ins[1])
+      let n = type_size(lookup[v]);
+      let fun = clean(ins[2]);
+      // o.push(`printf("%p\\n",${funname});`);
+      let I = shortid();
+      let top = shortid();
+      o.push(`int ${top} = ${fun}->siz;`);
+      o.push(`for (int ${I} = 0; ${I} < ${fun}->cnt; ${I}++){`);
+      o.push(`char vt = ((char*)(${fun}->captr))[${top}-=1];`);
+      o.push(`int sz;`);
+      o.push(`memcpy(&sz, ${fun}->captr+(${top}-=4), 4);`);
+      o.push(`void* ptr = ${fun}->captr+(${top}-=sz);`);
+      o.push(`__push_arg(&ptr,vt,8);`);
+      o.push("}");
+      o.push(`__push_retpt(&${v}, ${n});`);
+      o.push(`${fun}->funptr();`);
+      o.push(`__POP_RETPT;`);
+      o.push(`memcpy(&${v}, __retpts[__retpts_idx].var, ${n});`);
+      if (collectible.includes(vart(lookup[v]))){
+        o.push(`__put_var(${varcnt++},${v});`);
+      }
     }else if (ins[0] == 'ret'){
       if (ins[1]){
         let v = clean(ins[1]);

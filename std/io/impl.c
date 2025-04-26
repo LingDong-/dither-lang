@@ -11,6 +11,7 @@ void io_impl_print(char* s){
     void **ptr = dlsym(RTLD_DEFAULT, "__io_intern_hook_print");
     if (ptr == NULL){
       __io_intern_hooked_print = -1;
+      printf("%s",s);
     }else{
       __io_intern_hooked_print = 1;
       __io_intern_hook_print_found = *ptr;
