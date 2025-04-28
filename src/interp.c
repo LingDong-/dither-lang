@@ -12,7 +12,7 @@
   #define DBG 0
 #endif
 
-#define UNIMPL {printf("UNIMPLEMENTED: L%d\n",__LINE__); exit(0);}
+#define UNIMPL {printf("UNIMPLEMENTED: %s line %d\n",__FILE__,__LINE__); exit(0);}
 
 #define INSC2(x) (((x)[0]<<8)|((x)[1]))
 #define INSC3(x) (((x)[0]<<16)|((x)[1]<<8)|((x)[2]))
@@ -162,16 +162,21 @@ typedef struct lst_st{
   char* data;
 } lst_t;
 
+typedef struct arr_st{
+  char flag;
+  type_t* type;
+  int n;
+  uint8_t w;
+  int ndim;
+  char* data;
+  int dims[];
+} arr_t;
+
 typedef struct tup_st{
   char flag;
   type_t* type;
   char data[];
 } tup_t;
-
-typedef struct arr_st{
-  char flag;
-  type_t* type;
-} arr_t;
 
 typedef struct dic_st{
   char flag;
@@ -579,6 +584,7 @@ opran_t* read_term(FILE* fd){
     double f;
     int r = parse_num_maybe(word->data,&i,&u,&f);
     if (r == 1){
+      
       term->mode = TERM_NUMI;
       term->u.i = i;
     }else if (r == 2){
@@ -1248,6 +1254,26 @@ void to_str(int vart, void* u, str_t* s){
     }
     str_addch(s,'}');
     return;
+  }else if (vart == VART_ARR){
+    arr_t* v = (*((arr_t**)u));
+    if (!v) goto null_case;
+    str_addch(s,'[');
+    for (int i = 0; i < v->ndim; i++){
+      if (i)str_addch(s,'x');
+      char n[50];
+      sprintf(n,"%d",v->dims[i]);
+      str_add(s,n);
+    }
+    str_addch(s,']');
+    str_addch(s,'{');
+    char* ptr = v->data;
+    for (int i = 0; i < v->n; i++){
+      to_str(elem_vart(v), ptr, s);
+      ptr += v->w;
+      if (i<v->n-1)str_addch(s,',');
+    }
+    str_addch(s,'}');
+    return;
   }else if (vart == VART_TUP){
     tup_t* tup = (*((tup_t**)u));
     if (!tup) goto null_case;
@@ -1419,6 +1445,27 @@ void* get_addr(term_t* a, int* nbytes){
       idx = u->u.i32;
     }
     return (void*)(v->u.lst->data + (v->u.lst->w * idx));
+
+  }else if (v->type->vart == VART_ARR){
+    if (nbytes){
+      (*nbytes) = v->u.arr->w;
+    }
+    int idx = a->u.addr.offi;
+    if (idx == 0 && a->u.addr.offs.data[0] != '0'){
+      var_t* u = find_var(&(a->u.addr.offs));
+      if (u->type->vart == VART_VEC){
+        vec_t* vec = u->u.vec;
+        idx = 0;
+        int stride = 1;
+        for (int i = v->u.arr->ndim-1; i>=0; i--){
+          idx += ((int*)vec->data)[i] * stride;
+          stride *= (v->u.arr->dims)[i];
+        }
+      }else{
+        idx = u->u.i32;
+      }
+    }
+    return (void*)(v->u.arr->data + (v->u.arr->w * idx));
 
   }else if (v->type->vart == VART_TUP){
     
@@ -1788,6 +1835,16 @@ void gc_mark_lst(lst_t* o){
   }
 }
 
+void gc_mark_arr(arr_t* o){
+  type_t* t = (type_t*)(o->type->u.elem.head->data);
+  if (t->mode == TYPM_SIMP || t->mode == TYPM_CONT){
+    for (int i = 0; i < o->n; i++){
+      obj_t* ptr = (obj_t*)re_ptr_at((o->data + (i * o->w)));
+      gc_mark(ptr);
+    }
+  }
+}
+
 void gc_mark_tup(tup_t* o){
   list_node_t* p = o->type->u.elem.head;
   int n = 0;
@@ -1854,6 +1911,8 @@ void gc_mark(obj_t* o){
       gc_mark_vec((vec_t*)o);
     }else if (typ->vart == VART_LST){
       gc_mark_lst((lst_t*)o);
+    }else if (typ->vart == VART_ARR){
+      gc_mark_arr((arr_t*)o);
     }else if (typ->vart == VART_TUP){
       gc_mark_tup((tup_t*)o);
     }else if (typ->vart == VART_FUN){
@@ -1895,7 +1954,8 @@ void gc_sweep(){
 
         }else if (obj->type->vart == VART_LST){
           free(((lst_t*)obj)->data);
-
+        }else if (obj->type->vart == VART_ARR){
+          free(((arr_t*)obj)->data);
         }else if (obj->type->vart == VART_DIC){
           map_nuke(&(((dic_t*)obj)->map));
         }
@@ -2014,8 +2074,8 @@ var_t* var_new(type_t* typ){
       v->u.lst = NULL;
 
     }else if (typ->vart == VART_ARR){
-
       v->type = typ;
+      v->u.arr = NULL;
     }else if (typ->vart == VART_TUP){
 
       v->type = typ;
@@ -2091,6 +2151,38 @@ var_t* var_new_alloc(type_t* typ,int cnt){
 
       v->u.lst = arr;
 
+    }else if (typ->vart == VART_ARR){
+      int is2d = cnt & (1<<30);
+      int n = cnt;
+      int d0 = cnt;
+      int d1 = 1;
+      if (is2d){
+        d0 = ((cnt >> 15) & 0x7fff);
+        d1 = (cnt & 0x7fff);
+        n = d0 * d1;
+      }
+      int ndim = atoi(((type_t*)(typ->u.elem.tail->data))->u.str.data);
+
+      v->type = typ;
+      arr_t* arr = (arr_t*)gc_alloc(sizeof(arr_t)+ndim*sizeof(int));
+      type_t* ta = (type_t*)(typ->u.elem.head->data);
+      arr->n = n;
+      arr->w = type_size(ta);
+      arr->type = typ;
+      arr->data = calloc(arr->w,arr->n);
+      arr->ndim = ndim;
+      
+      for (int i = 0; i < ndim; i++){
+        if (i == 0){
+          arr->dims[i] = d0;
+        }else if (i == 1){
+          arr->dims[i] = d1;
+        }else{
+          arr->dims[i] = 1;
+        }
+      }
+      v->u.arr= arr;
+
     }else if (typ->vart == VART_DIC){
       v->type = typ;
       dic_t* dic = (dic_t*)gc_alloc(sizeof(dic_t));
@@ -2123,6 +2215,13 @@ void var_assign(var_t* v, term_t* b){
       var_t* u = find_var(&(b->u.str));
       v->u.lst = u->u.lst;
 
+    }else{
+      UNIMPL;
+    }
+  }else if (v->type->vart == VART_ARR){
+    if (b->mode == TERM_IDEN){
+      var_t* u = find_var(&(b->u.str));
+      v->u.arr = u->u.arr;
     }else{
       UNIMPL;
     }

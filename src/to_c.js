@@ -154,6 +154,15 @@ typedef struct{
   char* data;
 } __list_t;
 
+typedef struct{
+  int n;
+  int w;
+  int t;
+  int ndim;
+  char* data;
+  int dims[];
+} __arr_t;
+
 #define __NUM_DICT_SLOTS 64
 
 typedef struct{
@@ -173,7 +182,6 @@ typedef struct{
 
 
 typedef struct{
-  char* name;
   void (*funptr)(void);
   void* captr;
   int cnt;
@@ -225,6 +233,14 @@ void __gc_mark(void* ptr){
         __gc_mark( ptr );
       }
     }
+  }else if (vt == VART_ARR){
+    __arr_t* arr = (__arr_t*) ptr;
+    if (${collectible.map(x=>"arr->t=="+x).join('||')}){
+      for (int i = 0; i < arr->n; i++){
+        void* ptr = ((void**)(arr->data + arr->w * i))[0];
+        __gc_mark( ptr );
+      }
+    }
   }else if (vt == VART_STT){
     int n = ((int*)ptr)[0];
     for (int i = 0; i < n; i++){
@@ -247,6 +263,18 @@ void __gc_mark(void* ptr){
         }
       }
     }
+  }else if (vt == VART_FUN){
+    __func_t* fun = (__func_t*) ptr;
+    void* top = fun->captr + fun->siz;
+    while (top > fun->captr){
+      char vt = *((char*)(top-=1));
+      int sz;
+      memcpy(&sz, (top-=4), 4);
+      void* p = (top-=sz);
+      if (${collectible.map(x=>"vt=="+x).join('||')}){
+        __gc_mark(p);
+      }
+    }
   }
 }
 void __gc_run(){
@@ -265,6 +293,8 @@ void __gc_run(){
       if(DBG_GC)printf("free %p\\n",ptr);
       if (node->flag == VART_LST){
         free( ((__list_t*)ptr)->data );
+      }else if (node->flag == VART_ARR){
+        free( ((__arr_t*)ptr)->data );
       }else if (node->flag == VART_DIC){
         __dict_t* dic = (__dict_t*)ptr;
         for (int i = 0; i < __NUM_DICT_SLOTS; i++){
@@ -299,6 +329,34 @@ char* __to_str(void* ptr, int vart){
       o = realloc(o, no+na+2);
       strcpy(o+no, a);
       o[no+na] = (i == lst->n-1) ? '}' : ',';
+      o[no+na+1] = 0;
+    }
+  }else if (vart == VART_ARR){
+    __arr_t* arr = (__arr_t*)ptr;
+    o = calloc(2,1);
+    o[0] = '[';
+    for (int i = 0; i < arr->ndim; i++){
+      char* a = __to_str(arr->dims + i, VART_I32);
+      int no = strlen(o);
+      int na = strlen(a);
+      o = realloc(o, no+na+3);
+      strcpy(o+no, a);
+      if (i == arr->ndim-1){
+        o[no+na] = ']';
+        o[no+na+1] = '{';
+        o[no+na+2] = 0;
+      }else{
+        o[no+na] = 'x';
+        o[no+na+1] = 0;
+      }
+    }
+    for (int i = 0; i < arr->n; i++){
+      char* a = __to_str(arr->data + (i*arr->w), arr->t);
+      int no = strlen(o);
+      int na = strlen(a);
+      o = realloc(o, no+na+2);
+      strcpy(o+no, a);
+      o[no+na] = (i == arr->n-1) ? '}' : ',';
       o[no+na+1] = 0;
     }
   }else if (vart == VART_F32) {
@@ -621,8 +679,9 @@ function transpile_c(instrs,layout){
         df = `"%f" `;
         cst = `(double)`
       }
-      df = new Array(tb.elt[1]).fill(df).join(` "," `);
-      let ar = new Array(tb.elt[1]).fill(0).map((x,i)=>`${cst}${b}[${i}]`).join(",");
+      let n = Number(tb.elt[1]);
+      df = new Array(n).fill(df).join(` "," `);
+      let ar = new Array(n).fill(0).map((x,i)=>`${cst}${b}[${i}]`).join(",");
       o.push(`${a}=__gc_alloc(VART_STR,snprintf(NULL, 0, "{" ${df} "}", ${ar})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`sprintf(${a}, "{" ${df} "}", ${ar});`);
@@ -637,6 +696,13 @@ function transpile_c(instrs,layout){
     }else if (ta == "char*" && tb.con == 'list'){
       let tmp = shortid();
       o.push(`char* ${tmp} = __to_str(${b}, VART_LST);`);
+      o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
+      o.push(`__put_var(${varcnt++},${a});`);
+      o.push(`strcpy(${a},${tmp});`);
+      o.push(`free(${tmp});`);
+    }else if (ta == "char*" && tb.con == 'arr'){
+      let tmp = shortid();
+      o.push(`char* ${tmp} = __to_str(${b}, VART_ARR);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
@@ -715,6 +781,23 @@ function transpile_c(instrs,layout){
         }else{
           return [`(((${tt}*)((${v})->data)) + (${idx}*${tn}))`, t.elt[0], type_size(t.elt[0])]
         }
+      }else if (t.con == 'arr'){
+        let [tt,tn] = writable_type(t.elt[0]);
+        if (lookup[idx] && lookup[idx].con == 'vec'){
+          let ii = "0";
+          let stride = "1";
+          for (let i = t.elt[1]-1; i >= 0; i--){
+            ii += `+(${idx}[${i}] * ${stride})`;
+            stride += `*(${v}->dims[${i}])`;
+          }
+          idx = `(${ii})`;
+        }
+        if (t.elt[0] == 'char*' && n !== null){
+          return [`((  ((${tt}*)((${v})->data))[${idx}*${tn}] = __gc_alloc(VART_STR, ${n})) , (((${tt}*)((${v})->data)) + (${idx}*${tn})))`, t.elt[0], type_size(t.elt[0])]
+        }else{
+          return [`(((${tt}*)((${v})->data)) + (${idx}*${tn}))`, t.elt[0], type_size(t.elt[0])]
+        }
+        
       }else if (t.con == 'dict'){
         idx = maybenum(idx);
         if (typeof idx == 'number' || idx[0] == '"'){
@@ -766,10 +849,16 @@ function transpile_c(instrs,layout){
   function writable_type(typ){
     if (typ.con == 'list'){
       return [`__list_t*`,1];
+    }else if (typ.con == 'arr'){
+      return [`__arr_t*`,1];
     }else if (typ.con == 'dict'){
       return [`__dict_t*`,1];
     }else if (typ.con == 'vec'){
       return typ.elt;
+    }else if (typ.con == 'func'){
+      return [`__func_t*`,1];
+    }else if (typ.con == 'tup'){
+      return [`void*`,1];
     }else{
       return [typ,1];
     }
@@ -777,6 +866,8 @@ function transpile_c(instrs,layout){
   function write_decl(typ,nom){
     if (typ.con == 'list'){
       o.push(`__list_t* ${nom};`)
+    }else if (typ.con == 'arr'){
+      o.push(`__arr_t* ${nom};`)
     }else if (typ.con == 'dict'){
       o.push(`__dict_t* ${nom};`)
     }else if (typ.con == 'vec'){
@@ -910,7 +1001,33 @@ function transpile_c(instrs,layout){
         o.push(`${nom}->t = ${vart(typ.elt[0])};`);
         o.push(`${nom}->data = malloc(${w}*${cap});`);
         o.push(`__put_var(${varcnt++},${nom});`);
+      }else if (typ.con == 'arr'){
+        let w = type_size(typ.elt[0]);
+        let ndim = typ.elt[1];
+        let cnt = ins[3];
 
+        let is2d = cnt & (1<<30);
+        let n = cnt;
+        let d0 = cnt;
+        let d1 = 1;
+        if (is2d){
+          d0 = ((cnt >> 15) & 0x7fff);
+          d1 = (cnt & 0x7fff);
+          n = d0 * d1;
+        }
+        let ds = [d0,d1];
+        while (ds.length < ndim) ds.push(1);
+
+        o.push(`__arr_t* ${nom} = __gc_alloc(VART_ARR,sizeof(__arr_t)+${ndim}*4);`);
+        o.push(`${nom}->n = ${n};`);
+        o.push(`${nom}->ndim = ${ndim};`);
+        o.push(`${nom}->w = ${w};`);
+        o.push(`${nom}->t = ${vart(typ.elt[0])};`);
+        o.push(`${nom}->data = malloc(${w}*${n});`);
+        for (let i = 0; i < ndim; i++){
+          o.push(`${nom}->dims[${i}] = ${ds[i]};`);
+        }
+        o.push(`__put_var(${varcnt++},${nom});`);
       }else if (typ.con == 'dict'){
 
         let wk = type_size(typ.elt[0]);
@@ -1060,7 +1177,6 @@ function transpile_c(instrs,layout){
         n += "+5+" + type_size(dcap[i].typ);
       }
       o.push(`__func_t* ${nom} = __gc_alloc(VART_FUN,sizeof(__func_t));`);
-      o.push(`${nom}->name = "${ptr}";`);
       o.push(`${nom}->funptr = ${ptr};`);
       o.push(`${nom}->captr = malloc(${n});`);
       o.push(`${nom}->cnt = ${dcap.length};`);
@@ -1124,14 +1240,17 @@ function transpile_c(instrs,layout){
       let n = type_size(lookup[v]);
       let fun = clean(ins[2]);
       // o.push(`printf("%p\\n",${funname});`);
-      let I = shortid();
+      let tmp = shortid();
       let top = shortid();
-      o.push(`int ${top} = ${fun}->siz;`);
-      o.push(`for (int ${I} = 0; ${I} < ${fun}->cnt; ${I}++){`);
-      o.push(`char vt = ((char*)(${fun}->captr))[${top}-=1];`);
+      
+      o.push(`void* ${tmp} = malloc(${fun}->siz);`);
+      o.push(`memcpy(${tmp},${fun}->captr,${fun}->siz);`);
+      o.push(`void* ${top} = ${tmp} + ${fun}->siz;`);
+      o.push(`while (${top} > ${tmp}){`);
+      o.push(`char vt = *((char*)(${top}-=1));`);
       o.push(`int sz;`);
-      o.push(`memcpy(&sz, ${fun}->captr+(${top}-=4), 4);`);
-      o.push(`void* ptr = ${fun}->captr+(${top}-=sz);`);
+      o.push(`memcpy(&sz, (${top}-=4), 4);`);
+      o.push(`void* ptr = (${top}-=sz);`);
       o.push(`__push_arg(&ptr,vt,8);`);
       o.push("}");
       o.push(`__push_retpt(&${v}, ${n});`);
@@ -1141,6 +1260,7 @@ function transpile_c(instrs,layout){
       if (collectible.includes(vart(lookup[v]))){
         o.push(`__put_var(${varcnt++},${v});`);
       }
+      o.push(`free(${tmp});`);
     }else if (ins[0] == 'ret'){
       if (ins[1]){
         let v = clean(ins[1]);

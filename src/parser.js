@@ -1313,6 +1313,7 @@ var PARSER = function(sys){
     }
 
     function matchatmpl(fa,at,arg,tms,map){
+      if (fa == at) return 50;
       // console.log(fa,at,arg,tms,map)
       function unmap(fa){
         if (fa.con){
@@ -1366,7 +1367,9 @@ var PARSER = function(sys){
             if (printtype(fa)==printtype(arg.typ)){
               return score-1;
             }
+            
             maxtypf(fa,arg.typ,arg,0);
+            
             return score-2;
           }catch(e){}
         }
@@ -1377,7 +1380,7 @@ var PARSER = function(sys){
         if (printtype(at) == printtype(tms[i])){
           return score;
         }
-        
+
         if (fasp == printtype(tms[i])){
           if (map[fasp]){
             try{
@@ -1408,7 +1411,7 @@ var PARSER = function(sys){
 
         let strict = (fa.con == 'map' || fa.con == 'list' || at.con == 'map' || at.con == 'list')
         for (let i = 0; i < fa.elt.length; i++){
-          // console.log(fa.elt[i], at.elt[i], null, tms, map)
+
           let ok = matchatmpl(fa.elt[i], at.elt[i], null, tms, map);
           if (strict && ok < 50){
             ok = 0;
@@ -1430,6 +1433,7 @@ var PARSER = function(sys){
       let fts = [];
 
       funs.sort((a,b)=>(Number(b.typ.con=='func')-Number(a.typ.con=='func')));
+
       // console.log(funs.length)
       let nnn = funs.length
       for (let i = 0; i < nnn; i++){
@@ -1460,7 +1464,7 @@ var PARSER = function(sys){
             // console.log(printtype(args[j].typ) , printtype(fas[j]), tms, map)
             s = Math.min(s,matchatmpl(fas[j], args[j].typ, args[j], tms, map ));
             s = Math.max(s,1);
-            
+
             if (!s){
               break;
             }
@@ -1756,7 +1760,10 @@ var PARSER = function(sys){
       }else if (ast.ttp == 'cmtp'){
         return compcomp(ast.val,get_scope());
         
+      }else if (ast.typ == 'void'){
+        return 'void';
       }
+
       mkerr('typecheck','unrecognized type',somepos(ast));
     }
 
@@ -2377,8 +2384,8 @@ var PARSER = function(sys){
           }else if (ast.con.typ.con == 'arr'){
             ast.typ = ast.con.typ.elt[0];
             ast.idx = {
-              key:'tlit',
-              val:ast.idx
+              key:'vlit',
+              val:[ast.idx]
             }
             doinfer(ast.idx);
           }else if (ast.con.typ.con){
@@ -3045,14 +3052,22 @@ var PARSER = function(sys){
         if (ast.key == 'vlit'){
           tmp = mktmpvar(ast.typ);
         }else{
+          // let d0 = ast.val.length;
+          // let d1 = Math.max(...ast.val.map(x=>x.length));
+          // let dd = [d0,d1];
+          // let n = ast.typ.elt[1];
+          // while (dd.length < n){
+          //   dd.push(1);
+          // }
+          // tmp = alloctmpvar(ast.typ, '"'+dd.slice(0,n).join(",")+'"');
+
           let d0 = ast.val.length;
           let d1 = Math.max(...ast.val.map(x=>x.length));
-          let dd = [d0,d1];
-          let n = ast.typ.elt[1];
-          while (dd.length < n){
-            dd.push(1);
+          if (d0 == 1){
+            tmp = alloctmpvar(ast.typ,d1);
+          }else{
+            tmp = alloctmpvar(ast.typ, (1<<30) | (d0<<15) | (d1) );
           }
-          tmp = alloctmpvar(ast.typ, '"'+dd.slice(0,n).join(",")+'"');
         }
         let vals = ast.val.flat();
         for (let i = 0; i < vals.length; i++){

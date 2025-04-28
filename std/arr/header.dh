@@ -1,0 +1,6 @@
+
+namespace arr {
+  func shape[T,U](a:arr[T,U]):vec[i32,U];
+  func reshape[T,U](a:arr[T,U],n:vec[i32,U]);
+  func make[T,U](n:vec[i32,U],a:T):arr[T,U];
+}
