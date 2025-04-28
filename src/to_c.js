@@ -1,6 +1,17 @@
 const path = require('path');
 
-let collectible = ["VART_STR","VART_LST","VART_TUP","VART_DIC","VART_STT","VART_FUN","VART_ARR"]
+let collectible = ["VART_STR","VART_LST","VART_TUP","VART_DIC","VART_STT","VART_FUN","VART_ARR"];
+
+let vartnummap = {
+  'VART_I08':'int8_t',
+  'VART_U08':'uint8_t',
+  'VART_I16':'int16_t',
+  'VART_U16':'uint16_t',
+  'VART_I32':'int32_t',
+  'VART_U32':'uint32_t',
+  'VART_I64':'int64_t',
+  'VART_U64':'uint64_t',
+}
 
 let lib = `
 #include <stdint.h>
@@ -8,6 +19,8 @@ let lib = `
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#define PRIf32 "%f"
+#define PRIf64 "%f"
 #define DBG_GC 0
 #define VART_NUL 0
 #define VART_U08 1
@@ -247,6 +260,17 @@ void __gc_mark(void* ptr){
       int ofs = ((int*)ptr)[i+1];
       __gc_mark(ptr + ofs);
     }
+  }else if (vt == VART_TUP){
+    int i = 0;
+    while (1){
+      char typ = ((char*)(ptr + i*5))[0];
+      if (typ == 0) break;
+      if (${collectible.map(x=>"typ=="+x).join('||')}){
+        int ofs = ((int*)(ptr + i*5 +1))[0];
+        __gc_mark(ptr + ofs);
+      }
+      i++;
+    }
   }else if (vt == VART_DIC){
     __dict_t* dic = (__dict_t*) ptr;
     if (${collectible.map(x=>"dic->kt=="+x).join('||')}){
@@ -316,14 +340,14 @@ void __put_var(int idx, void* ptr){
     __vars_top = __vars_stack+idx+1;
   }
 }
-char* __to_str(void* ptr, int vart){
+char* __to_str(void* ptr, int vart, int w){
   char* o;
   if (vart == VART_LST){
     __list_t* lst = (__list_t*)ptr;
     o = calloc(2,1);
     o[0] = '{';
     for (int i = 0; i < lst->n; i++){
-      char* a = __to_str(lst->data + (i*lst->w), lst->t);
+      char* a = __to_str(lst->data + (i*lst->w), lst->t, lst->w);
       int no = strlen(o);
       int na = strlen(a);
       o = realloc(o, no+na+2);
@@ -336,7 +360,7 @@ char* __to_str(void* ptr, int vart){
     o = calloc(2,1);
     o[0] = '[';
     for (int i = 0; i < arr->ndim; i++){
-      char* a = __to_str(arr->dims + i, VART_I32);
+      char* a = __to_str(arr->dims + i, VART_I32, 4);
       int no = strlen(o);
       int na = strlen(a);
       o = realloc(o, no+na+3);
@@ -351,7 +375,7 @@ char* __to_str(void* ptr, int vart){
       }
     }
     for (int i = 0; i < arr->n; i++){
-      char* a = __to_str(arr->data + (i*arr->w), arr->t);
+      char* a = __to_str(arr->data + (i*arr->w), arr->t, arr->w);
       int no = strlen(o);
       int na = strlen(a);
       o = realloc(o, no+na+2);
@@ -359,15 +383,49 @@ char* __to_str(void* ptr, int vart){
       o[no+na] = (i == arr->n-1) ? '}' : ',';
       o[no+na+1] = 0;
     }
-  }else if (vart == VART_F32) {
-    o = malloc(32);
-    float f = *((float*) ptr);
-    sprintf(o, "%f", f);
-  }else if (vart == VART_I32) {
-    o = malloc(32);
-    int32_t f = *((int32_t*) ptr);
-    sprintf(o, "%" PRId32, f);
-  }
+  }else if (vart == VART_TUP) {
+    o = calloc(2,1);
+    o[0] = '[';
+    int i = 0;
+    while (1){
+      char typ = ((char*)(ptr + i*5))[0];
+      if (typ == 0) break;
+      int ofs = ((int*)(ptr + i*5 +1))[0];
+      int nofs = ((int*)(ptr + (i+1)*5 +1))[0];
+
+      char* a = __to_str(ptr + ofs, typ, nofs-ofs);
+      int no = strlen(o);
+      int na = strlen(a);
+      o = realloc(o, no+na+2);
+      strcpy(o+no, a);
+      o[no+na] = ',';
+      o[no+na+1] = 0;
+      i++;
+    }
+    o[strlen(o)-1] = ']';
+  }else if (vart == VART_STR) {
+    o = strdup(*(char**)ptr);
+  }${Object.keys(vartnummap).map(vart=>`
+    else if (vart == ${vart}){
+      int dw = ${Number(vart.slice(-2))/8};
+      int n = w/dw;
+      if (n == 1){
+        o = malloc(32);
+        sprintf(o, "%" PRI${{F:'',U:'u',I:'d'}[vart.at(-3)]}${Number(vart.slice(-2))}, (*(${vartnummap[vart]}*)ptr) );
+      }else{
+        o = calloc(2,1);
+        o[0] = '{';
+        for (int i = 0; i < n; i++){
+          char* a = __to_str(ptr + (i*dw), ${vart}, dw);
+          int no = strlen(o);
+          int na = strlen(a);
+          o = realloc(o, no+na+2);
+          strcpy(o+no, a);
+          o[no+na] = (i == n-1) ? '}' : ',';
+          o[no+na+1] = 0;
+        }
+      }
+    }`).join("")}
   return o;
 }
 int __hash(void* x, int n){
@@ -695,14 +753,21 @@ function transpile_c(instrs,layout){
       o.push(`}}`);
     }else if (ta == "char*" && tb.con == 'list'){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_LST);`);
+      o.push(`char* ${tmp} = __to_str(${b}, VART_LST, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
     }else if (ta == "char*" && tb.con == 'arr'){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_ARR);`);
+      o.push(`char* ${tmp} = __to_str(${b}, VART_ARR, 8);`);
+      o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
+      o.push(`__put_var(${varcnt++},${a});`);
+      o.push(`strcpy(${a},${tmp});`);
+      o.push(`free(${tmp});`);
+    }else if (ta == "char*" && tb.con == 'tup'){
+      let tmp = shortid();
+      o.push(`char* ${tmp} = __to_str(${b}, VART_TUP, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
@@ -756,11 +821,9 @@ function transpile_c(instrs,layout){
   }
 
   function tup_size(t,idx){
-    let nc = '4';
+    let nc = '5';
     for (let i = 0; i < t.elt.length; i++){
-      if (collectible.includes(vart(t.elt[i]))){
-        nc += '+4';
-      }
+      nc += '+5';
       if (i < idx){
         nc += '+'+type_size(t.elt[i]);
       }
@@ -985,6 +1048,13 @@ function transpile_c(instrs,layout){
       }else if (typ.con == 'tup'){
         let nc = tup_size(typ,Infinity);
         o.push(`${nom} = __gc_alloc(VART_TUP,(${nc}));`);
+        for (let i = 0; i < typ.elt.length; i++){
+          o.push(`((char*)((void*)${nom} + ${i}*5))[0] = ${vart(typ.elt[i])};`);
+          o.push(`((int*)((void*)${nom} + ${i}*5 + 1))[0] = ${tup_size(typ,i)};`);
+        }
+        o.push(`((char*)((void*)${nom} + ${typ.elt.length}*5))[0] = 0;`);
+        o.push(`((int*)((void*)${nom} + ${typ.elt.length}*5 + 1))[0] = ${tup_size(typ,Infinity)};`);
+
         o.push(`__put_var(${varcnt++},${nom});`);
       }
     }else if (ins[0] == 'alloc'){
