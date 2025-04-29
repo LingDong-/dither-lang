@@ -11,6 +11,8 @@ let vartnummap = {
   'VART_U32':'uint32_t',
   'VART_I64':'int64_t',
   'VART_U64':'uint64_t',
+  'VART_F32':'float',
+  'VART_F64':'double',
 }
 
 let lib = `
@@ -19,8 +21,8 @@ let lib = `
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#define PRIf32 "%f"
-#define PRIf64 "%f"
+#define PRIf32 "f"
+#define PRIf64 "f"
 #define DBG_GC 0
 #define VART_NUL 0
 #define VART_U08 1
@@ -405,13 +407,16 @@ char* __to_str(void* ptr, int vart, int w){
     o[strlen(o)-1] = ']';
   }else if (vart == VART_STR) {
     o = strdup(*(char**)ptr);
+  }else if (vart == VART_STT) {
+    o = malloc(32);
+    sprintf(o,"[object@%p]",ptr);
   }${Object.keys(vartnummap).map(vart=>`
     else if (vart == ${vart}){
       int dw = ${Number(vart.slice(-2))/8};
       int n = w/dw;
       if (n == 1){
         o = malloc(32);
-        sprintf(o, "%" PRI${{F:'',U:'u',I:'d'}[vart.at(-3)]}${Number(vart.slice(-2))}, (*(${vartnummap[vart]}*)ptr) );
+        sprintf(o, "%" PRI${{F:'f',U:'u',I:'d'}[vart.at(-3)]}${Number(vart.slice(-2))}, (*(${vartnummap[vart]}*)ptr) );
       }else{
         o = calloc(2,1);
         o[0] = '{';
@@ -772,6 +777,36 @@ function transpile_c(instrs,layout){
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
+    }else if (ta == "char*" && vart(tb)=="VART_STT"){
+      let tmp = shortid();
+      let tmp1 = shortid();
+      let no = shortid();
+      let na = shortid();
+      o.push(`char* ${tmp} = calloc(1,2); ${tmp}[0] = '{';`);
+      o.push(`char* ${tmp1}; int ${no},${na};`);
+      let lo = layout[tb];
+      for (let i = 0; i < lo.fields.length; i++){
+        let ofs = lo.fields[i][0];
+        let typ = lo.fields[i][2];
+        let last = (i==lo.fields.length-1);
+        let ds = (last ? lo.size : lo.fields[i+1][0])-ofs;
+        ofs += lo.collect.length*4+4;
+        o.push(`\
+          ${tmp1} = __to_str(${b} + ${ofs}, ${vart(typ)}, ${ds});
+          ${no} = strlen(${tmp});
+          ${na} = strlen(${tmp1});
+          ${tmp} = realloc(${tmp}, ${no}+${na}+${lo.fields[i][1].length+3});
+          strcpy(${tmp}+${no}, "${lo.fields[i][1]}");
+          strcpy(${tmp}+${no}+${lo.fields[i][1].length+1}, ${tmp1});
+          ${tmp}[${no}+${lo.fields[i][1].length}]=':';
+          ${tmp}[${no}+${lo.fields[i][1].length+1}+${na}] = '${last?"}":","}';
+          ${tmp}[${no}+${lo.fields[i][1].length+2}+${na}] = 0;\
+        `)
+      };
+      o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
+      o.push(`__put_var(${varcnt++},${a});`);
+      o.push(`strcpy(${a},${tmp});`);
+      o.push(`free(${tmp});`);
     }else{
       console.log(a,b,ta,tb);
       UNIMPL();
@@ -810,11 +845,17 @@ function transpile_c(instrs,layout){
   function compare(op,a,b,c){
     let os = {
       leq:'<=',geq:'>=',lt:'<',gt:'>',eq:'==',neq:'!='
-    }[op]
-    if (lookup[a].con == "vec"){
-      UNIMPL();
-    }else if (lookup[a] == "char*"){
-      UNIMPL();
+    }[op];
+    let t = lookup[b];
+    if (t.con == "vec"){
+      let s = [];
+      let n = Number(t.elt[1]);
+      for (let i = 0; i < n; i++){
+        s.push(`${b}[${i}]==${c}[${i}]`);
+      }
+      o.push(`${a} = (${s.join('&&')})${os}1;`);
+    }else if (t == "char*"){
+      o.push(`${a} = strcmp(${b},${c})${os}0;`);
     }else{
       o.push(`${a} = ${b} ${os} ${c};`);
     }
@@ -1124,7 +1165,6 @@ function transpile_c(instrs,layout){
         for (let i = 0; i < nf.length; i++){
           o.push(`((int*)(${nom}+${4+i*4}))[0] = ${nf[i]+nf.length*4+4};`);
         }
-        // UNIMPL();
       }else{
         UNIMPL();
       }
@@ -1165,29 +1205,6 @@ function transpile_c(instrs,layout){
   
         o.push(`memcpy(${pa}, ${pb}, ${nb});`);
       }
-
-
-
-      // if (a.includes('+')){
-      //   let [v,i] = a.split('+');
-      //   if (lookup[v].con == 'vec'){
-      //     o.push(`${v}[${i}] = ${clean(ins[2])};`);
-      //   }else{
-      //     UNIMPL();
-      //   }
-      // }else if (typeof b == 'number'){
-      //   o.push(`${a} = ${b};`);
-      // }else if (lookup[a] == 'char*'){
-      //   // if (b.startsWith('"')){
-      //     o.push(`${a} = __gc_alloc(strlen(${b})+1);`);
-      //     o.push(`strcpy(${a}, ${b});`);
-      //   // }else{
-      //   //   UNIMPL();
-      //   // }
-      // }else{
-      //   o.push(`memcpy(&(${a}), &(${b}), ${type_size(lookup[a])});`);
-      // }
-      
     }else if (['add','sub','mul','div','mod','pow'].includes(ins[0])){
       math(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
     }else if (['band','bor'].includes(ins[0])){
