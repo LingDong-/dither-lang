@@ -1,4 +1,3 @@
-const path = require('path');
 
 let collectible = ["VART_STR","VART_LST","VART_TUP","VART_DIC","VART_STT","VART_FUN","VART_ARR"];
 
@@ -602,7 +601,7 @@ function read_type(s){
   function proc(x){
     let y = typmap;
     if (y[x]) return y[x];
-    return clean(x)+"";
+    return clean(x);//+"";
   }
   for (let i = 0; i < s.length; i++){
     if (s[i] == '['){
@@ -1175,11 +1174,9 @@ function transpile_c(instrs,layout){
 
       if (typ.con == 'vec'){
         o.push(`${typ.elt[0]} (*_${nom})[${typ.elt[1]}];`);
-      }else if (typ.con == 'list'){
-        o.push(`__list_t** _${nom};`);
       }else{
         // console.log(typ,nom);
-        o.push(`${typ} *_${nom};`);
+        o.push(`${writable_type(typ)[0]} *_${nom};`);
       }
       o.push(`#define ${nom} (*_${nom})`);
       tmpdefs.push(nom);
@@ -1362,7 +1359,7 @@ function transpile_c(instrs,layout){
       o.push(`__pop_stack();`);
       o.push(`return;`);
     }else if (ins[0] == 'incl'){
-      let f = path.join(ins[1].slice(1,-1),"static.c");
+      let f = ins[1].slice(1,-1)+"/static.c";
       o.unshift(`#include "${f}"`);
       cflags.push(`eval "$(head -n 1 "${f}" | cut -c 3-)" && CFLAGS+=" " `);
     }else{
