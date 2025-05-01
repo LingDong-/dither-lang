@@ -14,7 +14,7 @@ globalThis.$list = new function(){
     a.splice(i,j-i);
   }
   that.make = function(){
-    let [n,x] = $pop_args(3);
+    let [n,x] = $pop_args(2);
     return new Array(n).fill(0).map(_=>$value(x));
   }
   that.length = function(){

@@ -32,7 +32,7 @@ globalThis.$snd = new function(){
   `;
 
   
-  let BUF_SIZE = 512;
+  let BUF_SIZE = 1024;
   let buffer = [];
 
   let audioCtx, workletNode;

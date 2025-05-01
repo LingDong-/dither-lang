@@ -65,6 +65,23 @@ function $assign(dst,src){
     Object.assign(dst,src);
   }
 }
+function $to_str(x){
+  if (typeof x == 'undefined'){
+    return 'void';
+  }else if (typeof x != 'object'){
+    return x.toString();
+  }else if ($numtyps.includes(x.__type)){
+    return x[0].toString();
+  }else if (x.__type.con == 'vec'){
+    return '{'+x.toString()+'}'
+  }else if (x.__type.con == 'list'){
+    return '{'+x.map($to_str).join(',')+'}';
+  }else if (x.__type.con == 'arr'){
+    return '['+x.__dim.join(',')+']{'+x.map($to_str).join(',')+'}';
+  }else{
+    return '[object:'+JSON.stringify(x.__type)+']';
+  }
+}
 `
 eval(lib);
 
@@ -236,7 +253,7 @@ function transpile_js(instrs,layout){
     let ta = lookup[a];
     let tb = lookup[b];
     if (ta == 'str'){
-      o.push(`${get_ptr(a)} = ${get_ptr(b)}.toString()`);
+      o.push(`${get_ptr(a)} = $to_str(${get_ptr(b)})`);
     }else if ($numtyps.includes(ta) && $numtyps.includes(tb)){
       o.push(`${get_ptr(a)} = ${get_ptr(b)}`);
     }else if ($numtyps.includes(ta) && typeof b == 'number'){
@@ -327,8 +344,10 @@ function transpile_js(instrs,layout){
       return `Object.assign([""],{__type:${JSON.stringify(typ)}})${nowrap?'[0]':''}`
     }else if ($numtyps.includes(typ)){
       return `Object.assign(new $typed_cons.${typ}(1),{__type:${JSON.stringify(typ)}})${nowrap?'[0]':''}`
-    }else if (typ.con == 'arr' || typ.con == 'list'){
+    }else if (typ.con == 'list'){
       return `Object.assign([],{__type:${JSON.stringify(typ)}})`;
+    }else if (typ.con == 'arr'){
+      return `Object.assign([],{__dims:[${'0,'.repeat(typ.elt[1])}],__type:${JSON.stringify(typ)}})`;
     }else{
       if (nowrap){
         return 'null';

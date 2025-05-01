@@ -2383,11 +2383,16 @@ var PARSER = function(sys){
             maxtype(ast.con.typ.elt[0],ast.idx.typ);
           }else if (ast.con.typ.con == 'arr'){
             ast.typ = ast.con.typ.elt[0];
-            ast.idx = {
-              key:'vlit',
-              val:[ast.idx]
+            if (ast.idx.length > 1){
+              ast.idx = {
+                key:'vlit',
+                val:[ast.idx]
+              }
+              doinfer(ast.idx);
+            }else{
+              ast.idx = ast.idx[0];
             }
-            doinfer(ast.idx);
+            
           }else if (ast.con.typ.con){
             ast.typ = ast.con.typ.elt[0];
             if (ast.idx.length >= Math.max(2,ast.con.typ.elt.length)){

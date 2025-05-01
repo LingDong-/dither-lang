@@ -1,4 +1,4 @@
-include "std/list"
+include "std/arr"
 include "std/math"
 include "std/gx"
 include "std/win"
@@ -7,11 +7,11 @@ W := 64;
 H := 64;
 scl := 4;
 
-brd := list[i32]{}
+brd := arr.make({H,W},0 as u8);
 msk := 1
 
 for (i := 0; i < W*H; i++){
-  brd.push(math.random()>0.5);
+  brd[i]=math.random()>0.5;
 }
 
 func step(){
@@ -21,26 +21,26 @@ func step(){
       jl := j > 0
       jr := j < W-1;
       if (i > 0){
-        if (brd[(i-1)*W+j] & msk) s++;
-        if (jl) if (brd[(i-1)*W+(j-1)] & msk) s++;
-        if (jr) if (brd[(i-1)*W+(j+1)] & msk) s++;
+        if (brd[(i-1),j] & msk) s++;
+        if (jl) if (brd[i-1,j-1] & msk) s++;
+        if (jr) if (brd[i-1,j+1] & msk) s++;
       }
       if (i < H-1){
-        if (brd[(i+1)*W+j] & msk) s++;
-        if (jl) if (brd[(i+1)*W+(j-1)] & msk) s++;
-        if (jr) if (brd[(i+1)*W+(j+1)] & msk) s++;
+        if (brd[i+1,j] & msk) s++;
+        if (jl) if (brd[i+1,j-1] & msk) s++;
+        if (jr) if (brd[i+1,j+1] & msk) s++;
       }
-      if (jl) if (brd[i*W+(j-1)] & msk) s++;
-      if (jr) if (brd[i*W+(j+1)] & msk) s++;
+      if (jl) if (brd[i,j-1] & msk) s++;
+      if (jr) if (brd[i,j+1] & msk) s++;
       
-      brd[i*W+j] &= ~(3-msk);
+      brd[i,j] &= ~(3-msk);
       
-      if (brd[i*W+j] & msk){
+      if (brd[i,j] & msk){
         if (s == 2 || s == 3){
-          brd[i*W+j] |= (3-msk);
+          brd[i,j] |= (3-msk);
         }
       }else if (s == 3){
-        brd[i*W+j] |= (3-msk);
+        brd[i,j] |= (3-msk);
       }
     }
   }
@@ -56,7 +56,7 @@ while (1){
   gx.background(0.1,0.2,0.3);
   for (i := 0; i < H; i++){
     for (j := 0; j < H; j++){
-      if (brd[i*W+j] & msk){
+      if (brd[i,j] & msk){
         gx.point(j*scl,i*scl);
       }
     }
@@ -72,7 +72,7 @@ while (1){
     for (ii : i32 = math.max(i-2,0); ii < math.min(i+3,H); ii++){
       for (jj : i32 = math.max(j-2,0); jj < math.min(j+3,W); jj++){
         if (math.random()>0.5){
-          brd[ii*W+jj] |= msk;
+          brd[ii,jj] |= msk;
         }
       }
     }

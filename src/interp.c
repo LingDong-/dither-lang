@@ -1635,6 +1635,11 @@ double get_val_f64(term_t* a){
   return a->u.f;
 }
 
+#define GVN_IDEN_VAL_INT(VART,CTYPE)\
+  else if (v->type->vart == VART_ ## VART){\
+    uint64_t v = get_val_int(a);\
+    return *(CTYPE*)(&v);\
+  }
 
 double get_val_num(term_t* a){
   if (a->mode == TERM_IDEN){
@@ -1643,11 +1648,16 @@ double get_val_num(term_t* a){
       return get_val_f32(a);
     }else if (v->type->vart == VART_F64){
       return get_val_f64(a);
-    }else if (v->type->vart == VART_I32){
-      uint64_t v = get_val_int(a);
-      int32_t vv = *(int32_t*)(&v);
-      return vv;
-    }else{
+    }
+      GVN_IDEN_VAL_INT(I64,int64_t)
+      GVN_IDEN_VAL_INT(U64,uint64_t)
+      GVN_IDEN_VAL_INT(I32,int32_t)
+      GVN_IDEN_VAL_INT(U32,uint32_t)
+      GVN_IDEN_VAL_INT(I16,int16_t)
+      GVN_IDEN_VAL_INT(U16,uint16_t)
+      GVN_IDEN_VAL_INT(I08,int8_t)
+      GVN_IDEN_VAL_INT(U08,uint8_t)
+    else{
       UNIMPL;
     }
   }else if (a->mode == TERM_ADDR){
@@ -2806,7 +2816,14 @@ list_node_t* execute_instr(list_node_t* ins_node){
       var_t* v = find_var(&(a->u.str));
       
       if (v->type->vart < VART_F32){
-        v->u.u64 = get_val_int(b)/get_val_int(c);
+        uint64_t bv = get_val_int(b);
+        uint64_t cv = get_val_int(c);
+        if (v->type->vart % 2 == VART_U08){
+          v->u.u64 = bv / cv;
+        }else{
+          int64_t vv = (* ((int64_t*)(&bv))) / (* ((int64_t*)(&cv)));
+          v->u.i64 = vv;
+        }
       }else if (v->type->vart == VART_F32){
         v->u.f32 = get_val_f32(b)/get_val_f32(c);
       }else if (v->type->vart == VART_F64){
@@ -2913,13 +2930,13 @@ list_node_t* execute_instr(list_node_t* ins_node){
       double bv = get_val_num(b);
       double cv = get_val_num(c);
       if (st0){
-        v->u.i32 = get_val_num(b)>get_val_num(c);
+        v->u.i32 = bv>cv;
       }else if (st1){
-        v->u.i32 = get_val_num(b)>=get_val_num(c);
+        v->u.i32 = bv>=cv;
       }else if (st2){
-        v->u.i32 = get_val_num(b)<=get_val_num(c);
+        v->u.i32 = bv<=cv;
       }else{
-        v->u.i32 = get_val_num(b)<get_val_num(c);
+        v->u.i32 = bv<cv;
       }
     }else{
       UNIMPL

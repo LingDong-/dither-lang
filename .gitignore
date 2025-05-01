@@ -2,7 +2,7 @@
 **/.DS_Store
 .vscode/
 build/*
-!build/.gitignore
+!build/.gitkeep
 *.so
 **/*.so
 **/node_modules/
