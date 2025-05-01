@@ -40,7 +40,7 @@ run_js: to_js
 	cp build/out.js /tmp/site;\
 	cd /tmp/site;\
 	echo '<body></body><script src="out.js"></script><script>;;(function(){var script=document.createElement("script");script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);stats.dom.style.left=null;stats.dom.style.right=0;requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src="//mrdoob.github.io/stats.js/build/stats.min.js";document.head.appendChild(script);})();</script>' > index.html;\
-	npx http-server
+	npx http-server;
 run_c: to_c
 	CFLAGS="";\
 	eval $$(head -n 1 "build/out.c" | cut -c 3-);\

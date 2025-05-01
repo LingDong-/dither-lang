@@ -61,8 +61,8 @@ var $typed_cons = {
 function $assign(dst,src){
   if (typeof src !== 'object'){
     (dst??{})[0] = src;
-  }else{
-    Object.assign(dst??{},src);
+  }else if (dst){
+    Object.assign(dst,src);
   }
 }
 `
@@ -241,6 +241,10 @@ function transpile_js(instrs,layout){
       o.push(`${get_ptr(a)} = ${get_ptr(b)}`);
     }else if ($numtyps.includes(ta) && typeof b == 'number'){
       o.push(`${get_ptr(a)} = ${get_ptr(b)}`);
+    }else if (ta.con == 'vec' && ($numtyps.includes(tb) || typeof b == 'number')){
+      for (let i = 0; i < ta.elt[1]; i++){
+        o.push(`${a}[${i}] = ${get_ptr(b)}`);
+      }
     }else{
       console.log(a,b,ta,tb)
       UNIMPL();
@@ -254,7 +258,7 @@ function transpile_js(instrs,layout){
     let typ = lookup[a];
     if (typ.con == 'vec'){
       for (let i = 0; i < Number(typ.elt[1]); i++){
-        o.push(`${a}[${i}]=$${typ.elt[0]}(${b}[${i}]${os}${c}[${i}]);`);
+        o.push(`${a}[${i}]=${b}[${i}]${os}${c}[${i}];`);
       }
     }else{
       o.push(`${get_ptr(a)}=${get_ptr(b)}${os}${get_ptr(c)};`);
@@ -384,7 +388,7 @@ function transpile_js(instrs,layout){
         if (infun){
           o.push(`default:$goto=0;break;}}}`);
         }
-        o.push(`(async function main(){`);
+        // o.push(`(async function main(){`);
         o.push(`let $goto = -1`);
         o.push(`$$: while ($goto){switch($goto){case -1:`);
         infun = 0;
@@ -542,6 +546,7 @@ function transpile_js(instrs,layout){
     }
   }
   o.push(`default:$goto=0;break;}}})()`);
+  o.unshift(`(async function (){`)
   o.unshift(lib);
   return o.join('\n')
 }

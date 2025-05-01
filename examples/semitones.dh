@@ -4,7 +4,7 @@ include "std/io"
 
 rate := 44100
 
-snd.init(rate,2);
+snd.init(rate,1);
 
 func note(freq:f32, sec:f32){
   t := 0.0;
@@ -12,8 +12,7 @@ func note(freq:f32, sec:f32){
     if (!snd.buffer_full()){
       x := math.sin( t * 2.0 * math.pi * freq ) 
       env := math.sin( t * math.pi / sec);
-      snd.put_sample(x);
-      snd.put_sample(x);
+      snd.put_sample(x*env);
       t += 1.0/rate;
     }
   }

@@ -20,5 +20,9 @@ globalThis.$math = new function(){
     let [x,y] = $pop_args(2);
     return Math.min(x,y);
   }
+  that.atan2 = function(){
+    let [y,x] = $pop_args(2);
+    return Math.atan2(y,x);
+  }
 }
 

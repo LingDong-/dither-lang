@@ -70,8 +70,8 @@ while (1){
   if (e.type == win.KEY_PRESSED){
     for ( i:= 0; i < keys.length(); i++){
       if (keys[i].qwerty == e.key){
+        if (!keys[i].state) keys[i].t = 0;
         keys[i].state = 1;
-        keys[i].t = 0;
         break;
       }
     }

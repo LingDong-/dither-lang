@@ -5,12 +5,16 @@ globalThis.$gx = new function(){
   let fbos = [];
   let no_stroke = 0;
   let no_fill = 0;
+  let first_vertex = 0;
   that._size = function(){
     let [w,h] = $pop_args(2);
     cnv = document.getElementById("canvas");
     ctx = cnv.getContext('2d');
+    ctx.fillRect(0,0,w,h);
     ctx.strokeStyle="black";
     ctx.fillStyle="white";
+    ctx.font = "15px monospace";
+    ctx.textBaseline = "bottom";
   }
   that._init_graphics = function(){
     let [pg,w,h] = $pop_args(3);
@@ -97,5 +101,69 @@ globalThis.$gx = new function(){
     if (!no_stroke)
     ctx.stroke();
   }
-
+  that.push_matrix = function(){
+    ctx.save();
+  }
+  that.pop_matrix = function(){
+    ctx.restore();
+  }
+  that.rotate_deg = function(){
+    let [r] = $pop_args(1);
+    ctx.rotate(r * Math.PI/180);
+  }
+  that.translate = function(){
+    let [x,y] = $pop_args(2);
+    ctx.translate(x,y);
+  }
+  that.scale = function(){
+    let [x,y] = $pop_args(2);
+    ctx.scale(x,y);
+  }
+  that.reset_matrix = function(){
+    ctx.resetTransform();
+  }
+  that.apply_matrix = function(){
+    let [mat] = $pop_args(1);
+    ctx.transform(
+      mat[0],
+      mat[3],
+      mat[6],
+      mat[1],
+      mat[4],
+      mat[7]
+    );
+  }
+  that.begin_shape = function(){
+    ctx.beginPath();
+    first_vertex = 1;
+  }
+  that.vertex = function(){
+    let [x,y] = $pop_args(2);
+    if (first_vertex){
+      ctx.moveTo(x,y);
+    }else{
+      ctx.lineTo(x,y);
+    }
+    first_vertex = 0;
+  }
+  that.end_shape = function(){
+    let [bclose] = $pop_args(1);
+    if (bclose){
+      ctx.closePath();
+    }
+    if (!no_fill) ctx.fill();
+    
+    if (!no_stroke) ctx.stroke();
+    
+    if (no_fill && no_stroke){
+      ctx.beginPath();
+      ctx.fill();
+    }
+  }
+  that.text = function(){
+    let [s,x,y] = $pop_args(3);
+    for (let i = 0; i < s.length; i++){
+      ctx.fillText(s[i],x+i*8,y+1);
+    }
+  }
 }
