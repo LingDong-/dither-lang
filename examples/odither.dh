@@ -1,0 +1,48 @@
+include "std/gx"
+include "std/math"
+include "std/io"
+
+ord_dith_map := arr[u8,2]{
+   0,48,12,60, 3,51,15,63;
+  32,16,44,28,35,19,47,31;
+   8,56, 4,52,11,59, 7,55;
+  40,24,36,20,43,27,39,23;
+   2,50,14,62, 1,49,13,61;
+  34,18,46,30,33,17,45,29;
+  10,58, 6,54, 9,57, 5,53;
+  42,26,38,22,41,25,37,21;
+};
+
+W := 128
+H := 128
+scl := 2
+t := 0.0
+
+gx.size(W*scl,H*scl);
+
+func dither(pattern:func[tup[i32,i32],i32]) {
+  for (y := 0; y < H; y++){
+    for (x := 0; x < W; x++){
+      o := pattern(x,y);
+      d := ord_dith_map[(y%8),x%8]<<2;
+      gx.fill(o>d);
+      //gx.fill(o/255.0);
+      gx.no_stroke();
+      gx.rect(x*scl,y*scl,scl,scl);
+    }
+  }
+}
+
+while (1){
+  func ripple(x:i32,y:i32):i32{
+    xx := ((x as f32)/W-0.5)*5;
+    yy := ((y as f32)/H-0.5)*5;
+    return (math.sin((xx*xx+yy*yy)**0.5*xx+t)*0.35+0.5)*255;
+  }
+
+  dither(ripple);
+
+  gx.poll();
+
+  t+=1.0;
+}

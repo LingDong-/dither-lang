@@ -1218,8 +1218,6 @@ function transpile_c(instrs,layout){
       compare(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
     }else if (ins[0] == 'lt'){
       o.push(`${clean(ins[1])} = ${clean(ins[2])} < ${clean(ins[3])};`);
-    }else if (ins[0] == 'eq'){
-      o.push(`${clean(ins[1])} = ${clean(ins[2])} == ${clean(ins[3])};`);
     }else if (ins[0] == 'cast'){
       cast(clean(ins[1]),clean(ins[2]));
     }else if (ins[0] == 'ccall'){
@@ -1279,7 +1277,7 @@ function transpile_c(instrs,layout){
         n += "+1";
       }
     }else if (ins[0] == 'cap'){
-
+      // pass
     }else if (ins[0] == 'call'){
       // let mk= `__retpt_${shortid()}`
       let v = clean(ins[1])

@@ -59,10 +59,13 @@ var $typed_cons = {
   "f64":Float64Array,
 }
 function $assign(dst,src){
-  if (typeof src !== 'object'){
-    (dst??{})[0] = src;
-  }else if (dst){
-    Object.assign(dst,src);
+  if (typeof dst !== 'object' || dst === null){
+    return src;
+  }else if (typeof src !== 'object'){
+    dst[0] = src;
+    return dst;
+  }else{
+    return Object.assign(dst,src);
   }
 }
 function $to_str(x){
@@ -78,9 +81,35 @@ function $to_str(x){
     return '{'+x.map($to_str).join(',')+'}';
   }else if (x.__type.con == 'arr'){
     return '['+x.__dim.join(',')+']{'+x.map($to_str).join(',')+'}';
+  }else if (x.__type.con == 'dict'){
+    return '{'+Object.entries(x).filter(a=>!a[0].startsWith('__')).map(a=>a[1]).flat().map(a=>$to_str(a[0])+':'+$to_str(a[1])).join(',')+'}'
   }else{
     return '[object:'+JSON.stringify(x.__type)+']';
   }
+}
+function $eq(x,y){
+  if (x === y) return true;
+  x = $unwrap(x);
+  y = $unwrap(y);
+  if (x === y) return true;
+  if (x?.__type?.con == 'vec' && y?.__type?.con == 'vec'){
+    return x.toString() == y.toString();
+  }
+  return false;
+}
+function $hash_slot(dict,key){
+  let l = dict[key];
+  if (!l){
+    dict[key] = l = [[key,$value(dict.__zero)]];
+    return l[0];
+  }
+  for (let i = 0; i < l.length; i++){
+    if ($eq(l[i][0],key)){
+      return l[i];
+    }
+  }
+  l.push([key,$value(dict.__zero)]);
+  return l.at(-1);
 }
 `
 eval(lib);
@@ -289,7 +318,7 @@ function transpile_js(instrs,layout){
     let tb = lookup[b];
     let tc = lookup[c];
     if ($numtyps.includes(tb) || $numtyps.includes(tb) || typeof b == 'number' || typeof c == 'number'){
-      o.push(`${a}[0]=Number(${get_ptr(b)}${os}${get_ptr(c)});`);
+      o.push(`${get_ptr(a)}=Number(${get_ptr(b)}${os}${get_ptr(c)});`);
     }else{
       UNIMPL();
     }
@@ -317,7 +346,7 @@ function transpile_js(instrs,layout){
         }
         return `${v}[${idx}]`;
       }else if (t.con == 'dict'){
-        return `${v}[${idx}]`;
+        return `$hash_slot(${v},${idx})[1]`;
       }else if (t.con == 'tup'){
         return `${v}[${idx}]`;
       }else if (typeof t == 'string'){
@@ -328,7 +357,11 @@ function transpile_js(instrs,layout){
     }else{
       let t = lookup[x];
       if ($numtyps.includes(t) || t == 'str'){
-        return `${x}[0]`;
+        if (allcaps[x]){
+          return `${x}[0]`
+        }else{
+          return `${x}`
+        }
       }else{
         return x;
       }
@@ -341,9 +374,19 @@ function transpile_js(instrs,layout){
     }else if (typ.con == 'tup'){
       return `Object.assign([${typ.elt.map(x=>type_zero(x)).join(',')}],{__type:${JSON.stringify(typ)}})`
     }else if (typ == 'str'){
-      return `Object.assign([""],{__type:${JSON.stringify(typ)}})${nowrap?'[0]':''}`
-    }else if ($numtyps.includes(typ)){
+      if (nowrap){
+        return `""`
+      }else{
+        return `Object.assign([""],{__type:${JSON.stringify(typ)}})${nowrap?'[0]':''}`
+      }
+    }else if (typ == 'i64' || typ == 'u64'){
       return `Object.assign(new $typed_cons.${typ}(1),{__type:${JSON.stringify(typ)}})${nowrap?'[0]':''}`
+    }else if ($numtyps.includes(typ)){
+      if (nowrap){
+        return `0`;
+      }else{
+        return `Object.assign(new $typed_cons.${typ}(1),{__type:${JSON.stringify(typ)}})`
+      }
     }else if (typ.con == 'list'){
       return `Object.assign([],{__type:${JSON.stringify(typ)}})`;
     }else if (typ.con == 'arr'){
@@ -363,6 +406,8 @@ function transpile_js(instrs,layout){
   let inmain = 0;
   let lbl2int = {};
   let lblidx = 1;
+  let allcaps = [];
+
   for (let i = 1; i < instrs.length; i++){
     let [lbl, ins] = instrs[i];
     if (lbl.length){
@@ -390,10 +435,14 @@ function transpile_js(instrs,layout){
       let nom = clean(ins[1]);
       let typ = read_type(ins[2]);
       curfun.dcap.push({nom,typ});
+      allcaps[nom] = 1;
+    }else if (ins[0] == 'argr'){
+      let nom = clean(ins[1]);
+      allcaps[nom] = 1;
     }
   }
   instrs.shift();
-
+  // console.log(allcaps);
   let infun = 0;
   inmain = 0;
 
@@ -439,7 +488,11 @@ function transpile_js(instrs,layout){
       let nom = clean(ins[1]);
       let typ = read_type(ins[2]);
       lookup[nom] = typ;
-      o.push(`var ${nom} = ${type_zero(typ)};`);
+      if (allcaps[nom]){
+        o.push(`var ${nom} = ${type_zero(typ)};`);
+      }else{
+        o.push(`var ${nom} = ${type_zero(typ,1)};`);
+      }
     }else if (ins[0] == 'alloc'){
       let nom = clean(ins[1]);
       let typ = read_type(ins[2]);
@@ -462,7 +515,7 @@ function transpile_js(instrs,layout){
         while (ds.length < ndim) ds.push(1);
         o.push(`var ${nom} = Object.assign(new Array(${n}).fill(0).map(_=>$value(${type_zero(typ.elt[0],1)})), {__dims:${JSON.stringify(ds)},__type:${JSON.stringify(typ)}})`);
       }else if (typ.con == 'dict'){
-        o.push(`var ${nom} = {__type:${JSON.stringify(typ)}}`);
+        o.push(`var ${nom} = {__zero:${type_zero(typ.elt[1],1)},__type:${JSON.stringify(typ)}}`);
       }else if (typeof typ == 'string'){
         let lo = layout[typ];
         o.push(`var ${nom} = {__type:${JSON.stringify(typ)}};`);
@@ -503,15 +556,14 @@ function transpile_js(instrs,layout){
       compare(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
     }else if (ins[0] == 'lt'){
       o.push(`${clean(ins[1])} = ${clean(ins[2])} < ${clean(ins[3])};`);
-    }else if (ins[0] == 'eq'){
-      o.push(`${clean(ins[1])} = ${clean(ins[2])} == ${clean(ins[3])};`);
     }else if (ins[0] == 'cast'){
       cast(clean(ins[1]),clean(ins[2]));
     }else if (ins[0] == 'ccall'){
       let tmp = shortid();
       o.push(`${tmp} = $${ins[2]}();`);
-      o.push(`if (${tmp} instanceof Promise) {${tmp} = await ${tmp};}`)
-      o.push(`$assign(${clean(ins[1])},${tmp});`);
+      o.push(`if (${tmp} instanceof Promise) {${tmp} = await ${tmp};}`);
+      let a = clean(ins[1]);
+      o.push(`${a}=$assign(${a},${tmp});`);
     }else if (ins[0] == 'argw'){
       o.push(`$args.push($typed_value(${clean(ins[1])},${JSON.stringify(read_type(ins[2]))}));`);
     }else if (ins[0] == 'argr'){
@@ -520,9 +572,16 @@ function transpile_js(instrs,layout){
       lookup[nom] = typ;
       o.push(`var ${nom} = $args.pop();`);
     }else if (ins[0] == 'fpak'){
-      UNIMPL();
+      let nom = clean(ins[1]);
+      let ptr = clean(ins[3]);
+      
+      let {dcap} = funcs[ptr];
+      o.push(`var ${nom} = {__funptr:${ptr},__captr:[],__type:'func'}`);
+      for (let i = dcap.length-1; i>=0; i--){
+        o.push(`${nom}.__captr.push($value(${dcap[i].nom}))`);
+      }
     }else if (ins[0] == 'cap'){
-      UNIMPL();
+      // pass
     }else if (ins[0] == 'call'){
       let v = clean(ins[1])
       let funname = clean(ins[2]);
@@ -532,7 +591,7 @@ function transpile_js(instrs,layout){
           let {typ,nom} = funcs[funname].dcap[i];
           o.push(`$args.push(${nom})`);
         }
-        o.push(`$assign(${v},await ${funname}());`);
+        o.push(`${v}=$assign(${v},await ${funname}());`);
       }else if (typds[funname]){
         o.push("{")
         for (let i = 0; i < typds[funname].instrs.length; i++){
@@ -545,8 +604,13 @@ function transpile_js(instrs,layout){
         o.push("}")
       }
       
+
     }else if (ins[0] == 'rcall'){
-      UNIMPL();
+      let v = clean(ins[1])
+      let fun = clean(ins[2]);
+      o.push(`$args.push(...${fun}.__captr.map($value))`);
+      o.push(`${v}=$assign(${v},await ${fun}.__funptr());`);
+
     }else if (ins[0] == 'ret'){
       if (ins[1]){
         let a = clean(ins[1]);
