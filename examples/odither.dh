@@ -1,6 +1,5 @@
 include "std/gx"
 include "std/math"
-include "std/io"
 
 ord_dith_map := arr[u8,2]{
    0,48,12,60, 3,51,15,63;

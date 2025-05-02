@@ -344,6 +344,7 @@ void __put_var(int idx, void* ptr){
 char* __to_str(void* ptr, int vart, int w){
   char* o;
   if (vart == VART_LST){
+    
     __list_t* lst = (__list_t*)ptr;
     o = calloc(2,1);
     o[0] = '{';
@@ -355,6 +356,7 @@ char* __to_str(void* ptr, int vart, int w){
       strcpy(o+no, a);
       o[no+na] = (i == lst->n-1) ? '}' : ',';
       o[no+na+1] = 0;
+      free(a);
     }
   }else if (vart == VART_ARR){
     __arr_t* arr = (__arr_t*)ptr;
@@ -374,6 +376,7 @@ char* __to_str(void* ptr, int vart, int w){
         o[no+na] = 'x';
         o[no+na+1] = 0;
       }
+      free(a);
     }
     for (int i = 0; i < arr->n; i++){
       char* a = __to_str(arr->data + (i*arr->w), arr->t, arr->w);
@@ -383,6 +386,7 @@ char* __to_str(void* ptr, int vart, int w){
       strcpy(o+no, a);
       o[no+na] = (i == arr->n-1) ? '}' : ',';
       o[no+na+1] = 0;
+      free(a);
     }
   }else if (vart == VART_TUP) {
     o = calloc(2,1);
@@ -401,9 +405,38 @@ char* __to_str(void* ptr, int vart, int w){
       strcpy(o+no, a);
       o[no+na] = ',';
       o[no+na+1] = 0;
+      free(a);
       i++;
     }
     o[strlen(o)-1] = ']';
+  }else if (vart == VART_DIC) {
+    __dict_t* dic = (__dict_t*)ptr;
+    o = calloc(2,1);
+    o[0] = '{';
+    for (int i = 0; i < __NUM_DICT_SLOTS; i++){
+      for (int j = 0; j < dic->slots[i].n; j++){
+        
+        char* a = __to_str( *(void**)(dic->slots[i].data + (dic->kw+dic->vw) * j), dic->kt, dic->kw);
+        int no = strlen(o);
+        int na = strlen(a);
+        o = realloc(o, no+na+2);
+        strcpy(o+no, a);
+        o[no+na] = ':';
+        o[no+na+1] = 0;
+        free(a);
+
+        a = __to_str(dic->slots[i].data + (dic->kw+dic->vw) * j + dic->kw, dic->vt, dic->vw);
+        no = strlen(o);
+        na = strlen(a);
+        o = realloc(o, no+na+2);
+        strcpy(o+no, a);
+        o[no+na] = ',';
+        o[no+na+1] = 0;
+        free(a);
+      }
+    }
+    o[strlen(o)-1] = '}';
+    
   }else if (vart == VART_STR) {
     o = strdup(*(char**)ptr);
   }else if (vart == VART_STT) {
@@ -427,13 +460,14 @@ char* __to_str(void* ptr, int vart, int w){
           strcpy(o+no, a);
           o[no+na] = (i == n-1) ? '}' : ',';
           o[no+na+1] = 0;
+          free(a);
         }
       }
     }`).join("")}
   return o;
 }
 int __hash(void* x, int n){
-  int k = 0;
+  uint32_t k = 0;
   for (int i = 0; i < n; i++){
     k ^= ((char*)x)[i];
   }
@@ -772,6 +806,13 @@ function transpile_c(instrs,layout){
     }else if (ta == "char*" && tb.con == 'tup'){
       let tmp = shortid();
       o.push(`char* ${tmp} = __to_str(${b}, VART_TUP, 8);`);
+      o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
+      o.push(`__put_var(${varcnt++},${a});`);
+      o.push(`strcpy(${a},${tmp});`);
+      o.push(`free(${tmp});`);
+    }else if (ta == "char*" && tb.con == 'dict'){
+      let tmp = shortid();
+      o.push(`char* ${tmp} = __to_str(${b}, VART_DIC, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
@@ -1195,7 +1236,8 @@ function transpile_c(instrs,layout){
         o.push(`((${ta}*)${pa})[0] = ${b};`);
       }else if (b[0] == '"'){
         let [pa,ta,na] = get_ptr(a,`(strlen(${b})+1)`);
-        o.push(`strcpy(*${pa}, ${b});`)
+        // o.push(`strcpy(*(char**)${pa}, ${b});`)
+        o.push(`*(char**)${pa} = ${b};`);
       }else{
         let [pb,tb,nb] = get_ptr(b,null);
         let [pa,ta,na] = get_ptr(a,nb);
