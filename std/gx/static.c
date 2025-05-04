@@ -1,4 +1,4 @@
-//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lGLEW -lGL")
+//CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL -framework CoreGraphics" || echo "-lGLEW -lGL")
 
 #include <stdio.h>
 // #include <unistd.h>
@@ -6,10 +6,11 @@
 #include "impl.c"
 
 void gx___size(){
+  uint64_t __ARG(ctx);
   int32_t __ARG(h);
   int32_t __ARG(w);
 
-  gx_impl__size(w,h);
+  gx_impl__size(w,h,ctx);
 }
 
 void gx___init_graphics(){

@@ -1371,8 +1371,11 @@ void (*__io_intern_hook_print)(char*) = cb_print_;
 
 
 int main(int argc, char** argv) {
-
-  void *lib = dlopen("std/win/platform/windowing.so", RTLD_NOW);
+#if __APPLE__
+  void *lib = dlopen("std/win/platform/glcocoa.so", RTLD_NOW);
+#else
+  void *lib = dlopen("std/win/platform/glx.so", RTLD_NOW);
+#endif
   windowing_init = dlsym(lib, "window_init");
   windowing_poll = dlsym(lib, "window_poll");
   windowing_exit = dlsym(lib, "window_exit");

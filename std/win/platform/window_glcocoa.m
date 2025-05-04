@@ -207,7 +207,7 @@ static NSEventModifierFlags prev_modifiers = 0;
 @end
 
 
-EXPORTED void window_init(int width, int height) {
+EXPORTED void** window_init(int width, int height) {
   @autoreleasepool {
     [NSApplication sharedApplication];
 
@@ -251,6 +251,7 @@ EXPORTED void window_init(int width, int height) {
     GLint sync = 0;
     [[g_glView openGLContext] setValues:&sync forParameter:NSOpenGLContextParameterSwapInterval];
   }
+  return NULL;
 }
 
 
@@ -284,4 +285,5 @@ EXPORTED event_t* window_poll(int* out_count) {
 EXPORTED void window_exit(void) {
   [NSApp terminate:nil];
 }
+
 

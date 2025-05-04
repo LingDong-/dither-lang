@@ -1,6 +1,6 @@
 //CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL -framework CoreGraphics" || echo "-lGLEW -lGL")
 
-#include "../../src/interp.c"
+#include "../../../../src/interp.c"
 #include "impl.c"
 
 #ifndef EXPORTED

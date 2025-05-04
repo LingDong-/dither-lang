@@ -1399,9 +1399,10 @@ function transpile_c(instrs,layout){
       o.push(`__pop_stack();`);
       o.push(`return;`);
     }else if (ins[0] == 'incl'){
-      let f = ins[1].slice(1,-1)+"/static.c";
+      let p = ins[1].slice(1,-1);
+      let f = p+"/static.c";
       o.unshift(`#include "${f}"`);
-      cflags.push(`eval "$(head -n 1 "${f}" | cut -c 3-)" && CFLAGS+=" " `);
+      cflags.push(`eval "$(cat ${p}/cflags.txt)"`);
     }else{
       console.log(ins)
     }

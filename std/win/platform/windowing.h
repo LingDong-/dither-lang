@@ -37,13 +37,13 @@
 #define KEY_RCMD   0xffec
 
 typedef struct {
-    int type;
-    int key;
-    float x;
-    float y;
+  int type;
+  int key;
+  float x;
+  float y;
 } event_t;
 
-void (*windowing_init)(int, int);
+void** (*windowing_init)(int, int);
 event_t* (*windowing_poll)(int* n);
 void (*windowing_exit)(void);
 

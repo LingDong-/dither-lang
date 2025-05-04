@@ -48,7 +48,7 @@ Window win;
 GLXContext glxContext;
 XEvent event;
 
-EXPORTED void window_init(int w, int h){
+EXPORTED void** window_init(int w, int h, int flags){
   display = XOpenDisplay(NULL);
   root = DefaultRootWindow(display);
   static int visual_attribs[] = {
@@ -92,6 +92,7 @@ EXPORTED void window_init(int w, int h){
   height = h;
 
   //XSetStandardProperties(dis,win,window_name,"",None,NULL,0,NULL);
+  return NULL;
 }
 
 int get_key_code(){

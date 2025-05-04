@@ -3,11 +3,7 @@
 
 #include <stdint.h>
 
-#ifdef __APPLE__
-#include "impl_coreaudio.c"
-#else
-#include "impl_portaudio.c"
-#endif
+#include "impl.c"
 
 void snd__init(){
   int32_t __ARG(chan);

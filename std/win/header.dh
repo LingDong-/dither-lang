@@ -30,13 +30,15 @@ namespace win {
   MOUSE_MOVED    := 3;
   KEY_PRESSED    := 4;
   KEY_RELEASED   := 5;
+  CONTEXT_2D     := 1;
+  CONTEXT_3D     := 2;
   typedef Event = {
     type : i32;
     key  : i32;
     x    : f32;
     y    : f32;
   };
-  func init(w:i32,h:i32);
+  func init(w:i32,h:i32,flags:i32):u64;
   func poll():Event;
   func exit();
 }

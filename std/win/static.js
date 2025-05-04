@@ -25,7 +25,7 @@ globalThis.$win = new function(){
     Meta:      0xffeb,
   };
   that.init = function(){
-    let [w,h] = $pop_args(2);
+    let [w,h,flags] = $pop_args(3);
     let par = document.getElementById("out") ?? document.body;
     cnv = document.createElement("canvas");
     cnv.id = "canvas";
@@ -71,7 +71,7 @@ globalThis.$win = new function(){
       let key = mapkey(e.key);
       evtq.push({type:5,key,x:0,y:0});
     });
-
+    return 0n;
   }
   function animation_frame() {
     return new Promise(resolve => requestAnimationFrame(resolve));

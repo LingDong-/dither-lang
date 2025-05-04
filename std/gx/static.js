@@ -7,7 +7,7 @@ globalThis.$gx = new function(){
   let no_fill = 0;
   let first_vertex = 0;
   that._size = function(){
-    let [w,h] = $pop_args(2);
+    let [w,h,_] = $pop_args(3);
     cnv = document.getElementById("canvas");
     ctx = cnv.getContext('2d');
     ctx.fillRect(0,0,w,h);

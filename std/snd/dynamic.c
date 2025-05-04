@@ -15,11 +15,7 @@
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "snd." QUOTE(name), snd_ ## name);
 
-#ifdef __APPLE__
-#include "impl_coreaudio.c"
-#else
-#include "impl_portaudio.c"
-#endif
+#include "impl.c"
 
 EXPORTED void snd_init(var_t* ret,  gstate_t* _g){
   int chan = ARG_POP(_g,i32);

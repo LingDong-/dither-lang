@@ -1,5 +1,4 @@
-export DITHER_ROOT := $(shell pwd)
-
+include config.env
 ifeq ($(dbg),1)
 	OPT = -DDBG
 	VM_CHOICE = vm_dbg
@@ -7,18 +6,28 @@ else
 	OPT = -O3
 	VM_CHOICE = vm
 endif
-std_one:
+build/config.h: config.env
+	rm -f build/config.h;
+	@set -a; \
+	. ./config.env; \
+	env | grep -E '^DITHER_' | while IFS='=' read -r key val; do \
+		case "$$val" in \
+			[0-9]*) echo "#define $$key $$val" ;; \
+			*) echo "#define $$key \"$$val\"" ;; \
+		esac >> build/config.h; \
+	done
+std_one: build/config.h
+	source config.env;\
 	cd std/$(lib);\
 	DEADSTRIP="-fdata-sections -ffunction-sections -Wl,--gc-sections";\
 	if [ "$$(uname)" == "Darwin" ]; then\
 		DEADSTRIP="-dead_strip";\
 	fi;\
 	f=dynamic.c;\
-	CFLAGS="";\
-	eval $$(head -n 1 "$$f" | cut -c 3-);\
+	eval "$$(cat cflags.txt)";\
 	echo $(lib) $$f ":" $$CFLAGS;\
-	gcc $(OPT) $$DEADSTRIP -shared -o $${f%.*}.so -fPIC -fvisibility=hidden $$f $$CFLAGS;
-std_all:
+	gcc -include $$DITHER_ROOT/build/config.h $(OPT) $$DEADSTRIP -shared -o $${f%.*}.so -fPIC -fvisibility=hidden $$f $$CFLAGS;
+std_all: build/config.h
 	for folder in std/*; do\
 		name=$$(basename $$folder);\
 		make std_one lib=$$name;\
@@ -41,11 +50,11 @@ run_js: to_js
 	cd /tmp/site;\
 	echo '<body></body><script src="out.js"></script><script>;;(function(){var script=document.createElement("script");script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);stats.dom.style.left=null;stats.dom.style.right=0;requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src="//mrdoob.github.io/stats.js/build/stats.min.js";document.head.appendChild(script);})();</script>' > index.html;\
 	npx http-server;
-run_c: to_c
-	CFLAGS="";\
+run_c: build/config.h to_c
+	source config.env;\
 	eval $$(head -n 1 "build/out.c" | cut -c 3-);\
 	echo $$CFLAGS;\
-	gcc -I. -O3 build/out.c $$CFLAGS -o build/a.out && build/a.out;
+	gcc -include build/config.h -I. -O3 build/out.c $$CFLAGS -o build/a.out && build/a.out;
 nwedit:
 	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
 gledit:

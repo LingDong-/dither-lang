@@ -11,10 +11,11 @@
 #define QUOTE(x) #x
 
 EXPORTED void win_init(var_t* ret, gstate_t* _g){
+  int flags = ARG_POP(_g,i32);
   int h = ARG_POP(_g,i32);
   int w = ARG_POP(_g,i32);
 
-  win_impl_init(w,h);
+  ret->u.u64 = win_impl_init(w,h,flags);
 }
 
 EXPORTED void win_poll(var_t* ret, gstate_t* _g){

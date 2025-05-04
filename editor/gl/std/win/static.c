@@ -9,11 +9,12 @@
 #include "impl.c"
 
 void win__init(){
+  int32_t __ARG(flags);
   int32_t __ARG(h);
   int32_t __ARG(w);
   
-  win_impl_init(w,h);
-  
+  uint64_t o = win_impl_init(w,h,flags);
+  __put_ret(&(o));
 }
 
 void win__poll(){

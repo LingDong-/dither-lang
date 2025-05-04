@@ -3137,10 +3137,11 @@ list_node_t* execute_instr(list_node_t* ins_node){
     str_t name = ((term_t*)(ins->b))->u.str;
 
     void (*cfun)(var_t* ret, gstate_t* _g) = (void (*)(var_t*, gstate_t*))map_get(&_G.cfuncs, &name);
-    // printf("%p %s %p %p %d\n",&_G.cfuncs,name.data,cfun,args,args->len);
+    // printf("%p %s %d %p\n",&_G.cfuncs,name.data,_G.args.len,cfun);
     
     // print_vars();
     cfun(v,&_G);
+    // printf(".\n");
   }else{
     UNIMPL;
   }

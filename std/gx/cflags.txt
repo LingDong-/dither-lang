@@ -1,0 +1,10 @@
+if [ "$(uname)" = "Darwin" ]; then
+  if [ "$DITHER_2D_USE_OPENGL" -eq 1 ]; then
+    CFLAGS="$CFLAGS -framework OpenGL"
+  fi
+  if [ "$DITHER_2D_USE_COREGRAPHICS" -eq 1 ]; then
+    CFLAGS="$CFLAGS -framework CoreGraphics"
+  fi
+else
+  CFLAGS="$CFLAGS -lGLEW -lGL"
+fi
