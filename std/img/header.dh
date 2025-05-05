@@ -1,0 +1,5 @@
+
+namespace img {
+  func decode(buf:list[u8]):arr[u8,3];
+  func encode(ext:str,pix:arr[u8,3]):list[u8];
+}

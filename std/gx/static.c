@@ -33,6 +33,29 @@ void gx___end_fbo(){
   gx_impl__end_fbo();
 }
 
+void gx___read_pixels(){
+  int __ARG(fbo);
+
+  __arr_t* a = __gc_alloc(VART_ARR, sizeof(__arr_t)+12);
+  a->ndim = 3;
+  a->data = gx_impl__read_pixels(fbo,&(a->dims[1]),&(a->dims[0]));
+  a->dims[2] = 4;
+  a->n = a->dims[0]*a->dims[1]*a->dims[2];
+  a->w = 1;
+  a->t = VART_U08;
+
+  __put_ret(&a);
+}
+
+void gx___write_pixels(){
+  __arr_t* a;
+  __pop_arg(&a, 8);
+
+  int __ARG(tex);
+
+  gx_impl__write_pixels(tex,a->data);
+}
+
 void gx___draw_texture(){
   float __ARG(h);
   float __ARG(w);

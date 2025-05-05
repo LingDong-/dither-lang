@@ -153,6 +153,66 @@ void gx_impl__end_fbo(){
   glMatrixMode(GL_MODELVIEW);
 }
 
+void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  int w,h;
+  GLint tex = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  unsigned char* pixels = malloc(w * h * 4);
+  glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
+  *_w = w;
+  *_h = h;
+
+  unsigned char *row = malloc(w*4);
+  for (int y = 0; y < h / 2; y++) {
+    unsigned char *top = pixels + y * w*4;
+    unsigned char *bot = pixels + (h - 1 - y) * w*4;
+    memcpy(row, top, w*4);
+    memcpy(top, bot, w*4);
+    memcpy(bot, row, w*4);
+  }
+  free(row);
+
+  return (void*)pixels;
+}
+
+
+void gx_impl__write_pixels(int tex, void* pixels){
+  int w,h;
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+
+  void* row = malloc(w*4);
+  for (int y = 0; y < h / 2; y++) {
+    void* top = pixels + y * w*4;
+    void* bot = pixels + (h - 1 - y) * w*4;
+    memcpy(row, top, w*4);
+    memcpy(top, bot, w*4);
+    memcpy(bot, row, w*4);
+  }
+  
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  for (int y = 0; y < h / 2; y++) {
+    void* top = pixels + y * w*4;
+    void* bot = pixels + (h - 1 - y) * w*4;
+    memcpy(row, top, w*4);
+    memcpy(top, bot, w*4);
+    memcpy(bot, row, w*4);
+  }
+
+  free(row);
+}
+
 void gx_impl__draw_texture(int tex, float x, float y, float w, float h){
   // printf("%d %f %f %f %f\n", tex,x,y,w,h);
   // glClear(GL_COLOR_BUFFER_BIT);

@@ -24,3 +24,15 @@ void io__write_file(){
 
   io_impl_write_file(s,a->data,a->n);
 }
+
+void io__read_file(){
+  char* __ARG(s);
+
+  __list_t* a = __gc_alloc(VART_LST, sizeof(__list_t));
+  a->w = 1;
+  a->t = VART_U08;
+  a->data = io_impl_read_file(s,&(a->n));
+  a->cap = a->n;
+
+  __put_ret(&a);
+}

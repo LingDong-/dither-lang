@@ -37,6 +37,27 @@ EXPORTED void gx__end_fbo(var_t* ret, gstate_t* _g){
   gx_impl__end_fbo();
 }
 
+EXPORTED void gx__read_pixels(var_t* ret, gstate_t* _g){
+  int fbo = ARG_POP(_g,i32);
+
+  arr_t* arr = (arr_t*)gc_alloc_(_g,sizeof(arr_t)+12);
+  arr->data = (char*)gx_impl__read_pixels(fbo, &(arr->dims[1]), &(arr->dims[0]));
+  arr->dims[2] = 4;
+  arr->ndim = 3;
+  arr->w = 1;
+  arr->type = ret->type;
+  arr->n = arr->dims[0]*arr->dims[1]*arr->dims[2];
+
+  ret->u.arr = arr;
+}
+
+EXPORTED void gx__write_pixels(var_t* ret, gstate_t* _g){
+  arr_t* arr = ARG_POP(_g,arr);
+  int tex = ARG_POP(_g,i32);
+
+  gx_impl__write_pixels(tex,arr->data);
+}
+
 EXPORTED void gx__draw_texture(var_t* ret, gstate_t* _g){
   float h = ARG_POP(_g,f32);
   float w = ARG_POP(_g,f32);
@@ -221,6 +242,9 @@ EXPORTED void lib_init_gx(gstate_t* _g){
   QK_REG(pop_matrix)
   QK_REG(apply_matrix)
   QK_REG(reset_matrix)
+
+  QK_REG(_read_pixels)
+  QK_REG(_write_pixels)
 }
 
 

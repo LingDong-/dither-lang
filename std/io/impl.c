@@ -23,7 +23,20 @@ void io_impl_print(char* s){
 }
 
 void io_impl_write_file(char* s, void* data, int n){
-  FILE* fd = fopen(s, "w");
+  FILE* fd = fopen(s, "wb");
   fwrite(data,1,n,fd);
   fclose(fd);
+}
+
+
+char* io_impl_read_file(char* s, int* n){
+  FILE* fd = fopen(s, "rb");
+  fseek(fd, 0, SEEK_END);
+  long file_size = ftell(fd);
+  rewind(fd);
+  char *buffer = malloc(file_size);
+  fread(buffer, 1, file_size, fd);
+  fclose(fd);
+  *n = file_size;
+  return buffer;
 }

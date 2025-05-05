@@ -26,10 +26,23 @@ EXPORTED void io_write_file(var_t* ret, gstate_t* _g){
   io_impl_write_file(s->data, l->data, l->n);
 }
 
+EXPORTED void io_read_file(var_t* ret, gstate_t* _g){
+  stn_t* s = ARG_POP(_g,str);
+
+  lst_t* lst = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
+  lst->data = io_impl_read_file(s->data, &(lst->n));
+
+  lst->cap = lst->n;
+  lst->w = 1;
+  lst->type = ret->type;
+  ret->u.lst = lst;
+}
+
 EXPORTED void lib_init_io(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "io.println", io_println);
   register_cfunc(&(_g->cfuncs), "io.print", io_print);
   register_cfunc(&(_g->cfuncs), "io.write_file", io_write_file);
+  register_cfunc(&(_g->cfuncs), "io.read_file", io_read_file);
 }
 
 

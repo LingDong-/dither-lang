@@ -34,6 +34,25 @@ globalThis.$gx = new function(){
   that._end_fbo = function(){
     ctx = cnv.getContext('2d');
   }
+  that._read_pixels = function(){
+    let [fbo] = $pop_args(1);
+    let c = fbos[fbo].getContext('2d');
+    let h = c.canvas.height;
+    let w = c.canvas.width;
+    let data = c.getImageData(0,0,w,h).data;
+    return Object.assign(Array.from(data),{__dims:[h,w,4]});
+  }
+  that._write_pixels = function(){
+    let [tex,arr] = $pop_args(2);
+    let c = fbos[tex].getContext('2d');
+    let h = c.canvas.height;
+    let w = c.canvas.width;
+    let imdata = c.getImageData(0,0,w,h);
+    for (let i = 0; i < imdata.data.length; i++){
+      imdata.data[i] = arr[i];
+    }
+    c.putImageData(imdata,0,0);
+  }
   that._draw_texture = function(){
     let [tex,x,y,w,h] = $pop_args(5);
     ctx.drawImage(fbos[tex], x,y,w,h);

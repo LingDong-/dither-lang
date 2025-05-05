@@ -30,6 +30,10 @@ Run in VM (requires standard library compilation, see below)
 make run_vm src=examples/helloworld.dh
 ```
 
+### Configure
+
+Edit `config.env` to configure backends for various components. Some backends are platform specific -- pick one that you have on your system.
+
 ### Compile the Standard Library
 
 This step is only required for running scripts on the VM.

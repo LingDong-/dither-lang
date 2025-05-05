@@ -97,6 +97,35 @@ void gx_impl__end_fbo(){
   
 }
 
+void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+  CGContextRef c = fbos.data[fbo];
+  void *data = CGBitmapContextGetData(c);
+  int w = CGBitmapContextGetWidth(c);
+  int h = CGBitmapContextGetHeight(c);
+  void* copy = malloc(w*h*4);
+
+  size_t rowBytes = w*4;
+  for (int y = 0; y < h; y++) {
+    memcpy(copy + y * rowBytes,data + (h - 1 - y) * rowBytes,rowBytes);
+  }
+  *_w = w;
+  *_h = h;
+  return copy;
+}
+
+
+void gx_impl__write_pixels(int tex, void* pixels){
+  CGContextRef c = fbos.data[tex];
+  void *data = CGBitmapContextGetData(c);
+  int w = CGBitmapContextGetWidth(c);
+  int h = CGBitmapContextGetHeight(c);
+
+  size_t rowBytes = w*4;
+  for (int y = 0; y < h; y++) {
+    memcpy(data + y * rowBytes,pixels + (h - 1 - y) * rowBytes,rowBytes);
+  }
+}
+
 void gx_impl__draw_texture(int tex, float x, float y, float w, float h){
   CGImageRef img = CGBitmapContextCreateImage(fbos.data[tex]);
   CGContextDrawImage(*ctx, CGRectMake(x, y, w, h), img);

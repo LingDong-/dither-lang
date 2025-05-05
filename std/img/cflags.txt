@@ -1,0 +1,3 @@
+if [ "$DITHER_IMGIO_USE_COREGRAPHICS" -eq 1 ]; then
+  CFLAGS="$CFLAGS -framework CoreGraphics -framework Foundation -framework ImageIO"
+fi

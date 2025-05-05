@@ -3,4 +3,5 @@ namespace io {
   func println(s:str);
   func print(s:str);
   func write_file(s:str,buf:list[u8]);
+  func read_file(s:str):list[u8];
 }
