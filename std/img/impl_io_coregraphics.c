@@ -13,25 +13,17 @@ uint8_t* img_impl_decode(uint8_t* buffer, size_t length, int* width, int* height
   CFRelease(src);
 
   CGImageAlphaInfo alpha = CGImageGetAlphaInfo(image);
-  size_t comps = CGColorSpaceGetNumberOfComponents(CGImageGetColorSpace(image));
+
   int chan = 4;
-  if (comps == 1 && alpha == kCGImageAlphaNone) chan = 1;
-  if (comps == 3 && alpha == kCGImageAlphaNone) chan = 3;
-  if (comps == 3 && alpha != kCGImageAlphaNoneSkipLast) chan = 4;
-
-  size_t w = CGImageGetWidth(image), h = CGImageGetHeight(image);
+  size_t w = CGImageGetWidth(image);
+  size_t h = CGImageGetHeight(image);
   size_t stride = w * chan;
-  uint8_t* pixels = (uint8_t*)malloc(h * stride);
 
-  CGColorSpaceRef cs = (chan == 1)
-    ? CGColorSpaceCreateDeviceGray()
-    : CGColorSpaceCreateDeviceRGB();
+  uint8_t* pixels = malloc(h * stride);
 
-  CGBitmapInfo info = (chan == 1)
-    ? kCGImageAlphaNone
-    : (chan == 3
-      ? kCGImageAlphaNone | kCGBitmapByteOrderDefault
-      : kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+  CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+
+  CGBitmapInfo info = kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big;
 
   CGContextRef ctx = CGBitmapContextCreate(pixels, w, h, 8, stride, cs, info);
   CGColorSpaceRelease(cs);
