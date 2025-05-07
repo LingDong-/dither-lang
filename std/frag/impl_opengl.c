@@ -55,11 +55,11 @@ GLint fbo_zero;
 int tex_cnt = 0;
 
 const char* vertexShaderSource = "#version 120\n"
-"attribute vec2 aPosition;\n"
-"varying vec2 vUv;\n"
+"attribute vec2 a_position;\n"
+"varying vec2 v_uv;\n"
 "void main() {\n"
-"  vUv = (aPosition + 1.0) * 0.5;\n"
-"  gl_Position = vec4(aPosition, 0.0, 1.0);\n"
+"  v_uv = (a_position + 1.0) * 0.5;\n"
+"  gl_Position = vec4(a_position, 0.0, 1.0);\n"
 "}\n";
 
 GLfloat vertices[] = {
@@ -151,15 +151,13 @@ void frag_impl__begin(int prgm, int fbo){
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  posAttrib = glGetAttribLocation(prgm, "aPosition");
+  posAttrib = glGetAttribLocation(prgm, "a_position");
   glEnableVertexAttribArray(posAttrib);
   glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
   tex_cnt = 0;
 }
 
 void frag_impl_end(){
-  GLint currentFbo;
-  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFbo);
 
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glDisableVertexAttribArray(posAttrib);

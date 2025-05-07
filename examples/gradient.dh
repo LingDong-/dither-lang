@@ -3,11 +3,10 @@ include "std/math"
 include "std/io"
 // an example showcasing code-sharing between shader and CPU code
 // -- learn one language, write your code once
-resolution := {640.0,480.0}; // global variables referenced in
-                             // functions used by shaders are
-                             // turned into uniforms, initialized
+resolution := {640.0,480.0}; // initialized => glsl global
+t : f32;                     // uninitialized => glsl uniform
 image : frag.Texture; // == sampler2D in GLSL, fbo in OpenGL
-t := 0.0;
+
 frag.size(...resolution);
 // define a function for the entry point of first shader,
 // just like writing a normal function in dither.
@@ -24,7 +23,7 @@ func offset(p:vec[f32,2]):vec[f32,2]{
 func pass1(fragCoord:vec[f32,2]):vec[f32,4]{
   uv := fragCoord/resolution;
   color := image.sample(uv+offset(uv+{t,0.0}));
-  return {color.r, color.g, color.b, 1.0};
+  return {color.r, color.g, math.sin(t)*0.2+0.5, 1.0};
 }
 // you can call these shader functions in CPU too!
 // great for sanity checks...
@@ -38,16 +37,15 @@ shader0 := frag.program(embed pass0 as "fragment");
 shader1 := frag.program(embed pass1 as "fragment");
 
 image = frag.texture();
+t = 0;
 while (1){
   frag.begin(shader0,image); // rendering shader0 onto image
-  frag.uniform("resolution", resolution); // optional, since it was initialized
-  frag.end();                             // with defualt, and we're not changing it
+  frag.end();
   
   frag.begin(shader1); // rendering shader1 onto main screen
-  frag.uniform("resolution", resolution);
   frag.uniform("t", t); 
   frag.uniform("image", image); // put in the output of the first pass
   frag.end();
-  t += 0.0001;
+  t += 0.0005;
   frag.poll(); // display & read windowing events
 }

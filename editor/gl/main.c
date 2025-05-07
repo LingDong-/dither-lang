@@ -18,7 +18,7 @@
 #include "../../std/win/platform/windowing.h"
 
 char* keywords[] = {
-  "namespace","continue","typedef","include","return","break","while","const",
+  "namespace","continue","typedef","include","return","break","while","embed",
   "else","func","func","dict","list",
   "for","i16","u16","i32","u32","i64","u64","f32","f64","tup","vec","arr","str",
   "if","do","as","i8","u8"

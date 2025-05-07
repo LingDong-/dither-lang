@@ -121,7 +121,7 @@ function embed_glsl_frag(ast,scopes){
           didvar[id] = 1;
           let a = scopes[i][k];
           if (a.val !== null){
-            out.push(`uniform ${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
+            out.push(`${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
           }else{
             out.push(`uniform ${printtype(a.typ)} ${k};`);
           }
