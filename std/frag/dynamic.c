@@ -11,6 +11,7 @@
 #define QUOTE(x) #x
 
 EXPORTED void frag__size(var_t* ret, gstate_t* _g){
+  
   uint64_t ctx = ARG_POP(_g,u64);
   int h = ARG_POP(_g,i32);
   int w = ARG_POP(_g,i32);
@@ -18,10 +19,66 @@ EXPORTED void frag__size(var_t* ret, gstate_t* _g){
   frag_impl__size(w,h,ctx);
 }
 
+EXPORTED void frag__init_texture(var_t* ret, gstate_t* _g){
+  obj_t* o = ARG_POP(_g,obj);
+  frag_impl__init_texture(o->data);
+}
+
+EXPORTED void frag_program(var_t* ret, gstate_t* _g){
+  stn_t* src = ARG_POP(_g,str);
+  int prgm = frag_impl_program(src->data);
+  ret->u.i32 = prgm;
+}
+
+EXPORTED void frag__begin(var_t* ret, gstate_t* _g){
+  int fbo = ARG_POP(_g,i32);
+  int prgm = ARG_POP(_g,i32);
+
+  frag_impl__begin(prgm, fbo);
+}
+
+EXPORTED void frag_end(var_t* ret, gstate_t* _g){
+  frag_impl_end();
+}
+
+EXPORTED void frag_uniform(var_t* ret, gstate_t* _g){
+  var_t* u = ARG_POP_VAR_NO_FREE(_g);
+  stn_t* s = ARG_POP(_g,str);
+
+  if (u->type->vart == VART_I32){
+    frag_impl_uniformi(s->data,&(u->u.i32),1);
+  }else if (u->type->vart == VART_F32){
+    frag_impl_uniformf(s->data,&(u->u.f32),1);
+  }else if (u->type->vart == VART_VEC){
+    type_t* ta = (type_t*)(u->type->u.elem.head->data);
+    if (ta->vart == VART_I32){
+      frag_impl_uniformi(s->data, (int32_t*)(u->u.vec->data), u->u.vec->n);
+    }else if (ta->vart == VART_F32){
+      frag_impl_uniformf(s->data, (float*)(u->u.vec->data), u->u.vec->n);
+    }
+  }else if (u->type->vart == VART_STT){
+    int fbo = ((int32_t*)(u->u.obj->data))[2];
+    frag_impl_uniform_sampler(s->data,fbo);
+  }
+
+  free(u);
+}
+
+EXPORTED void frag__sample(var_t* ret, gstate_t* _g){
+  vec_t* v = ARG_POP(_g,vec);
+  int fbo = ARG_POP(_g,i32);
+}
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "frag." QUOTE(name), frag_ ## name);
 
-EXPORTED void lib_init_gx(gstate_t* _g){
+EXPORTED void lib_init_frag(gstate_t* _g){
   QK_REG(_size)
+  QK_REG(_init_texture)
+  QK_REG(program)
+  QK_REG(_begin)
+  QK_REG(end)
+  QK_REG(uniform)
+  QK_REG(_sample)
 }
 
 

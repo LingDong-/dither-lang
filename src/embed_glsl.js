@@ -1,4 +1,4 @@
-function embed_glsl(ast,scopes){
+function embed_glsl_frag(ast,scopes){
   let out = [];
 
   let didfun = {};
@@ -35,11 +35,37 @@ function embed_glsl(ast,scopes){
     }else if (ast.key == 'swiz'){
       o += `${docompile(ast.lhs)}.${ast.rhs.val}`;
     }else if (ast.key == 'call'){
-      o += `${ast.fun.val[0].ipl.nom.val}(${ast.arg.map(docompile).join(',')})`;
+ 
+      if (ast.fun.key == 'a.b'){
+
+        if (ast.fun.rhs.val == 'sample' && ast.fun.lhs.typ.endsWith(".Texture")){
+          o += `texture2D(${ast.fun.lhs.val},${ast.arg.map(docompile).join(',')})`;
+        }else if (ast.fun.lhs.val == 'math'){
+          o += `${ast.fun.rhs.val[0].ipl.nom.val}(${ast.arg.map(docompile).join(',')})`
+        }
+        
+      }else{
+        o += `${ast.fun.val[0].ipl.nom.val}(${ast.arg.map(docompile).join(',')})`;
+      }
+    }else if (ast.key == 'cast'){
+      o += `${printtype(ast.rhs.typ)}(${docompile(ast.lhs)})`
     }else if (ast.key == 'noop'){
       o += ``;
+    }else if (ast.key == 'decl'){
+      let typ;
+      if (ast.ano){
+        typ = ast.ano.typ;
+      }else{
+        typ = ast.val.typ;
+      }
+      if (ast.val){
+        out.push(`${printtype(typ)} ${ast.nom.val} = ${docompile(ast.val)};`);
+      }else{
+        out.push(`${printtype(typ)} ${ast.nom.val};`);
+      }
+      
     }else{
-      console.log(ast.key)
+      console.log(ast)
     }
     return o;
   }
@@ -54,6 +80,13 @@ function embed_glsl(ast,scopes){
       return `int`
     }else if (typ == 'f32'){
       return `float`
+    }else if (typeof typ == 'string' && typ.includes('.')){
+      let [nmsp,name] = typ.split(".");
+      if (scopes[Number(nmsp)].__names.endsWith(".frag")){
+        if (name == 'Texture'){
+          return `sampler2D`;
+        }
+      }
     }else{
       return typ;
     }
@@ -87,8 +120,13 @@ function embed_glsl(ast,scopes){
           if (didvar[id]) return;
           didvar[id] = 1;
           let a = scopes[i][k];
-          out.push(`uniform ${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
-          // out.push(`uniform ${printtype(a.typ)} ${k};`);
+          if (a.val !== null){
+            out.push(`uniform ${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
+          }else{
+            out.push(`uniform ${printtype(a.typ)} ${k};`);
+          }
+          
+          
         }
       }
     }
@@ -121,5 +159,5 @@ function embed_glsl(ast,scopes){
 }
 
 if (typeof module !== 'undefined'){
-  module.exports = embed_glsl;
+  module.exports = {fragment:embed_glsl_frag}
 }

@@ -142,7 +142,7 @@ int frag_impl_program(const char* src){
 }
 
 void frag_impl__begin(int prgm, int fbo){
-
+  if (fbo == 0) fbo = fbo_zero;
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
   glClear(GL_COLOR_BUFFER_BIT);
@@ -166,7 +166,9 @@ void frag_impl_end(){
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glDeleteBuffers(1, &vbo);
 
+  glUseProgram(0);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
+  
 }
 
 void frag_impl_uniformf(const char* s, float* x, int n){

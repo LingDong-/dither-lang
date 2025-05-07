@@ -3788,7 +3788,7 @@ if (typeof module !== 'undefined'){
   const embed_glsl = require('./embed_glsl.js');
   let parser = new PARSER(
     {fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)},
-    {fragment:embed_glsl}
+    Object.assign({},embed_glsl),
   );
 
   let toks = parser.tokenize(path.resolve(inp_pth));

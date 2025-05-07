@@ -56,3 +56,10 @@ void frag__uniform(){
     frag_impl_uniform_sampler(s,fbo);
   }
 }
+
+
+void frag___sample(){
+  float uv[2];
+  __pop_arg((void*)uv,2*sizeof(float));
+  int32_t __ARG(fbo);
+}
