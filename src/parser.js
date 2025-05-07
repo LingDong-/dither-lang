@@ -1,4 +1,4 @@
-var PARSER = function(sys){
+var PARSER = function(sys,extensions={}){
   let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
   let numer = "0123456789";
   let alphanumer = alpha+numer;
@@ -7,7 +7,7 @@ var PARSER = function(sys){
     "continue",
     "typedef","include",
     "return",
-    "break","while","const",
+    "break","while","embed",
     "else","func",
     "for",
     "if","do","as"
@@ -339,7 +339,7 @@ var PARSER = function(sys){
           tmp.push(toks[j]);
         }
       }
-      
+
       return [j,parseexpr(tmp)];
     }
     
@@ -486,7 +486,11 @@ var PARSER = function(sys){
         while (i < out0.length){
           if (tokamong(out0[i],ks)){
             if (!ispost && (out0[i-1] == undefined || out0[i-1].tag == 'sigil')){
-              out1.push({key:out0[i].val+'u',val:out0[++i]});
+              if (out0[i].tag == 'keywr'){
+                out1.push({key:out0[i].val,val:out0[++i]});
+              }else{
+                out1.push({key:out0[i].val+'u',val:out0[++i]});
+              }
             }else if (ispost && (out0[i+1] == undefined || out0[i+1].tag == 'sigil')){
               out1.push({key:'u'+out0[i].val,val:out1.pop(),is_unop:true});
             }else{
@@ -546,6 +550,7 @@ var PARSER = function(sys){
       }
 
       out2 = dobinary(out2,["keywr:as"]);
+      out2 = dounary(out2,["keywr:embed"]);
 
       for (let k of biord){
         out2 = dobinary(out2, k.map(x=>"sigil:"+x));
@@ -883,6 +888,7 @@ var PARSER = function(sys){
   }
 
   function abstract(cst){
+ 
     function untree(cst){
       if (!cst){
         return [];
@@ -1079,6 +1085,10 @@ var PARSER = function(sys){
       for (let i = 0; i < cst.val.length; i++){
         ast.val.push(abstract(cst.val[i]));
       }
+    }else if (cst.key == 'embed'){
+      ast.key = cst.key;
+      ast.lhs = cst.val.lhs;
+      ast.rhs = cst.val.rhs;
     }else{
       ast.key = cst.key;
       for (let k in cst){
@@ -2711,10 +2721,14 @@ var PARSER = function(sys){
             doinfer(ast.val[i]);
           }
           ast.typ = "str";
+        }else if (ast.key == 'embed'){
+          doinfer(ast.lhs);
+          realizefunc(ast.lhs);
+          ast.typ = "str";
+          ast.rhs = ast.rhs.val.slice(1,-1);
         }else{
           ast.typ = 'void';
         }
-
       }
     }
     doinfer(ast);
@@ -3633,6 +3647,12 @@ var PARSER = function(sys){
           }
           return tmp;
         }
+      }else if (ast.key == 'embed'){
+        let tmp = mktmpvar(ast.typ);
+        let str = extensions[ast.rhs](ast.lhs.val[0],scopes);
+        let q = '"'+str+'"';
+        pushins('mov',tmp,q);
+        return tmp;
       }else{
 
       }
@@ -3765,7 +3785,11 @@ if (typeof module !== 'undefined'){
     process.exit(0);
   }
 
-  let parser = new PARSER({fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)});
+  const embed_glsl = require('./embed_glsl.js');
+  let parser = new PARSER(
+    {fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)},
+    {fragment:embed_glsl}
+  );
 
   let toks = parser.tokenize(path.resolve(inp_pth));
 
@@ -3776,7 +3800,7 @@ if (typeof module !== 'undefined'){
   if (cst_pth) fs.writeFileSync(cst_pth,JSON.stringify(cst,null,2));
 
   let ast = parser.abstract(cst);
-
+  // console.dir(ast,{depth:10000})
   if (ast_pth) fs.writeFileSync(ast_pth,JSON.stringify(ast,null,2));
 
   let scopes = parser.infertypes(ast);
