@@ -1,0 +1,20 @@
+include "std/win"
+
+namespace frag {
+  func _sample(fbo:Texture,uv:vec[f32,2]):vec[f32,4];
+  typedef Texture = {
+    fbo: i32;
+    func sample(uv:vec[f32,2]):vec[f32,4]{return _sample(this.fbo,uv);}
+  }
+  func _init_texture(tex:Texture);
+  func _size(w:i32,h:i32,ctx:u64);
+  func size(w:i32,h:i32){_size(w,h,win.init(w,h,win.CONTEXT_3D));}
+  func poll():win.Event{return win.poll()};
+  func program(src:str):i32;
+  func texture():Texture{tex:=Texture{};_init_texture(tex);return tex};
+  func uniform[T](name:str, x:T);
+  func _begin(fbo:i32,prgm:i32);
+  func begin(prgm:i32,tex:Texture){_begin(prgm,tex.fbo)}
+  func begin(prgm:i32){_begin(prgm,0)}
+  func end();
+}

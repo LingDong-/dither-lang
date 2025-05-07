@@ -3203,6 +3203,7 @@ var PARSER = function(sys){
           let tt = [];
           for (let i = 0; i < ast.lhs.rhs.val.length; i++){
             let idx = "xyzw".indexOf(ast.lhs.rhs.val[i]);
+            console.log(ast);
             let t1 = mktmpvar(ast.rhs.typ.elt[0]);
             pushins('mov',t1,[n1,idx]);
             tt.push(t1);

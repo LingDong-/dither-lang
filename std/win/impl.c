@@ -12,29 +12,38 @@
 #include "platform/windowing.h"
 
 uint64_t win_impl_init(int w, int h, int flag){
+
   const char* dir = getenv("DITHER_ROOT");
   if (!dir) dir = ".";
   char full_path[512];
-  if (flag | CONTEXT_2D){
+  if (flag & CONTEXT_2D){
     snprintf(full_path, sizeof(full_path), "%s/%s", dir, 
       #if DITHER_WIN_USE_COCOA
         #if DITHER_2D_USE_OPENGL
           "std/win/platform/glcocoa.so"
         #elif DITHER_2D_USE_COREGRAPHICS
           "std/win/platform/coregraphics.so"
+        #else
+          ""
         #endif
       #elif DITHER_WIN_USE_X11
         #if DITHER_2D_USE_OPENGL
           "std/win/platform/glx.so"
+        #else
+          ""
         #endif
+      #else
+        ""
       #endif
     );
-  }else if (flag | CONTEXT_3D){
+  }else if (flag & CONTEXT_3D){
     snprintf(full_path, sizeof(full_path), "%s/%s", dir, 
       #if DITHER_WIN_USE_COCOA
         "std/win/platform/glcocoa.so"
       #elif DITHER_WIN_USE_X11
         "std/win/platform/glx.so"
+      #else
+        ""
       #endif
     );
   }
