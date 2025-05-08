@@ -82,9 +82,8 @@ void gx_impl__init_graphics(void* data, int w, int h){
   ARR_PUSH(CGContextRef,fbos,fbo);
 
   ((int32_t*)(data))[2] = fbos.len-1;
-  ((int32_t*)(data))[3] = fbos.len-1;
-  ((int32_t*)(data))[4] = w;
-  ((int32_t*)(data))[5] = h;
+  ((int32_t*)(data))[3] = w;
+  ((int32_t*)(data))[4] = h;
 }
 
 void gx_impl__begin_fbo(int fbo){
@@ -114,8 +113,8 @@ void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
 }
 
 
-void gx_impl__write_pixels(int tex, void* pixels){
-  CGContextRef c = fbos.data[tex];
+void gx_impl__write_pixels(int fbo, void* pixels){
+  CGContextRef c = fbos.data[fbo];
   void *data = CGBitmapContextGetData(c);
   int w = CGBitmapContextGetWidth(c);
   int h = CGBitmapContextGetHeight(c);
@@ -126,8 +125,8 @@ void gx_impl__write_pixels(int tex, void* pixels){
   }
 }
 
-void gx_impl__draw_texture(int tex, float x, float y, float w, float h){
-  CGImageRef img = CGBitmapContextCreateImage(fbos.data[tex]);
+void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
+  CGImageRef img = CGBitmapContextCreateImage(fbos.data[fbo]);
   CGContextDrawImage(*ctx, CGRectMake(x, y, w, h), img);
   CGImageRelease(img);
 }

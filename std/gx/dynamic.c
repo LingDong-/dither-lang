@@ -53,9 +53,9 @@ EXPORTED void gx__read_pixels(var_t* ret, gstate_t* _g){
 
 EXPORTED void gx__write_pixels(var_t* ret, gstate_t* _g){
   arr_t* arr = ARG_POP(_g,arr);
-  int tex = ARG_POP(_g,i32);
+  int fbo = ARG_POP(_g,i32);
 
-  gx_impl__write_pixels(tex,arr->data);
+  gx_impl__write_pixels(fbo,arr->data);
 }
 
 EXPORTED void gx__draw_texture(var_t* ret, gstate_t* _g){
@@ -64,9 +64,9 @@ EXPORTED void gx__draw_texture(var_t* ret, gstate_t* _g){
   float y = ARG_POP(_g,f32);
   float x = ARG_POP(_g,f32);
 
-  int tex = ARG_POP(_g,i32);
+  int fbo = ARG_POP(_g,i32);
 
-  gx_impl__draw_texture(tex,x,y,w,h);
+  gx_impl__draw_texture(fbo,x,y,w,h);
 }
 
 

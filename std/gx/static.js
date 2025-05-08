@@ -25,7 +25,6 @@ globalThis.$gx = new function(){
     pg.w = w;
     pg.h = h;
     pg.fbo = fbos.length-1;
-    pg.tex = fbos.length-1;
   }
   that._begin_fbo = function(){
     let [fbo] = $pop_args(1);
@@ -43,8 +42,8 @@ globalThis.$gx = new function(){
     return Object.assign(Array.from(data),{__dims:[h,w,4]});
   }
   that._write_pixels = function(){
-    let [tex,arr] = $pop_args(2);
-    let c = fbos[tex].getContext('2d');
+    let [fbo,arr] = $pop_args(2);
+    let c = fbos[fbo].getContext('2d');
     let h = c.canvas.height;
     let w = c.canvas.width;
     let imdata = c.getImageData(0,0,w,h);
@@ -54,8 +53,8 @@ globalThis.$gx = new function(){
     c.putImageData(imdata,0,0);
   }
   that._draw_texture = function(){
-    let [tex,x,y,w,h] = $pop_args(5);
-    ctx.drawImage(fbos[tex], x,y,w,h);
+    let [fbo,x,y,w,h] = $pop_args(5);
+    ctx.drawImage(fbos[fbo], x,y,w,h);
   }
   that.background = function(){
     let [r,g,b,a] = $pop_args(4);

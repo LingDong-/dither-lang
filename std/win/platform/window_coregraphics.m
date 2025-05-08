@@ -9,14 +9,17 @@
 #include "windowing.h"
 
 NSWindow *g_window = nil;
+
 NSView *g_cgView = nil;
+int width,height;
+CGContextRef cgCtx = NULL;
+CGContextRef cgNextCtx = NULL;
+
+static NSEventModifierFlags prev_modifiers = 0;
 
 #define MAX_EVENTS 64 
 
 int mouse_x,mouse_y;
-int width,height;
-CGContextRef cgCtx = NULL;
-CGContextRef cgNextCtx = NULL;
 
 event_t event_buffer[MAX_EVENTS];
 event_t out_buffer[MAX_EVENTS];
@@ -61,6 +64,117 @@ int map_unichar_to_keycode(unichar key) {
   }
 }
 
+#define HANDLE_EVENTS \
+- (void)keyDown:(NSEvent *)event {\
+  NSString *chars = [event characters];\
+  if ([chars length] > 0) {\
+    unichar key = [chars characterAtIndex:0];   \
+    add_event(KEY_PRESSED, map_unichar_to_keycode(key), mouse_x, mouse_y);\
+  }\
+}\
+- (void)keyUp:(NSEvent *)event {\
+  NSString *chars = [event characters];\
+  if ([chars length] > 0) {\
+    unichar key = [chars characterAtIndex:0];\
+    add_event(KEY_RELEASED, map_unichar_to_keycode(key), mouse_x, mouse_y);\
+  }\
+}\
+- (void)flagsChanged:(NSEvent *)event {\
+  NSEventModifierFlags new_mods = [event modifierFlags];\
+  NSEventModifierFlags old_mods = prev_modifiers;\
+  NSUInteger keyCode = [event keyCode];\
+  int x = mouse_x;\
+  int y = mouse_y;\
+  int down = (new_mods > old_mods) ? KEY_PRESSED : KEY_RELEASED;\
+  switch (keyCode) {\
+    case 56: add_event(down, KEY_LSHIFT, x, y); break;\
+    case 60: add_event(down, KEY_RSHIFT, x, y); break;\
+    case 59: add_event(down, KEY_LCTRL, x, y); break;\
+    case 62: add_event(down, KEY_RCTRL, x, y); break;\
+    case 58: add_event(down, KEY_LALT, x, y); break;\
+    case 61: add_event(down, KEY_RALT, x, y); break;\
+    case 55: add_event(down, KEY_LCMD, x, y); break;\
+    case 54: add_event(down, KEY_RCMD, x, y); break;\
+    default: break;\
+  }\
+  prev_modifiers = new_mods;\
+}\
+- (void)mouseDown:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_PRESSED, MOUSE_LEFT, mouse_x, mouse_y); \
+}\
+- (void)mouseUp:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_RELEASED, MOUSE_LEFT, mouse_x, mouse_y);\
+}\
+- (void)rightMouseDown:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_PRESSED, MOUSE_RIGHT, mouse_x, mouse_y);\
+}\
+- (void)rightMouseUp:(NSEvent *)event { \
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_RELEASED, MOUSE_RIGHT, mouse_x, mouse_y); \
+}\
+- (void)otherMouseDown:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_PRESSED, (int)[event buttonNumber] + 1, mouse_x, mouse_y); \
+}\
+- (void)otherMouseUp:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_RELEASED, (int)[event buttonNumber] + 1, mouse_x, mouse_y); \
+}\
+- (void)scrollWheel:(NSEvent *)event {\
+  add_event(WHEEL_SCROLLED, 0, (int)[event scrollingDeltaX], (int)[event scrollingDeltaY]);\
+}\
+- (void)mouseMoved:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);\
+}\
+- (void)mouseDragged:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);\
+}\
+- (void)rightMouseDragged:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);\
+}\
+- (void)otherMouseDragged:(NSEvent *)event {\
+  NSPoint p = [event locationInWindow];\
+  NSRect bounds = [self bounds];\
+  mouse_x = (int)p.x;\
+  mouse_y = (int)(bounds.size.height - p.y);\
+  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);\
+}
+
+
+
 @interface MyWindowDelegate : NSObject <NSWindowDelegate>
 @end
 
@@ -70,6 +184,7 @@ int map_unichar_to_keycode(unichar key) {
   return YES;
 }
 @end
+
 
 @interface MyCGView : NSView
 @end
@@ -96,122 +211,7 @@ int map_unichar_to_keycode(unichar key) {
   cgNextCtx = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
   CGColorSpaceRelease(colorSpace);
 }
-
-- (void)keyDown:(NSEvent *)event {
-  NSString *chars = [event characters];
-  if ([chars length] > 0) {
-    unichar key = [chars characterAtIndex:0];
-    
-    add_event(KEY_PRESSED, map_unichar_to_keycode(key), mouse_x, mouse_y);
-  }
-}
-
-- (void)keyUp:(NSEvent *)event {
-  NSString *chars = [event characters];
-  if ([chars length] > 0) {
-    unichar key = [chars characterAtIndex:0];
-    add_event(KEY_RELEASED, map_unichar_to_keycode(key), mouse_x, mouse_y);
-  }
-}
-
-static NSEventModifierFlags prev_modifiers = 0;
-
-- (void)flagsChanged:(NSEvent *)event {
-  NSEventModifierFlags new_mods = [event modifierFlags];
-  NSEventModifierFlags old_mods = prev_modifiers;
-  NSUInteger keyCode = [event keyCode];
-  int x = mouse_x;
-  int y = mouse_y;
-  int down = (new_mods > old_mods) ? KEY_PRESSED : KEY_RELEASED;
-  switch (keyCode) {
-    case 56: add_event(down, KEY_LSHIFT, x, y); break;
-    case 60: add_event(down, KEY_RSHIFT, x, y); break;
-    case 59: add_event(down, KEY_LCTRL, x, y); break;
-    case 62: add_event(down, KEY_RCTRL, x, y); break;
-    case 58: add_event(down, KEY_LALT, x, y); break;
-    case 61: add_event(down, KEY_RALT, x, y); break;
-    case 55: add_event(down, KEY_LCMD, x, y); break;
-    case 54: add_event(down, KEY_RCMD, x, y); break;
-    default: break;
-  }
-  prev_modifiers = new_mods;
-}
-
-- (void)mouseDown:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_PRESSED, MOUSE_LEFT, mouse_x, mouse_y); 
-}
-- (void)mouseUp:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_RELEASED, MOUSE_LEFT, mouse_x, mouse_y);
-}
-- (void)rightMouseDown:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_PRESSED, MOUSE_RIGHT, mouse_x, mouse_y);
-}
-- (void)rightMouseUp:(NSEvent *)event { 
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_RELEASED, MOUSE_RIGHT, mouse_x, mouse_y); 
-}
-- (void)otherMouseDown:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_PRESSED, (int)[event buttonNumber] + 1, mouse_x, mouse_y); 
-}
-- (void)otherMouseUp:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_RELEASED, (int)[event buttonNumber] + 1, mouse_x, mouse_y); 
-}
-
-- (void)scrollWheel:(NSEvent *)event {
-  add_event(WHEEL_SCROLLED, 0, (int)[event scrollingDeltaX], (int)[event scrollingDeltaY]);
-}
-
-- (void)mouseMoved:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);
-}
-- (void)mouseDragged:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);
-}
-- (void)rightMouseDragged:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);
-}
-- (void)otherMouseDragged:(NSEvent *)event {
-  NSPoint p = [event locationInWindow];
-  NSRect bounds = [self bounds];
-  mouse_x = (int)p.x;
-  mouse_y = (int)(bounds.size.height - p.y);
-  add_event(MOUSE_MOVED, 0, mouse_x, mouse_y);
-}
+HANDLE_EVENTS
 @end
 
 
@@ -231,13 +231,11 @@ EXPORTED void** window_init(int _width, int _height) {
 
     NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable;
 
-    g_cgView = [[MyCGView alloc] initWithFrame:frame];
-
     g_window = [[NSWindow alloc] initWithContentRect:frame
                           styleMask:style
                           backing:NSBackingStoreBuffered
                           defer:NO];
-    [g_window setContentView:g_cgView];
+
     [g_window setDelegate:[MyWindowDelegate new]];
     // [g_window setTitle:[NSString stringWithUTF8String:title]];
     [g_window setAcceptsMouseMovedEvents:YES];
@@ -247,6 +245,17 @@ EXPORTED void** window_init(int _width, int _height) {
 
     [g_window makeKeyAndOrderFront:nil];
     [g_window makeMainWindow];
+    
+    NSView *contentView = [g_window contentView];
+    NSRect contentBounds = [contentView bounds];
+
+    g_cgView = [[MyCGView alloc] initWithFrame:contentBounds];
+
+    [g_cgView setWantsLayer:YES];
+    g_cgView.layer.backgroundColor = [[NSColor clearColor] CGColor];
+
+    [contentView addSubview:g_cgView];
+
     [g_window makeFirstResponder:g_cgView];
 
     size_t bytesPerPixel = 4;
@@ -258,11 +267,13 @@ EXPORTED void** window_init(int _width, int _height) {
     CGColorSpaceRelease(colorSpace);
   }
   return (void**)&cgCtx;
+  
 }
 
 
 EXPORTED event_t* window_poll(int* out_count) {
   @autoreleasepool {
+    
     if (cgNextCtx){
       CGContextRelease(cgCtx);
       cgCtx = cgNextCtx;
@@ -278,7 +289,6 @@ EXPORTED event_t* window_poll(int* out_count) {
                       dequeue:YES])) {
       [NSApp sendEvent:event];
     }
-
     if (*out_count == 0){
       *out_count = event_count;
     }

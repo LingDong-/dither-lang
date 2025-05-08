@@ -43,9 +43,9 @@ while (1){
   frag.end();
   
   frag.begin(shader1); // rendering shader1 onto main screen
-  frag.uniform("t", t); 
+  frag.uniform("t", t+=0.0005); 
   frag.uniform("image", image); // put in the output of the first pass
   frag.end();
-  t += 0.0005;
+  
   frag.poll(); // display & read windowing events
 }

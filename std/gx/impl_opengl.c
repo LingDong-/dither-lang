@@ -119,9 +119,8 @@ void gx_impl__init_graphics(void* data, int w, int h){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
 
   ((int32_t*)(data))[2] = fbo;
-  ((int32_t*)(data))[3] = fboTexture;
-  ((int32_t*)(data))[4] = w;
-  ((int32_t*)(data))[5] = h;
+  ((int32_t*)(data))[3] = w;
+  ((int32_t*)(data))[4] = h;
 
 }
 
@@ -184,7 +183,11 @@ void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
 }
 
 
-void gx_impl__write_pixels(int tex, void* pixels){
+void gx_impl__write_pixels(int fbo, void* pixels){
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  GLint tex = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+
   int w,h;
   glBindTexture(GL_TEXTURE_2D, tex);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
@@ -201,6 +204,7 @@ void gx_impl__write_pixels(int tex, void* pixels){
   
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
   glBindTexture(GL_TEXTURE_2D, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
 
   for (int y = 0; y < h / 2; y++) {
     void* top = pixels + y * w*4;
@@ -213,7 +217,12 @@ void gx_impl__write_pixels(int tex, void* pixels){
   free(row);
 }
 
-void gx_impl__draw_texture(int tex, float x, float y, float w, float h){
+void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  GLint tex = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
+
   // printf("%d %f %f %f %f\n", tex,x,y,w,h);
   // glClear(GL_COLOR_BUFFER_BIT);
   glBindTexture(GL_TEXTURE_2D, tex);

@@ -51,9 +51,9 @@ void gx___write_pixels(){
   __arr_t* a;
   __pop_arg(&a, 8);
 
-  int __ARG(tex);
+  int __ARG(fbo);
 
-  gx_impl__write_pixels(tex,a->data);
+  gx_impl__write_pixels(fbo,a->data);
 }
 
 void gx___draw_texture(){
@@ -62,9 +62,9 @@ void gx___draw_texture(){
   float __ARG(y);
   float __ARG(x);
 
-  int32_t __ARG(tex);
+  int32_t __ARG(fbo);
 
-  gx_impl__draw_texture(tex,x,y,w,h);
+  gx_impl__draw_texture(fbo,x,y,w,h);
 }
 
 

@@ -37,10 +37,10 @@ globalThis.$frag = new function(){
     width = w;
     height = h;
   }
-
+  
   that.program = function(){
     let [src] = $pop_args(1);
-    src = src.replace(/#version 120/g,`precision mediump float;`);
+    src = src.replace(/#version +\d\d\d/g,`precision mediump float;`);
     console.log(src);
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSrc);
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, src);
