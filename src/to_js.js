@@ -278,7 +278,7 @@ function transpile_js(instrs,layout){
   let o = [];
   let lookup = {};
 
-  function cast(a,b){
+  function cast(a,b,ins){
     let ta = lookup[a];
     let tb = lookup[b];
     if (ta == 'str'){
@@ -291,6 +291,21 @@ function transpile_js(instrs,layout){
       for (let i = 0; i < ta.elt[1]; i++){
         o.push(`${a}[${i}] = ${get_ptr(b)}`);
       }
+    }else if (ta.con == 'union'){
+      if (typeof b == 'number'){
+        if (ins[2].includes(".")){
+          o.push(`${a}.__sel = ${ta.elt.indexOf('f32')};`);
+        }else{
+          o.push(`${a}.__sel = ${ta.elt.indexOf('i32')};`);
+        }
+      }else if (b[0] == '"'){
+        o.push(`${a}.__sel = ${ta.elt.indexOf('str')};`);
+      }else{
+        o.push(`${a}.__sel = ${ta.elt.map(x=>JSON.stringify(x)).indexOf(JSON.stringify(tb))};`);
+      }
+      o.push(`${a}.__val = $value(${b});`);
+    }else if (tb.con == 'union'){
+      o.push(`${a} = $value(${b}.__val);`);
     }else{
       console.log(a,b,ta,tb)
       UNIMPL();
@@ -391,6 +406,8 @@ function transpile_js(instrs,layout){
       return `Object.assign([],{__type:${JSON.stringify(typ)}})`;
     }else if (typ.con == 'arr'){
       return `Object.assign([],{__dims:[${'0,'.repeat(typ.elt[1])}],__type:${JSON.stringify(typ)}})`;
+    }else if (typ.con == 'union'){
+      return `{__val:null,__sel:-1,__type:${JSON.stringify(typ)}}`;
     }else{
       if (nowrap){
         return 'null';
@@ -557,7 +574,7 @@ function transpile_js(instrs,layout){
     }else if (ins[0] == 'lt'){
       o.push(`${clean(ins[1])} = ${clean(ins[2])} < ${clean(ins[3])};`);
     }else if (ins[0] == 'cast'){
-      cast(clean(ins[1]),clean(ins[2]));
+      cast(clean(ins[1]),clean(ins[2]),ins);
     }else if (ins[0] == 'ccall'){
       let tmp = shortid();
       o.push(`${tmp} = $${ins[2]}();`);
@@ -623,6 +640,13 @@ function transpile_js(instrs,layout){
       }else{
         o.push(`eval($include(${ins[1]}+"/static.js"))`); 
       }
+    }else if (ins[0] == 'utag'){
+      let a = clean(ins[1]);
+      let b = clean(ins[2]);
+      let typ = read_type(ins[3]);
+      let tb = lookup[b];
+      let idx = tb.elt.map(x=>JSON.stringify(x)).indexOf(JSON.stringify(typ));
+      o.push(`${a} = Number(${idx} == (${b}).__sel);`);
     }else{
       UNIMPL();
       console.log(ins)

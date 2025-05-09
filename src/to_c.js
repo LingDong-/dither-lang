@@ -178,6 +178,13 @@ typedef struct{
   int dims[];
 } __arr_t;
 
+typedef struct{
+  int sel;
+  int w;
+  int t;
+  char data[];
+} __union_t;
+
 #define __NUM_DICT_SLOTS 64
 
 typedef struct{
@@ -293,13 +300,18 @@ void __gc_mark(void* ptr){
     __func_t* fun = (__func_t*) ptr;
     void* top = fun->captr + fun->siz;
     while (top > fun->captr){
-      char vt = *((char*)(top-=1));
+      char vvt = *((char*)(top-=1));
       int sz;
       memcpy(&sz, (top-=4), 4);
       void* p = (top-=sz);
-      if (${collectible.map(x=>"vt=="+x).join('||')}){
+      if (${collectible.map(x=>"vvt=="+x).join('||')}){
         __gc_mark(p);
       }
+    }
+  }else if (vt == VART_UON){
+    __union_t* uon = (__union_t*) ptr;
+    if (${collectible.map(x=>"uon->t=="+x).join('||')}){
+      __gc_mark(uon->data);
     }
   }
 }
@@ -438,6 +450,9 @@ char* __to_str(void* ptr, int vart, int w){
     }
     o[strlen(o)-1] = '}';
     
+  }else if (vart == VART_UON) {
+    __union_t* uon = (__union_t*)ptr;
+    o = __to_str( &(uon->data), uon->t, uon->w);
   }else if (vart == VART_STR) {
     o = strdup(*(char**)ptr);
   }else if (vart == VART_STT) {
@@ -736,6 +751,7 @@ function vart(x){
     tup:"VART_TUP",
     dict:"VART_DIC",
     fun:"VART_FUN",
+    union:"VART_UON",
   }[v] ?? "VART_STT";
   return z;
 }
@@ -746,7 +762,7 @@ function transpile_c(instrs,layout){
   let lookup = {};
   let cflags = [];
 
-  function cast(a,b){
+  function cast(a,b,ins){
     let ta = lookup[a];
     let tb = lookup[b];
     if (ta == 'char*' && intpam[tb]){
@@ -818,6 +834,13 @@ function transpile_c(instrs,layout){
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
+    }else if (ta == "char*" && tb.con == "union"){
+      let tmp = shortid();
+      o.push(`char* ${tmp} = __to_str(${b}, VART_UON, 8);`);
+      o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
+      o.push(`__put_var(${varcnt++},${a});`);
+      o.push(`strcpy(${a},${tmp});`);
+      o.push(`free(${tmp});`);
     }else if (ta == "char*" && vart(tb)=="VART_STT"){
       let tmp = shortid();
       let tmp1 = shortid();
@@ -848,6 +871,39 @@ function transpile_c(instrs,layout){
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
+    }else if (ta.con == 'union'){
+      if (b[0] == '"'){
+        o.push(`${a}->sel = ${ta.elt.indexOf("char*")};`);
+        o.push(`${a}->t = VART_STR;`);
+        o.push(`${a}->w = 8;`);
+        o.push(`* ((char**) (${a}->data)) = __gc_alloc(VART_STR, ${b.length-1});`);
+        o.push(`strcpy(  *((char**) (${a}->data)), ${b}  );`);
+      }else if (typeof b == 'number'){
+        if (ins[2].includes('.')){
+          o.push(`${a}->sel = ${ta.elt.indexOf("float")};`);
+          o.push(`${a}->t = VART_F32;`);
+          o.push(`${a}->w = 4;`);
+          o.push(`* ((float*) (${a}->data)) = ${b};`);
+        }else{
+          o.push(`${a}->sel = ${ta.elt.indexOf("int32_t")};`);
+          o.push(`${a}->t = VART_I32;`);
+          o.push(`${a}->w = 4;`);
+          o.push(`* ((int32_t*) (${a}->data)) = ${b};`);
+        }
+      }else if (tb == 'char*'){
+        o.push(`${a}->sel = ${ta.elt.indexOf("char*")};`);
+        o.push(`${a}->t = VART_STR;`);
+        o.push(`${a}->w = 8;`);
+        o.push(`* ((char**) (${a}->data)) = __gc_alloc(VART_STR, strlen(${b})+1);`);
+        o.push(`strcpy(  *((char**) (${a}->data)), ${b}  );`);
+      }else{
+        o.push(`${a}->sel = ${ ta.elt.map(q=>JSON.stringify(q)).indexOf(JSON.stringify(b)) };`);
+        o.push(`${a}->t = ${vart(tb)};`);
+        o.push(`${a}->w = ${type_size(tb)};`);
+        o.push(`memcpy( (void*) (${a}->data),  &${b}, 8);`);
+      }
+    }else if (tb.con == 'union'){
+      o.push(`memcpy( &(${a}), &(${b}->data), ${type_size(ta)} );`);
     }else{
       console.log(a,b,ta,tb);
       UNIMPL();
@@ -1004,6 +1060,8 @@ function transpile_c(instrs,layout){
       return [`__func_t*`,1];
     }else if (typ.con == 'tup'){
       return [`void*`,1];
+    }else if (typ.con == 'union'){
+      return [`__union_t*`,1];
     }else{
       return [typ,1];
     }
@@ -1021,6 +1079,8 @@ function transpile_c(instrs,layout){
       o.push(`void* ${nom};`);
     }else if (typ.con == 'func'){
       o.push(`__func_t* ${nom};`);
+    }else if (typ.con == 'union'){
+      o.push(`__union_t* ${nom};`);
     }else{
       o.push(`${typ} ${nom};`);
     }
@@ -1137,6 +1197,14 @@ function transpile_c(instrs,layout){
         o.push(`((char*)((void*)${nom} + ${typ.elt.length}*5))[0] = 0;`);
         o.push(`((int*)((void*)${nom} + ${typ.elt.length}*5 + 1))[0] = ${tup_size(typ,Infinity)};`);
 
+        o.push(`__put_var(${varcnt++},${nom});`);
+      }else if (typ.con == 'union'){
+        let ts = type_size(typ.elt[0]);
+        for (let i = 1; i < typ.elt.length; i++){
+          ts = `(((${type_size(typ.elt[i])})>(${ts}))?(${type_size(typ.elt[i])}):(${ts}))`;
+        }
+        o.push(`${nom} = __gc_alloc(VART_UON,sizeof(__union_t)+${ts});`);
+        o.push(`${nom}->sel = -1;`);
         o.push(`__put_var(${varcnt++},${nom});`);
       }
     }else if (ins[0] == 'alloc'){
@@ -1259,10 +1327,17 @@ function transpile_c(instrs,layout){
       o.push(`${clean(ins[1])} = ${clean(ins[2])} >> ${clean(ins[3])};`);
     }else if (['leq','geq','lt','gt','neq','eq'].includes(ins[0])){
       compare(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
+    }else if (ins[0] == 'utag'){
+      let a = clean(ins[1]);
+      let b = clean(ins[2]);
+      let typ = read_type(ins[3]);
+      let tb = lookup[b];
+      let idx = tb.elt.map(x=>JSON.stringify(x)).indexOf(JSON.stringify(typ));
+      o.push(`${a} = ${idx} == (${b})->sel;`);
     }else if (ins[0] == 'lt'){
       o.push(`${clean(ins[1])} = ${clean(ins[2])} < ${clean(ins[3])};`);
     }else if (ins[0] == 'cast'){
-      cast(clean(ins[1]),clean(ins[2]));
+      cast(clean(ins[1]),clean(ins[2]),ins);
     }else if (ins[0] == 'ccall'){
       let v = clean(ins[1])
       let n = type_size(lookup[v]);

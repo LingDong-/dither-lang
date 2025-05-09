@@ -46,6 +46,8 @@ var PARSER = function(sys,extensions={}){
     src:[],
   };
 
+  let curpos = [0,0];
+
   function mkerr(tag,msg,pos){
 
     let [pthidx,idx] = pos??[0,0];
@@ -416,18 +418,21 @@ var PARSER = function(sys,extensions={}){
                   
           let prv = -1; while (tokis(out0.at(prv),'sigil:\n')){prv--}
           let pprv = prv-1; while (tokis(out0.at(pprv),'sigil:\n')){pprv--};
-
+          let ppprv = pprv-1; while (tokis(out0.at(ppprv),'sigil:\n')){ppprv--};
+          let pppprv = ppprv-1; while (tokis(out0.at(pppprv),'sigil:\n')){pppprv--};
           // console.log(',',out0.at(prv), g.val);
-
           if ( /*g.val.length <= 1 && */
             out0.at(prv) && (gtok(out0.at(prv)).tag == 'ident' || gtok(out0.at(prv)).key == 'subs' || gtok(out0.at(prv)).key == 'a.b') &&
             
-            (!out0.at(pprv) || (!tokis(out0.at(pprv),'sigil::') && !tokis(out0.at(pprv),'sigil:]')  ))
+            (!out0.at(pprv) || ( 
+              (!tokis(out0.at(pprv),'sigil::') || tokis(out0.at(pppprv),'sigil:,') || out0.at(pppprv)===undefined  )
+              && !tokis(out0.at(pprv),'sigil:]')  ))
           ){
             if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='vec' || gtok(out0.at(prv)).lhs.val=='arr')){
               
               out0.push({key:gtok(out0.at(prv)).lhs.val[0]+'lit',ano:out0.pop(),val:g.val});
             }else if (g.val.length <= 1){
+              
               out0.push({key:'olit',lhs:out0.pop(),rhs:g.val[0]});
             }else{
               out0.push(g);
@@ -637,7 +642,7 @@ var PARSER = function(sys,extensions={}){
       let out7 = dobinary(out6,['sigil:,']);
 
       if (out7.length != 1){
-        // console.dir(out7,{depth:100000})
+        console.dir(out7,{depth:100000})
         mkerr('parse',`extra elements in expression`,roughpos);
       }
       return out7[0];
@@ -1015,7 +1020,21 @@ var PARSER = function(sys,extensions={}){
       ast.key = cst.key;
       ast.nom = cst.nom;
       if (cst.tem){
-        ast.tem = untree(cst.tem).map(abstype);
+        let ut = untree(cst.tem);
+        ast.tem = ut.map(function(t){
+          if (t.key == '='){
+            return abstype(t.lhs);
+          }else{
+            return abstype(t)
+          }
+        });
+        ast.pte = ut.map(function(t){
+          if (t.key == '='){
+            return abstype(t.rhs);
+          }else{
+            return null
+          }
+        })
       }
       if (cst.arg.key == 'noop'){
         ast.arg = [];
@@ -1246,7 +1265,7 @@ var PARSER = function(sys,extensions={}){
     }else if (typeof a == 'number' && typeof b == 'number'){
       return Math.max(a,b);
 
-    }else if (a.con && b.con){
+    }else if (a.con && b.con && a.con != 'union'){
       let o = {con:a.con,elt:[]};
 
       if (a.con != b.con){
@@ -1291,10 +1310,10 @@ var PARSER = function(sys,extensions={}){
       if (typs.includes(printtype(b))){
         return a;
       }
-      if (die) mkerr('typecheck',`union type '${printtype(a)}' has no option '${printtype(b)}'`,[0,0]);
+      if (die) mkerr('typecheck',`union type '${printtype(a)}' has no option '${printtype(b)}'`,curpos);
       throw 'up'
     }else{
-      if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,[0,0]);
+      if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos);
       throw 'up'
     }
     
@@ -1448,7 +1467,7 @@ var PARSER = function(sys,extensions={}){
     }
 
 
-    function matchftmpl(args,funs,map0={}){
+    function matchftmpl(args,funs,map0={},pte=null){
       // console.log(args);
       // console.log("-----")
       let scores = [];
@@ -1471,8 +1490,24 @@ var PARSER = function(sys,extensions={}){
         }else{
           fas = funs[i].tty.elt[0].elt;
           tms = funs[i].ipl.tem.map(x=>shrinktype(x,0));
+          if (pte && pte.length == tms.length){
+            for (let j = 0; j < pte.length; j++){
+              let q = pte[j];
+              map[printtype(tms[j])] = q;
+              tms[j] = q;
+            }
+            s = 100;
+          }else{
+            s = 50;
+          }
+          for (let j = 0; j < funs[i].ipl.pte.length; j++){
+            if (funs[i].ipl.pte[j]){
+              let q = shrinktype(funs[i].ipl.pte[j]);
+              map[printtype(tms[j])] = q;
+              tms[j] = q;
+            }
+          }
           // tms = funs[i].ipl.tem.map(x=>x.val.val);
-          s = 50;
         }
         
         if (fas.length < args.length || funs[i].mac > args.length){
@@ -1788,6 +1823,15 @@ var PARSER = function(sys,extensions={}){
 
       mkerr('typecheck','unrecognized type',somepos(ast));
     }
+    function latetype(ast){
+      if (ast.key == 'subs'){
+        return {con:ast.con.val, elt:ast.idx.map(latetype)}
+      }else if (ast.tag == 'ident'){
+        return ast.val;
+      }else if (ast.tag == 'numbr'){
+        return Number(ast.val);
+      }
+    }
 
     function fieldtype(typ,nom,abort=1){
       // let vars = get_scope();
@@ -2063,12 +2107,14 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'cast'){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
+          curpos = somepos(ast.lhs);
           maxtype(ast.lhs.typ,ast.rhs.typ);
           ast.typ = ast.rhs.typ;
         }else if (ast.key == 'is'){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           if (ast.lhs.typ.con && ast.lhs.typ.con == 'union'){
+            curpos = somepos(ast.lhs);
             maxtype(ast.lhs.typ,ast.rhs.typ);
             ast.typ = 'i32';
           }else{
@@ -2096,6 +2142,7 @@ var PARSER = function(sys,extensions={}){
             w = Math.max(w,ast.val[i].length);
             for (let j = 0; j < ast.val[i].length; j++){
               doinfer(ast.val[i][j]);
+              curpos = somepos(ast.val[i][j]);
               t = maxtype(t,ast.val[i][j].typ);
             }
           }
@@ -2105,6 +2152,7 @@ var PARSER = function(sys,extensions={}){
             ast.typ = {con:'vec',elt:[t,w]};
           }
           if (ast.ano){
+            curpos = somepos(ast);
             ast.typ = maxtype(shrinktype(ast.ano),ast.typ);
           }
         }else if (ast.key == 'alit'){
@@ -2132,6 +2180,7 @@ var PARSER = function(sys,extensions={}){
             for (let i = 0; i < ast.rhs.length; i++){
               doinfer(ast.rhs[i].lhs);
               doinfer(ast.rhs[i].rhs);
+              curpos = somepos(ast.rhs[i].lhs);
               maxtype(ast.rhs[i].lhs.typ, lht.elt[0]);
               maxtype(ast.rhs[i].rhs.typ, lht.elt[1]);
             }
@@ -2141,6 +2190,8 @@ var PARSER = function(sys,extensions={}){
               doinfer(ast.rhs[i].rhs);
               let typ = fieldtype(lht,fdnom);
               // ast.rhs[i].rhs.rty = maxtype(typ,ast.rhs[i].rhs.typ)
+              curpos = somepos(ast.rhs[i].rhs);
+              maxtype(typ,ast.rhs[i].rhs.typ);
               ast.rhs[i].rhs.rty = typ;
             }
           }
@@ -2329,7 +2380,8 @@ var PARSER = function(sys,extensions={}){
             ret = ast.fun.typ.elt[1];
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__func_ovld_')){
             // console.dir(ast,{depth:100000});
-            ;[ret,ast.fun.rty] = matchftmpl(arg2,fd.val);
+
+            ;[ret,ast.fun.rty] = matchftmpl(arg2,fd.val,{},ast.fun.pte);
             
           }else{
             
@@ -2379,76 +2431,81 @@ var PARSER = function(sys,extensions={}){
           pop_scope();
         }else if (ast.key == 'subs'){
           doinfer(ast.con);
-          ast.idx.map(doinfer);
-          
-          if (ast.con.typ.con != 'dict'){
-            for (let i = 0; i < ast.idx.length; i++){
-              if (!intyps.includes(ast.idx[i].typ)){
-                mkerr('typecheck',`subscript operator expects integral index for given type (got ${printtype(ast.idx[i].typ)})`,somepos(ast));
-              }
-            }
-          }
-          if (ast.con.typ == 'str'){
+          if (typeof ast.con.typ == 'string' && ast.con.typ.startsWith('__func_ovld_')){
+            Object.assign(ast,ast.con,{pte:ast.idx.map(latetype)})
+          }else{
+            ast.idx.map(doinfer);
             
-            if (ast.idx.length != 1){
-              mkerr('typecheck',`subscript operator expects single index for string (got ${ast.idx.length})`,somepos(ast));
-            }
-            ast.idx = ast.idx[0];
-            ast.typ = 'u8';
-
-          }else if (ast.con.typ.con == 'func'){
-            mkerr('typecheck',`subscript operator cannot be used on ${printtype(ast.lhs.typ)}`,somepos(ast));
-          }else if (ast.con.typ.con == 'tup'){
-            if (ast.idx.length != 1){
-              mkerr('typecheck',`subscript operator expects single index for tuple (got ${ast.idx.length})`,somepos(ast));
-            }
-            let idx = compcomp(ast.idx[0],get_scope());
-            // ast.idx = ast.idx[0];
-            ast.idx = {
-              tag: 'numbr', val: idx, pos:ast.idx[0].pos, key: 'term', typ: 'i32'
-            };
-            ast.typ = ast.con.typ.elt[idx];
-          }else if (ast.con.typ.con == 'dict'){
-            if (ast.idx.length != 1){
-              mkerr('typecheck',`subscript operator expects single index for map (got ${ast.idx.length})`,somepos(ast));
-            }
-            ast.typ = ast.con.typ.elt[1];
-            ast.idx = ast.idx[0];
             
-            maxtype(ast.con.typ.elt[0],ast.idx.typ);
-          }else if (ast.con.typ.con == 'arr'){
-            ast.typ = ast.con.typ.elt[0];
-            if (ast.idx.length > 1){
-              ast.idx = {
-                key:'vlit',
-                val:[ast.idx]
-              }
-              doinfer(ast.idx);
-            }else{
-              ast.idx = ast.idx[0];
-            }
-            
-          }else if (ast.con.typ.con){
-            ast.typ = ast.con.typ.elt[0];
-            if (ast.idx.length >= Math.max(2,ast.con.typ.elt.length)){
-              mkerr('typecheck',`too many indices for ${printtype(ast.con.typ)} (got ${ast.idx.length})`,somepos(ast));
-            }
-            if (ast.idx.length > 1){
-              function trfidx(dims,idcs){
-                if (dims.length == 1){
-                  return idcs[0];
-                }else{
-                  return {key:'+',lhs:idcs[0],rhs:{key:'*',lhs:{tag:'numbr',val:dims[0],pos:idcs[0].pos,key:'term',typ:'i32'},rhs:trfidx(dims.slice(1),idcs.slice(1)),typ:'i32'},typ:'i32'};
+            if (ast.con.typ.con != 'dict'){
+              for (let i = 0; i < ast.idx.length; i++){
+                if (!intyps.includes(ast.idx[i].typ)){
+                  mkerr('typecheck',`subscript operator expects integral index for given type (got ${printtype(ast.idx[i].typ)})`,somepos(ast));
                 }
               }
-              ast.idx = trfidx(ast.con.typ.elt.slice(1).reverse(),ast.idx.slice().reverse());
-              // console.dir(ast.idx,{depth:10000});
-              // process.exit();
-            }else{
-              ast.idx = ast.idx[0];
             }
-          }else{
-            mkerr('typecheck',`subscript operator cannot be used on ${printtype(ast.lhs.typ)}`,somepos(ast));
+            if (ast.con.typ == 'str'){
+              
+              if (ast.idx.length != 1){
+                mkerr('typecheck',`subscript operator expects single index for string (got ${ast.idx.length})`,somepos(ast));
+              }
+              ast.idx = ast.idx[0];
+              ast.typ = 'u8';
+
+            }else if (ast.con.typ.con == 'func'){
+              mkerr('typecheck',`subscript operator cannot be used on ${printtype(ast.lhs.typ)}`,somepos(ast));
+            }else if (ast.con.typ.con == 'tup'){
+              if (ast.idx.length != 1){
+                mkerr('typecheck',`subscript operator expects single index for tuple (got ${ast.idx.length})`,somepos(ast));
+              }
+              let idx = compcomp(ast.idx[0],get_scope());
+              // ast.idx = ast.idx[0];
+              ast.idx = {
+                tag: 'numbr', val: idx, pos:ast.idx[0].pos, key: 'term', typ: 'i32'
+              };
+              ast.typ = ast.con.typ.elt[idx];
+            }else if (ast.con.typ.con == 'dict'){
+              if (ast.idx.length != 1){
+                mkerr('typecheck',`subscript operator expects single index for map (got ${ast.idx.length})`,somepos(ast));
+              }
+              ast.typ = ast.con.typ.elt[1];
+              ast.idx = ast.idx[0];
+              
+              maxtype(ast.con.typ.elt[0],ast.idx.typ);
+            }else if (ast.con.typ.con == 'arr'){
+              ast.typ = ast.con.typ.elt[0];
+              if (ast.idx.length > 1){
+                ast.idx = {
+                  key:'vlit',
+                  val:[ast.idx]
+                }
+                doinfer(ast.idx);
+              }else{
+                ast.idx = ast.idx[0];
+              }
+              
+            }else if (ast.con.typ.con){
+              ast.typ = ast.con.typ.elt[0];
+              if (ast.idx.length >= Math.max(2,ast.con.typ.elt.length)){
+                mkerr('typecheck',`too many indices for ${printtype(ast.con.typ)} (got ${ast.idx.length})`,somepos(ast));
+              }
+              if (ast.idx.length > 1){
+                function trfidx(dims,idcs){
+                  if (dims.length == 1){
+                    return idcs[0];
+                  }else{
+                    return {key:'+',lhs:idcs[0],rhs:{key:'*',lhs:{tag:'numbr',val:dims[0],pos:idcs[0].pos,key:'term',typ:'i32'},rhs:trfidx(dims.slice(1),idcs.slice(1)),typ:'i32'},typ:'i32'};
+                  }
+                }
+                ast.idx = trfidx(ast.con.typ.elt.slice(1).reverse(),ast.idx.slice().reverse());
+                // console.dir(ast.idx,{depth:10000});
+                // process.exit();
+              }else{
+                ast.idx = ast.idx[0];
+              }
+            }else{
+              mkerr('typecheck',`subscript operator cannot be used on ${printtype(ast.lhs.typ)}`,somepos(ast));
+            }
           }
         }else if (ast.key == 'typd' ){
           
@@ -3247,7 +3304,7 @@ var PARSER = function(sys,extensions={}){
           let tt = [];
           for (let i = 0; i < ast.lhs.rhs.val.length; i++){
             let idx = "xyzw".indexOf(ast.lhs.rhs.val[i]);
-            console.log(ast);
+            // console.log(ast);
             let t1 = mktmpvar(ast.rhs.typ.elt[0]);
             pushins('mov',t1,[n1,idx]);
             tt.push(t1);

@@ -710,7 +710,6 @@ int type_eq(type_t* a, type_t* b){
       n = n->next;
       m = m->next;
     }
-    printf("]");
   }
   return 1;
 }
@@ -2443,13 +2442,14 @@ void cast(term_t* a, term_t* b){
         v->u.f32 = (float)(b->u.f);
       }else if (b->mode == TERM_IDEN){
         
-        var_t* u = find_var(&(b->u.str));
-        if (u->type->vart == VART_I32){
-          v->u.f32 = u->u.i32;
-        }else{
-          // printf("%d\n");
-          UNIMPL
-        }
+        // var_t* u = find_var(&(b->u.str));
+        // if (u->type->vart == VART_I32){
+        //   v->u.f32 = u->u.i32;
+        // }else{
+        //   printf("%d\n",u->type->vart);
+        //   UNIMPL
+        // }
+        v->u.f32 = get_val_num(b);
       }else{
         UNIMPL
       }
@@ -2562,7 +2562,8 @@ void cast(term_t* a, term_t* b){
             else if (vm == VART_F32) ((float*)(v->u.vec->data))[i] = bv;
             else if (vm == VART_F64) ((double*)(v->u.vec->data))[i] = bv;
           }
-          
+        }else if (u->type->vart == VART_UON){
+          v->u.vec = vec_copy(u->u.uon->var->u.vec);
         }else{
           UNIMPL
         }
@@ -2580,6 +2581,7 @@ void cast(term_t* a, term_t* b){
         else if (vm == VART_F32) for (int i = 0; i < v->u.vec->n; i++) ((float*)(v->u.vec->data))[i] = bv;
         else if (vm == VART_F64) for (int i = 0; i < v->u.vec->n; i++) ((double*)(v->u.vec->data))[i] = bv;
         
+        
       }else{
         UNIMPL;
       }
@@ -2588,7 +2590,7 @@ void cast(term_t* a, term_t* b){
         if (b->mode == TERM_IDEN){
           var_t* u = find_var(&(b->u.str));
           v->u.uon->var = var_new(u->type);
-        }else if (b->mode == TERM_NUMU || b->mode == TERM_NUMI || b->mode == TERM_NUMI || b->mode == TERM_STRL){
+        }else if (b->mode == TERM_NUMU || b->mode == TERM_NUMI || b->mode == TERM_NUMF || b->mode == TERM_STRL){
           v->u.uon->var = (var_t*)calloc(1,sizeof(var_t));
           list_node_t* it = v->type->u.elem.head;
           while (it){
@@ -2611,7 +2613,16 @@ void cast(term_t* a, term_t* b){
       }
       var_assign(v->u.uon->var, b);
     }else{
-      UNIMPL
+      if (b->mode == TERM_IDEN){
+        var_t* u = find_var(&(b->u.str));
+        if (u->type->vart == VART_UON){
+          v->u.obj = u->u.uon->var->u.obj;
+        }else{
+          UNIMPL
+        }
+      }else{
+        UNIMPL
+      }
     }
   }else{
     UNIMPL
@@ -3227,6 +3238,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     
     // print_vars();
   }else if (INSIS4("cast")){
+
     cast((term_t*)(ins->a),(term_t*)(ins->b));
     // print_vars();
 
