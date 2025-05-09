@@ -21,12 +21,12 @@ char* keywords[] = {
   "namespace","continue","typedef","include","return","break","while","embed",
   "else","func","func","dict","list",
   "for","i16","u16","i32","u32","i64","u64","f32","f64","tup","vec","arr","str",
-  "if","do","as","i8","u8"
+  "if","do","as","is","i8","u8"
 };
 
 char* asm_keywords[] = {
   "matmul","ccall","rcall",
-  "cast","bnot","lnot","decl","argr","argw","alloc","call","jeqz","fpak","incl","band","bloc","dcap","eoir",
+  "cast","bnot","lnot","decl","argr","argw","alloc","call","jeqz","fpak","incl","band","bloc","dcap","eoir","utag",
   "mov","cap","ret","jmp","add","sub","mul","div","mod","pow","shl","shr","bor","xor","geq","leq","eq","neq","nop","end",
   "gt","lt",
   "I08","U08","I16","U16","I32","U32","I64","U64","F32","F64","TUP","LST","VEC","ARR","DIC","STR","FUN","NUL","VOD",

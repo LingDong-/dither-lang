@@ -42,6 +42,7 @@ let lib = `
 #define VART_DIC 16
 #define VART_STT 17
 #define VART_FUN 18
+#define VART_UON 19
 #define OP_ADD(a,b) ((a)+(b))
 #define OP_SUB(a,b) ((a)-(b))
 #define OP_MUL(a,b) ((a)*(b))

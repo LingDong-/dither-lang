@@ -10,7 +10,7 @@ var PARSER = function(sys,extensions={}){
     "break","while","embed",
     "else","func",
     "for",
-    "if","do","as"
+    "if","do","as","is"
   ];
   let sigil = [
     ">>=","<<=","@*=","...",
@@ -549,7 +549,8 @@ var PARSER = function(sys,extensions={}){
         return out1;
       }
 
-      out2 = dobinary(out2,["keywr:as"]);
+      out2 = dobinary(out2,["keywr:as","keywr:is"]);
+
       out2 = dounary(out2,["keywr:embed"]);
 
       for (let k of biord){
@@ -963,6 +964,10 @@ var PARSER = function(sys,extensions={}){
       ast.key = 'cast';
       ast.lhs = abstract(cst.lhs);
       ast.rhs = abstype(cst.rhs);
+    }else if (cst.key == 'is'){
+      ast.key = 'is';
+      ast.lhs = abstract(cst.lhs);
+      ast.rhs = abstype(cst.rhs);
     }else if (cst.key == '[]'){
       ast.key = 'tlit';
       ast.val = untree(cst.val).map(abstract);
@@ -1281,6 +1286,13 @@ var PARSER = function(sys,extensions={}){
       return b;
     }else if (a.con == 'func' && typeof b == 'string' && b.startsWith('__func_ovld_')){
       return a;
+    }else if (a.con == 'union'){
+      let typs = a.elt.map(printtype);
+      if (typs.includes(printtype(b))){
+        return a;
+      }
+      if (die) mkerr('typecheck',`union type '${printtype(a)}' has no option '${printtype(b)}'`,[0,0]);
+      throw 'up'
     }else{
       if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,[0,0]);
       throw 'up'
@@ -1621,7 +1633,7 @@ var PARSER = function(sys,extensions={}){
 
       let m;
       if (x.con){
-        if (cntyps.includes(x.con) || x.con == 'func' || x.con == 'dict'){
+        if (cntyps.includes(x.con) || x.con == 'func' || x.con == 'dict' || x.con == 'union'){
           return x;
         }
         for (let i = scostk.length-1; i>= 0; i--){
@@ -2051,8 +2063,21 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'cast'){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
+          maxtype(ast.lhs.typ,ast.rhs.typ);
           ast.typ = ast.rhs.typ;
-          
+        }else if (ast.key == 'is'){
+          doinfer(ast.lhs);
+          doinfer(ast.rhs);
+          if (ast.lhs.typ.con && ast.lhs.typ.con == 'union'){
+            maxtype(ast.lhs.typ,ast.rhs.typ);
+            ast.typ = 'i32';
+          }else{
+            ok = printtype(ast.lhs.typ) == printtype(ast.rhs.typ);
+            ast.tag = 'numbr';
+            ast.key = 'term';
+            ast.type = 'i32';
+            ast.val = Number(ok)+"";
+          }
         }else if (ast.key == 'tlit'){
           let typs = [];
           for (let i = 0; i < ast.val.length; i++){
@@ -2993,6 +3018,11 @@ var PARSER = function(sys,extensions={}){
       }else if (ast.key == 'cast'){
         let n1 = docompile(ast.lhs);
         return docast(n1,ast.lhs.typ,ast.rhs.typ);
+      }else if (ast.key == 'is'){
+        let n1 = docompile(ast.lhs);
+        let tmp = mktmpvar(ast.typ);
+        pushins('utag',tmp,n1,ast.rhs.typ);
+        return tmp;
       }else if (ast.key == 'decl'){
 
         // let pth = ast.ori.join('.')+".";

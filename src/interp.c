@@ -62,11 +62,12 @@
 #define VART_DIC 16
 #define VART_STT 17
 #define VART_FUN 18
+#define VART_UON 19
 
 #define GFLG_NOGC (1L<<0)
 #define GFLG_TRGC (1L<<1)
 
-const char* vart_names = "NULU08I08U16I16U32I32U64I64F32F64STRVECARRLSTTUPDICSTTFUN";
+const char* vart_names = "NULU08I08U16I16U32I32U64I64F32F64STRVECARRLSTTUPDICSTTFUNUON";
 
 typedef struct type_st{
   uint8_t tag;
@@ -191,6 +192,15 @@ typedef struct fun_st{
   list_t captr;
 } fun_t;
 
+struct var_st;
+
+typedef struct uon_st{
+  char flag;
+  type_t* type;
+  struct var_st* var;
+} uon_t;
+
+
 typedef struct var_st{
   type_t* type;
   union {
@@ -212,6 +222,7 @@ typedef struct var_st{
     lst_t* lst;
     dic_t* dic;
     fun_t* fun;
+    struct uon_st* uon;
   } u;
 } var_t;
 
@@ -346,6 +357,8 @@ uint8_t str2vart(char* ts){
     return VART_LST;
   }else if (!strcmp(ts,"dict")){
     return VART_DIC;
+  }else if (!strcmp(ts,"union")){
+    return VART_UON;
   }else if (!strcmp(ts,"tup")){
     return VART_TUP;
   }else if (!strcmp(ts,"void")){
@@ -369,7 +382,7 @@ opran_t* read_type(FILE* fd){
   do{
     if (c == '[' ){
       lvl++;
-      if ((str_eq(&word,"vec") || str_eq(&word,"arr") || str_eq(&word,"list") || str_eq(&word,"tup") || str_eq(&word,"dict") || str_eq(&word,"func"))  ){
+      if ((str_eq(&word,"vec") || str_eq(&word,"arr") || str_eq(&word,"list") || str_eq(&word,"tup") || str_eq(&word,"dict") || str_eq(&word,"func") || str_eq(&word,"union"))  ){
         typ->mode = TYPM_CONT;
         
         typ->vart = str2vart(word.data);
@@ -670,6 +683,38 @@ void print_type(type_t* a){
   }
 }
 
+int type_eq(type_t* a, type_t* b){
+  if (!a || !b){
+    return 0;
+  }
+  if (a->mode != b->mode) return 0;
+  if (a->vart != b->vart) return 0;
+  
+  if (a->mode == TYPM_SIMP){
+    if (a->vart == VART_STR){
+
+    }else{
+      return strcmp(a->u.str.data, b->u.str.data)==0;
+    }
+  }else if (a->mode == TYPM_CONT){
+    if (a->u.elem.len != b->u.elem.len) return 0;
+
+    list_node_t* n = a->u.elem.head;
+    list_node_t* m = b->u.elem.head;
+    while (n){
+      type_t* t = (type_t*)n->data;
+      type_t* s = (type_t*)m->data;
+      if (!type_eq(t,s)){
+        return 0;
+      }
+      n = n->next;
+      m = m->next;
+    }
+    printf("]");
+  }
+  return 1;
+}
+
 
 
 
@@ -823,6 +868,11 @@ instr_t* read_ir_line(FILE* fd){
         if (INSIS3("mov") || INSIS4("cast") || INSIS4("bnot") || INSIS4("lnot")){
           ins->a = read_term(fd);
           ins->b = read_term(fd);
+        }else if (INSIS4("utag")){
+          ins->a = read_term(fd);
+          ins->b = read_term(fd);
+          ins->c = read_type(fd);
+
         }else if (INSIS4("decl") || INSIS4("argr") || INSIS4("argw") || INSIS4("dcap")){
 
           ins->a = read_term(fd);
@@ -1348,6 +1398,10 @@ void to_str(int vart, void* u, str_t* s){
     char cs[64];
     sprintf(cs,"[func@%p->%p]",f,f->ptr);
     str_add(s,cs);
+  }else if (vart == VART_UON){
+    uon_t* v = (*((uon_t**)u));
+    if (!v || !v->var) goto null_case;
+    to_str(v->var->type->vart, &(v->var->u), s);
   }else{
     UNIMPL
   }
@@ -1637,17 +1691,22 @@ double get_val_f64(term_t* a){
 
 #define GVN_IDEN_VAL_INT(VART,CTYPE)\
   else if (v->type->vart == VART_ ## VART){\
-    uint64_t v = get_val_int(a);\
-    return *(CTYPE*)(&v);\
+    uint64_t q = v->u.u64;\
+    return *(CTYPE*)(&q);\
   }
 
 double get_val_num(term_t* a){
   if (a->mode == TERM_IDEN){
     var_t* v = find_var(&(a->u.str));
+  tryagain:
     if (v->type->vart == VART_F32){
-      return get_val_f32(a);
+      return v->u.f32;
     }else if (v->type->vart == VART_F64){
-      return get_val_f64(a);
+      return v->u.f64;
+    }else if (v->type->vart == VART_UON){
+      v = v->u.uon->var;
+      goto tryagain;
+      
     }
       GVN_IDEN_VAL_INT(I64,int64_t)
       GVN_IDEN_VAL_INT(U64,uint64_t)
@@ -1796,6 +1855,32 @@ tup_t* get_val_tup(term_t* a){
   return NULL;
 }
 
+var_t* var_new(type_t* typ);
+
+uon_t* get_val_uon(term_t* a){
+  uon_t* uon = (uon_t*)gc_alloc(sizeof(uon_t));
+  uon_t* von;
+  if (a->mode == TERM_IDEN){
+    von = find_var(&(a->u.str))->u.uon;
+  }else if (a->mode == TERM_ADDR){
+    von = *((uon_t**)get_addr(a,NULL));
+  }else{
+    UNIMPL;
+  }
+  type_t* t = von->var->type;
+  uon->type = von->type;
+  uon->var = var_new(von->var->type);
+  if (t->vart == VART_STR){
+    uon->var->u.vec = vec_copy(von->var->u.vec);
+  }else if (t->vart == VART_VEC){
+    uon->var->u.str = stn_copy(von->var->u.str);
+  }else{
+    uon->var->u.obj = von->var->u.obj;
+  }
+  return uon;
+}
+
+
 fun_t* get_ref_fun(term_t* a){
   if (a->mode == TERM_IDEN){
     // printf("%s\n",a->u.str.data);
@@ -1870,6 +1955,12 @@ void gc_mark_tup(tup_t* o){
   }
 
 }
+void gc_mark_uon(uon_t* o){
+  if (!o->var) return;
+  if (o->var->type->mode == TYPM_SIMP || o->var->type->mode == TYPM_CONT){
+    gc_mark(o->var->u.obj);
+  }
+}
 
 void gc_mark_fun(fun_t* o){
   list_node_t* p = o->captr.head;
@@ -1897,6 +1988,8 @@ void gc_mark_dic(dic_t* o){
     }
   }
 }
+
+
 
 void gc_mark(obj_t* o){
   if (!o){
@@ -1929,6 +2022,8 @@ void gc_mark(obj_t* o){
       gc_mark_fun((fun_t*)o);
     }else if (typ->vart == VART_DIC){
       gc_mark_dic((dic_t*)o);
+    }else if (typ->vart == VART_UON){
+      gc_mark_uon((uon_t*)o);
     }
   }
 }
@@ -1945,7 +2040,7 @@ void gc_sweep(){
       printf("SWP %p\n",obj);
 #endif
       if (obj->type->mode == TYPM_SIMP){
-       
+
       }else if (obj->type->mode == TYPM_CONT){
 
         if (obj->type->vart == VART_TUP){
@@ -1968,6 +2063,8 @@ void gc_sweep(){
           free(((arr_t*)obj)->data);
         }else if (obj->type->vart == VART_DIC){
           map_nuke(&(((dic_t*)obj)->map));
+        }else if (obj->type->vart == VART_UON){
+          free(((uon_t*)obj)->var);
         }
       }else{
         free(obj->data);
@@ -2113,6 +2210,11 @@ var_t* var_new(type_t* typ){
       v->u.fun->type = typ;
       list_init(&(v->u.fun->captr));
 
+    }else if (typ->vart == VART_UON){
+      v->type = typ;
+      v->u.uon = gc_alloc(sizeof(uon_t));
+      v->u.uon->type = typ;
+      v->u.uon->var = NULL;
     }else{
       UNIMPL
     }
@@ -2249,6 +2351,8 @@ void var_assign(var_t* v, term_t* b){
     }else{
       UNIMPL;
     }
+  }else if (v->type->vart == VART_UON){
+    v->u.uon = get_val_uon(b);
   }else{
     UNIMPL
   }
@@ -2479,6 +2583,33 @@ void cast(term_t* a, term_t* b){
       }else{
         UNIMPL;
       }
+    }else if (v->type->vart == VART_UON){
+      if (v->u.uon->var == NULL){
+        if (b->mode == TERM_IDEN){
+          var_t* u = find_var(&(b->u.str));
+          v->u.uon->var = var_new(u->type);
+        }else if (b->mode == TERM_NUMU || b->mode == TERM_NUMI || b->mode == TERM_NUMI || b->mode == TERM_STRL){
+          v->u.uon->var = (var_t*)calloc(1,sizeof(var_t));
+          list_node_t* it = v->type->u.elem.head;
+          while (it){
+            type_t* t = (type_t*)(it->data);
+            if (t->vart == VART_I32 && (b->mode == TERM_NUMI || b->mode == TERM_NUMU)){
+              v->u.uon->var->type = t;
+              break;
+            }else if (t->vart == VART_F32 && b->mode == TERM_NUMF){
+              v->u.uon->var->type = t;
+              break;
+            }else if (t->vart == VART_STR && b->mode == TERM_STRL){
+              v->u.uon->var->type = t;
+              break;
+            }
+            it = it->next;
+          }
+        }else{
+          UNIMPL
+        }
+      }
+      var_assign(v->u.uon->var, b);
     }else{
       UNIMPL
     }
@@ -2966,6 +3097,18 @@ list_node_t* execute_instr(list_node_t* ins_node){
     }else{
       UNIMPL
     }
+  }else if (INSIS4("utag")){
+    term_t* a = ((term_t*)(ins->a));
+    term_t* b = ((term_t*)(ins->b));
+    type_t* typ = (type_t*)(ins->c);
+    if (a->mode == TERM_IDEN && b->mode == TERM_IDEN){
+      var_t* v = find_var(&(a->u.str));
+      var_t* u = find_var(&(b->u.str));
+      v->u.i32 = type_eq(u->u.uon->var->type, typ);
+    }else{
+      UNIMPL
+    }
+
   }else if (INSIS4("argw")){
     term_t* a = ((term_t*)(ins->a));
     type_t* typ = ((type_t*)(ins->b));
