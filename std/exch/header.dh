@@ -3,9 +3,12 @@ namespace exch {
   typedef JSON = {
     data : union[list[JSON],dict[str,JSON],str,f32]
   }
+
   func _decode_json(trg:JSON,src:str);
+  func _encode_json(obj:JSON):str;
+
   func decode[T=JSON](src:str):T{
-    x : union[list[JSON],dict[str,JSON],str,f32] = 0.0;
+    x : union[list[JSON],dict[str,JSON],str,f32];
     j := JSON{data:x};
     _decode_json(j,src);
     return j;

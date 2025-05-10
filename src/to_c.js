@@ -616,6 +616,7 @@ function parse_ir(txt){
         }else if (st == 1){
           st = 0;
         }else{
+          ac += '\\'
           st = 1;
         }
         ac += ln[j];

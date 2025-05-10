@@ -1382,7 +1382,8 @@ void to_str(int vart, void* u, str_t* s){
       if (lofd->type->mode == TYPM_SIMP && lofd->type->vart != VART_STR){
         obj_t* ptr = (obj_t*)re_ptr_at(offsp);
         char cs[32];
-        sprintf(cs,"[object@%p]",ptr);
+        // sprintf(cs,"[object@%p]",ptr);
+        sprintf(cs,"[object@%05lx]",((unsigned long)ptr) & 0xFFFFF);
         str_add(s,cs);
       }else{
         to_str(lofd->type->vart,offsp,s);
@@ -1395,7 +1396,8 @@ void to_str(int vart, void* u, str_t* s){
     fun_t* f = (*((fun_t**)u));
     if (!f) goto null_case;
     char cs[64];
-    sprintf(cs,"[func@%p->%p]",f,f->ptr);
+    //sprintf(cs,"[func@%p->%p]",f,f->ptr);
+    sprintf(cs,"[func@%05lx->%05lx]",((unsigned long)f) & 0xFFFFF,((unsigned long)(f->ptr)) & 0xFFFFF);
     str_add(s,cs);
   }else if (vart == VART_UON){
     uon_t* v = (*((uon_t**)u));

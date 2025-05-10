@@ -2,7 +2,7 @@ globalThis.$arr = new function(){
   var that = this;
 
   that.reshape = function(){
-    let [a,n] = $pop_args(1);
+    let [a,n] = $pop_args(2);
     let cnt = n.reduce((acc, num) => acc * num, 1);
     a.__dims = n;
     a.length = cnt;

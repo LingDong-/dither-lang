@@ -1259,7 +1259,7 @@ var PARSER = function(sys,extensions={}){
       let ia = ordn.indexOf(a);
       let ib = ordn.indexOf(b);
       if (ia == -1 || ib == -1){
-        if (die) mkerr('typecheck',`no cast between types '${a}' and '${b}'`,somepos({}));
+        if (die) mkerr('typecheck',`no cast between types '${a}' and '${b}'`,curpos??[0,0]);
         throw 'up'
       }
       return ordn[Math.max(ia,ib)];
@@ -1273,7 +1273,7 @@ var PARSER = function(sys,extensions={}){
         let ia = ordv.indexOf(a.con);
         let ib = ordv.indexOf(b.con);
         if (ia == -1 || ib == -1  ){
-          if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,[0,0]);
+          if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos??[0,0]);
           throw 'up'
         }
         if (ia > ib){
@@ -1284,7 +1284,7 @@ var PARSER = function(sys,extensions={}){
       }
       if (a.elt.length != b.elt.length){
         if (a.con != 'vec' || b.con != 'vec' || a.elt.slice(1).reduce((x,y)=>x*y,1) != b.elt.slice(1).reduce((x,y)=>x*y,1)){
-          if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,[0,0]);
+          if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos??[0,0]);
           throw 'up'
         } else{
           for (let i = 0; i < a.elt.length; i++){
@@ -1292,7 +1292,7 @@ var PARSER = function(sys,extensions={}){
           }
         }
       }else if (a.con != 'vec' || b.con != 'vec'){
-        if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,[0,0]);
+        if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos??[0,0]);
         throw 'up'
       }else{
         for (let i = 0; i < a.elt.length; i++){
@@ -1311,10 +1311,10 @@ var PARSER = function(sys,extensions={}){
       if (typs.includes(printtype(b))){
         return a;
       }
-      if (die) mkerr('typecheck',`union type '${printtype(a)}' has no option '${printtype(b)}'`,curpos);
+      if (die) mkerr('typecheck',`union type '${printtype(a)}' has no option '${printtype(b)}'`,curpos??[0,0]);
       throw 'up'
     }else{
-      if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos);
+      if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos??[0,0]);
       throw 'up'
     }
     
@@ -2393,7 +2393,7 @@ var PARSER = function(sys,extensions={}){
           
           doinfer(ast.val);
           realizefunc(ast.val);
-
+          curpos = somepos(ast);
           if (typeof ast.val.typ == 'string' && ast.val.typ.startsWith('__func_ovld_')){
             if (ast.val.tag != 'ident'){
               mkerr('typecheck',`non-inferrable function type`,somepos(ast));

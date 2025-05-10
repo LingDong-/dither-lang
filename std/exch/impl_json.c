@@ -4,12 +4,11 @@ void exch_impl__json_exit_dic();
 void exch_impl__json_enter_lst();
 void exch_impl__json_exit_lst();
 
-void exch_impl__json_key_len(int n);
-void exch_impl__json_key(char* s);
+void exch_impl__json_key(char* s, int n);
 
 void exch_impl__json_num(float x);
-void exch_impl__json_str_len(int n);
-void exch_impl__json_str(char* s);
+void exch_impl__json_str(char* s, int n);
+
 
 
 #define _STATE_IDLE  0
@@ -50,11 +49,15 @@ int exch_impl__decode_json(char* src){
           }
           idx ++;
         }
-        exch_impl__json_key_len(idx-idx0);
-        exch_impl__json_key(src+idx0);
+        exch_impl__json_key(src+idx0,idx-idx0);
         idx++;
       }else if (c == ':'){
         state = _STATE_DIC_V;
+        idx++;
+      }else if (c == '}'){
+        exch_impl__json_exit_dic();
+        return idx+1;
+      }else{
         idx++;
       }
     }else if (state == _STATE_ARR || state == _STATE_DIC_V || state == _STATE_VAL){
@@ -70,8 +73,7 @@ int exch_impl__decode_json(char* src){
           }
           idx ++;
         }
-        exch_impl__json_str_len(idx-idx0);
-        exch_impl__json_str(src+idx0);
+        exch_impl__json_str(src+idx0,idx-idx0);
         idx++;
       }else if (c == ','){
         if (state == _STATE_DIC_V){
@@ -88,6 +90,8 @@ int exch_impl__decode_json(char* src){
       }else if (c == ']'){
         exch_impl__json_exit_lst();
         return idx+1;
+      }else if (c == ' ' || c == '\n' || c == '\r' || c == '\t'){
+        idx++;
       }else{
         int idx0 = idx;
         while (1){

@@ -176,6 +176,7 @@ function parse_ir(txt){
         }else if (st == 1){
           st = 0;
         }else{
+          ac += '\\'
           st = 1;
         }
         ac += ln[j];
@@ -582,6 +583,7 @@ function transpile_js(instrs,layout){
       let a = clean(ins[1]);
       o.push(`${a}=$assign(${a},${tmp});`);
     }else if (ins[0] == 'argw'){
+      // console.log(ins)
       o.push(`$args.push($typed_value(${clean(ins[1])},${JSON.stringify(read_type(ins[2]))}));`);
     }else if (ins[0] == 'argr'){
       let nom = clean(ins[1]);
