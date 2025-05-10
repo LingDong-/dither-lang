@@ -1,10 +1,14 @@
 
 namespace exch {
   typedef JSON = {
-    value : union[list[JSON],dict[str,JSON],str,f32,i32]
+    data : union[list[JSON],dict[str,JSON],str,f32]
   }
+  func _decode_json(trg:JSON,src:str);
   func decode[T=JSON](src:str):T{
-    return _decode_json(src);
+    x : union[list[JSON],dict[str,JSON],str,f32] = 0.0;
+    j := JSON{data:x};
+    _decode_json(j,src);
+    return j;
   }
   func encode(obj:JSON):str{return _encode_json(obj);}
 }

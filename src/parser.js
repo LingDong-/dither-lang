@@ -892,42 +892,43 @@ var PARSER = function(sys,extensions={}){
     }
     return null;
   }
+  function untree(cst){
+    if (!cst){
+      return [];
+    }
+    if (cst.key != ','){
+      return [cst];
+    }
+    return untree(cst.lhs).concat(untree(cst.rhs));
+  }
+  function abstype(cst){
+    if (cst == null) return null;
+    if (cst.key == 'subs'){
+      if (cst.lhs.tag == 'keywr') cst.lhs.tag = 'ident';
+      if (cst.lhs.tag != 'ident') mkerr('syntax','expected identifier for type annotation',cst.lhs.pos);
+      let rhs = untree(cst.rhs);
+      let rrhs = [];
+      for (let i = 0; i < rhs.length; i++){
+        if (rhs[i].key != 'noop'){
+          rrhs.push(abstype(rhs[i]));
+        }
+      }
+      return {key:'type',ttp:'cntp',con:cst.lhs,elt:rrhs};
+    }else if (cst.tag == 'ident'){
+      return {key:'type',ttp:'smtp',val:cst};
+    }else if (cst.tag == 'numbr'){
+      return {key:'type',ttp:'nmtp',val:cst};
+    }else if (cst.key == 'a.b'){
+      return {key:'type',ttp:'smtp',val:{tag:'ident',val:abstype(cst.lhs).val.val + "." + cst.rhs.val,pos:cst.lhs.pos}};
+    }else{
+      // mkerr('syntax','unexpected token in type annotation',somepos(cst));
+      return {key:'type',ttp:'cmtp',val:abstract(cst)};
+    }
+  }
 
   function abstract(cst){
- 
-    function untree(cst){
-      if (!cst){
-        return [];
-      }
-      if (cst.key != ','){
-        return [cst];
-      }
-      return untree(cst.lhs).concat(untree(cst.rhs));
-    }
-    function abstype(cst){
-      if (cst == null) return null;
-      if (cst.key == 'subs'){
-        if (cst.lhs.tag == 'keywr') cst.lhs.tag = 'ident';
-        if (cst.lhs.tag != 'ident') mkerr('syntax','expected identifier for type annotation',cst.lhs.pos);
-        let rhs = untree(cst.rhs);
-        let rrhs = [];
-        for (let i = 0; i < rhs.length; i++){
-          if (rhs[i].key != 'noop'){
-            rrhs.push(abstype(rhs[i]));
-          }
-        }
-        return {key:'type',ttp:'cntp',con:cst.lhs,elt:rrhs};
-      }else if (cst.tag == 'ident'){
-        return {key:'type',ttp:'smtp',val:cst};
-      }else if (cst.tag == 'numbr'){
-        return {key:'type',ttp:'nmtp',val:cst};
-      }else if (cst.key == 'a.b'){
-        return {key:'type',ttp:'smtp',val:{tag:'ident',val:abstype(cst.lhs).val.val + "." + cst.rhs.val,pos:cst.lhs.pos}};
-      }else{
-        // mkerr('syntax','unexpected token in type annotation',somepos(cst));
-        return {key:'type',ttp:'cmtp',val:abstract(cst)};
-      }
-    }
+
+
     if (cst == null) return null;
     if (!cst.key) return cst;
     let ast = {};
@@ -1502,7 +1503,7 @@ var PARSER = function(sys,extensions={}){
           }
           for (let j = 0; j < funs[i].ipl.pte.length; j++){
             if (funs[i].ipl.pte[j]){
-              let q = shrinktype(funs[i].ipl.pte[j]);
+              let q = funs[i].ipl.pte[j];
               map[printtype(tms[j])] = q;
               tms[j] = q;
             }
@@ -1747,6 +1748,7 @@ var PARSER = function(sys,extensions={}){
           if (m = scozoo[idx].__alias[idx+'.'+xb]){
             return fixtype(scozoo[idx].__alias[idx+'.'+xb])
           }
+          
           if (m = scozoo[idx].__types[idx+'.'+xb]){
             xb = idx+'.'+xb;
             if (m.typ.con){
@@ -1822,15 +1824,6 @@ var PARSER = function(sys,extensions={}){
       }
 
       mkerr('typecheck','unrecognized type',somepos(ast));
-    }
-    function latetype(ast){
-      if (ast.key == 'subs'){
-        return {con:ast.con.val, elt:ast.idx.map(latetype)}
-      }else if (ast.tag == 'ident'){
-        return ast.val;
-      }else if (ast.tag == 'numbr'){
-        return Number(ast.val);
-      }
     }
 
     function fieldtype(typ,nom,abort=1){
@@ -2432,7 +2425,7 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'subs'){
           doinfer(ast.con);
           if (typeof ast.con.typ == 'string' && ast.con.typ.startsWith('__func_ovld_')){
-            Object.assign(ast,ast.con,{pte:ast.idx.map(latetype)})
+            Object.assign(ast,ast.con,{pte:ast.idx.map(abstype).map(shrinktype)})
           }else{
             ast.idx.map(doinfer);
             
