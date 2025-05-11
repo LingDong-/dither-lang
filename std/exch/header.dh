@@ -8,8 +8,8 @@ namespace exch {
   func _encode_json(obj:JSON):str;
 
   func decode[T=JSON](src:str):T{
-    x : union[list[JSON],dict[str,JSON],str,f32];
-    j := JSON{data:x};
+    x : union[list[T],dict[str,T],str,f32];
+    j := T{data:x};
     _decode_json(j,src);
     return j;
   }

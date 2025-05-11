@@ -9,12 +9,10 @@ void exch_impl__json_key(char* s, int n);
 void exch_impl__json_num(float x);
 void exch_impl__json_str(char* s, int n);
 
-
-
 #define _STATE_IDLE  0
 #define _STATE_DIC_K 1
 #define _STATE_DIC_V 2
-#define _STATE_ARR   3
+#define _STATE_LST   3
 #define _STATE_VAL   4
 
 int exch_impl__decode_json(char* src){
@@ -31,7 +29,7 @@ int exch_impl__decode_json(char* src){
         idx++;
       }else if (c == '['){
         exch_impl__json_enter_lst();
-        state = _STATE_ARR;
+        state = _STATE_LST;
         idx++;
       }else{
         state = _STATE_VAL;
@@ -60,7 +58,7 @@ int exch_impl__decode_json(char* src){
       }else{
         idx++;
       }
-    }else if (state == _STATE_ARR || state == _STATE_DIC_V || state == _STATE_VAL){
+    }else if (state == _STATE_LST || state == _STATE_DIC_V || state == _STATE_VAL){
       if (c == '"'){
         idx++;
         int idx0 = idx;
@@ -116,4 +114,29 @@ int exch_impl__decode_json(char* src){
     } 
   }
   return idx;
+}
+
+
+void exch_impl__json_copy_esc(char* trg, char* src, int n){
+  int i = 0;
+  int j = 0;
+  while (i < n){
+    if (src[i] == '\\'){
+      i++;
+      if (src[i] == 't'){
+        trg[j] = '\t';
+      }else if (src[i] == 'n'){
+        trg[j] = '\n';
+      }else if (src[i] == 'r'){
+        trg[j] = '\r';
+      }else{
+        trg[j] = src[i];
+      }
+    }else{
+      trg[j] = src[i];
+    }
+    i++;
+    j++;
+  }
+  trg[j] = 0;
 }

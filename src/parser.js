@@ -253,7 +253,7 @@ var PARSER = function(sys,extensions={}){
           if (sit != 0){
             mkerr('tokenize',`malformed string interpolation`,[pthidx,posofs+i0]);
           }
-          if (ss.length == 1 && a == "'"){
+          if (ss.length == 1 && ss[0].length == 1 && a == "'"){
             pushtok('numbr',ss[0].charCodeAt(0).toString(),i);
           }else{
             pushtok('strlt',ss,i);
@@ -1734,6 +1734,7 @@ var PARSER = function(sys,extensions={}){
         let xa = x.split(".").slice(0,-1).join('.');
         let xb = x.split(".").at(-1);
 
+
         for (let i = scostk.length-1; i>= 0; i--){
           let idx = scostk[i];
 
@@ -1802,7 +1803,7 @@ var PARSER = function(sys,extensions={}){
     }
 
     function shrinktype(ast,strict=1){
-      
+
       if (ast.ttp == 'smtp'){
         let o = unalias(ast.val.val);
         if (strict) return fixtype(o);
@@ -2425,7 +2426,7 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'subs'){
           doinfer(ast.con);
           if (typeof ast.con.typ == 'string' && ast.con.typ.startsWith('__func_ovld_')){
-            Object.assign(ast,ast.con,{pte:ast.idx.map(abstype).map(shrinktype)})
+            Object.assign(ast,ast.con,{pte:ast.idx.map(abstype).map(x=>shrinktype(x))})
           }else{
             ast.idx.map(doinfer);
             

@@ -148,33 +148,10 @@ void exch_impl__json_exit_lst(){
   list_pop(&jstack);
 }
 
-void copy_esc(char* trg, char* src, int n){
-  int i = 0;
-  int j = 0;
-  while (i < n){
-    if (src[i] == '\\'){
-      i++;
-      if (src[i] == 't'){
-        trg[j] = '\t';
-      }else if (src[i] == 'n'){
-        trg[j] = '\n';
-      }else if (src[i] == 'r'){
-        trg[j] = '\r';
-      }else{
-        trg[j] = src[i];
-      }
-    }else{
-      trg[j] = src[i];
-    }
-    i++;
-    j++;
-  }
-  trg[j] = 0;
-}
 
 void exch_impl__json_key(char* s,int n){
   tmp_key = realloc(tmp_key,n+1);
-  copy_esc(tmp_key,s,n);
+  exch_impl__json_copy_esc(tmp_key,s,n);
   tmp_key[n] = 0;
 }
 
@@ -197,7 +174,7 @@ void exch_impl__json_str(char* s,int n){
   ss->n = n;
   ss->w = 1;
   ss->type = jt_str;
-  copy_esc(ss->data, s, n);
+  exch_impl__json_copy_esc(ss->data, s, n);
 
   u->var->u.str = ss;
   jinsert(o);

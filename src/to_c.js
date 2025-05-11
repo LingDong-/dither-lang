@@ -1,5 +1,5 @@
 
-let collectible = ["VART_STR","VART_LST","VART_TUP","VART_DIC","VART_STT","VART_FUN","VART_ARR"];
+let collectible = ["VART_STR","VART_LST","VART_TUP","VART_DIC","VART_STT","VART_FUN","VART_ARR","VART_UON"];
 
 let vartnummap = {
   'VART_I08':'int8_t',
@@ -124,7 +124,7 @@ void* __gc_alloc(char flag, int sz){
   }
   __gc_list.tail = n;
   __gc_list.len ++;
-  if(DBG_GC)printf("alloc %d %p\\n",(char)n->flag,n->data);
+  if(DBG_GC)printf("alloc %d %p sz:%d\\n",(char)n->flag,n->data,sz);
   return n->data;
 }
 void* __gc_realloc(void* ptr, int sz){
@@ -179,9 +179,9 @@ typedef struct{
 } __arr_t;
 
 typedef struct{
-  int sel;
-  int w;
-  int t;
+  int32_t sel;
+  int16_t w;
+  int16_t t;
   char data[];
 } __union_t;
 
@@ -267,7 +267,7 @@ void __gc_mark(void* ptr){
     int n = ((int*)ptr)[0];
     for (int i = 0; i < n; i++){
       int ofs = ((int*)ptr)[i+1];
-      __gc_mark(ptr + ofs);
+      __gc_mark( *((void**)(ptr + ofs)) );
     }
   }else if (vt == VART_TUP){
     int i = 0;
@@ -358,8 +358,8 @@ char* __to_str(void* ptr, int vart, int w){
   char* o;
   if (vart == VART_LST){
     
-    __list_t* lst = (__list_t*)ptr;
-    o = calloc(2,1);
+    __list_t* lst = *(__list_t**)ptr;
+    o = calloc(3,1);
     o[0] = '{';
     for (int i = 0; i < lst->n; i++){
       char* a = __to_str(lst->data + (i*lst->w), lst->t, lst->w);
@@ -371,9 +371,10 @@ char* __to_str(void* ptr, int vart, int w){
       o[no+na+1] = 0;
       free(a);
     }
+    if (!lst->n) o[1] = '}';
   }else if (vart == VART_ARR){
-    __arr_t* arr = (__arr_t*)ptr;
-    o = calloc(2,1);
+    __arr_t* arr = *(__arr_t**)ptr;
+    o = calloc(3,1);
     o[0] = '[';
     for (int i = 0; i < arr->ndim; i++){
       char* a = __to_str(arr->dims + i, VART_I32, 4);
@@ -401,6 +402,7 @@ char* __to_str(void* ptr, int vart, int w){
       o[no+na+1] = 0;
       free(a);
     }
+    if (!arr->n) o[1] = '}';
   }else if (vart == VART_TUP) {
     o = calloc(2,1);
     o[0] = '[';
@@ -423,13 +425,12 @@ char* __to_str(void* ptr, int vart, int w){
     }
     o[strlen(o)-1] = ']';
   }else if (vart == VART_DIC) {
-    __dict_t* dic = (__dict_t*)ptr;
-    o = calloc(2,1);
+    __dict_t* dic = *(__dict_t**)ptr;
+    o = calloc(3,1);
     o[0] = '{';
     for (int i = 0; i < __NUM_DICT_SLOTS; i++){
       for (int j = 0; j < dic->slots[i].n; j++){
-        
-        char* a = __to_str( *(void**)(dic->slots[i].data + (dic->kw+dic->vw) * j), dic->kt, dic->kw);
+        char* a = __to_str( (void**)(dic->slots[i].data + (dic->kw+dic->vw) * j), dic->kt, dic->kw);
         int no = strlen(o);
         int na = strlen(a);
         o = realloc(o, no+na+2);
@@ -448,10 +449,13 @@ char* __to_str(void* ptr, int vart, int w){
         free(a);
       }
     }
-    o[strlen(o)-1] = '}';
-    
+    if (o[1] == 0){
+      o[1] = '}';
+    }else{
+      o[strlen(o)-1] = '}';
+    }
   }else if (vart == VART_UON) {
-    __union_t* uon = (__union_t*)ptr;
+    __union_t* uon = *(__union_t**)ptr;
     o = __to_str( &(uon->data), uon->t, uon->w);
   }else if (vart == VART_STR) {
     o = strdup(*(char**)ptr);
@@ -490,7 +494,12 @@ int __hash(void* x, int n){
   return k % __NUM_DICT_SLOTS;
 }
 void* __dict_get(__dict_t* dic, void* idx){
-  int s = __hash(idx, dic->kw);
+  int s;
+  if (dic->kt == VART_STR){
+    s = __hash(*(char**)idx, strlen(*(char**)idx));
+  }else{
+    s = __hash(idx, dic->kw);
+  }
   if (! dic->slots[s].cap){
     dic->slots[s].cap = 4;
     dic->slots[s].n = 0;
@@ -570,15 +579,17 @@ function parse_layout(ls){
         size: Number(b),
         fields:[],
       }
-      let nf = [];
-      for (let i = 1; i < lo[ca].fields.length; i++){
-        let vt = vart(lo[ca].fields[i][2]);
-        if (collectible.includes(vt)){
-          nf.push(lo[ca].fields[0]);
-        }
-      }
-      lo[ca].collect = nf;
     }
+  }
+  for (let ca in lo){
+    let nf = [];
+    for (let i = 1; i < lo[ca].fields.length; i++){
+      let vt = vart(lo[ca].fields[i][2]);
+      if (collectible.includes(vt)){
+        nf.push(lo[ca].fields[i][0]);
+      }
+    }
+    lo[ca].collect = nf;
   }
   return lo;
 }
@@ -809,35 +820,35 @@ function transpile_c(instrs,layout){
       o.push(`}}`);
     }else if (ta == "char*" && tb.con == 'list'){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_LST, 8);`);
+      o.push(`char* ${tmp} = __to_str(&(${b}), VART_LST, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
     }else if (ta == "char*" && tb.con == 'arr'){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_ARR, 8);`);
+      o.push(`char* ${tmp} = __to_str(&(${b}), VART_ARR, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
     }else if (ta == "char*" && tb.con == 'tup'){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_TUP, 8);`);
+      o.push(`char* ${tmp} = __to_str(&(${b}), VART_TUP, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
     }else if (ta == "char*" && tb.con == 'dict'){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_DIC, 8);`);
+      o.push(`char* ${tmp} = __to_str(&(${b}), VART_DIC, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
       o.push(`free(${tmp});`);
     }else if (ta == "char*" && tb.con == "union"){
       let tmp = shortid();
-      o.push(`char* ${tmp} = __to_str(${b}, VART_UON, 8);`);
+      o.push(`char* ${tmp} = __to_str(&(${b}), VART_UON, 8);`);
       o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
       o.push(`__put_var(${varcnt++},${a});`);
       o.push(`strcpy(${a},${tmp});`);
@@ -978,11 +989,8 @@ function transpile_c(instrs,layout){
         return [`((${v}) + (${idx}))`, t.elt[0], type_size(t.elt[0])]
       }else if (t.con == 'list'){
         let [tt,tn] = writable_type(t.elt[0]);
-        if (t.elt[0] == 'char*' && n !== null){
-          return [`((  ((${tt}*)((${v})->data))[${idx}*${tn}] = __gc_alloc(VART_STR, ${n})) , (((${tt}*)((${v})->data)) + (${idx}*${tn})))`, t.elt[0], type_size(t.elt[0])]
-        }else{
-          return [`(((${tt}*)((${v})->data)) + (${idx}*${tn}))`, t.elt[0], type_size(t.elt[0])]
-        }
+        return [`(((${tt}*)((${v})->data)) + (${idx}*${tn}))`, t.elt[0], type_size(t.elt[0])]
+        
       }else if (t.con == 'arr'){
         let [tt,tn] = writable_type(t.elt[0]);
         if (lookup[idx] && lookup[idx].con == 'vec'){
@@ -994,11 +1002,8 @@ function transpile_c(instrs,layout){
           }
           idx = `(${ii})`;
         }
-        if (t.elt[0] == 'char*' && n !== null){
-          return [`((  ((${tt}*)((${v})->data))[${idx}*${tn}] = __gc_alloc(VART_STR, ${n})) , (((${tt}*)((${v})->data)) + (${idx}*${tn})))`, t.elt[0], type_size(t.elt[0])]
-        }else{
-          return [`(((${tt}*)((${v})->data)) + (${idx}*${tn}))`, t.elt[0], type_size(t.elt[0])]
-        }
+        return [`(((${tt}*)((${v})->data)) + (${idx}*${tn}))`, t.elt[0], type_size(t.elt[0])]
+        
         
       }else if (t.con == 'dict'){
         idx = maybenum(idx);
@@ -1011,11 +1016,9 @@ function transpile_c(instrs,layout){
       }else if (t.con == 'tup'){
         idx = Number(idx);
         let nc = tup_size(t, idx);
-        if (t.elt[idx] == 'char*' && n !== null){
-          return [`( ((((char**) (((void*)${v}) + (${nc})) ))[0] = __gc_alloc(VART_STR, ${n})), (char**) ((((void*)${v}) + (${nc})) ))`, t.elt[idx], type_size(t.elt[idx])]
-        }else{
-          return [`(char**) ((((void*)${v}) + (${nc})))`, t.elt[idx], type_size(t.elt[idx])]
-        }
+
+        return [`(char**) ((((void*)${v}) + (${nc})))`, t.elt[idx], type_size(t.elt[idx])]
+        
       }else if (typeof t == 'string'){
         let lo = layout[t];
         let ofs,typ;
@@ -1036,11 +1039,7 @@ function transpile_c(instrs,layout){
     }else{
       let t = lookup[x];
       if (t == 'char*'){
-        if (n == null){
-          return [`&(${x})`, 'char*', `(strlen(${x})+1)`];
-        }else{
-          return [`((${x})=__gc_alloc(VART_STR,${n}), __put_var(${varcnt++},${x}), (char**)&(${x}))`, 'char*', null];
-        }
+        return [`&(${x})`, 'char*', `8`];
       }else{
         let t = lookup[x];
         return [`&(${x})`, t, type_size(t)];
@@ -1269,10 +1268,12 @@ function transpile_c(instrs,layout){
       }else if (typeof typ == 'string'){
         let lo = layout[typ];
         let nf = lo.collect;
+        // console.log(lo.size,nf,lo.size+nf.length*4+4)
         o.push(`void* ${nom} = __gc_alloc(VART_STT,${lo.size+nf.length*4+4});`);
         o.push(`__put_var(${varcnt++},${nom});`);
         o.push(`((int*)${nom})[0] = ${nf.length};`);
         for (let i = 0; i < nf.length; i++){
+          // console.log(nf[i])
           o.push(`((int*)(${nom}+${4+i*4}))[0] = ${nf[i]+nf.length*4+4};`);
         }
       }else{
@@ -1305,14 +1306,27 @@ function transpile_c(instrs,layout){
         let [pa,ta,na] = get_ptr(a,null);
         o.push(`((${ta}*)${pa})[0] = ${b};`);
       }else if (b[0] == '"'){
-        let [pa,ta,na] = get_ptr(a,`(strlen(${b})+1)`);
+        // let [pa,ta,na] = get_ptr(a,`(strlen(${b})+1)`);
         // o.push(`strcpy(*(char**)${pa}, ${b});`)
-        o.push(`*(char**)${pa} = ${b};`);
+        // o.push(`*(char**)${pa} = ${b};`);
+        let [pa,ta,na] = get_ptr(a,8);
+        let tmp = shortid();
+        o.push(`char* ${tmp} = __gc_alloc(VART_STR, strlen(${b})+1 );`);
+        o.push(`strcpy(${tmp}, ${b} );`);
+        o.push(`memcpy(${pa}, &${tmp}, 8);`);
+        o.push(`__put_var(${varcnt++},${tmp});`);
       }else{
         let [pb,tb,nb] = get_ptr(b,null);
         let [pa,ta,na] = get_ptr(a,nb);
-  
-        o.push(`memcpy(${pa}, ${pb}, ${nb});`);
+        if (tb == 'char*'){
+          let tmp = shortid();
+          o.push(`char* ${tmp} = __gc_alloc(VART_STR, strlen(*(${pb}))+1 );`);
+          o.push(`strcpy(${tmp}, *(${pb}) );`)
+          o.push(`memcpy(${pa}, &${tmp}, ${nb});`);
+          o.push(`__put_var(${varcnt++},${tmp});`);
+        }else{
+          o.push(`memcpy(${pa}, ${pb}, ${nb});`);
+        }
       }
     }else if (['add','sub','mul','div','mod','pow'].includes(ins[0])){
       math(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
