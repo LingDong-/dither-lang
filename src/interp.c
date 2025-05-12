@@ -2101,6 +2101,13 @@ void gc_run(){
     }
     e = e->next;
   }
+
+  for (int i = 0; i < _G.args.len; i++){
+    var_t* v = (var_t*)(_G.args.data[i]);
+    if (v->type->mode == TYPM_CONT || v->type->mode == TYPM_SIMP){
+      gc_mark(v->u.obj);
+    }
+  }
   
   gc_sweep();
 }
@@ -3142,7 +3149,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     var_t* v = (var_t*)ARR_POP(uintptr_t, _G.args);
     free(map_overwrite(frame, &(a->u.str), v));
 
-    //  printf("- %d\n",args->len);
+    // printf("- %d\n",_G.args.len);
   }else if (INSIS4("call")){
 
     retp_t r;

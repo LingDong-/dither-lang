@@ -1,8 +1,8 @@
 //
 void str__length(){
   char* __ARG(s); 
-  int l = strlen(s);
-  __put_ret(&(s));
+  int32_t l = strlen(s);
+  __put_ret(&(l));
 }
 
 void str__chr(){

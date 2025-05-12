@@ -480,17 +480,20 @@ void gx_impl_end_shape(int bclose){
 
 #define ELLIPSE_DETAIL 32
 float lvs[ELLIPSE_DETAIL][2];
+float lvs2[2][2];
+float lvs3[4][2];
+float lvs4[1][2];
 
 void gx_impl_line(float x0, float y0, float x1, float y1){
-  lvs[1][1] = y1;
-  lvs[1][0] = x1;
-  lvs[0][1] = y0;
-  lvs[0][0] = x0;
+  lvs2[1][1] = y1;
+  lvs2[1][0] = x1;
+  lvs2[0][1] = y0;
+  lvs2[0][0] = x0;
 
   if (is_stroke && color_stroke.a){
     glColor4f(color_stroke.r, color_stroke.g, color_stroke.b, color_stroke.a);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs2);
     glDrawArrays(GL_LINES,0,4);
     glDisableClientState(GL_VERTEX_ARRAY);
   }
@@ -535,37 +538,37 @@ void gx_impl_ellipse(float x, float y, float w, float h){
 
 void gx_impl_rect(float x, float y, float w, float h){
 
-  lvs[0][0] = x;
-  lvs[0][1] = y;
-  lvs[1][0] = x+w;
-  lvs[1][1] = y;
-  lvs[2][0] = x+w;
-  lvs[2][1] = y+h;
-  lvs[3][0] = x;
-  lvs[3][1] = y+h;
+  lvs3[0][0] = x;
+  lvs3[0][1] = y;
+  lvs3[1][0] = x+w;
+  lvs3[1][1] = y;
+  lvs3[2][0] = x+w;
+  lvs3[2][1] = y+h;
+  lvs3[3][0] = x;
+  lvs3[3][1] = y+h;
 
   glEnableClientState(GL_VERTEX_ARRAY);
   if (is_fill && color_fill.a){
     glColor4f(color_fill.r, color_fill.g, color_fill.b, color_fill.a);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs3);
     glDrawArrays(GL_QUADS,0,4);
   }
   if (is_stroke && color_stroke.a){
     glColor4f(color_stroke.r, color_stroke.g, color_stroke.b, color_stroke.a);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs3);
     glDrawArrays(GL_LINE_LOOP,0,4);
   }
   glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void gx_impl_point(float x, float y){
-  lvs[0][1] = y;
-  lvs[0][0] = x;
+  lvs4[0][1] = y;
+  lvs4[0][0] = x;
 
   if (is_stroke && color_stroke.a){
     glEnableClientState(GL_VERTEX_ARRAY);
     glColor4f(color_stroke.r, color_stroke.g, color_stroke.b, color_stroke.a);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs4);
     glDrawArrays(GL_POINTS,0,1);
     glDisableClientState(GL_VERTEX_ARRAY);
   } 

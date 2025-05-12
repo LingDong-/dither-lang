@@ -1,0 +1,10 @@
+
+namespace time {
+  func fps(trg:f32):f32;
+  func fps():f32{return fps(-1.0)}
+  func millis():f64;
+  func stamp():f64;
+  func delay(ms:f32);
+  func local(stmp:f64):tup[i32,i32,i32,i32,i32,i32];
+  func local():tup[i32,i32,i32,i32,i32,i32]{return local(stamp());}
+}

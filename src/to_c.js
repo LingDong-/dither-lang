@@ -404,16 +404,17 @@ char* __to_str(void* ptr, int vart, int w){
     }
     if (!arr->n) o[1] = '}';
   }else if (vart == VART_TUP) {
+    void* tup = *(void**)ptr;
     o = calloc(2,1);
     o[0] = '[';
     int i = 0;
     while (1){
-      char typ = ((char*)(ptr + i*5))[0];
+      char typ = ((char*)(tup + i*5))[0];
       if (typ == 0) break;
-      int ofs = ((int*)(ptr + i*5 +1))[0];
-      int nofs = ((int*)(ptr + (i+1)*5 +1))[0];
+      int ofs = ((int*)(tup + i*5 +1))[0];
+      int nofs = ((int*)(tup + (i+1)*5 +1))[0];
 
-      char* a = __to_str(ptr + ofs, typ, nofs-ofs);
+      char* a = __to_str(tup + ofs, typ, nofs-ofs);
       int no = strlen(o);
       int na = strlen(a);
       o = realloc(o, no+na+2);

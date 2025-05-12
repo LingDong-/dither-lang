@@ -3,6 +3,8 @@ include "std/list"
 include "std/vec"
 include "std/gx"
 include "std/win"
+include "std/time"
+include "std/io"
 
 width := 300
 height := 300
@@ -152,6 +154,8 @@ for (i := 0; i < 20; i++){
 }
 
 while (1){
+  time.fps(120);
+  
   gx.background(0.2);
   
   for (i := 0; i < boids.length(); i++){
