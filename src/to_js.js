@@ -285,9 +285,9 @@ function transpile_js(instrs,layout){
     if (ta == 'str'){
       o.push(`${get_ptr(a)} = $to_str(${get_ptr(b)})`);
     }else if ($numtyps.includes(ta) && $numtyps.includes(tb)){
-      o.push(`${get_ptr(a)} = ${get_ptr(b)}`);
+      o.push(`${get_ptr(a)} = new $typed_cons.${ta}([${get_ptr(b)}])[0]`);
     }else if ($numtyps.includes(ta) && typeof b == 'number'){
-      o.push(`${get_ptr(a)} = ${get_ptr(b)}`);
+      o.push(`${get_ptr(a)} = new $typed_cons.${ta}([${get_ptr(b)}])[0]`);
     }else if (ta.con == 'vec' && ($numtyps.includes(tb) || typeof b == 'number')){
       for (let i = 0; i < ta.elt[1]; i++){
         o.push(`${a}[${i}] = ${get_ptr(b)}`);

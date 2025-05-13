@@ -2,6 +2,7 @@ include "std/list"
 include "std/math"
 include "std/vec"
 include "std/gx"
+include "std/time"
 
 W := 400
 H := 400
@@ -20,7 +21,7 @@ for (i:=0; i<100; i++){
 gx.size(W,H);
 
 while (1){
-  gx.poll();
+  time.fps(120);
   
   gx.background(0);
   gx.stroke_weight(1);
@@ -43,4 +44,6 @@ while (1){
     y = (y + vy + H)%H;
     dots[i] = {x,y,vx,vy};
   } 
+
+  gx.poll();
 }
