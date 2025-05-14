@@ -61,3 +61,6 @@ gledit:
 	rm -rf /tmp/examples;\
 	cp -r examples /tmp/examples;\
 	gcc editor/gl/main.c $$([ "$$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lgl") -lm -o build/gledit && build/gledit /tmp/examples/boids.dh;
+webedit:
+	node editor/site/make_site.js;\
+	npx html-minifier-terser build/site.html -o build/site.min.html --collapse-whitespace --minify-js --minify-css

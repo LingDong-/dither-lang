@@ -363,7 +363,7 @@ typedef P[T] = {
   }
 }
 p := P[f32]{1.0, 2.0};
-q := P[str]{"hello", "world};
+q := P[str]{"hello", "world"};
 ```
 
 You can also use `typedef` to make an alias for a type, for example:
@@ -395,12 +395,12 @@ N.b = N.f(N.a)
 Imports can be made with the `include` keyword:
 
 ```
-include "path/to/my/script.txt"
+include "path/to/my/script.dh"
 include "path/to/my/c_library.so"
-include "path/to/my/package.lib"
+include "path/to/my/package"
 ```
 
-If the path ends with `.so`, a dynamic library (binary) is imported. If the path ends with `.lib`, the compiler will determine which file to use inside the `.lib` folder. Otherwise, a text file is imported.
+If the path ends with `.so`, a dynamic library (binary) is imported. If the path is a folder, the compiler will determine which file to use inside the folder. Otherwise, a text file is imported.
 
 ## Lists
 
@@ -413,7 +413,7 @@ x := list[i32]{1,2,3};
 To do useful things with lists, the list library needs to be imported:
 
 ```
-include "std/list.lib"
+include "std/list"
 
 x := list[i32]{1,2,3,4,5};
 list.length(x) == 5;
@@ -460,7 +460,7 @@ z := dict[vec[i32,2],f32]{
 ## io
 
 ```
-include "std/io.lib"
+include "std/io"
 
 io.println("hello world");
 
@@ -471,7 +471,7 @@ io.print("how are you\n");
 ## str
 
 ```
-include "std/str.lib"
+include "std/str"
 
 str.chr(104) // "h"
 "hello".length() // 5
@@ -480,7 +480,7 @@ str.chr(104) // "h"
 ## vec
 
 ```
-include "std/vec.lib"
+include "std/vec"
 
 x := {1.0,2.0,3.0}
 x.mag() // length / L2 norm
@@ -491,7 +491,7 @@ x.dir() // normalized
 ## list
 
 ```
-include "std/list.lib"
+include "std/list"
 
 x := list[i32]{1,2,3,4,5}
 x.length(); // number of items
@@ -503,7 +503,7 @@ x.slice(2,4); // copy range (start, end(
 ## math
 
 ```
-include "std/math.lib"
+include "std/math"
 
 x := 1.0
 y := 2.0
@@ -521,7 +521,7 @@ A simple Processing/p5 style graphics library.
 Instead of having magical `setup` and `draw` functions, you just write a normal program.
 
 ```
-include "std/gx.lib"
+include "std/gx"
 
 gx.size(640,480) // make canvas
 
@@ -545,7 +545,7 @@ See examples for more usage.
 A minimal library that writes to sound card.
 
 ```
-include "std/snd.lib"
+include "std/snd"
 
 snd.init(44100, 2); // sample rate, channels
 

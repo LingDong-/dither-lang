@@ -16,7 +16,7 @@ float time_impl_fps(float target_fps) {
                    (current_time.tv_nsec - last_time.tv_nsec) / 1e9;
   double target_frame_time = 1.0 / target_fps;
   double sleep_time_sec = target_frame_time - elapsed;
-  sleep_time_sec -= 0.001;
+  sleep_time_sec -= 0.0005;
   if (sleep_time_sec > 0) {
     sleep_time.tv_sec = (time_t)sleep_time_sec;
     sleep_time.tv_nsec = (long)((sleep_time_sec - sleep_time.tv_sec) * 1e9);

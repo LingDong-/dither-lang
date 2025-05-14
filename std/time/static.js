@@ -17,7 +17,7 @@ globalThis.$time = new function(){
     sleep_time_sec -= 0.001;
     if (sleep_time_sec > 0) {
       await sleep(sleep_time_sec * 1000);
-      elapsed = performance.now()-last_time;
+      elapsed = (performance.now()-last_time) / 1000.0;
     }
     last_time = current_time;
     return 1.0 / elapsed;
