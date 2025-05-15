@@ -34,7 +34,13 @@ globalThis.$io = new function(){
   }
   that.read_file = async function(){
     let [pth] = $pop_args(1);
-    if (is_node){
+    if (globalThis.__io_intern_hooked_read_file){
+      let o = __io_intern_hooked_read_file(pth);
+      if (o instanceof Promise){
+        o = await o;
+      }
+      return o;
+    }else if (is_node){
       return Array.from((fs??(fs=require('fs'))).readFileSync(pth));
     }else{
       const response = await fetch(pth, { method: 'GET' });

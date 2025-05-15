@@ -42,6 +42,13 @@ function embed_glsl_frag(ast,scopes){
           o += `texture2D(${ast.fun.lhs.val},${ast.arg.map(docompile).join(',')})`;
         }else if (ast.fun.lhs.val == 'math'){
           o += `${ast.fun.rhs.val[0].ipl.nom.val}(${ast.arg.map(docompile).join(',')})`
+        }else if (ast.fun.lhs.val == 'vec'){
+          let nom = ast.fun.rhs.val[0].ipl.nom.val;
+          if (nom == 'mag'){
+            o += `length(${ast.arg.map(docompile).join(',')})`
+          }else if (nom == 'dir'){
+            o += `normalize(${ast.arg.map(docompile).join(',')})`
+          }
         }
         
       }else{
@@ -73,7 +80,7 @@ function embed_glsl_frag(ast,scopes){
     if (typ.con == 'vec'){
       if (typ.elt[0] == 'f32'){
         return typ.con+typ.elt[1];
-      }else if (typ.elt[1] == 'i32'){
+      }else if (typ.elt[0] == 'i32'){
         return 'i'+typ.con+typ.elt[1];
       }
     }else if (typ == 'i32'){

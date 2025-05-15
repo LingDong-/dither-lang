@@ -69,6 +69,14 @@ EXPORTED void frag__sample(var_t* ret, gstate_t* _g){
   int fbo = ARG_POP(_g,i32);
 }
 
+EXPORTED void frag__write_pixels(var_t* ret, gstate_t* _g){
+  arr_t* arr = ARG_POP(_g,arr);
+  int fbo = ARG_POP(_g,i32);
+
+  frag_impl__write_pixels(fbo,arr->data);
+}
+
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "frag." QUOTE(name), frag_ ## name);
 
 EXPORTED void lib_init_frag(gstate_t* _g){
@@ -79,6 +87,7 @@ EXPORTED void lib_init_frag(gstate_t* _g){
   QK_REG(end)
   QK_REG(uniform)
   QK_REG(_sample)
+  QK_REG(_write_pixels)
 }
 
 

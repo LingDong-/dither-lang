@@ -270,6 +270,28 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
           last_call = performance.now();
         }
       }
+      globalThis.__io_intern_hooked_read_file = async function(pth){
+        if (pth.startsWith("examples/assets/")){
+          let blobUrl = await new Promise((resolve) => {
+            window.addEventListener("message", function handleResponse(event) {
+              if (event.data.type === "resource-response") {
+                window.removeEventListener("message", handleResponse);
+                resolve(event.data.value);
+              }
+            });
+            window.parent.postMessage({type:"request-resource",value:pth}, "*");
+          });
+          const response = await fetch(blobUrl);            
+          const arrayBuffer = await response.arrayBuffer();
+          const byteArray = new Uint8Array(arrayBuffer);
+          return Array.from(byteArray);
+        }else{
+          const response = await fetch(pth, { method: 'GET' });
+          const arrayBuffer = await response.arrayBuffer();
+          let arr = Array.from(new Uint8Array(arrayBuffer));
+          return arr;
+        }
+      }
       ${jj}
       ${"<"}${"/"}script>
     `;
@@ -278,6 +300,26 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
     iframeDoc.close();
 
   }
+  let asset_url = {}
+  window.addEventListener("message", async (event) => {
+    if (event.data.type === "request-resource") {
+      let pth = event.data.value;
+      let blobUrl;
+      if (asset_url[pth]){
+        blobUrl = asset_url[pth];
+      }else{
+        let b64 = ASSETS[pth];
+        let bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+        let blob = new Blob([bytes], { type: "application/octet-stream" });
+        blobUrl = URL.createObjectURL(blob);
+        asset_url[pth] = blobUrl;
+      }
+      event.source.postMessage({
+        type: "resource-response",
+        value: blobUrl
+      }, "*");
+    }
+  });
 
   document.getElementById("btn-compile").onclick = function(){
     compile_from_str(CML.getValue());
@@ -530,7 +572,7 @@ html.push(`<script>var DOC = \`${txt}\`</script>`);
 
 
 
-ff = fs.readdirSync("examples").filter(x=>!x.startsWith('.'));
+ff = fs.readdirSync("examples").filter(x=>x.endsWith('.dh'));
 html.push(`<script>var EXAMPLES = {`);
 for (let i = 0; i < ff.length; i++){
   let txt = fs.readFileSync("examples/"+ff[i]).toString()
@@ -538,6 +580,13 @@ for (let i = 0; i < ff.length; i++){
 }
 html.push(`}</script>`);
 
+
+html.push(`<script>var ASSETS = {`);
+ff = fs.readdirSync("examples/assets").filter(x=>!x.startsWith('.'));
+for (let i = 0; i < ff.length; i++){
+  html.push(`'examples/assets/${ff[i]}':"${fs.readFileSync("examples/assets/"+ff[i]).toString('base64')}",`);
+}
+html.push(`}</script>`);
 
 html.push(`<script>${main.toString()};main();</script>`)
 

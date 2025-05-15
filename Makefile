@@ -45,8 +45,9 @@ to_c: ir
 to_js: ir
 	node src/to_js.js build/ir.dsm -o build/out.js;
 run_js: to_js
-	mkdir -p /tmp/site;\
+	mkdir -p /tmp/site/examples;\
 	cp build/out.js /tmp/site;\
+	cp -r examples/assets /tmp/site/examples/assets;\
 	cd /tmp/site;\
 	echo '<body></body><script src="out.js"></script><script>;;(function(){var script=document.createElement("script");script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);stats.dom.style.left=null;stats.dom.style.right=0;requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src="//mrdoob.github.io/stats.js/build/stats.min.js";document.head.appendChild(script);})();</script>' > index.html;\
 	npx http-server;

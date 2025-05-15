@@ -128,4 +128,24 @@ globalThis.$frag = new function(){
       tex_cnt++;
     }
   }
+  that._write_pixels = function(){
+    let [fbo, pix] = $pop_args(2);
+    
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[fbo]);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+    gl.bindTexture(gl.TEXTURE_2D, fbos[fbo]._tex);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0, 0,
+      width,
+      height,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array(pix)
+    );
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
 }

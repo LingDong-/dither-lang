@@ -63,3 +63,12 @@ void frag___sample(){
   __pop_arg((void*)uv,2*sizeof(float));
   int32_t __ARG(fbo);
 }
+
+void frag___write_pixels(){
+  __arr_t* a;
+  __pop_arg(&a, 8);
+
+  int __ARG(fbo);
+
+  frag_impl__write_pixels(fbo,a->data);
+}

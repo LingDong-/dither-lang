@@ -1,0 +1,43 @@
+include "std/frag"
+include "std/math"
+include "std/img"
+include "std/io"
+include "std/arr"
+include "std/vec"
+include "std/time"
+
+pixels := img.decode(io.read_file("examples/assets/pepper.png"));
+
+resolution := {256.0,256.0};
+t : f32;
+image : frag.Texture;
+
+frag.size(...resolution);
+
+
+func ripple(fragCoord:vec[f32,2]):vec[f32,4]{
+  uv := fragCoord/resolution;
+  center := {0.5,0.5}
+  d := uv-center;
+  l := vec.mag(d);
+  u := vec.dir(d);
+  w := math.sin(l*50.0-t*0.015);
+  color := image.sample(uv+u*w*0.075*math.cos(t*0.001));
+  return {color.r,color.g,color.b,1.0};
+}
+
+shader := frag.program(embed ripple as "fragment");
+
+image = frag.texture();
+image.write_pixels(pixels);
+
+while (1){
+  time.fps(120);
+
+  frag.begin(shader);
+  frag.uniform("t", t=time.millis()); 
+  frag.uniform("image", image);
+  frag.end();
+  
+  frag.poll();
+}
