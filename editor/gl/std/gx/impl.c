@@ -114,14 +114,15 @@ void gx_impl__init_graphics(void* data, int w, int h){
     
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
 
   ((int32_t*)(data))[2] = fbo;
-  ((int32_t*)(data))[3] = fboTexture;
-  ((int32_t*)(data))[4] = w;
-  ((int32_t*)(data))[5] = h;
+  ((int32_t*)(data))[3] = w;
+  ((int32_t*)(data))[4] = h;
 
 }
 
@@ -153,7 +154,77 @@ void gx_impl__end_fbo(){
   glMatrixMode(GL_MODELVIEW);
 }
 
-void gx_impl__draw_texture(int tex, float x, float y, float w, float h){
+void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  int w,h;
+  GLint tex = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  unsigned char* pixels = malloc(w * h * 4);
+  glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
+  *_w = w;
+  *_h = h;
+
+  unsigned char *row = malloc(w*4);
+  for (int y = 0; y < h / 2; y++) {
+    unsigned char *top = pixels + y * w*4;
+    unsigned char *bot = pixels + (h - 1 - y) * w*4;
+    memcpy(row, top, w*4);
+    memcpy(top, bot, w*4);
+    memcpy(bot, row, w*4);
+  }
+  free(row);
+
+  return (void*)pixels;
+}
+
+
+void gx_impl__write_pixels(int fbo, void* pixels){
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  GLint tex = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+
+  int w,h;
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+
+  void* row = malloc(w*4);
+  for (int y = 0; y < h / 2; y++) {
+    void* top = pixels + y * w*4;
+    void* bot = pixels + (h - 1 - y) * w*4;
+    memcpy(row, top, w*4);
+    memcpy(top, bot, w*4);
+    memcpy(bot, row, w*4);
+  }
+  
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
+
+  for (int y = 0; y < h / 2; y++) {
+    void* top = pixels + y * w*4;
+    void* bot = pixels + (h - 1 - y) * w*4;
+    memcpy(row, top, w*4);
+    memcpy(top, bot, w*4);
+    memcpy(bot, row, w*4);
+  }
+
+  free(row);
+}
+
+void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  GLint tex = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
+
   // printf("%d %f %f %f %f\n", tex,x,y,w,h);
   // glClear(GL_COLOR_BUFFER_BIT);
   glBindTexture(GL_TEXTURE_2D, tex);
@@ -411,17 +482,20 @@ void gx_impl_end_shape(int bclose){
 
 #define ELLIPSE_DETAIL 32
 float lvs[ELLIPSE_DETAIL][2];
+float lvs2[2][2];
+float lvs3[4][2];
+float lvs4[1][2];
 
 void gx_impl_line(float x0, float y0, float x1, float y1){
-  lvs[1][1] = y1;
-  lvs[1][0] = x1;
-  lvs[0][1] = y0;
-  lvs[0][0] = x0;
+  lvs2[1][1] = y1;
+  lvs2[1][0] = x1;
+  lvs2[0][1] = y0;
+  lvs2[0][0] = x0;
 
   if (is_stroke && color_stroke.a){
     glColor4f(color_stroke.r, color_stroke.g, color_stroke.b, color_stroke.a);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs2);
     glDrawArrays(GL_LINES,0,4);
     glDisableClientState(GL_VERTEX_ARRAY);
   }
@@ -466,37 +540,37 @@ void gx_impl_ellipse(float x, float y, float w, float h){
 
 void gx_impl_rect(float x, float y, float w, float h){
 
-  lvs[0][0] = x;
-  lvs[0][1] = y;
-  lvs[1][0] = x+w;
-  lvs[1][1] = y;
-  lvs[2][0] = x+w;
-  lvs[2][1] = y+h;
-  lvs[3][0] = x;
-  lvs[3][1] = y+h;
+  lvs3[0][0] = x;
+  lvs3[0][1] = y;
+  lvs3[1][0] = x+w;
+  lvs3[1][1] = y;
+  lvs3[2][0] = x+w;
+  lvs3[2][1] = y+h;
+  lvs3[3][0] = x;
+  lvs3[3][1] = y+h;
 
   glEnableClientState(GL_VERTEX_ARRAY);
   if (is_fill && color_fill.a){
     glColor4f(color_fill.r, color_fill.g, color_fill.b, color_fill.a);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs3);
     glDrawArrays(GL_QUADS,0,4);
   }
   if (is_stroke && color_stroke.a){
     glColor4f(color_stroke.r, color_stroke.g, color_stroke.b, color_stroke.a);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs3);
     glDrawArrays(GL_LINE_LOOP,0,4);
   }
   glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void gx_impl_point(float x, float y){
-  lvs[0][1] = y;
-  lvs[0][0] = x;
+  lvs4[0][1] = y;
+  lvs4[0][0] = x;
 
   if (is_stroke && color_stroke.a){
     glEnableClientState(GL_VERTEX_ARRAY);
     glColor4f(color_stroke.r, color_stroke.g, color_stroke.b, color_stroke.a);
-    glVertexPointer(2, GL_FLOAT, 0, lvs);
+    glVertexPointer(2, GL_FLOAT, 0, lvs4);
     glDrawArrays(GL_POINTS,0,1);
     glDisableClientState(GL_VERTEX_ARRAY);
   } 

@@ -4,15 +4,18 @@ namespace gx {
   func _begin_fbo(fbo:i32);
   func _end_fbo();
   func _draw_texture(tex:i32,x:f32,y:f32,w:f32,h:f32);
+  func _read_pixels(fbo:i32):arr[u8,3];
+  func _write_pixels(fbo:i32,pix:arr[u8,3]);
   typedef Graphics = {
     fbo  : i32;
-    tex  : i32;
     w    : i32;
     h    : i32;
     func begin() {_begin_fbo(this.fbo);};
     func end()   {  _end_fbo();};
-    func draw(x:f32,y:f32,w:f32,h:f32)  {_draw_texture(this.tex,x,y,w,h);};
-    func draw(x:f32,y:f32)    {_draw_texture(this.tex,x,y,this.w,this.h);};
+    func draw(x:f32,y:f32,w:f32,h:f32)  {_draw_texture(this.fbo,x,y,w,h);};
+    func draw(x:f32,y:f32)    {_draw_texture(this.fbo,x,y,this.w,this.h);};
+    func read_pixels():arr[u8,3]     {return _read_pixels(this.fbo)};
+    func write_pixels(pix:arr[u8,3]) {_write_pixels(this.fbo,pix)};
   };
   typedef Font = i32;
   func _size(w:i32,h:i32,ctx:u64);

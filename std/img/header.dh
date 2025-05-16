@@ -2,4 +2,14 @@
 namespace img {
   func decode(buf:list[u8]):arr[u8,3];
   func encode(ext:str,pix:arr[u8,3]):list[u8];
+
+  func get[T](pix:arr[T,3],x:i32,y:i32):vec[T,4]{
+    return {pix[y,x,0],pix[y,x,1],pix[y,x,2],pix[y,x,3]}
+  }
+  func set[T](pix:arr[T,3],x:i32,y:i32,c:vec[T,4]){
+    pix[y,x,0] = c[0];
+    pix[y,x,1] = c[1];
+    pix[y,x,2] = c[2];
+    pix[y,x,3] = c[3];
+  }
 }

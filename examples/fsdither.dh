@@ -16,33 +16,37 @@ pixels := img.decode(io.read_file("examples/assets/pepper.png"));
 
 ({H,W,chan}) := pixels.shape();
 
-fstein := arr.make({H+1,W+1},{0.,0.,0.});
+fstein := arr.make({2,W+2},{0.,0.,0.});
 
 func quant(x:f32):f32{
-  return math.floor(x*nlvl)/nlvl;
+  return math.round(x*nlvl)/nlvl;
 }
 
 guts.gc_off();
 
+swap := 0
+next := {0.,0.,0.}
 for (y:=0; y<H; y++){
   for (x:=0; x<W; x++){
     o := {pixels[y,x,gray] as f32,pixels[y,x,1],pixels[y,x,2-gray]}/255.0 
-    o += fstein[y,x];
+    o += next + fstein[1-swap,x+1];
     c := { quant(o.r), quant(o.g), quant(o.b) };
     err := o - c;
-    fstein[y  ,x  ] = c;
-    fstein[y  ,x+1] += (err*7)/16;
-    fstein[y+1,x-1] += (err*3)/16;
-    fstein[y+1,x  ] += (err*5)/16;
-    fstein[y+1,x+1] += (err*1)/16;
+    
+    ({pixels[y,x,0],pixels[y,x,1],pixels[y,x,2]}) = c*255;
+    next = (err*7)/16;
+    fstein[swap,x  ] += (err*3)/16;
+    fstein[swap,x+1] += (err*5)/16;
+    fstein[swap,x+2] += (err*1)/16;
+  }
+  swap = 1-swap;
+  for (x:=0; x<W+2; x++){
+    fstein[swap,x] = {0.,0.,0.};
   }
 }
 
-for (y:=0; y<H; y++){
-  for (x:=0; x<W; x++){
-    ({pixels[y,x,0],pixels[y,x,1],pixels[y,x,2]}) = fstein[y,x]*255;
-  }
-}
+fstein.reshape({0,0});
+guts.gc_on();
 
 gx.size(W*scl,H*scl)
 
@@ -55,3 +59,4 @@ while (1){
   pg.draw(0,0,W*scl,H*scl);
   gx.poll();
 }
+
