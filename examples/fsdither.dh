@@ -1,0 +1,57 @@
+include "std/math"
+include "std/img"
+include "std/io"
+include "std/arr"
+include "std/time"
+include "std/gx"
+include "std/guts"
+
+// floyd-steinberg dither demo
+
+nlvl := 2; // number of quantize levels
+gray := 0; // do grayscale instead of color?
+scl  := 2; // upscale to visualize
+
+pixels := img.decode(io.read_file("examples/assets/pepper.png"));
+
+({H,W,chan}) := pixels.shape();
+
+fstein := arr.make({H+1,W+1},{0.,0.,0.});
+
+func quant(x:f32):f32{
+  return math.floor(x*nlvl)/nlvl;
+}
+
+guts.gc_off();
+
+for (y:=0; y<H; y++){
+  for (x:=0; x<W; x++){
+    o := {pixels[y,x,gray] as f32,pixels[y,x,1],pixels[y,x,2-gray]}/255.0 
+    o += fstein[y,x];
+    c := { quant(o.r), quant(o.g), quant(o.b) };
+    err := o - c;
+    fstein[y  ,x  ] = c;
+    fstein[y  ,x+1] += (err*7)/16;
+    fstein[y+1,x-1] += (err*3)/16;
+    fstein[y+1,x  ] += (err*5)/16;
+    fstein[y+1,x+1] += (err*1)/16;
+  }
+}
+
+for (y:=0; y<H; y++){
+  for (x:=0; x<W; x++){
+    ({pixels[y,x,0],pixels[y,x,1],pixels[y,x,2]}) = fstein[y,x]*255;
+  }
+}
+
+gx.size(W*scl,H*scl)
+
+pg := gx.create_graphics(W,H);
+pg.write_pixels(pixels);
+
+
+while (1){
+  gx.background(0);
+  pg.draw(0,0,W*scl,H*scl);
+  gx.poll();
+}

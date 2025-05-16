@@ -24,5 +24,13 @@ globalThis.$math = new function(){
     let [y,x] = $pop_args(2);
     return Math.atan2(y,x);
   }
+  that.round = function(){
+    let [x] = $pop_args(1);
+    return Math.round(x);
+  }
+  that.floor = function(){
+    let [x] = $pop_args(1);
+    return Math.floor(x);
+  }
 }
 

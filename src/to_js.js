@@ -305,6 +305,10 @@ var TO_JS = function(cfg){
         o.push(`${a}.__val = $value(${b});`);
       }else if (tb.con == 'union'){
         o.push(`${a} = $value(${b}.__val);`);
+      }else if (ta.con == 'vec' && tb.con == 'vec'){
+        for (let i = 0; i < ta.elt[1]; i++){
+          o.push(`${a}[${i}] = ${b}[${i}]`);
+        }
       }else{
         console.log(a,b,ta,tb)
         UNIMPL();

@@ -4,6 +4,7 @@ namespace math {
   func random():f32;
   func abs(x:f32):f32;
   func floor(x:f32):f32;
+  func round(x:f32):f32;
   func min(x:f32,y:f32):f32;
   func max(x:f32,y:f32):f32;
   func atan2(x:f32,y:f32):f32;

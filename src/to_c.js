@@ -315,7 +315,9 @@ void __gc_mark(void* ptr){
     }
   }
 }
+int __gc_off = 0;
 void __gc_run(){
+  if (__gc_off) return;
   if (DBG_GC) {printf("stack "); for (int i = 0; i < __vars_top; i++) printf("%p %d ",(void*)__vars[i], (char)(((__mem_node_t*)(((void*)__vars[i])-sizeof(__mem_node_t)))->flag )); printf("\\n");}
   for (int i = 0; i < __vars_top; i++){
     __gc_mark((void*)(__vars[i]));
@@ -917,6 +919,10 @@ function transpile_c(instrs,layout){
       }
     }else if (tb.con == 'union'){
       o.push(`memcpy( &(${a}), &(${b}->data), ${type_size(ta)} );`);
+    }else if (ta.con == 'vec' && tb.con == 'vec'){
+      for (let i = 0; i < ta.elt[1]; i++){
+        o.push(`${a}[${i}] = ${b}[${i}];`);
+      }
     }else{
       console.log(a,b,ta,tb);
       UNIMPL();

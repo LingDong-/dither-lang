@@ -241,8 +241,10 @@ ARR_DEF(var_t);
 typedef struct mem_node_st {
   struct mem_node_st *prev;
   struct mem_node_st *next;
+  int64_t size;
   char data[];
 } mem_node_t;
+
 typedef struct mem_list_st {
   mem_node_t *head;
   mem_node_t *tail;
@@ -251,6 +253,7 @@ typedef struct mem_list_st {
 
 void* mem_alloc(mem_list_t* l, int sz){
   mem_node_t* n = (mem_node_t*)calloc( sizeof(mem_node_t)+sz, 1);
+  n->size = sz;
   n->next = NULL;
   n->prev = l->tail;
   if (l->head == NULL){
@@ -259,11 +262,12 @@ void* mem_alloc(mem_list_t* l, int sz){
     l->tail->next = n;
   }
   l->tail = n;
-  l->len ++;
+  l->len+=sz;
   return n->data;
 }
 void mem_free(mem_list_t* l, void* ptr){
   mem_node_t* node = ptr - sizeof(mem_node_t);
+  int sz = node->size;
   if (node == l->tail){
     if (node == l->head){
       l->head = NULL;
@@ -282,7 +286,7 @@ void mem_free(mem_list_t* l, void* ptr){
   node->prev->next = node->next;
   node->next->prev = node->prev;
 cleanup:
-  l->len--;
+  l->len-=sz;
   free(node);
 }
 
@@ -2139,7 +2143,9 @@ map_t* frame_end(){
   }
   
   if (!(_G.flags & GFLG_NOGC)){
-    gc_run();
+    if (_G.objs.len > 16384){
+      gc_run();
+    }
   }
   return (map_t*)(_G.vars.tail->data);
 }

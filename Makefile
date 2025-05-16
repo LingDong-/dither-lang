@@ -47,7 +47,7 @@ to_js: ir
 run_js: to_js
 	mkdir -p /tmp/site/examples;\
 	cp build/out.js /tmp/site;\
-	cp -r examples/assets /tmp/site/examples/assets;\
+	cp -r examples/assets /tmp/site/examples;\
 	cd /tmp/site;\
 	echo '<body></body><script src="out.js"></script><script>;;(function(){var script=document.createElement("script");script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);stats.dom.style.left=null;stats.dom.style.right=0;requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src="//mrdoob.github.io/stats.js/build/stats.min.js";document.head.appendChild(script);})();</script>' > index.html;\
 	npx http-server;
@@ -65,3 +65,7 @@ gledit:
 webedit:
 	node editor/site/make_site.js;\
 	npx html-minifier-terser build/site.html -o build/site.min.html --collapse-whitespace --minify-js --minify-css
+profile: ir
+	FILENAME=$$(date +%s%N | shasum -a 256 | head -c 10).trace;\
+	arch -arm64 zsh -c "xcrun xctrace record --template 'Time Profiler' --output /tmp/$$FILENAME --launch -- build/vm build/ir.dsm"
+	open /tmp/$$FILENAME;

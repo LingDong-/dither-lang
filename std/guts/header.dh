@@ -1,0 +1,6 @@
+
+namespace guts {
+  func gc_on();
+  func gc_off();
+  func gc();
+}

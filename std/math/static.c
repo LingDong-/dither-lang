@@ -52,3 +52,18 @@ void math__atan2(){
 
   __put_ret(&z);
 }
+
+
+void math__round(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = roundf(x);
+  __put_ret(&y);
+}
+
+void math__floor(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = floorf(x);
+  __put_ret(&y);
+}

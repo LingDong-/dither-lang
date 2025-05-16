@@ -3316,7 +3316,7 @@ var PARSER = function(sys,extensions={}){
           let tt = [];
           for (let i = 0; i < ast.lhs.val.length; i++){
             for (let j = 0; j < ast.lhs.val[i].length; j++){
-              let t1 = mktmpvar(ast.rhs.typ.elt[0]);
+              let t1 = mktmpvar(ast.lhs.typ.elt[0]);
               pushins('mov',t1,[n1,i*ast.lhs.val[i].length+j]);
               tt.push(t1);
             }
