@@ -18,7 +18,7 @@ globalThis.$exch = new function(){
       o.data.__val = Object.assign(jn.map(x=>jbuild(x)),{__type:jt_lst});
     }else if (typeof jn == 'object'){
       o.data.__sel = 1;
-      o.data.__val = Object.assign(Object.fromEntries(Object.entries(jn).map(([x,y])=>[x,jbuild(y)])),{__type:jt_dic});
+      o.data.__val = Object.assign(Object.fromEntries(Object.entries(jn).map(([x,y])=>[x,[[x,jbuild(y)]]])),{__type:jt_dic});
     }else if (typeof jn == 'string'){
       o.data.__sel = 2;
       o.data.__val = Object.assign([jn],{__type:jt_str});
@@ -45,7 +45,7 @@ globalThis.$exch = new function(){
         if (!first) s.push(",");
         first = 0;
         s.push(JSON.stringify(k)+":");
-        s.push(jencode(o.data.__val[k]));
+        s.push(jencode(o.data.__val[k][0][1]));
       }
       s.push("}");
     }else if (o.data.__sel == 2){
@@ -69,6 +69,7 @@ globalThis.$exch = new function(){
     let jn = JSON.parse(s);
 
     o.data = jbuild(jn).data;
+    console.log(o);
   }
   that._encode_json = function(){
     let [o] = $pop_args(1);

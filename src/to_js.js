@@ -81,6 +81,10 @@ var TO_JS = function(cfg){
       return '['+x.__dim.join(',')+']{'+x.map($to_str).join(',')+'}';
     }else if (x.__type.con == 'dict'){
       return '{'+Object.entries(x).filter(a=>!a[0].startsWith('__')).map(a=>a[1]).flat().map(a=>$to_str(a[0])+':'+$to_str(a[1])).join(',')+'}'
+    }else if (x.__type.con == 'union'){
+      return $to_str(x.__val);
+    }else if (x.__type == 'str'){
+      return x[0];
     }else{
       return '[object:'+JSON.stringify(x.__type)+']';
     }
@@ -325,7 +329,7 @@ var TO_JS = function(cfg){
           o.push(`${a}[${i}]=${b}[${i}]${os}${c}[${i}];`);
         }
       }else{
-        o.push(`${get_ptr(a)}=${get_ptr(b)}${os}${get_ptr(c)};`);
+        o.push(`${get_ptr(a)}=$unwrap(${get_ptr(b)})${os}$unwrap(${get_ptr(c)});`);
       }
     }
 

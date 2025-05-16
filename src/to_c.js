@@ -221,6 +221,7 @@ int __stack_top = 0;
 
 
 void __push_stack(){
+  if (DBG_GC) printf("push stack\\n");
   __vars_stack = __vars_top;
   if (__stack_top+1>=__stack_cap){
     __stack_cap = (__stack_cap)*2+1;
@@ -229,6 +230,7 @@ void __push_stack(){
   __stack[__stack_top++] = __vars_stack;
 }
 void __pop_stack(){
+  if (DBG_GC) printf("pop stack\\n");
   __vars_top = __vars_stack;
   __stack_top--;
   __vars_stack = __stack[__stack_top-1];
@@ -276,7 +278,7 @@ void __gc_mark(void* ptr){
       if (typ == 0) break;
       if (${collectible.map(x=>"typ=="+x).join('||')}){
         int ofs = ((int*)(ptr + i*5 +1))[0];
-        __gc_mark(ptr + ofs);
+        __gc_mark( *(void**)(ptr + ofs));
       }
       i++;
     }
@@ -285,14 +287,14 @@ void __gc_mark(void* ptr){
     if (${collectible.map(x=>"dic->kt=="+x).join('||')}){
       for (int i = 0; i < __NUM_DICT_SLOTS; i++){
         for (int j = 0; j < dic->slots[i].n; j++){
-          __gc_mark( dic->slots[i].data + (dic->kw+dic->vw) * j );
+          __gc_mark( *(void**)(dic->slots[i].data + (dic->kw+dic->vw) * j) );
         }
       }
     }
     if (${collectible.map(x=>"dic->vt=="+x).join('||')}){
       for (int i = 0; i < __NUM_DICT_SLOTS; i++){
         for (int j = 0; j < dic->slots[i].n; j++){
-          __gc_mark( dic->slots[i].data + (dic->kw+dic->vw) * j + dic->kw );
+          __gc_mark( *(void**)(dic->slots[i].data + (dic->kw+dic->vw) * j + dic->kw) );
         }
       }
     }
@@ -311,7 +313,7 @@ void __gc_mark(void* ptr){
   }else if (vt == VART_UON){
     __union_t* uon = (__union_t*) ptr;
     if (${collectible.map(x=>"uon->t=="+x).join('||')}){
-      __gc_mark(uon->data);
+      __gc_mark(*(void**)(uon->data));
     }
   }
 }
@@ -912,7 +914,7 @@ function transpile_c(instrs,layout){
         o.push(`* ((char**) (${a}->data)) = __gc_alloc(VART_STR, strlen(${b})+1);`);
         o.push(`strcpy(  *((char**) (${a}->data)), ${b}  );`);
       }else{
-        o.push(`${a}->sel = ${ ta.elt.map(q=>JSON.stringify(q)).indexOf(JSON.stringify(b)) };`);
+        o.push(`${a}->sel = ${ ta.elt.map(q=>JSON.stringify(q)).indexOf(JSON.stringify(tb)) };`);
         o.push(`${a}->t = ${vart(tb)};`);
         o.push(`${a}->w = ${type_size(tb)};`);
         o.push(`memcpy( (void*) (${a}->data),  &${b}, 8);`);
@@ -1014,9 +1016,14 @@ function transpile_c(instrs,layout){
         
       }else if (t.con == 'dict'){
         idx = maybenum(idx);
-        if (typeof idx == 'number' || idx[0] == '"'){
+        if (typeof idx == 'number'){
           let tmp = shortid();
           o.push(`${t.elt[0]} ${tmp} = ${idx};`);
+          idx = tmp;
+        }else if (idx[0] == '"'){
+          let tmp = shortid();
+          o.push(`${t.elt[0]} ${tmp} = __gc_alloc(VART_STR,${idx.length-1});`);
+          o.push(`strcpy(${tmp},${idx});`);
           idx = tmp;
         }
         return [`__dict_get(${v}, &(${idx}))`, t.elt[1], type_size(t.elt[1])];

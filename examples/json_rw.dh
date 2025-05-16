@@ -1,0 +1,59 @@
+include "std/exch"
+include "std/gx"
+include "std/io"
+include "std/str"
+
+rect := exch.decode[exch.JSON](
+  '{"x":50,"y":50,"w":200,"h":100,"label":"rectangle"}'
+);
+
+circ := exch.JSON{data:dict[str,exch.JSON]{
+  "center":exch.JSON{data:list[exch.JSON]{
+    exch.JSON{data:100.},
+    exch.JSON{data:200.},
+  }},
+  "radius":exch.JSON{data:50.},
+  "label" :exch.JSON{data:"circle"}
+}}
+
+gx.size(450,250);
+
+shapes := exch.JSON{data:dict[str,exch.JSON]{
+  "circ": circ,
+  "rect": rect
+}}
+
+io.println(exch.encode(shapes))
+
+while (1){
+  [x,y,w,h,lbl0] := [
+    (rect.data as dict[str,exch.JSON])["x"].data as f32,
+    (rect.data as dict[str,exch.JSON])["y"].data as f32,
+    (rect.data as dict[str,exch.JSON])["w"].data as f32,
+    (rect.data as dict[str,exch.JSON])["h"].data as f32,
+    (rect.data as dict[str,exch.JSON])["label"].data as str,
+  ];
+  [cx,cy,r,lbl1] := [
+    ((circ.data as dict[str,exch.JSON])["center"].data as list[exch.JSON])[0].data as f32,
+    ((circ.data as dict[str,exch.JSON])["center"].data as list[exch.JSON])[1].data as f32,
+    (circ.data as dict[str,exch.JSON])["radius"].data as f32,
+    (circ.data as dict[str,exch.JSON])["label"].data as str,
+  ]
+
+  gx.background(0.5);
+  gx.fill(1.0);
+  gx.rect(x,y,w,h);
+  gx.ellipse(cx,cy,r*2,r*2);
+
+  gx.fill(0.0)
+  gx.text(lbl0,x+w/2-lbl0.length()*4,y+h/2+8);
+  gx.text(lbl1,cx-lbl1.length()*4,cy+8);
+
+  gx.text(exch.encode(rect),0,16);
+  gx.text(exch.encode(circ),0,32);
+
+  gx.poll();
+}
+
+
+

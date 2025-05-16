@@ -53,7 +53,7 @@ void exch_impl__json_enter_dic(){
   u->sel = 1;
   u->w = 8;
   u->t = VART_DIC;
-  __dict_t* m = __gc_alloc(VART_DIC,sizeof(__dict_t));;
+  __dict_t* m = __gc_alloc(VART_DIC,sizeof(__dict_t));
   *((void**)(u->data)) = m;
   m->n = 0;
   m->kt = VART_STR;
@@ -87,7 +87,7 @@ void exch_impl__json_exit_lst(){
 }
 
 void exch_impl__json_key(char* s, int n){
-  _jkey = realloc(_jkey,n+1);
+  _jkey = __gc_alloc(VART_STR,n+1);
   exch_impl__json_copy_esc(_jkey,s,n);
   _jkey[n] = 0;
 }
