@@ -13,7 +13,7 @@
 
 uint64_t win_impl_init(int w, int h, int flag){
 
-  const char* dir = getenv("DITHER_ROOT");
+  const char* dir = DITHER_ROOT;
   if (!dir) dir = ".";
   char full_path[512];
   if (flag & CONTEXT_2D){

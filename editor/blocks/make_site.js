@@ -24,7 +24,7 @@ let html = [`
     cursor:pointer;
   }
 </style>
-<body></body>
+<body style="min-width:960px;position:absolute;width:100%;height:100%;left:0px;top:0px;margin:0px;padding-0px;"></body>
 `];
 
 html.push(`<script>${fs.readFileSync("src/parser.js").toString()}</script>`);
@@ -78,9 +78,13 @@ html.push(`<script>var Std_idens = [${Array.from(idens).sort().join(',')}]</scri
 
 
 function main(){
+  let EXAMPLES = [
+    '["prgm","ctrl",[[["varv","decl",[["iden","iden",[],["Spread"],null],["lf32","litr",["0.5"],null,null]],null,null],["func","decl",[["iden","iden",[],["Tree"],null],["tvod","type",[],null,null],[["argr","decl",[["iden","iden",[],["X"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["Y"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["A"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["L"],null],["tf32","type",[],null,null]],null,null]],[["cond","ctrl",[["oolt","oper",[["iden","iden",[],["L"],null],["lf32","litr",["8.0"],null,null]],null,null],[["ret0","misc",[],null,null]]],null,null],["varv","decl",[["iden","iden",[],["X1"],null],["oadd","oper",[["iden","iden",[],["X"],null],["omul","oper",[["cal1","misc",[["stdf","stdl",[],["math: <b>cos</b>"],null],["iden","iden",[],["A"],null]],null,null],["iden","iden",[],["L"],null]],null,null]],null,null]],null,null],["varv","decl",[["iden","iden",[],["Y1"],null],["oadd","oper",[["iden","iden",[],["Y"],null],["omul","oper",[["cal1","misc",[["stdf","stdl",[],["math: <b>sin</b>"],null],["iden","iden",[],["A"],null]],null,null],["iden","iden",[],["L"],null]],null,null]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["gx: <b>line</b>"],null],[["iden","iden",[],["X"],null],["iden","iden",[],["Y"],null],["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null]]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null],["osub","oper",[["iden","iden",[],["A"],null],["iden","iden",[],["Spread"],null]],null,null],["omul","oper",[["iden","iden",[],["L"],null],["lf32","litr",["0.8"],null,null]],null,null]]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null],["oadd","oper",[["iden","iden",[],["A"],null],["iden","iden",[],["Spread"],null]],null,null],["omul","oper",[["iden","iden",[],["L"],null],["lf32","litr",["0.8"],null,null]],null,null]]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>size</b>"],null],["li32","litr",["320"],null,null],["li32","litr",["240"],null,null]],null,null],["whil","ctrl",[["li32","litr",["1"],null,null],[["cal1","misc",[["stdf","stdl",[],["gx: <b>background</b>"],null],["lf32","litr",["0.75"],null,null]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["lf32","litr",["160.0"],null,null],["lf32","litr",["240.0"],null,null],["odiv","oper",[["stdd","stdl",[],["math: <b>PI</b>"],null],["lf32","litr",["-2.0"],null,null]],null,null],["lf32","litr",["50.0"],null,null]]],null,null],["asgn","misc",[["iden","iden",[],["Spread"],null],["cal1","misc",[["stdf","stdl",[],["math: <b>sin</b>"],null],["omul","oper",[["lf32","litr",["0.002"],null,null],["cal0","misc",[["stdf","stdl",[],["time: <b>millis</b>"],null]],null,null]],null,null]],null,null]],null,null],["cal0","misc",[["stdf","stdl",[],["gx: <b>poll</b>"],null]],null,null]]],null,null]]],null,[24,24]]',
+    '["prgm","ctrl",[[["varv","decl",[["iden","iden",[],["Width"],null],["li32","litr",["256"],null,null]],null,null],["varv","decl",[["iden","iden",[],["Height"],null],["li32","litr",["256"],null,null]],null,null],["varv","decl",[["iden","iden",[],["MaxIteration"],null],["li32","litr",["13"],null,null]],null,null],["func","decl",[["iden","iden",[],["Mandelbrot"],null],["ti32","type",[],null,null],[["argr","decl",[["iden","iden",[],["X0"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["Y0"],null],["tf32","type",[],null,null]],null,null]],[["varv","decl",[["iden","iden",[],["Y"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["X"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["Iteration"],null],["li32","litr",["0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["XX"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["YY"],null],["lf32","litr",["0.0"],null,null]],null,null],["whil","ctrl",[["olan","oper",[["oolt","oper",[["iden","iden",[],["Iteration"],null],["iden","iden",[],["MaxIteration"],null]],null,null],["oleq","oper",[["oadd","oper",[["asgn","misc",[["iden","iden",[],["XX"],null],["omul","oper",[["iden","iden",[],["X"],null],["iden","iden",[],["X"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["YY"],null],["omul","oper",[["iden","iden",[],["Y"],null],["iden","iden",[],["Y"],null]],null,null]],null,null]],null,null],["lf32","litr",["4.0"],null,null]],null,null]],null,null],[["varv","decl",[["iden","iden",[],["Xt"],null],["oadd","oper",[["osub","oper",[["iden","iden",[],["XX"],null],["iden","iden",[],["YY"],null]],null,null],["iden","iden",[],["X0"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["Y"],null],["oadd","oper",[["omul","oper",[["lf32","litr",["2.0"],null,null],["omul","oper",[["iden","iden",[],["X"],null],["iden","iden",[],["Y"],null]],null,null]],null,null],["iden","iden",[],["Y0"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["X"],null],["iden","iden",[],["Xt"],null]],null,null],["asgn","misc",[["iden","iden",[],["Iteration"],null],["oadd","oper",[["iden","iden",[],["Iteration"],null],["li32","litr",["1"],null,null]],null,null]],null,null]]],null,null],["retn","misc",[["iden","iden",[],["Iteration"],null]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>size</b>"],null],["iden","iden",[],["Width"],null],["iden","iden",[],["Height"],null]],null,null],["whi1","ctrl",[[["forr","ctrl",[["iden","iden",[],["I"],null],["li32","litr",["0"],null,null],["iden","iden",[],["Height"],null],[["cal0","misc",[["stdf","stdl",[],["gx: <b>poll</b>"],null]],null,null],["forr","ctrl",[["iden","iden",[],["J"],null],["li32","litr",["0"],null,null],["iden","iden",[],["Width"],null],[["varv","decl",[["iden","iden",[],["Q"],null],["call","misc",[["iden","iden",[],["Mandelbrot"],null],[["osub","oper",[["omul","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["J"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["Width"],null]],null,null],["lf32","litr",["3.0"],null,null]],null,null],["lf32","litr",["2.0"],null,null]],null,null],["osub","oper",[["omul","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["I"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["Height"],null]],null,null],["lf32","litr",["3.0"],null,null]],null,null],["lf32","litr",["1.5"],null,null]],null,null]]],null,null]],null,null],["varv","decl",[["iden","iden",[],["F"],null],["opow","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["Q"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["MaxIteration"],null]],null,null],["lf32","litr",["0.5"],null,null]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["gx: <b>stroke</b>"],null],[["iden","iden",[],["F"],null],["omul","oper",[["iden","iden",[],["F"],null],["lf32","litr",["0.8"],null,null]],null,null],["osub","oper",[["lf32","litr",["1.0"],null,null],["iden","iden",[],["F"],null]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>point</b>"],null],["iden","iden",[],["J"],null],["iden","iden",[],["I"],null]],null,null]]],null,null]]],null,null]]],null,null]]],null,[24,24]]',
+    '["prgm","ctrl",[[["func","decl",[["iden","iden",[],["Factorial"],null],["ti32","type",[],null,null],[["argr","decl",[["iden","iden",[],["X"],null],["ti32","type",[],null,null]],null,null]],[["cond","ctrl",[["iden","iden",[],["X"],null],[["retn","misc",[["omul","oper",[["iden","iden",[],["X"],null],["call","misc",[["iden","iden",[],["Factorial"],null],[["osub","oper",[["iden","iden",[],["X"],null],["li32","litr",["1"],null,null]],null,null]]],null,null]],null,null]],null,null]]],null,null],["retn","misc",[["li32","litr",["1"],null,null]],null,null]]],null,null],["varv","decl",[["iden","iden",[],["A"],null],["li32","litr",["6"],null,null]],null,null],["varv","decl",[["iden","iden",[],["B"],null],["call","misc",[["iden","iden",[],["Factorial"],null],[["iden","iden",[],["A"],null]]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["io: <b>println</b>"],null],[["ocat","oper",[[["lstr","litr",["The factorial of "],null,null],["iden","iden",[],["A"],null],["lstr","litr",[" is "],null,null],["iden","iden",[],["B"],null]]],null,null]]],null,null]]],null,[24,24]]',
+  ]
 
-  // let test_program = '{"tag":"prgm","page":"ctrl","texts":["<b>Program</b>","End"],"slot_types":["L"],"x":17,"y":104,"slots":[[{"tag":"func","page":"decl","texts":["Define <b>function</b>","that returns a","and takes","Begin","End"],"slot_types":["X","X","L","L"],"x":4,"y":19,"slots":[{"tag":"iden","page":"iden","texts":["Factorial"],"slot_types":[],"x":117,"y":22,"slots":[]},{"tag":"ti32","page":"type","texts":["<b>Integer</b>"],"slot_types":[],"x":275,"y":22,"slots":[]},[{"tag":"argr","page":"decl","texts":["<b>Argument</b>","of type",""],"slot_types":["X","X"],"x":11,"y":44,"slots":[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":90,"y":47,"slots":[]},{"tag":"ti32","page":"type","texts":["<b>Integer</b>"],"slot_types":[],"x":180,"y":47,"slots":[]}]}],[{"tag":"cond","page":"ctrl","texts":["<b>If</b>","then",""],"slot_types":["X","L"],"x":11,"y":88,"slots":[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":33,"y":91,"slots":[]},[{"tag":"retn","page":"misc","texts":["<b>Return</b>",""],"slot_types":["X"],"x":18,"y":113,"slots":[{"tag":"omul","page":"oper","texts":["","<b>times</b>",""],"slot_types":["X","X"],"x":25,"y":132,"slots":[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":38,"y":154,"slots":[]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":123,"y":135,"slots":[{"tag":"iden","page":"iden","texts":["Factorial"],"slot_types":[],"x":214,"y":138,"slots":[]},[{"tag":"osub","page":"oper","texts":["","<b>minus</b>",""],"slot_types":["X","X"],"x":130,"y":160,"slots":[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":143,"y":165,"slots":[]},{"tag":"li32","page":"litr","texts":["Integer",""],"slot_types":["I"],"x":232,"y":163,"slots":["1"]}]}]]}]}]}]]},{"tag":"retn","page":"misc","texts":["<b>Return</b>",""],"slot_types":["X"],"x":11,"y":202,"slots":[{"tag":"li32","page":"litr","texts":["Integer",""],"slot_types":["I"],"x":69,"y":205,"slots":["1"]}]}]]},{"tag":"varv","page":"decl","texts":["Declare <b>variable</b>","of value",""],"slot_types":["X","X"],"x":4,"y":250,"slots":[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":122,"y":255,"slots":[]},{"tag":"li32","page":"litr","texts":["Integer",""],"slot_types":["I"],"x":219,"y":253,"slots":["6"]}]},{"tag":"varv","page":"decl","texts":["Declare <b>variable</b>","of value",""],"slot_types":["X","X"],"x":4,"y":280,"slots":[{"tag":"iden","page":"iden","texts":["B"],"slot_types":[],"x":122,"y":283,"slots":[]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":11,"y":305,"slots":[{"tag":"iden","page":"iden","texts":["Factorial"],"slot_types":[],"x":103,"y":308,"slots":[]},[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":18,"y":330,"slots":[]}]]}]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":4,"y":355,"slots":[{"tag":"stdf","page":"stdl","texts":["io: <b>println</b>"],"slot_types":[],"x":96,"y":358,"slots":[]},[{"tag":"ocat","page":"oper","texts":["The following texts <b>joined</b>",""],"slot_types":["L"],"x":11,"y":380,"slots":[[{"tag":"lstr","page":"litr","texts":["Text \\"","\\""],"slot_types":["S"],"x":18,"y":399,"slots":["The factorial of "]},{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":18,"y":440,"slots":[]},{"tag":"lstr","page":"litr","texts":["Text \\"","\\""],"slot_types":["S"],"x":18,"y":459,"slots":[" is "]},{"tag":"iden","page":"iden","texts":["B"],"slot_types":[],"x":18,"y":500,"slots":[]}]]}]]}]]}'
-  let test_program = '{"tag":"prgm","page":"ctrl","texts":["<b>Program</b>","End"],"slot_types":["L"],"x":30,"y":8,"slots":[[{"tag":"varv","page":"decl","texts":["Declare <b>variable</b>","of value",""],"slot_types":["X","X"],"x":8,"y":18,"slots":[{"tag":"iden","page":"iden","texts":["Spread"],"slot_types":[],"x":119,"y":23,"slots":[]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":228,"y":21,"slots":["0.5"]}]},{"tag":"func","page":"decl","texts":["Define <b>function</b>","that returns a","and takes","Begin","End"],"slot_types":["X","X","L","L"],"x":8,"y":48,"slots":[{"tag":"iden","page":"iden","texts":["Tree"],"slot_types":[],"x":113,"y":51,"slots":[]},{"tag":"tvod","page":"type","texts":["<b>Nothing</b>"],"slot_types":[],"x":238,"y":51,"slots":[]},[{"tag":"argr","page":"decl","texts":["<b>Argument</b>","of type",""],"slot_types":["X","X"],"x":19,"y":73,"slots":[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":93,"y":76,"slots":[]},{"tag":"tf32","page":"type","texts":["<b>Number</b>"],"slot_types":[],"x":180,"y":76,"slots":[]}]},{"tag":"argr","page":"decl","texts":["<b>Argument</b>","of type",""],"slot_types":["X","X"],"x":19,"y":98,"slots":[{"tag":"iden","page":"iden","texts":["Y"],"slot_types":[],"x":93,"y":101,"slots":[]},{"tag":"tf32","page":"type","texts":["<b>Number</b>"],"slot_types":[],"x":180,"y":101,"slots":[]}]},{"tag":"argr","page":"decl","texts":["<b>Argument</b>","of type",""],"slot_types":["X","X"],"x":19,"y":123,"slots":[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":93,"y":126,"slots":[]},{"tag":"tf32","page":"type","texts":["<b>Number</b>"],"slot_types":[],"x":180,"y":126,"slots":[]}]},{"tag":"argr","page":"decl","texts":["<b>Argument</b>","of type",""],"slot_types":["X","X"],"x":19,"y":148,"slots":[{"tag":"iden","page":"iden","texts":["L"],"slot_types":[],"x":93,"y":151,"slots":[]},{"tag":"tf32","page":"type","texts":["<b>Number</b>"],"slot_types":[],"x":180,"y":151,"slots":[]}]}],[{"tag":"cond","page":"ctrl","texts":["<b>If</b>","then",""],"slot_types":["X","L"],"x":19,"y":191,"slots":[{"tag":"oolt","page":"oper","texts":["","is <b>less</b> than",""],"slot_types":["X","X"],"x":40,"y":194,"slots":[{"tag":"iden","page":"iden","texts":["L"],"slot_types":[],"x":53,"y":199,"slots":[]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":168,"y":197,"slots":["8.0"]}]},[{"tag":"ret0","page":"misc","texts":["<b>Return</b> nothing"],"slot_types":[],"x":30,"y":226,"slots":[]}]]},{"tag":"varv","page":"decl","texts":["Declare <b>variable</b>","of value",""],"slot_types":["X","X"],"x":19,"y":248,"slots":[{"tag":"iden","page":"iden","texts":["X1"],"slot_types":[],"x":130,"y":251,"slots":[]},{"tag":"oadd","page":"oper","texts":["","<b>plus</b>",""],"slot_types":["X","X"],"x":26,"y":273,"slots":[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":39,"y":276,"slots":[]},{"tag":"omul","page":"oper","texts":["","<b>times</b>",""],"slot_types":["X","X"],"x":33,"y":298,"slots":[{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":46,"y":301,"slots":[{"tag":"stdf","page":"stdl","texts":["math: <b>cos</b>"],"slot_types":[],"x":132,"y":304,"slots":[]},[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":57,"y":326,"slots":[]}]]},{"tag":"iden","page":"iden","texts":["L"],"slot_types":[],"x":344,"y":315,"slots":[]}]}]}]},{"tag":"varv","page":"decl","texts":["Declare <b>variable</b>","of value",""],"slot_types":["X","X"],"x":19,"y":357,"slots":[{"tag":"iden","page":"iden","texts":["Y1"],"slot_types":[],"x":130,"y":360,"slots":[]},{"tag":"oadd","page":"oper","texts":["","<b>plus</b>",""],"slot_types":["X","X"],"x":26,"y":382,"slots":[{"tag":"iden","page":"iden","texts":["Y"],"slot_types":[],"x":39,"y":385,"slots":[]},{"tag":"omul","page":"oper","texts":["","<b>times</b>",""],"slot_types":["X","X"],"x":33,"y":407,"slots":[{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":46,"y":410,"slots":[{"tag":"stdf","page":"stdl","texts":["math: <b>sin</b>"],"slot_types":[],"x":132,"y":413,"slots":[]},[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":57,"y":435,"slots":[]}]]},{"tag":"iden","page":"iden","texts":["L"],"slot_types":[],"x":340,"y":424,"slots":[]}]}]}]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":19,"y":466,"slots":[{"tag":"stdf","page":"stdl","texts":["gx: <b>line</b>"],"slot_types":[],"x":105,"y":469,"slots":[]},[{"tag":"iden","page":"iden","texts":["X"],"slot_types":[],"x":30,"y":491,"slots":[]},{"tag":"iden","page":"iden","texts":["Y"],"slot_types":[],"x":30,"y":510,"slots":[]},{"tag":"iden","page":"iden","texts":["X1"],"slot_types":[],"x":30,"y":529,"slots":[]},{"tag":"iden","page":"iden","texts":["Y1"],"slot_types":[],"x":30,"y":548,"slots":[]}]]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":19,"y":570,"slots":[{"tag":"iden","page":"iden","texts":["Tree"],"slot_types":[],"x":105,"y":573,"slots":[]},[{"tag":"iden","page":"iden","texts":["X1"],"slot_types":[],"x":30,"y":595,"slots":[]},{"tag":"iden","page":"iden","texts":["Y1"],"slot_types":[],"x":30,"y":614,"slots":[]},{"tag":"osub","page":"oper","texts":["","<b>minus</b>",""],"slot_types":["X","X"],"x":30,"y":633,"slots":[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":43,"y":636,"slots":[]},{"tag":"iden","page":"iden","texts":["Spread"],"slot_types":[],"x":129,"y":636,"slots":[]}]},{"tag":"omul","page":"oper","texts":["","<b>times</b>",""],"slot_types":["X","X"],"x":30,"y":658,"slots":[{"tag":"iden","page":"iden","texts":["L"],"slot_types":[],"x":43,"y":663,"slots":[]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":125,"y":661,"slots":["0.8"]}]}]]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":19,"y":691,"slots":[{"tag":"iden","page":"iden","texts":["Tree"],"slot_types":[],"x":105,"y":694,"slots":[]},[{"tag":"iden","page":"iden","texts":["X1"],"slot_types":[],"x":30,"y":716,"slots":[]},{"tag":"iden","page":"iden","texts":["Y1"],"slot_types":[],"x":30,"y":735,"slots":[]},{"tag":"oadd","page":"oper","texts":["","<b>plus</b>",""],"slot_types":["X","X"],"x":30,"y":754,"slots":[{"tag":"iden","page":"iden","texts":["A"],"slot_types":[],"x":43,"y":757,"slots":[]},{"tag":"iden","page":"iden","texts":["Spread"],"slot_types":[],"x":118,"y":757,"slots":[]}]},{"tag":"omul","page":"oper","texts":["","<b>times</b>",""],"slot_types":["X","X"],"x":30,"y":779,"slots":[{"tag":"iden","page":"iden","texts":["L"],"slot_types":[],"x":43,"y":784,"slots":[]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":125,"y":782,"slots":["0.8"]}]}]]}]]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":8,"y":829,"slots":[{"tag":"stdf","page":"stdl","texts":["gx: <b>size</b>"],"slot_types":[],"x":94,"y":832,"slots":[]},[{"tag":"li32","page":"litr","texts":["Integer",""],"slot_types":["I"],"x":19,"y":854,"slots":["320"]},{"tag":"li32","page":"litr","texts":["Integer",""],"slot_types":["I"],"x":19,"y":878,"slots":["240"]}]]},{"tag":"whil","page":"ctrl","texts":["Repeat <b>while</b>","do","end"],"slot_types":["X","L"],"x":8,"y":904,"slots":[{"tag":"li32","page":"litr","texts":["Integer",""],"slot_types":["I"],"x":99,"y":907,"slots":["1"]},[{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":19,"y":934,"slots":[{"tag":"stdf","page":"stdl","texts":["gx: <b>background</b>"],"slot_types":[],"x":105,"y":937,"slots":[]},[{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":30,"y":959,"slots":["0.75"]}]]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":19,"y":985,"slots":[{"tag":"iden","page":"iden","texts":["Tree"],"slot_types":[],"x":105,"y":988,"slots":[]},[{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":30,"y":1010,"slots":["160.0"]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":30,"y":1034,"slots":["240.0"]},{"tag":"odiv","page":"oper","texts":["","<b>divided</b> by",""],"slot_types":["X","X"],"x":30,"y":1057,"slots":[{"tag":"stdd","page":"stdl","texts":["math: <b>PI</b>"],"slot_types":[],"x":43,"y":1062,"slots":[]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":176,"y":1060,"slots":["-2.0"]}]},{"tag":"lf32","page":"litr","texts":["Number",""],"slot_types":["N"],"x":30,"y":1087,"slots":["50.0"]}]]},{"tag":"call","page":"misc","texts":["<b>Call</b> function","with arguments",""],"slot_types":["X","L"],"x":19,"y":1113,"slots":[{"tag":"stdf","page":"stdl","texts":["gx: <b>poll</b>"],"slot_types":[],"x":105,"y":1116,"slots":[]},[]]}]]}]]}'
+
   let zicnt = 0;
   let ID = 0;
 
@@ -116,6 +120,82 @@ function main(){
   let Dtext = document.createElement("textarea");
   Dtext.style = "font-size:11px;border:none;border-top:1px solid black;position:absolute;right:0px;bottom:0px;width:360px;height:calc(30% - 24px);background:whitesmoke;"
   document.body.appendChild(Dtext)
+
+  let btn_load = document.createElement("button");
+  btn_load.classList.add("menubtn");
+  btn_load.style = "position:absolute;left:0px;width:64px;"
+  btn_load.innerHTML = "Load"
+  Dmenu.appendChild(btn_load);
+  btn_load.onclick = function(){
+    upload_file(function(txt){
+      btn_clear.onclick();
+      deserialize_block(uncompact_serialized(JSON.parse(txt)));
+      add_user_idens(uncompact_serialized(JSON.parse(txt)));
+      Dout.innerHTML = "";
+      Dtext.value = do_transpile();
+      btn_run.onclick();
+    })
+  }
+
+  let btn_save = document.createElement("button");
+  btn_save.classList.add("menubtn");
+  btn_save.style = "position:absolute;left:64px;width:64px;"
+  btn_save.innerHTML = "Save"
+  Dmenu.appendChild(btn_save);
+  btn_save.onclick = function(){
+    download_file("dither-blocks-program.json",
+      JSON.stringify(
+        compact_serialized(serialize_block(Blocks.filter(x=>(!x.parent && x.tag == 'prgm'))[0]))
+      )
+    );
+  }
+
+  function download_file(pth,text){
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', pth);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }
+
+  function upload_file(callback) {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.body.removeChild(fileInput);
+          callback(e.target.result);
+        };
+        reader.readAsText(file);
+      }
+    });
+    fileInput.click();
+
+  }
+
+  let EG_IDX = 0;
+
+  let btn_eg = document.createElement("button");
+  btn_eg.classList.add("menubtn");
+  btn_eg.style = "position:absolute;left:128px;width:64px;"
+  btn_eg.innerHTML = "Example"
+  Dmenu.appendChild(btn_eg);
+  btn_eg.onclick = function(){
+    btn_clear.onclick();
+    EG_IDX = (EG_IDX+1)%EXAMPLES.length;
+    deserialize_block(uncompact_serialized(JSON.parse(EXAMPLES[EG_IDX])));
+    add_user_idens(uncompact_serialized(JSON.parse(EXAMPLES[EG_IDX])));
+    Dout.innerHTML = "";
+    Dtext.value = do_transpile();
+    btn_run.onclick();
+  }
 
   let btn_run = document.createElement("button");
   btn_run.classList.add("menubtn");
@@ -184,7 +264,7 @@ function main(){
     Dout.appendChild(iframe);
     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
     const htmlContent = `
-      <body style="font-size:13px;font-family:monospace;">${"<"}${"/"}body>
+      <body style="font-size:13px;font-family:monospace;margin:0px">${"<"}${"/"}body>
       <script>
       let last_call = performance.now();
       globalThis.__io_intern_hooked_print = async function(s){
@@ -352,7 +432,7 @@ function main(){
       }
     }
 
-    div.style="display:block;font-family:sans-serif;font-size:13px;min-width:32px;min-height:16px;border:1px solid black;border-radius:2px;cursor:grab;-webkit-user-select: none;-ms-user-select: none;user-select: none;padding-top:2px;padding-left:1px";
+    div.style="display:block;font-family:sans-serif;font-size:12px;min-width:32px;min-height:16px;border:1px solid black;border-radius:2px;cursor:grab;-webkit-user-select: none;-ms-user-select: none;user-select: none;padding-top:2px;padding-left:1px";
     div.style.borderWidth = "0px 1px 1px 0px"
     div.style.borderLeft = "3px solid "+Colormap[cfg.page]
     div.style.position = 'absolute';
@@ -736,6 +816,7 @@ function main(){
     {page:"ctrl",tag:'elif',texts:['<b>Else if</b>','then',''],slot_types:['X','L'],},
     {page:"ctrl",tag:'else',texts:['<b>Else</b>',''],slot_types:['L'],},
     {page:"ctrl",tag:'whil',texts:['Repeat <b>while</b>','do','end'],slot_types:['X','L'],},
+    {page:"ctrl",tag:'whi1',texts:['Repeat <b>forever</b>','end'],slot_types:['L'],},
     {page:"ctrl",tag:'forr',texts:['Repeat <b>for</b>','from','till','do','end'],slot_types:['X','X','X','L'],},
     {page:"ctrl",tag:'forl',texts:['First do',`then repeat${NL}Before each time check`,`${NL}After each time`,`${NL}<b>For</b> each time do`,'end'],slot_types:['X','X','X','L'],},
     {page:"ctrl",tag:'brek',texts:['<b>Break</b> out of the loop'],slot_types:[],},
@@ -767,11 +848,15 @@ function main(){
     {page:"oper",tag:'osub',texts:['','<b>minus</b>',''],slot_types:['X','X'],},
     {page:"oper",tag:'omul',texts:['','<b>times</b>',''],slot_types:['X','X'],},
     {page:"oper",tag:'odiv',texts:['','<b>divided</b> by',''],slot_types:['X','X'],},
+    {page:"oper",tag:'opow',texts:['','to the <b>power</b> of',''],slot_types:['X','X'],},
     {page:"oper",tag:'ooeq',texts:['','<b>equals</b>',''],slot_types:['X','X'],},
     {page:"oper",tag:'oneq',texts:['','does <b>not equal</b>',''],slot_types:['X','X'],},
     {page:"oper",tag:'oolt',texts:['','is <b>less</b> than',''],slot_types:['X','X'],},
     {page:"oper",tag:'oogt',texts:['','is <b>greater</b> than',''],slot_types:['X','X'],},
     {page:"oper",tag:'oleq',texts:['','is <b>at most</b>',''],slot_types:['X','X'],},
+    {page:"oper",tag:'ogeq',texts:['','is <b>at least</b>',''],slot_types:['X','X'],},
+    {page:"oper",tag:'olan',texts:['','<b>and</b> also',''],slot_types:['X','X'],},
+    {page:"oper",tag:'olor',texts:['','<b>or</b> else',''],slot_types:['X','X'],},
     {page:"oper",tag:'ogeq',texts:['','is <b>at least</b>',''],slot_types:['X','X'],},
     {page:"oper",tag:'ocat',texts:['The following texts <b>joined</b>',''],slot_types:['L'],},
     {page:"litr",tag:'lstr',texts:['Text "','"'],slot_types:['S'],},
@@ -791,6 +876,9 @@ function main(){
     {page:"misc",tag:'subx',texts:['<b>X</b> component of',''],slot_types:['X'],},
     {page:"misc",tag:'suby',texts:['<b>Y</b> component of',''],slot_types:['X'],},
     {page:"misc",tag:'subz',texts:['<b>Z</b> component of',''],slot_types:['X'],},
+    {page:"misc",tag:'cal0',texts:['<b>Call</b> function',''],slot_types:['X'],},
+    {page:"misc",tag:'cal1',texts:['<b>Call</b> function','with',''],slot_types:['X','X'],},
+    {page:"misc",tag:'cal2',texts:['<b>Call</b> function','with','and',''],slot_types:['X','X','X'],},
     {page:"misc",tag:'call',texts:['<b>Call</b> function','with arguments',''],slot_types:['X','L'],},
     {page:"misc",tag:'cast',texts:['','converted to <b>type</b>',''],slot_types:['X','X'],},
   ];
@@ -833,7 +921,8 @@ function main(){
         Dpalette.appendChild(btm);
         Dpalette.appendChild(document.createElement("br"))
         function add(){
-          let tem = {page:"iden",tag:'iden',texts:[inp.value],slot_types:[],}
+          let val = inp.value.replace(/[^a-zA-Z0-9]/g, "_");
+          let tem = {page:"iden",tag:'iden',texts:[val],slot_types:[],}
           Templates.push(tem);
           let b = make_block(Object.assign({},tem,{is_template:true,x:0,y:0}));
           b.elt.main.style.position = "static";
@@ -923,14 +1012,94 @@ function main(){
   }
 
 
-  deserialize_block(JSON.parse(test_program));
+  
+  deserialize_block(uncompact_serialized(JSON.parse(EXAMPLES[EG_IDX])));
 
   Tabs.ctrl.button.onclick();
 
+  function add_user_idens(tree){
+    
+    if (!tree) return;
+    if (tree.tag == 'iden'){
+      let same =Templates.filter(x=>(x.tag=='iden'&&x.texts[0]==tree.texts[0]));
+      // console.log(tree.texts[0],same);
+      if (!same.length){
+        let tem = {page:"iden",tag:'iden',texts:[tree.texts[0]],slot_types:[]}
+        Templates.push(tem);
+      }
+    }else{
+      for (let i = 0; i < tree.slot_types.length; i++){
+        if (tree.slot_types[i] == 'L'){
+          tree.slots[i].map(add_user_idens);
+        }else if (tree.slot_types[i] == 'X'){
+          add_user_idens(tree.slots[i])
+        }
+      }
+    }
+  }
+
+  function compact_serialized(tree){
+    function _compact(tree){
+      if (!tree) return tree;
+      let o = [];
+      o[3] = null;
+      if (tree.page == 'iden' || tree.page == 'stdl'){
+        o[3] = tree.texts;
+      }
+      o[0] = tree.tag;
+      o[1] = tree.page;
+      o[2] = [];
+      for (let i = 0; i < tree.slots.length; i++){
+        if (tree.slot_types[i] == 'L'){
+          o[2].push(tree.slots[i].map(_compact));
+        }else if (tree.slot_types[i] == 'X'){
+          o[2].push(_compact(tree.slots[i]))
+        }else{
+          o[2].push(tree.slots[i]);
+        }
+      }
+      o[4] = null;
+      return o;
+    }
+    let o = _compact(tree);
+    o[4] = [tree.x,tree.y];
+    return o;
+  }
+  function uncompact_serialized(tree){
+    if (!tree) return tree;
+    let o = {tag:tree[0],page:tree[1],x:0,y:0};
+    let tem = Templates.filter(x=>(x.tag == tree[0] && x.page == tree[1]))[0];
+    o.texts = tree[3];
+    if (!o.texts){
+      o.texts = tem.texts;
+    }
+    if (tree[4]){
+      o.x = tree[4][0];
+      o.y = tree[4][1];
+    }
+    o.slot_types = tem.slot_types;
+    o.slots = [];
+    for (let i = 0; i < tree[2].length; i++){
+      if (o.slot_types[i] == 'L'){
+        o.slots.push(tree[2][i].map(uncompact_serialized));
+      }else if (o.slot_types[i] == 'X'){
+        o.slots.push(uncompact_serialized(tree[2][i]))
+      }else{
+        o.slots.push(tree[2][i]);
+      }
+    }
+    return o;
+  }
+
+
+  add_user_idens(uncompact_serialized(JSON.parse(EXAMPLES[EG_IDX])));
+  btn_run.onclick();
 
   function transpile(tree){
+    
     let includes = new Set();
     function _transpile(tree){
+      // console.log(tree);
       if (tree.tag == 'prgm'){
         return tree.slots[0].map(_transpile).join(';');
       }else if (tree.tag == 'iden'){
@@ -949,6 +1118,11 @@ function main(){
         return `if (${_transpile(tree.slots[0])}){${tree.slots[1].map(_transpile).join(';')}}`
       }else if (tree.tag == 'whil'){
         return `while (${_transpile(tree.slots[0])}){${tree.slots[1].map(_transpile).join(';')}}`
+      }else if (tree.tag == 'whi1'){
+        return `while (1){${tree.slots[0].map(_transpile).join(';')}}`
+      }else if (tree.tag == 'forr'){
+        let i = _transpile(tree.slots[0]);
+        return `for (${i}:=${_transpile(tree.slots[1])}; ${i}<${_transpile(tree.slots[2])}; ${i}++){${tree.slots[3].map(_transpile).join(';')}}`
       }else if (tree.tag == 'retn'){
         return `return ${_transpile(tree.slots[0])};`
       }else if (tree.tag == 'li32'){
@@ -965,14 +1139,28 @@ function main(){
         return `((${_transpile(tree.slots[0])}) + (${_transpile(tree.slots[1])}))`
       }else if (tree.tag == 'odiv'){
         return `((${_transpile(tree.slots[0])}) / (${_transpile(tree.slots[1])}))`
+      }else if (tree.tag == 'opow'){
+        return `((${_transpile(tree.slots[0])}) ** (${_transpile(tree.slots[1])}))`
       }else if (tree.tag == 'oolt'){
         return `((${_transpile(tree.slots[0])}) < (${_transpile(tree.slots[1])}))`
+      }else if (tree.tag == 'oleq'){
+        return `((${_transpile(tree.slots[0])}) <= (${_transpile(tree.slots[1])}))`
+      }else if (tree.tag == 'olan'){
+        return `((${_transpile(tree.slots[0])}) && (${_transpile(tree.slots[1])}))`
+      }else if (tree.tag == 'cast'){
+        return `((${_transpile(tree.slots[0])}) as ${_transpile(tree.slots[1])})`
       }else if (tree.tag == 'ret0'){
         return `return;`
       }else if (tree.tag == 'ocat'){
         return `(${tree.slots[0].map(_transpile).join('+')})`
       }else if (tree.tag == 'call'){
         return `${_transpile(tree.slots[0])}(${tree.slots[1].map(_transpile).join(',')})`
+      }else if (tree.tag == 'cal0'){
+        return `${_transpile(tree.slots[0])}()`
+      }else if (tree.tag == 'cal1'){
+        return `${_transpile(tree.slots[0])}(${_transpile(tree.slots[1])})`
+      }else if (tree.tag == 'cal2'){
+        return `${_transpile(tree.slots[0])}(${_transpile(tree.slots[1])},${_transpile(tree.slots[2])})`
       }else if (tree.tag == 'varv'){
         return `${_transpile(tree.slots[0])} := ${_transpile(tree.slots[1])};`
       }else if (tree.tag == 'asgn'){
