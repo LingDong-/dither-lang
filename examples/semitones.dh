@@ -10,8 +10,8 @@ func note(freq:f32, sec:f32){
   t := 0.0;
   while (t < sec){
     if (!snd.buffer_full()){
-      x := math.sin( t * 2.0 * math.pi * freq ) 
-      env := math.sin( t * math.pi / sec);
+      x := math.sin( t * 2.0 * math.PI * freq ) 
+      env := math.sin( t * math.PI / sec);
       snd.put_sample(x*env);
       t += 1.0/rate;
     }

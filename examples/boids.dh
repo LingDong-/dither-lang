@@ -21,7 +21,7 @@ typedef Boid = {
   maxspeed : f32 = 2.0;   // Maximum speed
   
   func init(x:f32,y:f32){
-    angle := math.random()*math.pi*2;
+    angle := math.random()*math.PI*2;
     .velocity = {math.cos(angle),math.sin(angle)};
     .position = {x,y};
   }
@@ -170,7 +170,7 @@ while (1){
     gx.stroke(1.0);
     gx.push_matrix();
     gx.translate(...b.position);
-    gx.rotate_deg(theta*180/math.pi+90);
+    gx.rotate_deg(theta*180/math.PI+90);
     gx.begin_shape();
     gx.vertex(0, -b.r*2);
     gx.vertex(-b.r, b.r*2);

@@ -29,13 +29,13 @@ while (1){
   gx.stroke_weight(2);
   gx.ellipse(0,0,r_face*2,r_face*2);
 
-  s := (sec          )/60.0*math.pi*2-math.pi/2;
-  m := (min +sec/60.0)/60.0*math.pi*2-math.pi/2;
-  h := (hour+min/60.0)/12.0*math.pi*2-math.pi/2;
+  s := (sec          )/60.0*math.PI*2-math.PI/2;
+  m := (min +sec/60.0)/60.0*math.PI*2-math.PI/2;
+  h := (hour+min/60.0)/12.0*math.PI*2-math.PI/2;
 
   for (i := 0; i < 60; i++){
     
-    ang := i/60.0 * math.pi*2;
+    ang := i/60.0 * math.PI*2;
     if (!(i%5)){
       gx.stroke_weight(1);
       gx.line(

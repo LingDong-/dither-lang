@@ -510,7 +510,7 @@ y := 2.0
 math.sin(x)
 math.atan2(y,x)
 math.hypot(x,y)
-math.pi
+math.PI
 // ... and all the other stuff you can expect
 ```
 

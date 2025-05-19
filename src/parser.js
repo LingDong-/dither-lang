@@ -3832,65 +3832,69 @@ var PARSER = function(sys,extensions={}){
 
 
 if (typeof module !== 'undefined'){
+  if (require.main !== module){
+    module.exports = PARSER;
+  }else{
 
-  const fs = require('fs');
-  const path = require('path');
-  
-  let inp_pth;
-  let cst_pth;
-  let tok_pth;
-  let ast_pth;
-  let map_pth;
-  let out_pth = "ir.dsm";
-  let inc_pth = [];
+    const fs = require('fs');
+    const path = require('path');
+    
+    let inp_pth;
+    let cst_pth;
+    let tok_pth;
+    let ast_pth;
+    let map_pth;
+    let out_pth = "ir.dsm";
+    let inc_pth = [];
 
-  for (let i = 2; i < process.argv.length; i++){
-    if (process.argv[i] == '-o' || process.argv[i] == '--output'){
-      out_pth = process.argv[++i];
-    }else if (process.argv[i] == '--ast'){
-      ast_pth = process.argv[++i];
-    }else if (process.argv[i] == '--cst'){
-      cst_pth = process.argv[++i];
-    }else if (process.argv[i] == '--tok'){
-      tok_pth = process.argv[++i];
-    }else if (process.argv[i] == '--map'){
-      map_pth = process.argv[++i];
-    }else if (process.argv[i] == '-I' || process.argv[i] == '--include'){
-      inc_pth.push(process.argv[++i]);
-    }else{
-      inp_pth = process.argv[i];
+    for (let i = 2; i < process.argv.length; i++){
+      if (process.argv[i] == '-o' || process.argv[i] == '--output'){
+        out_pth = process.argv[++i];
+      }else if (process.argv[i] == '--ast'){
+        ast_pth = process.argv[++i];
+      }else if (process.argv[i] == '--cst'){
+        cst_pth = process.argv[++i];
+      }else if (process.argv[i] == '--tok'){
+        tok_pth = process.argv[++i];
+      }else if (process.argv[i] == '--map'){
+        map_pth = process.argv[++i];
+      }else if (process.argv[i] == '-I' || process.argv[i] == '--include'){
+        inc_pth.push(process.argv[++i]);
+      }else{
+        inp_pth = process.argv[i];
+      }
     }
+    if (!inp_pth){
+      console.log("no input file.");
+      process.exit(0);
+    }
+
+    const embed_glsl = require('./embed_glsl.js');
+    let parser = new PARSER(
+      {fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)},
+      Object.assign({},embed_glsl),
+    );
+
+    let toks = parser.tokenize(path.resolve(inp_pth));
+
+    if (tok_pth) fs.writeFileSync(tok_pth,JSON.stringify(toks,null,2));
+
+    let cst = parser.parse(toks);
+
+    if (cst_pth) fs.writeFileSync(cst_pth,JSON.stringify(cst,null,2));
+
+    let ast = parser.abstract(cst);
+    // console.dir(ast,{depth:10000})
+    if (ast_pth) fs.writeFileSync(ast_pth,JSON.stringify(ast,null,2));
+
+    let scopes = parser.infertypes(ast);
+    // console.dir(ast,{depth:10000});
+    let [instrs,layout] = parser.compile(ast,scopes);
+
+    let lo = parser.writelayout(layout);
+
+    if (map_pth) fs.writeFileSync(map_pth,parser.writesrcmap(instrs));
+
+    fs.writeFileSync(out_pth,parser.writeir(instrs)+lo);
   }
-  if (!inp_pth){
-    console.log("no input file.");
-    process.exit(0);
-  }
-
-  const embed_glsl = require('./embed_glsl.js');
-  let parser = new PARSER(
-    {fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)},
-    Object.assign({},embed_glsl),
-  );
-
-  let toks = parser.tokenize(path.resolve(inp_pth));
-
-  if (tok_pth) fs.writeFileSync(tok_pth,JSON.stringify(toks,null,2));
-
-  let cst = parser.parse(toks);
-
-  if (cst_pth) fs.writeFileSync(cst_pth,JSON.stringify(cst,null,2));
-
-  let ast = parser.abstract(cst);
-  // console.dir(ast,{depth:10000})
-  if (ast_pth) fs.writeFileSync(ast_pth,JSON.stringify(ast,null,2));
-
-  let scopes = parser.infertypes(ast);
-  // console.dir(ast,{depth:10000});
-  let [instrs,layout] = parser.compile(ast,scopes);
-
-  let lo = parser.writelayout(layout);
-
-  if (map_pth) fs.writeFileSync(map_pth,parser.writesrcmap(instrs));
-
-  fs.writeFileSync(out_pth,parser.writeir(instrs)+lo);
 }

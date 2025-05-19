@@ -24,7 +24,7 @@ while (1){
   
   spr = math.sin(frame*0.01);
   
-  tree(160,240,-math.pi/2,50);
+  tree(160,240,-math.PI/2,50);
   gx.poll();
   
   frame++;

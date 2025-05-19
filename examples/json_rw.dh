@@ -2,6 +2,7 @@ include "std/exch"
 include "std/gx"
 include "std/io"
 include "std/str"
+include "std/win"
 
 rect := exch.decode[exch.JSON](
   '{"x":50,"y":50,"w":200,"h":100,"label":"rectangle"}'
@@ -52,7 +53,10 @@ while (1){
   gx.text(exch.encode(rect),0,16);
   gx.text(exch.encode(circ),0,32);
 
-  gx.poll();
+  e := gx.poll();
+  if (e.type == win.MOUSE_PRESSED){
+    (rect.data as dict[str,exch.JSON])["x"].data = e.x as f32
+  }
 }
 
 

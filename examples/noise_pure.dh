@@ -9,7 +9,7 @@ namespace Noise {
   perlin_octaves := 4; perlin_amp_falloff := 0.5;
 
   func scaled_cosine(i:f32):f32{
-    return 0.5*(1.0-math.cos(i*math.pi));
+    return 0.5*(1.0-math.cos(i*math.PI));
   }
 
   perlin := list[f32]{};

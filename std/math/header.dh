@@ -9,5 +9,5 @@ namespace math {
   func max(x:f32,y:f32):f32;
   func atan2(x:f32,y:f32):f32;
   func hypot(x:f32,y:f32):f32;
-  pi : f32 = 3.141592653589793;
+  PI : f32 = 3.141592653589793;
 }
