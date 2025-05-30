@@ -79,9 +79,9 @@ html.push(`<script>var Std_idens = [${Array.from(idens).sort().join(',')}]</scri
 
 function main(){
   let EXAMPLES = [
-    '["prgm","ctrl",[[["varv","decl",[["iden","iden",[],["Spread"],null],["lf32","litr",["0.5"],null,null]],null,null],["func","decl",[["iden","iden",[],["Tree"],null],["tvod","type",[],null,null],[["argr","decl",[["iden","iden",[],["X"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["Y"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["A"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["L"],null],["tf32","type",[],null,null]],null,null]],[["cond","ctrl",[["oolt","oper",[["iden","iden",[],["L"],null],["lf32","litr",["8.0"],null,null]],null,null],[["ret0","misc",[],null,null]]],null,null],["varv","decl",[["iden","iden",[],["X1"],null],["oadd","oper",[["iden","iden",[],["X"],null],["omul","oper",[["cal1","misc",[["stdf","stdl",[],["math: <b>cos</b>"],null],["iden","iden",[],["A"],null]],null,null],["iden","iden",[],["L"],null]],null,null]],null,null]],null,null],["varv","decl",[["iden","iden",[],["Y1"],null],["oadd","oper",[["iden","iden",[],["Y"],null],["omul","oper",[["cal1","misc",[["stdf","stdl",[],["math: <b>sin</b>"],null],["iden","iden",[],["A"],null]],null,null],["iden","iden",[],["L"],null]],null,null]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["gx: <b>line</b>"],null],[["iden","iden",[],["X"],null],["iden","iden",[],["Y"],null],["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null]]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null],["osub","oper",[["iden","iden",[],["A"],null],["iden","iden",[],["Spread"],null]],null,null],["omul","oper",[["iden","iden",[],["L"],null],["lf32","litr",["0.8"],null,null]],null,null]]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null],["oadd","oper",[["iden","iden",[],["A"],null],["iden","iden",[],["Spread"],null]],null,null],["omul","oper",[["iden","iden",[],["L"],null],["lf32","litr",["0.8"],null,null]],null,null]]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>size</b>"],null],["li32","litr",["320"],null,null],["li32","litr",["240"],null,null]],null,null],["whil","ctrl",[["li32","litr",["1"],null,null],[["cal1","misc",[["stdf","stdl",[],["gx: <b>background</b>"],null],["lf32","litr",["0.75"],null,null]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["lf32","litr",["160.0"],null,null],["lf32","litr",["240.0"],null,null],["odiv","oper",[["stdd","stdl",[],["math: <b>PI</b>"],null],["lf32","litr",["-2.0"],null,null]],null,null],["lf32","litr",["50.0"],null,null]]],null,null],["asgn","misc",[["iden","iden",[],["Spread"],null],["cal1","misc",[["stdf","stdl",[],["math: <b>sin</b>"],null],["omul","oper",[["lf32","litr",["0.002"],null,null],["cal0","misc",[["stdf","stdl",[],["time: <b>millis</b>"],null]],null,null]],null,null]],null,null]],null,null],["cal0","misc",[["stdf","stdl",[],["gx: <b>poll</b>"],null]],null,null]]],null,null]]],null,[24,24]]',
-    '["prgm","ctrl",[[["varv","decl",[["iden","iden",[],["Width"],null],["li32","litr",["256"],null,null]],null,null],["varv","decl",[["iden","iden",[],["Height"],null],["li32","litr",["256"],null,null]],null,null],["varv","decl",[["iden","iden",[],["MaxIteration"],null],["li32","litr",["13"],null,null]],null,null],["func","decl",[["iden","iden",[],["Mandelbrot"],null],["ti32","type",[],null,null],[["argr","decl",[["iden","iden",[],["X0"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["Y0"],null],["tf32","type",[],null,null]],null,null]],[["varv","decl",[["iden","iden",[],["Y"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["X"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["Iteration"],null],["li32","litr",["0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["XX"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["YY"],null],["lf32","litr",["0.0"],null,null]],null,null],["whil","ctrl",[["olan","oper",[["oolt","oper",[["iden","iden",[],["Iteration"],null],["iden","iden",[],["MaxIteration"],null]],null,null],["oleq","oper",[["oadd","oper",[["asgn","misc",[["iden","iden",[],["XX"],null],["omul","oper",[["iden","iden",[],["X"],null],["iden","iden",[],["X"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["YY"],null],["omul","oper",[["iden","iden",[],["Y"],null],["iden","iden",[],["Y"],null]],null,null]],null,null]],null,null],["lf32","litr",["4.0"],null,null]],null,null]],null,null],[["varv","decl",[["iden","iden",[],["Xt"],null],["oadd","oper",[["osub","oper",[["iden","iden",[],["XX"],null],["iden","iden",[],["YY"],null]],null,null],["iden","iden",[],["X0"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["Y"],null],["oadd","oper",[["omul","oper",[["lf32","litr",["2.0"],null,null],["omul","oper",[["iden","iden",[],["X"],null],["iden","iden",[],["Y"],null]],null,null]],null,null],["iden","iden",[],["Y0"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["X"],null],["iden","iden",[],["Xt"],null]],null,null],["asgn","misc",[["iden","iden",[],["Iteration"],null],["oadd","oper",[["iden","iden",[],["Iteration"],null],["li32","litr",["1"],null,null]],null,null]],null,null]]],null,null],["retn","misc",[["iden","iden",[],["Iteration"],null]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>size</b>"],null],["iden","iden",[],["Width"],null],["iden","iden",[],["Height"],null]],null,null],["whi1","ctrl",[[["forr","ctrl",[["iden","iden",[],["I"],null],["li32","litr",["0"],null,null],["iden","iden",[],["Height"],null],[["cal0","misc",[["stdf","stdl",[],["gx: <b>poll</b>"],null]],null,null],["forr","ctrl",[["iden","iden",[],["J"],null],["li32","litr",["0"],null,null],["iden","iden",[],["Width"],null],[["varv","decl",[["iden","iden",[],["Q"],null],["call","misc",[["iden","iden",[],["Mandelbrot"],null],[["osub","oper",[["omul","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["J"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["Width"],null]],null,null],["lf32","litr",["3.0"],null,null]],null,null],["lf32","litr",["2.0"],null,null]],null,null],["osub","oper",[["omul","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["I"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["Height"],null]],null,null],["lf32","litr",["3.0"],null,null]],null,null],["lf32","litr",["1.5"],null,null]],null,null]]],null,null]],null,null],["varv","decl",[["iden","iden",[],["F"],null],["opow","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["Q"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["MaxIteration"],null]],null,null],["lf32","litr",["0.5"],null,null]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["gx: <b>stroke</b>"],null],[["iden","iden",[],["F"],null],["omul","oper",[["iden","iden",[],["F"],null],["lf32","litr",["0.8"],null,null]],null,null],["osub","oper",[["lf32","litr",["1.0"],null,null],["iden","iden",[],["F"],null]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>point</b>"],null],["iden","iden",[],["J"],null],["iden","iden",[],["I"],null]],null,null]]],null,null]]],null,null]]],null,null]]],null,[24,24]]',
-    '["prgm","ctrl",[[["func","decl",[["iden","iden",[],["Factorial"],null],["ti32","type",[],null,null],[["argr","decl",[["iden","iden",[],["X"],null],["ti32","type",[],null,null]],null,null]],[["cond","ctrl",[["iden","iden",[],["X"],null],[["retn","misc",[["omul","oper",[["iden","iden",[],["X"],null],["call","misc",[["iden","iden",[],["Factorial"],null],[["osub","oper",[["iden","iden",[],["X"],null],["li32","litr",["1"],null,null]],null,null]]],null,null]],null,null]],null,null]]],null,null],["retn","misc",[["li32","litr",["1"],null,null]],null,null]]],null,null],["varv","decl",[["iden","iden",[],["A"],null],["li32","litr",["6"],null,null]],null,null],["varv","decl",[["iden","iden",[],["B"],null],["call","misc",[["iden","iden",[],["Factorial"],null],[["iden","iden",[],["A"],null]]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["io: <b>println</b>"],null],[["ocat","oper",[[["lstr","litr",["The factorial of "],null,null],["iden","iden",[],["A"],null],["lstr","litr",[" is "],null,null],["iden","iden",[],["B"],null]]],null,null]]],null,null]]],null,[24,24]]',
+    '["prgm","ctrl",[[["varv","decl",[["iden","iden",[],["Spread"],null],["lf32","litr",["0.5"],null,null]],null,null],["func","decl",[["iden","iden",[],["Tree"],null],["tvod","type",[],null,null],[["argr","decl",[["iden","iden",[],["X"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["Y"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["A"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["L"],null],["tf32","type",[],null,null]],null,null]],[["cond","ctrl",[["oolt","oper",[["iden","iden",[],["L"],null],["lfsl","litr",["3.0","56","12.0"],null,null]],null,null],[["ret0","misc",[],null,null]]],null,null],["varv","decl",[["iden","iden",[],["X1"],null],["oadd","oper",[["iden","iden",[],["X"],null],["omul","oper",[["cal1","misc",[["stdf","stdl",[],["math: <b>cos</b>"],null],["iden","iden",[],["A"],null]],null,null],["iden","iden",[],["L"],null]],null,null]],null,null]],null,null],["varv","decl",[["iden","iden",[],["Y1"],null],["oadd","oper",[["iden","iden",[],["Y"],null],["omul","oper",[["cal1","misc",[["stdf","stdl",[],["math: <b>sin</b>"],null],["iden","iden",[],["A"],null]],null,null],["iden","iden",[],["L"],null]],null,null]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["gx: <b>line</b>"],null],[["iden","iden",[],["X"],null],["iden","iden",[],["Y"],null],["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null]]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null],["osub","oper",[["iden","iden",[],["A"],null],["iden","iden",[],["Spread"],null]],null,null],["omul","oper",[["iden","iden",[],["L"],null],["lf32","litr",["0.8"],null,null]],null,null]]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["iden","iden",[],["X1"],null],["iden","iden",[],["Y1"],null],["oadd","oper",[["iden","iden",[],["A"],null],["iden","iden",[],["Spread"],null]],null,null],["omul","oper",[["iden","iden",[],["L"],null],["lf32","litr",["0.8"],null,null]],null,null]]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>size</b>"],null],["li32","litr",["320"],null,null],["li32","litr",["240"],null,null]],null,null],["whil","ctrl",[["li32","litr",["1"],null,null],[["cal1","misc",[["stdf","stdl",[],["gx: <b>background</b>"],null],["lf32","litr",["0.75"],null,null]],null,null],["call","misc",[["iden","iden",[],["Tree"],null],[["lf32","litr",["160.0"],null,null],["lf32","litr",["240.0"],null,null],["odiv","oper",[["stdd","stdl",[],["math: <b>PI</b>"],null],["lf32","litr",["-2.0"],null,null]],null,null],["lf32","litr",["50.0"],null,null]]],null,null],["asgn","misc",[["iden","iden",[],["Spread"],null],["cal1","misc",[["stdf","stdl",[],["math: <b>sin</b>"],null],["omul","oper",[["lf32","litr",["0.002"],null,null],["cal0","misc",[["stdf","stdl",[],["time: <b>millis</b>"],null]],null,null]],null,null]],null,null]],null,null],["cal0","misc",[["stdf","stdl",[],["gx: <b>poll</b>"],null]],null,null]]],null,null]]],null,[24,24]]',
+    '["prgm","ctrl",[[["varv","decl",[["iden","iden",[],["Width"],null],["li32","litr",["256"],null,null]],null,null],["varv","decl",[["iden","iden",[],["Height"],null],["li32","litr",["256"],null,null]],null,null],["varv","decl",[["iden","iden",[],["MaxIteration"],null],["lisl","litr",["4","71","16"],null,null]],null,null],["func","decl",[["iden","iden",[],["Mandelbrot"],null],["ti32","type",[],null,null],[["argr","decl",[["iden","iden",[],["X0"],null],["tf32","type",[],null,null]],null,null],["argr","decl",[["iden","iden",[],["Y0"],null],["tf32","type",[],null,null]],null,null]],[["varv","decl",[["iden","iden",[],["Y"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["X"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["Iteration"],null],["li32","litr",["0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["XX"],null],["lf32","litr",["0.0"],null,null]],null,null],["varv","decl",[["iden","iden",[],["YY"],null],["lf32","litr",["0.0"],null,null]],null,null],["whil","ctrl",[["olan","oper",[["oolt","oper",[["iden","iden",[],["Iteration"],null],["iden","iden",[],["MaxIteration"],null]],null,null],["oleq","oper",[["oadd","oper",[["asgn","misc",[["iden","iden",[],["XX"],null],["omul","oper",[["iden","iden",[],["X"],null],["iden","iden",[],["X"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["YY"],null],["omul","oper",[["iden","iden",[],["Y"],null],["iden","iden",[],["Y"],null]],null,null]],null,null]],null,null],["lf32","litr",["4.0"],null,null]],null,null]],null,null],[["varv","decl",[["iden","iden",[],["Xt"],null],["oadd","oper",[["osub","oper",[["iden","iden",[],["XX"],null],["iden","iden",[],["YY"],null]],null,null],["iden","iden",[],["X0"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["Y"],null],["oadd","oper",[["omul","oper",[["lf32","litr",["2.0"],null,null],["omul","oper",[["iden","iden",[],["X"],null],["iden","iden",[],["Y"],null]],null,null]],null,null],["iden","iden",[],["Y0"],null]],null,null]],null,null],["asgn","misc",[["iden","iden",[],["X"],null],["iden","iden",[],["Xt"],null]],null,null],["asgn","misc",[["iden","iden",[],["Iteration"],null],["oadd","oper",[["iden","iden",[],["Iteration"],null],["li32","litr",["1"],null,null]],null,null]],null,null]]],null,null],["retn","misc",[["iden","iden",[],["Iteration"],null]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>size</b>"],null],["iden","iden",[],["Width"],null],["iden","iden",[],["Height"],null]],null,null],["whi1","ctrl",[[["forr","ctrl",[["iden","iden",[],["I"],null],["li32","litr",["0"],null,null],["iden","iden",[],["Height"],null],[["cal0","misc",[["stdf","stdl",[],["gx: <b>poll</b>"],null]],null,null],["forr","ctrl",[["iden","iden",[],["J"],null],["li32","litr",["0"],null,null],["iden","iden",[],["Width"],null],[["varv","decl",[["iden","iden",[],["Q"],null],["call","misc",[["iden","iden",[],["Mandelbrot"],null],[["osub","oper",[["omul","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["J"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["Width"],null]],null,null],["lf32","litr",["3.0"],null,null]],null,null],["lf32","litr",["2.0"],null,null]],null,null],["osub","oper",[["omul","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["I"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["Height"],null]],null,null],["lf32","litr",["3.0"],null,null]],null,null],["lf32","litr",["1.5"],null,null]],null,null]]],null,null]],null,null],["varv","decl",[["iden","iden",[],["F"],null],["opow","oper",[["odiv","oper",[["cast","misc",[["iden","iden",[],["Q"],null],["tf32","type",[],null,null]],null,null],["iden","iden",[],["MaxIteration"],null]],null,null],["lf32","litr",["0.5"],null,null]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["gx: <b>stroke</b>"],null],[["iden","iden",[],["F"],null],["omul","oper",[["iden","iden",[],["F"],null],["lf32","litr",["0.8"],null,null]],null,null],["osub","oper",[["lf32","litr",["1.0"],null,null],["iden","iden",[],["F"],null]],null,null]]],null,null],["cal2","misc",[["stdf","stdl",[],["gx: <b>point</b>"],null],["iden","iden",[],["J"],null],["iden","iden",[],["I"],null]],null,null]]],null,null]]],null,null]]],null,null]]],null,[24,24]]',
+    '["prgm","ctrl",[[["func","decl",[["iden","iden",[],["Factorial"],null],["ti32","type",[],null,null],[["argr","decl",[["iden","iden",[],["X"],null],["ti32","type",[],null,null]],null,null]],[["cond","ctrl",[["iden","iden",[],["X"],null],[["retn","misc",[["omul","oper",[["iden","iden",[],["X"],null],["call","misc",[["iden","iden",[],["Factorial"],null],[["osub","oper",[["iden","iden",[],["X"],null],["li32","litr",["1"],null,null]],null,null]]],null,null]],null,null]],null,null]]],null,null],["retn","misc",[["li32","litr",["1"],null,null]],null,null]]],null,null],["varv","decl",[["iden","iden",[],["A"],null],["lisl","litr",["0","50","12"],null,null]],null,null],["varv","decl",[["iden","iden",[],["B"],null],["call","misc",[["iden","iden",[],["Factorial"],null],[["iden","iden",[],["A"],null]]],null,null]],null,null],["call","misc",[["stdf","stdl",[],["io: <b>println</b>"],null],[["ocat","oper",[[["lstr","litr",["The factorial of "],null,null],["iden","iden",[],["A"],null],["lstr","litr",[" is "],null,null],["iden","iden",[],["B"],null]]],null,null]]],null,null]]],null,[24,24]]',
   ]
 
 
@@ -400,6 +400,40 @@ function main(){
     that.prev = null;
   }
 
+  function reshape_checkbox_matrix(slot,nc,nr){
+    while (slot.getElementsByTagName('div').length < nr){
+      let d = document.createElement('div');
+      d.style = "white-space:nowrap"
+      slot.appendChild(d);
+    }
+    while (slot.getElementsByTagName('div').length > nr){
+      slot.removeChild(slot.lastChild);
+    }
+    let rows = Array.from(slot.getElementsByTagName('div'));
+    for (let i = 0; i < nr; i++){
+      while (rows[i].getElementsByTagName('input').length < nc){
+        let d = document.createElement("input");
+        d.setAttribute("type","checkbox");
+        d.style.margin = "0px";
+        d.onmousedown = function(e){
+          setTimeout(function(){
+            Dtext.value = do_transpile();
+          },10);
+          e.stopPropagation();
+        }
+        d.onchange = function(e){
+          setTimeout(function(){
+            Dtext.value = do_transpile();
+          },10);
+        }
+        rows[i].appendChild(d);
+      }
+      while (rows[i].getElementsByTagName('input').length > nc){
+        rows[i].removeChild(rows[i].lastChild);
+      }
+    }
+  }
+
   function make_block(cfg){
     let div = document.createElement("div");
     let that = Object.assign({
@@ -673,13 +707,15 @@ function main(){
       let span = document.createElement("span");
       span.innerHTML = that.texts[i];
       span.style = "margin:3px;"
-      div.appendChild(span);
+      if (that.texts[i].length){
+        div.appendChild(span);
+      }
       if (i == that.texts.length-1){
         break;
       }
       let slot; 
 
-      if ('XL'.includes(that.slot_types[i])){
+      if ('XLRB'.includes(that.slot_types[i])){
         slot = document.createElement("span");
       }else if ('NI'.includes(that.slot_types[i])){
         slot = document.createElement("input");
@@ -709,13 +745,91 @@ function main(){
         }
         slot.style.width="64px";
         
-      }else if (that.slot_types[i] == 'I'){
-        
-        slot.style.display = "inline-block";
-        slot.setAttribute("type","number");
-        slot.value = "0"
       }else if (that.slot_types[i] == 'S'){
         slot.style.display = "inline-block";
+      }else if (that.slot_types[i] == 'R'){
+        
+
+        let sl = document.createElement("input");
+        sl.setAttribute("type","range");
+        sl.value = "50"
+        sl.style="width:100px;";
+        let lb = document.createElement("div");
+        lb.style="width:104px;text-align:center;"
+        
+        slot.style = "display:inline-block;width:105px;vertical-align: middle;"
+
+        slot.appendChild(lb);
+        slot.appendChild(sl);
+        
+        let is_int = that.slot_types[i-1] == 'I';
+
+        function linklbl(){
+          let nl = slot.previousSibling;
+          let nr = slot.nextSibling;
+          nl.addEventListener('change',setlbl);
+          nr.addEventListener('change',setlbl);
+        }
+
+        function setlbl(){
+          let nl = slot.previousSibling;
+          let nr = slot.nextSibling;
+          let t = Number(sl.value)/100;
+          let a = Number(nl.value);
+          let b = Number(nr.value);
+          let v = a * (1-t) + b * t;
+
+          function formatThreeSigAfterDecimal(num) {
+            const EPS = Number.EPSILON * Math.max(1, Math.abs(num));
+            if (Math.abs(num - Math.round(num)) < EPS) {
+              return Math.round(num);
+            }
+            const decimalPart = num.toString().split('.')[1];
+            if (!decimalPart || decimalPart.replace(/^0+/, '').length <= 3) {
+              return num;
+            }
+            let intPartLength = Math.trunc(num).toString().length;
+            let totalSigDigits = intPartLength + 3;
+            return Number(num.toPrecision(totalSigDigits));
+          }
+          if (is_int){
+            lb.innerHTML = Math.round(v);
+          }else{
+            lb.innerHTML = formatThreeSigAfterDecimal(v);
+          }
+
+        }
+
+        setTimeout(setlbl,10);
+        setTimeout(linklbl,10);
+
+        sl.addEventListener("input",setlbl)
+
+        sl.onmousedown = function(e){
+          setTimeout(function(){
+            Dtext.value = do_transpile();
+          },10);
+          e.stopPropagation();
+        }
+        sl.onchange = function(e){
+          setTimeout(function(){
+            Dtext.value = do_transpile();
+          },10);
+        }
+
+      }else if (that.slot_types[i] == 'B'){
+        slot.style = "";
+        slot.style.display = "block";
+        let nh = div.lastChild;
+        let nw = nh.previousSibling.previousSibling;
+
+        function reshape(){
+          let nr = Number(nh.value);
+          let nc = Number(nw.value);
+          reshape_checkbox_matrix(slot,nc,nr);
+        }
+        nw.addEventListener('change',reshape);
+        nh.addEventListener('change',reshape);
       }
 
       if ('NIS'.includes(that.slot_types[i])){
@@ -724,6 +838,11 @@ function main(){
             Dtext.value = do_transpile();
           },10);
           e.stopPropagation();
+        }
+        slot.onchange = function(e){
+          setTimeout(function(){
+            Dtext.value = do_transpile();
+          },10);
         }
       }
       that.elt.slots.push(slot);
@@ -756,6 +875,18 @@ function main(){
         that.slots[i] = other;
       }else if ("NIS".includes(that.slot_types[i]) && that.slots[i] !== null){
         that.elt.slots[i].value = that.slots[i];
+      }else if (that.slot_types[i] == 'R' && that.slots[i] !== null){
+        that.elt.slots[i].firstChild.nextSibling.value = that.slots[i];
+      }else if (that.slot_types[i] == 'B' && that.slots[i] !== null){
+        reshape_checkbox_matrix(that.elt.slots[i],(that.slots[i][0]??[]).length,that.slots[i].length);
+
+        let rows = Array.from(that.elt.slots[i].getElementsByTagName('div'));
+        for (let y = 0; y < rows.length; y++){
+          let cols = Array.from(rows[y].getElementsByTagName('input'));
+          for (let x = 0; x < cols.length; x++){
+            cols[x].checked = that.slots[i][y][x]!=0;
+          }
+        }
       }
     }
 
@@ -788,7 +919,14 @@ function main(){
       }else if ("NIS".includes(b.slot_types[i])){
 
         o.slots.push(b.elt.slots[i].value);
-        
+      }else if (b.slot_types[i] == 'R'){
+        // console.log(b.elt.slots[i])
+        // console.log(b.elt.slots[i].firstChild)
+        // console.log(b.elt.slots[i].firstChild.nextSibling)
+        o.slots.push(b.elt.slots[i].firstChild.nextSibling.value);
+      }else if (b.slot_types[i] == 'B'){
+        // o.slots.push(Array.from(b.elt.slots[i].getElementsByTagName("input")).map(x=>Number(x.checked)));
+        o.slots.push(Array.from(b.elt.slots[i].getElementsByTagName("div")).map(x=>Array.from(x.getElementsByTagName("input")).map(y=>Number(y.checked))));
       }else{
         o.slots.push(null);
       }
@@ -827,6 +965,7 @@ function main(){
     {page:"decl",tag:'varv',texts:['Declare <b>variable</b>','of value',''],slot_types:['X','X'],},
     {page:"decl",tag:'vatv',texts:['Declare <b>variable</b>','of type','and value',''],slot_types:['X','X','X'],},
     {page:"decl",tag:'tmpl',texts:['Named','with <b>generic</b> types',''],slot_types:['X','L'],},
+    {page:"decl",tag:'typd',texts:['Define <b>type</b>','','end'],slot_types:['X','L'],},
     {page:"type",tag:'tvod',texts:['<b>Nothing</b>'],slot_types:[],},
     {page:"type",tag:'ti32',texts:['<b>Integer</b>'],slot_types:[],},
     {page:"type",tag:'tf32',texts:['<b>Number</b>'],slot_types:[],},
@@ -861,6 +1000,8 @@ function main(){
     {page:"oper",tag:'ocat',texts:['The following texts <b>joined</b>',''],slot_types:['L'],},
     {page:"litr",tag:'lstr',texts:['Text "','"'],slot_types:['S'],},
     {page:"litr",tag:'lf32',texts:['Number',''],slot_types:['N'],},
+    {page:"litr",tag:'lfsl',texts:['Number','','',''],slot_types:['N','R','N'],},
+    {page:"litr",tag:'lisl',texts:['Integer','','',''],slot_types:['I','R','I'],},
     {page:"litr",tag:'li32',texts:['Integer',''],slot_types:['I'],},
     {page:"litr",tag:'lvec',texts:['Vector',''],slot_types:['L'],},
     {page:"litr",tag:'llst',texts:['List',''],slot_types:['L'],},
@@ -868,11 +1009,15 @@ function main(){
     {page:"litr",tag:'ltup',texts:['Tuple',''],slot_types:['L'],},
     {page:"litr",tag:'ldic',texts:['Dictionary',''],slot_types:['L'],},
     {page:"litr",tag:'lkvp',texts:['Entry with <b>key</b>','and <b>value</b>',''],slot_types:['X','X'],},
+    {page:"litr",tag:'lbmp',texts:['Bitmap','x','',''],slot_types:['I','I','B'],},
+    // {page:"litr",tag:'lfun',texts:['Shaping function',''],slot_types:['F'],},
+    {page:"litr",tag:'lcmt',texts:['Comment ',''],slot_types:['S'],},
     {page:"misc",tag:'asgn',texts:['<b>Set</b>','to',''],slot_types:['X','X'],},
     {page:"misc",tag:'retn',texts:['<b>Return</b>',''],slot_types:['X'],},
     {page:"misc",tag:'ret0',texts:['<b>Return</b> nothing'],slot_types:[],},
     {page:"misc",tag:'subs',texts:['The','-th <b>item</b> of',''],slot_types:['X','X'],},
     {page:"misc",tag:'subs',texts:['<b>Entry</b>','of',''],slot_types:['X','X'],},
+    {page:"misc",tag:'adot',texts:['<b>Attribute</b>','of',''],slot_types:['X','X'],},
     {page:"misc",tag:'subx',texts:['<b>X</b> component of',''],slot_types:['X'],},
     {page:"misc",tag:'suby',texts:['<b>Y</b> component of',''],slot_types:['X'],},
     {page:"misc",tag:'subz',texts:['<b>Z</b> component of',''],slot_types:['X'],},
@@ -904,7 +1049,7 @@ function main(){
 
   for (let k in Tabs){
     let btn = document.createElement("button");
-    btn.style = "margin:2px;font-size:13px;border:1px solid black;border-radius: 2px;background:gainsboro;cursor:pointer"
+    btn.style = "height:21.5px;margin:2px;font-size:13px;border:1px solid black;border-radius: 2px;background:gainsboro;cursor:pointer"
     btn.style.borderTop = `3px solid ${Colormap[k]}`
     // btn.innerHTML = `<span><span style="display:inline-block;width:8px;height:8px;border-radius:8px;vertical-align:middle;background:${Colormap[k]}"></span>&nbsp;${Tabs[k].name}</span>`;
     btn.innerHTML = `${Tabs[k].name}`;
@@ -1129,8 +1274,24 @@ function main(){
         return `(${tree.slots[0]} as i32)`
       }else if (tree.tag == 'lf32'){
         return `(${tree.slots[0]} as f32)`
+      }else if (tree.tag == 'lisl'){
+        let a = Number(tree.slots[0]);
+        let t = Number(tree.slots[1])/100.0;
+        let b = Number(tree.slots[2]);
+        let n = Math.round(a * (1-t) + b * t);
+        return `(${n} as i32)`
+      }else if (tree.tag == 'lfsl'){
+        let a = Number(tree.slots[0]);
+        let t = Number(tree.slots[1])/100.0;
+        let b = Number(tree.slots[2]);
+        let n = a * (1-t) + b * t;
+        return `(${n} as f32)`
       }else if (tree.tag == 'lstr'){
         return `${JSON.stringify(tree.slots[0])}`
+      }else if (tree.tag == 'lbmp'){
+        return `arr[i32,2]{${tree.slots[2].map(x=>x.join(',')).join(';')}}`
+      }else if (tree.tag == 'lcmt'){
+        return `/*${tree.slots[0]}*/`
       }else if (tree.tag == 'omul'){
         return `((${_transpile(tree.slots[0])}) * (${_transpile(tree.slots[1])}))`
       }else if (tree.tag == 'osub'){
