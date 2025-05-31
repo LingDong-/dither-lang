@@ -58,7 +58,7 @@ while (1){
   
   gx.background(0.1,0.2,0.3);
   for (i := 0; i < H; i++){
-    for (j := 0; j < H; j++){
+    for (j := 0; j < W; j++){
       if (brd[i,j] & msk){
         gx.point(j*scl,i*scl);
       }
