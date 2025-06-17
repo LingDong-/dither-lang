@@ -2310,7 +2310,11 @@ var PARSER = function(sys,extensions={}){
                   pos:ast.fun.lhs.pos,
                 }
                 ast.arg.unshift(v0);
-                doinfer(ast.fun);
+                if (ast.fun.lhs.val == 'vec' && ast.fun.rhs.val == 'map'){
+                  ast.fun.typ = '__vec_map';
+                }else{
+                  doinfer(ast.fun);
+                }
                 skipfirst = 1;
               }
               ast.typ = typ;
@@ -2326,19 +2330,21 @@ var PARSER = function(sys,extensions={}){
             doinfer(ast.fun);
           }
           // console.log(',,,,,,,,,,,,,,,,,',ast.fun)
-
-          let fd = findvar(get_scope(),ast.fun,false);
-          if (!fd){
-            for (let i = 0; i < scozoo.length; i++){
-              for (let k in scozoo[i]){
-                if (scozoo[i][k].typ == ast.fun.typ){
-                  fd = scozoo[i][k];
+          let fd;
+          if (!ast.fun.typ.startsWith('__vec_map')){
+            fd = findvar(get_scope(),ast.fun,false);
+            if (!fd){
+              for (let i = 0; i < scozoo.length; i++){
+                for (let k in scozoo[i]){
+                  if (scozoo[i][k].typ == ast.fun.typ){
+                    fd = scozoo[i][k];
+                  }
                 }
               }
             }
-          }
-          if (!fd){
-            mkerr('typecheck',`cannot find function ${printtype(ast.fun.typ)}`,somepos(ast.fun));
+            if (!fd){
+              mkerr('typecheck',`cannot find function ${printtype(ast.fun.typ)}`,somepos(ast.fun));
+            }
           }
 
           let arg2 = [];
@@ -2368,10 +2374,21 @@ var PARSER = function(sys,extensions={}){
           }
           // console.log(arg2)
           let ret;
-
+          
           if (ast.fun.typ.con == 'func'){
             ast.fun.rty = ast.fun.typ;
             ret = ast.fun.typ.elt[1];
+          }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__vec_map')){
+            let e = {typ:arg2[0].typ.elt[0]};
+            let [r,t] = matchftmpl([e],arg2[1].val,{},[]);
+            // console.dir(t,{depth:Infinity});
+            ast.fun.rty = {
+              con:'func', elt:[ {con:'tup', elt:[
+                arg2[0].typ,
+                t,
+              ]}, arg2[0].typ]}
+            ret = arg2[0].typ;
+            
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__func_ovld_')){
             // console.dir(ast,{depth:100000});
 
@@ -3398,56 +3415,71 @@ var PARSER = function(sys,extensions={}){
         }
 
         let n1 = mktmpvar(ast.fun.rty.elt[1]);
-        let idx = 0;
-        // pushins('bloc');
-        for (let i = 0; i < ast.arg.length; i++){
-          if (ast.arg[i].key == '...u'){
-            let ni = docompile(ast.arg[i].val);
 
-            if (ast.arg[i].val.typ.con == 'tup'){
-              for (let j = 0; j < ast.arg[i].val.typ.elt.length; j++){
-                let nj = mktmpvar(ast.arg[i].val.typ.elt[j]);
-                pushins('mov',nj,[ni,j]);
-                if (!typeeq(ast.fun.rty.elt[0].elt[idx],ast.arg[i].val.typ.elt[j])){
-                  nj = docast(nj,ast.arg[i].val.typ.elt[j],ast.fun.rty.elt[0].elt[idx]);
-                }
-
-                argw(nj,ast.fun.rty.elt[0].elt[idx++]);
-              }
-            }else if (ast.arg[i].val.typ.con == 'vec'){
-              let n = ast.arg[i].val.typ.elt.slice(1).reduce((a,b)=>a*b,1);
-              for (let j = 0; j < n; j++){
-                let nj = mktmpvar(ast.arg[i].val.typ.elt[0]);
-                pushins('mov',nj,[ni,j]);
-                if (!typeeq(ast.fun.rty.elt[0].elt[idx],ast.arg[i].val.typ.elt[0])){
-                  nj = docast(nj,ast.arg[i].val.typ.elt[0],ast.fun.rty.elt[0].elt[idx]);
-                }
-                
-                argw(nj,ast.fun.rty.elt[0].elt[idx++]);
-              }
-            }
-          }else{
-
-            let ni = docompile(ast.arg[i]);
-            
-            if (!typeeq(ast.arg[i].typ,ast.fun.rty.elt[0].elt[idx])){
-              // console.log(ast.arg[i],ni);
-              // process.exit();
-              let src = ast.arg[i].typ;
-              let trg = ast.fun.rty.elt[0].elt[idx];
-              ni = docast(ni,src,trg)
-            }
-            argw(ni,ast.fun.rty.elt[0].elt[idx++]);
+        if (ast.fun.typ.startsWith("__vec_map")){
+          let n = ast.fun.rty.elt[1].elt[1];
+          let t = ast.fun.rty.elt[1].elt[0];
+          for (let i = 0; i <n; i++){
+            let ni = mktmpvar(t);
+            let nj = mktmpvar(t);
+            pushins('mov',nj,[docompile(ast.arg[0]),i])
+            argw(nj,t);
+            pushins('call',ni,ast.arg[1].typ+'_'+printtypeser(ast.fun.rty.elt[0].elt[1]));
+            pushins('mov',[n1,i],ni);
           }
-        }
-
-        if (ast.fun.is_fun_alias){
-          pushins('call',n1,ast.fun.typ+'_'+printtypeser(ast.fun.rty));
         }else{
-          try{
-            pushins('rcall',n1, ast.fun.ori.split(".").at(-1)+"."+ast.fun.val);
-          }catch(e){
+
+          let idx = 0;
+          // pushins('bloc');
+          for (let i = 0; i < ast.arg.length; i++){
+            if (ast.arg[i].key == '...u'){
+              let ni = docompile(ast.arg[i].val);
+
+              if (ast.arg[i].val.typ.con == 'tup'){
+                for (let j = 0; j < ast.arg[i].val.typ.elt.length; j++){
+                  let nj = mktmpvar(ast.arg[i].val.typ.elt[j]);
+                  pushins('mov',nj,[ni,j]);
+                  if (!typeeq(ast.fun.rty.elt[0].elt[idx],ast.arg[i].val.typ.elt[j])){
+                    nj = docast(nj,ast.arg[i].val.typ.elt[j],ast.fun.rty.elt[0].elt[idx]);
+                  }
+
+                  argw(nj,ast.fun.rty.elt[0].elt[idx++]);
+                }
+              }else if (ast.arg[i].val.typ.con == 'vec'){
+                let n = ast.arg[i].val.typ.elt.slice(1).reduce((a,b)=>a*b,1);
+                for (let j = 0; j < n; j++){
+                  let nj = mktmpvar(ast.arg[i].val.typ.elt[0]);
+                  pushins('mov',nj,[ni,j]);
+                  if (!typeeq(ast.fun.rty.elt[0].elt[idx],ast.arg[i].val.typ.elt[0])){
+                    nj = docast(nj,ast.arg[i].val.typ.elt[0],ast.fun.rty.elt[0].elt[idx]);
+                  }
+                  
+                  argw(nj,ast.fun.rty.elt[0].elt[idx++]);
+                }
+              }
+            }else{
+
+              let ni = docompile(ast.arg[i]);
+              if (!typeeq(ast.arg[i].typ,ast.fun.rty.elt[0].elt[idx])){
+                // console.log(ast.arg[i],ni);
+                // process.exit();
+                let src = ast.arg[i].typ;
+                let trg = ast.fun.rty.elt[0].elt[idx];
+                ni = docast(ni,src,trg)
+              }
+              argw(ni,ast.fun.rty.elt[0].elt[idx++]);
+            }
+          }
+
+          if (ast.fun.is_fun_alias){
             pushins('call',n1,ast.fun.typ+'_'+printtypeser(ast.fun.rty));
+          }else{
+            
+            try{
+              pushins('rcall',n1, ast.fun.ori.split(".").at(-1)+"."+ast.fun.val);
+            }catch(e){
+              pushins('call',n1,ast.fun.typ+'_'+printtypeser(ast.fun.rty));
+            }
           }
         }
         // pushins('end');

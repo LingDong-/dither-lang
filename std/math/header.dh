@@ -1,3 +1,5 @@
+include "std/vec"
+
 namespace math {
   func sin(x:f32):f32;
   func cos(x:f32):f32;
@@ -10,4 +12,15 @@ namespace math {
   func atan2(x:f32,y:f32):f32;
   func hypot(x:f32,y:f32):f32;
   PI : f32 = 3.141592653589793;
+  func sin[N](x:vec[f32,N]):vec[f32,N]{return x.map(sin);};
+  func cos[N](x:vec[f32,N]):vec[f32,N]{return x.map(cos);};
+  func abs[N](x:vec[f32,N]):vec[f32,N]{return x.map(abs);};
+  func floor[N](x:vec[f32,N]):vec[f32,N]{return x.map(floor);};
+  func round[N](x:vec[f32,N]):vec[f32,N]{return x.map(round);};
+  func min[N](x:vec[f32,N],y:vec[f32,N]):vec[f32,N]{
+    func f(a:f32,i:i32):f32{
+      return min(a,y[i]);
+    }
+    return x.map(f);
+  };
 }
