@@ -623,7 +623,7 @@ var PARSER = function(sys,extensions={}){
               nom = arg.lhs;
               arg = arg.rhs;
             }
-            if (nom.key == 'subs'){
+            if (nom && nom.key == 'subs'){
               tem = nom.rhs;
               nom = nom.lhs;
             }
@@ -2285,7 +2285,25 @@ var PARSER = function(sys,extensions={}){
             avar.__isfun = true;
             let agt = scozoo.length;
             scozoo.push(avar);
-            if (ast.nom){
+            if (!ast.nom){
+              ast.nom = {tag:'ident',val:"__lambda_"+shortid(),pos:somepos(ast)};
+              let f;
+              add_func(f={
+                typ:o,
+                ipl:Object.assign({},ast),
+                ctx:scostk.slice(),
+                agt,
+                did:false,
+                mac:minargc,
+              });
+    
+              ast.tag = 'ident';
+              ast.val = [f];
+              ast.typ = f.ipl.mty;
+              ast.ori = cur_scope().__names;
+              ast.is_fun_alias = 1;
+              ast.key = 'term';
+            }else{
               add_func({
                 typ:o,
                 ipl:ast,
@@ -2396,6 +2414,7 @@ var PARSER = function(sys,extensions={}){
                 throw 'up';
               }
             }catch(_){
+              // console.log(arg2[1])
               ;[r,t] = matchftmpl([e],arg2[1].val,{},[]);
             }
             // console.dir(t,{depth:Infinity});
