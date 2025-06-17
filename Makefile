@@ -39,6 +39,7 @@ build/vm_dbg: $(wildcard src/*)
 ir:
 	node src/parser.js $(src) -o build/ir.dsm --map build/ir.map;
 run_vm: build/vm build/vm_dbg ir
+	echo $$DITHER_ROOT;\
 	build/$(VM_CHOICE) build/ir.dsm --map build/ir.map;
 to_c: ir
 	node src/to_c.js build/ir.dsm -o build/out.c;
@@ -65,6 +66,10 @@ gledit:
 webedit:
 	node editor/site/make_site.js;\
 	npx html-minifier-terser build/site.html -o build/site.min.html --collapse-whitespace --minify-js --minify-css
+cmdline:
+	cd editor/cmdline;\
+	npx pkg package.json;\
+	cp ../../build/dither /usr/local/bin
 profile: ir
 	FILENAME=$$(date +%s%N | shasum -a 256 | head -c 10).trace;\
 	arch -arm64 zsh -c "xcrun xctrace record --template 'Time Profiler' --output /tmp/$$FILENAME --launch -- build/vm build/ir.dsm"

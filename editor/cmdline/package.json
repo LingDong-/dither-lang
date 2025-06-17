@@ -1,0 +1,14 @@
+{
+  "name": "dither",
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "../../std/**",
+      "../../build/vm",
+      "../../build/config.h",
+      "../../config.env"
+    ],
+    "targets": ["node18"],
+    "outputPath": "../../build"
+  }
+}

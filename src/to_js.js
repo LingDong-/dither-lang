@@ -671,21 +671,24 @@ var TO_JS = function(cfg){
 
 
 if (typeof module !== 'undefined'){
-  let to_js = new TO_JS({preclude:1});
-  let inp_pth;
-  let out_pth;
-  for (let i = 2; i < process.argv.length; i++){
-    if (process.argv[i] == '-o' || process.argv[i] == '--output'){
-      out_pth = process.argv[++i];
-    }else{
-      inp_pth = process.argv[i];
+  if (require.main !== module){
+    module.exports = TO_JS;
+  }else{
+    let to_js = new TO_JS({preclude:1});
+    let inp_pth;
+    let out_pth;
+    for (let i = 2; i < process.argv.length; i++){
+      if (process.argv[i] == '-o' || process.argv[i] == '--output'){
+        out_pth = process.argv[++i];
+      }else{
+        inp_pth = process.argv[i];
+      }
     }
+    const fs = require('fs');
+    let txt = fs.readFileSync(inp_pth).toString();
+    let [ir,layout] = to_js.parse_ir(txt);
+    // console.dir(layout,{depth:Infinity})
+    fs.writeFileSync(out_pth,to_js.transpile(ir,layout));
   }
-  const fs = require('fs');
-  let txt = fs.readFileSync(inp_pth).toString();
-  let [ir,layout] = to_js.parse_ir(txt);
-  // console.dir(layout,{depth:Infinity})
-  fs.writeFileSync(out_pth,to_js.transpile(ir,layout));
-
 }
 

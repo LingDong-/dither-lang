@@ -1,5 +1,3 @@
-include "std/vec"
-
 namespace math {
   func sin(x:f32):f32;
   func cos(x:f32):f32;

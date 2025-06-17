@@ -1256,7 +1256,7 @@ var PARSER = function(sys,extensions={}){
     if (b == 'auto'){
       return a;
     }
-
+    
     if (typeof a == 'string' && typeof b == 'string'){
       if (a == b){
         return a;
@@ -1306,9 +1306,18 @@ var PARSER = function(sys,extensions={}){
       }
       return o;
     }else if (a.con == 'vec' && nmtyps.includes(b)){
-      return a;
+      if (nmtyps.includes(a.elt[0]) && typeof a.elt[1] == 'number'){
+        return a;
+      }else{
+        // console.trace();
+        throw 'up'
+      }
     }else if (b.con == 'vec' && nmtyps.includes(a)){
-      return b;
+      if (nmtyps.includes(b.elt[0]) && typeof b.elt[1] == 'number'){
+        return b;
+      }else{
+        throw 'up'
+      }
     }else if (a.con == 'func' && typeof b == 'string' && b.startsWith('__func_ovld_')){
       return a;
     }else if (a.con == 'union'){
@@ -1318,6 +1327,10 @@ var PARSER = function(sys,extensions={}){
       }
       if (die) mkerr('typecheck',`union type '${printtype(a)}' has no option '${printtype(b)}'`,curpos??[0,0]);
       throw 'up'
+    }else if (a == 'str'){
+      return a;
+    }else if (b == 'str'){
+      return b;
     }else{
       if (die) mkerr('typecheck',`no cast between types '${printtype(a)}' and '${printtype(b)}'`,curpos??[0,0]);
       throw 'up'
@@ -1361,7 +1374,9 @@ var PARSER = function(sys,extensions={}){
 
     function matchatmpl(fa,at,arg,tms,map){
       if (fa == at) return 50;
+
       // console.log(fa,at,arg,tms,map)
+
       function unmap(fa){
         if (fa.con){
           return {con:fa.con, elt:fa.elt.map(unmap)}
@@ -1374,6 +1389,7 @@ var PARSER = function(sys,extensions={}){
         }
         return fa;
       }
+
       fa = unmap(fa);
 
       let fasp = printtype(fa);
@@ -1416,7 +1432,6 @@ var PARSER = function(sys,extensions={}){
               // console.log('?',score)
               return score-1;
             }
-            
             maxtypf(fa,arg.typ,arg,0);
             // console.log('___',score)
             return score-2;
@@ -1455,10 +1470,11 @@ var PARSER = function(sys,extensions={}){
         return score;
       }
       
-
+      
       if (fa.con && (fa.con == at.con) && (fa.elt.length == at.elt.length)){
 
         let strict = (fa.con == 'map' || fa.con == 'list' || at.con == 'map' || at.con == 'list')
+        
         for (let i = 0; i < fa.elt.length; i++){
 
           let ok = matchatmpl(fa.elt[i], at.elt[i], null, tms, map);
@@ -1470,7 +1486,7 @@ var PARSER = function(sys,extensions={}){
         }
         return score;
       }
-      // console.log(fa,at,tms)
+
       return 0;
     }
 
@@ -1528,8 +1544,10 @@ var PARSER = function(sys,extensions={}){
             // console.log(map)
             // console.log(printtype(args[j].typ) , printtype(fas[j]), tms, map)
             s = Math.min(s,matchatmpl(fas[j], args[j].typ, args[j], tms, map ));
-            s = Math.max(s,1);
-
+            s = Math.max(s,0);
+            // if (s == 1){
+            //   console.log(args[j].typ,fas[j])
+            // }
             if (!s){
               break;
             }
@@ -1589,8 +1607,9 @@ var PARSER = function(sys,extensions={}){
           funs.push(nf);
 
           nf.ipl.ano.typ = unalias_recursive(nf.ipl.ano.typ);
-          fts[i] = shrinktype(funs[i].ipl.ano);
           
+          fts[i] = shrinktype(funs[i].ipl.ano);
+
           retyps.push(fts[i]);
           
           if (nf.ipl.bdy)
@@ -1621,6 +1640,7 @@ var PARSER = function(sys,extensions={}){
       // console.log(funs.length)
       scores.sort((a,b)=>(b[1]-a[1]));
 
+      // console.log("________",funs)
       // console.dir(scores,{depth:1000000})
 
       
@@ -2427,7 +2447,7 @@ var PARSER = function(sys,extensions={}){
             
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__func_ovld_')){
             // console.dir(ast,{depth:100000});
-
+            // console.log(fd.val);
             ;[ret,ast.fun.rty] = matchftmpl(arg2,fd.val,{},ast.fun.pte);
             
           }else{
