@@ -48,7 +48,12 @@ var PARSER = function(sys,extensions={}){
 
   let curpos = [0,0];
 
+  let nonlethal = 0;
   function mkerr(tag,msg,pos){
+    if (nonlethal){
+      nonlethal--;
+      return;
+    }
 
     let [pthidx,idx] = pos??[0,0];
     let txt = state.src[pthidx].txt;
@@ -1406,12 +1411,14 @@ var PARSER = function(sys,extensions={}){
           }
         }else{
           try{
+            // console.log(fa,arg.typ)
             if (printtype(fa)==printtype(arg.typ)){
+              // console.log('?',score)
               return score-1;
             }
             
             maxtypf(fa,arg.typ,arg,0);
-            
+            // console.log('___',score)
             return score-2;
           }catch(e){}
         }
@@ -1585,6 +1592,7 @@ var PARSER = function(sys,extensions={}){
           fts[i] = shrinktype(funs[i].ipl.ano);
           
           retyps.push(fts[i]);
+          
           if (nf.ipl.bdy)
             doinfer(nf.ipl.bdy);
           retyps.pop();
@@ -1594,7 +1602,7 @@ var PARSER = function(sys,extensions={}){
           for (let j = 0; j < n; j++){
             scostk.pop();
           }
-          scores.push([i,s-1,nf.typ,()=>funs.splice(funs.indexOf(nf),1)]);
+          scores.push([i,s-0.01,nf.typ,()=>funs.splice(funs.indexOf(nf),1)]);
         }
 
         
@@ -2380,7 +2388,16 @@ var PARSER = function(sys,extensions={}){
             ret = ast.fun.typ.elt[1];
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__vec_map')){
             let e = {typ:arg2[0].typ.elt[0]};
-            let [r,t] = matchftmpl([e],arg2[1].val,{},[]);
+            let r,t;
+            try{
+              nonlethal = -1;
+              ;[r,t] = matchftmpl([e,{typ:'i32'}],arg2[1].val,{},[]);
+              if (nonlethal < -1){
+                throw 'up';
+              }
+            }catch(_){
+              ;[r,t] = matchftmpl([e],arg2[1].val,{},[]);
+            }
             // console.dir(t,{depth:Infinity});
             ast.fun.rty = {
               con:'func', elt:[ {con:'tup', elt:[
@@ -2974,6 +2991,8 @@ var PARSER = function(sys,extensions={}){
         }
       }
       function docast(nom,src,trg){
+        // console.log(nom)
+        // console.trace();
         if (trg.con == 'func'){
           // console.trace();
           let cs = getcaps(src,trg);
@@ -3424,6 +3443,9 @@ var PARSER = function(sys,extensions={}){
             let nj = mktmpvar(t);
             pushins('mov',nj,[docompile(ast.arg[0]),i])
             argw(nj,t);
+            if(ast.fun.rty.elt[0].elt[1].elt[0].elt[1]){
+              argw(i,'i32');
+            }
             pushins('call',ni,ast.arg[1].typ+'_'+printtypeser(ast.fun.rty.elt[0].elt[1]));
             pushins('mov',[n1,i],ni);
           }

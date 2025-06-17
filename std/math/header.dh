@@ -18,9 +18,7 @@ namespace math {
   func floor[N](x:vec[f32,N]):vec[f32,N]{return x.map(floor);};
   func round[N](x:vec[f32,N]):vec[f32,N]{return x.map(round);};
   func min[N](x:vec[f32,N],y:vec[f32,N]):vec[f32,N]{
-    func f(a:f32,i:i32):f32{
-      return min(a,y[i]);
-    }
+    func f(a:f32,i:i32):f32{return min(a,y[i]);}
     return x.map(f);
   };
 }
