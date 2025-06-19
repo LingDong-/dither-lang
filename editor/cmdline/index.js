@@ -6,8 +6,9 @@ const TO_JS = require('../../src/to_js.js');
 const TO_C = require('../../src/to_c.js');
 const embed_glsl = require('../../src/embed_glsl.js');
 
+let version = "v0.0.1"
 let help = `
-The DITHER Programming Language
+The DITHER Programming Language ${version}
 usage:
     dither [options] file.dh
 options:
@@ -17,6 +18,7 @@ options:
     --include, -I path : add include path
     --command, -c cmd  : program passed in as string
     --help,    -h      : print this help
+    --version, -V      : print version
 `
 let args0 = process.argv.slice(2);
 let args = [];
@@ -33,6 +35,7 @@ let out_pth = null;
 let inc_pth = [];
 let inp_pth = null;
 let map_pth = '/tmp/dither/ir.map';
+let did_info = 0;
 if (args.length == 0){
   console.log(help);
 }
@@ -47,6 +50,9 @@ for (let i = 0; i < args.length; i++){
     inc_pth.push(args[++i])
   }else if (args[i] == '--help' || args[i] == '-h'){
     console.log(help);
+  }else if (args[i] == '--version' || args[i] == '-V'){
+    console.log(version);
+    did_info = 1;
   }else if (args[i] == '--command' || args[i] == '-c'){
     fs.writeFileSync(inp_pth = "/tmp/dither/in.dh",args[++i]);
   }else{
@@ -55,7 +61,9 @@ for (let i = 0; i < args.length; i++){
 }
 
 if (inp_pth == null){
-  console.warn("[warning] no input file.");
+  if (!did_info){
+    console.warn("[warning] no input file.");
+  }
   process.exit(0);
 }
 if (out_pth == null){
@@ -106,7 +114,7 @@ function miniServer(ENTRY_FILE){
   const net = require('net');
   const BASE_DIR = path.dirname(path.resolve(ENTRY_FILE));
   const ENTRY_ABS = path.resolve(ENTRY_FILE);
-  let PORT = 8080;
+  let PORT = 5555;
   function findAvailablePort(start, callback) {
     const server = net.createServer();
     server.listen(start, () => {

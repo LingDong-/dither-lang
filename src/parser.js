@@ -1249,7 +1249,8 @@ var PARSER = function(sys,extensions={}){
     
     let ordn = [...nmtyps,'str'];
     let ordv = [...cntyps];
-
+    // if (a == 'void') return a;
+    // if (b == 'void') return b;
     if (a == 'auto'){
       return b;
     }
@@ -1263,11 +1264,17 @@ var PARSER = function(sys,extensions={}){
       }
       let ia = ordn.indexOf(a);
       let ib = ordn.indexOf(b);
-      if (ia == -1 || ib == -1){
-        if (die) mkerr('typecheck',`no cast between types '${a}' and '${b}'`,curpos??[0,0]);
-        throw 'up'
-      }
-      return ordn[Math.max(ia,ib)];
+      // if (a == 'i32' && !smtyps.includes(b)){
+      //   return a;
+      // }else if (b == 'i32' && !smtyps.includes(a)){
+      //   return b;
+      // }else{
+        if ((ia == -1 || ib == -1) && (a!='str' && b!='str')){
+          if (die) mkerr('typecheck',`no cast between types '${a}' and '${b}'`,curpos??[0,0]);
+          throw 'up'
+        }
+        return ordn[Math.max(ia,ib)];
+      // }
     }else if (typeof a == 'number' && typeof b == 'number'){
       return Math.max(a,b);
 
@@ -1545,7 +1552,7 @@ var PARSER = function(sys,extensions={}){
             // console.log(printtype(args[j].typ) , printtype(fas[j]), tms, map)
             s = Math.min(s,matchatmpl(fas[j], args[j].typ, args[j], tms, map ));
             s = Math.max(s,0);
-            // if (s == 1){
+            // if (s == 0){
             //   console.log(args[j].typ,fas[j])
             // }
             if (!s){
@@ -1557,7 +1564,9 @@ var PARSER = function(sys,extensions={}){
         if (!s){
           continue;
         }
-
+        if (!funs[i].ipl.bdy){
+          s-=0.0001;
+        }
         let n = funs[i].ctx.length;
 
         if (funs[i].typ.con == 'func'){
@@ -1624,7 +1633,7 @@ var PARSER = function(sys,extensions={}){
           scores.push([i,s-0.01,nf.typ,()=>funs.splice(funs.indexOf(nf),1)]);
         }
 
-        
+
         if (s == 100){
           break;
         }
@@ -1643,7 +1652,9 @@ var PARSER = function(sys,extensions={}){
       // console.log("________",funs)
       // console.dir(scores,{depth:1000000})
 
-      
+      if (!scores.length){
+        mkerr('typecheck',`no matching overload found, try ${printtype(funs[0].typ)} etc...`,somepos(args)||somepos(funs));
+      }
       if (scores[0][1] <= 0){
         mkerr('typecheck',`no matching overload found, try ${printtype(funs[scores[0][0]].typ)} etc...`,somepos(args)||somepos(funs));
       }
@@ -1696,6 +1707,7 @@ var PARSER = function(sys,extensions={}){
     function fixtype(x){
 
       let m;
+      if (x == 'void') return x;
       if (x.con){
         if (cntyps.includes(x.con) || x.con == 'func' || x.con == 'dict' || x.con == 'union'){
           return x;
@@ -2009,7 +2021,13 @@ var PARSER = function(sys,extensions={}){
           ast.sco = scostk.slice();
           pop_scope();
         }else if (ast.key == 'nmsp'){
-          add_scope(new_scope(),ast.nom.val);
+          let ns = findnmsp(scozoo,namesp,ast.nom.val);
+          if (ns){
+            namesp.push(ast.nom.val);
+            scostk.push(ns.typ.elt[0]);
+          }else{
+            add_scope(new_scope(),ast.nom.val);
+          }
           for (let i = 0; i < ast.val.length; i++){
             doinfer(ast.val[i]);
           }
@@ -2130,7 +2148,9 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           curpos = somepos(ast.lhs);
-          maxtype(ast.lhs.typ,ast.rhs.typ);
+          if (ast.rhs.typ != 'void'){
+            maxtype(ast.lhs.typ,ast.rhs.typ);
+          }
           ast.typ = ast.rhs.typ;
         }else if (ast.key == 'is'){
           doinfer(ast.lhs);
@@ -2222,11 +2242,12 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'func'){
         
           function add_func(f){
+            // console.log(ast.nom.val,cur_scope())
             if (!cur_scope()[ast.nom.val]){
               cur_scope()[ast.nom.val] = {typ:"__func_ovld_"+ast.nom.val+'_'+shortid(),val:[]};
             }
             f.ipl.mty = cur_scope()[ast.nom.val].typ;
-            cur_scope()[ast.nom.val].val.push(f);
+            cur_scope()[ast.nom.val].val.unshift(f);
           }
           let o = {con:'func',elt:[{con:'tup',elt:[]}]};
           let avar = new_scope();

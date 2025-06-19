@@ -44,6 +44,13 @@ EXPORTED void math_floor(var_t* ret,  gstate_t* _g){
   ret->u.f32 = y;
 }
 
+EXPORTED void math_ceil(var_t* ret,  gstate_t* _g){
+  float x = ARG_POP(_g,f32);
+  float y = ceil(x);
+  
+  ret->u.f32 = y;
+}
+
 EXPORTED void math_min(var_t* ret,  gstate_t* _g){
   float y = ARG_POP(_g,f32);
   float x = ARG_POP(_g,f32);
@@ -85,6 +92,7 @@ EXPORTED void lib_init_math(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "math.cos", math_cos);
   register_cfunc(&(_g->cfuncs), "math.abs", math_abs);
   register_cfunc(&(_g->cfuncs), "math.floor", math_floor);
+  register_cfunc(&(_g->cfuncs), "math.ceil", math_ceil);
   register_cfunc(&(_g->cfuncs), "math.round", math_round);
   register_cfunc(&(_g->cfuncs), "math.random", math_random);
   register_cfunc(&(_g->cfuncs), "math.min", math_min);

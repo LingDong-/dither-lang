@@ -32,5 +32,9 @@ globalThis.$math = new function(){
     let [x] = $pop_args(1);
     return Math.floor(x);
   }
+  that.ceil = function(){
+    let [x] = $pop_args(1);
+    return Math.ceil(x);
+  }
 }
 

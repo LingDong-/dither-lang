@@ -1261,7 +1261,7 @@ int elem_vart(void* v){
 
 
 
-void to_str(int vart, void* u, str_t* s){
+void to_str_(int vart, void* u, str_t* s, int depth){
   if (vart == VART_NUL){
     null_case:
     str_add(s,"null");
@@ -1292,7 +1292,7 @@ void to_str(int vart, void* u, str_t* s){
     char* ptr = v->data;
     for (int i = 0; i < v->n; i++){
       
-      to_str(elem_vart(v), ptr, s);
+      to_str_(elem_vart(v), ptr, s, depth-1);
       ptr += v->w;
       if (i<v->n-1)str_addch(s,',');
     }
@@ -1304,7 +1304,7 @@ void to_str(int vart, void* u, str_t* s){
     str_addch(s,'{');
     char* ptr = v->data;
     for (int i = 0; i < v->n; i++){
-      to_str(elem_vart(v), ptr, s);
+      to_str_(elem_vart(v), ptr, s, depth-1);
       ptr += v->w;
       if (i<v->n-1)str_addch(s,',');
     }
@@ -1324,7 +1324,7 @@ void to_str(int vart, void* u, str_t* s){
     str_addch(s,'{');
     char* ptr = v->data;
     for (int i = 0; i < v->n; i++){
-      to_str(elem_vart(v), ptr, s);
+      to_str_(elem_vart(v), ptr, s, depth-1);
       ptr += v->w;
       if (i<v->n-1)str_addch(s,',');
     }
@@ -1339,7 +1339,7 @@ void to_str(int vart, void* u, str_t* s){
     while (q){
       type_t* t = (type_t*)(q->data);
 
-      to_str(t->vart,tup->data + ofs,s);
+      to_str_(t->vart,tup->data + ofs,s, depth-1);
 
       q = q->next;
       ofs += type_size(t);
@@ -1362,12 +1362,12 @@ void to_str(int vart, void* u, str_t* s){
         for (int i = 0; i < dic->map.slots[k].len; i++){
           pair_t p = dic->map.slots[k].data[i];
           if (ta->vart <= VART_F64){
-            to_str(ta->vart, p.key, s);
+            to_str_(ta->vart, p.key, s, depth-1);
           }else{
             str_add(s,p.key);
           }
           str_addch(s,':');
-          to_str(tb->vart, p.val, s);
+          to_str_(tb->vart, p.val, s, depth-1);
           n++;
           if (n != dic->map.len) str_addch(s,',');
         }
@@ -1378,27 +1378,25 @@ void to_str(int vart, void* u, str_t* s){
   }else if (vart == VART_STT){
     obj_t* o = (*((obj_t**)u));
     if (!o) goto null_case;
-    lost_t* lost = (lost_t*)map_get(&_G.layouts,&(o->type->u.str));
-    list_node_t* n = lost->fields.head;
-    str_addch(s,'{');
-    while (n){
-      lofd_t* lofd = n->data;
-      void* offsp = (void*)( ((char*)(o->data)) + (lofd->offs) );
-      str_add(s,lofd->name.data);
-      str_addch(s,':');
-      if (lofd->type->mode == TYPM_SIMP && lofd->type->vart != VART_STR){
-        obj_t* ptr = (obj_t*)re_ptr_at(offsp);
-        char cs[32];
-        // sprintf(cs,"[object@%p]",ptr);
-        sprintf(cs,"[object@%05lx]",((unsigned long)ptr) & 0xFFFFF);
-        str_add(s,cs);
-      }else{
-        to_str(lofd->type->vart,offsp,s);
+    if (depth > 0){
+      lost_t* lost = (lost_t*)map_get(&_G.layouts,&(o->type->u.str));
+      list_node_t* n = lost->fields.head;
+      str_addch(s,'{');
+      while (n){
+        lofd_t* lofd = n->data;
+        void* offsp = (void*)( ((char*)(o->data)) + (lofd->offs) );
+        str_add(s,lofd->name.data);
+        str_addch(s,':');
+        to_str_(lofd->type->vart,offsp,s,depth-1);
+        n = n->next;
+        if (n) str_addch(s,',');
       }
-      n = n->next;
-      if (n) str_addch(s,',');
+      str_addch(s,'}');
+    }else{
+      char cs[32];
+      sprintf(cs,"[object@%05lx]",((unsigned long)o) & 0xFFFFF);
+      str_add(s,cs);
     }
-    str_addch(s,'}');
   }else if (vart == VART_FUN){
     fun_t* f = (*((fun_t**)u));
     if (!f) goto null_case;
@@ -1409,11 +1407,16 @@ void to_str(int vart, void* u, str_t* s){
   }else if (vart == VART_UON){
     uon_t* v = (*((uon_t**)u));
     if (!v || !v->var) goto null_case;
-    to_str(v->var->type->vart, &(v->var->u), s);
+    // printf("%d\n",v->var->type->vart);
+    to_str_(v->var->type->vart, &(v->var->u), s, depth-1);
   }else{
     UNIMPL
   }
 }
+void to_str(int vart, void* u, str_t* s){
+  return to_str_(vart,u,s,1);
+}
+
 
 void to_key(int vart, void* u, str_t* s){
   return to_str(vart,u,s);
@@ -3124,6 +3127,8 @@ list_node_t* execute_instr(list_node_t* ins_node){
       }
       if (u && u->type->vart == VART_VEC){
         v->u.i32 = vec_eq(get_ref_vec(b),get_ref_vec(c));
+      }else if ((u && u->type->vart == VART_STR) || b->mode == TERM_STRL){
+        v->u.i32 = strcmp(get_val_stn(b)->data,get_val_stn(c)->data)==0;
       }else{
         v->u.i32 = get_val_num(b)==get_val_num(c);
       }

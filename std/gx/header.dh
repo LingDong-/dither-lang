@@ -26,12 +26,15 @@ namespace gx {
   func background(r:f32,g:f32,b:f32,a:f32);
   func background(r:f32,g:f32,b:f32){background(r,g,b,1.0);};
   func background(r:f32){background(r,r,r,1.0);};
+  func background(r:f32,a:f32){background(r,r,r,a);};
   func fill(r:f32,g:f32,b:f32,a:f32);
   func stroke(r:f32,g:f32,b:f32,a:f32);
   func fill(r:f32,g:f32,b:f32){fill(r,g,b,1.0);};
   func stroke(r:f32,g:f32,b:f32){stroke(r,g,b,1.0);};
+  func fill(r:f32,a:f32){fill(r,r,r,a);};
   func fill(r:f32){fill(r,r,r,1.0);};
   func stroke(r:f32){stroke(r,r,r,1.0);};
+  func stroke(r:f32,a:f32){stroke(r,r,r,a);};
   func stroke_weight(w:f32);
   func no_fill();
   func no_stroke();

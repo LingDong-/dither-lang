@@ -67,8 +67,8 @@ var TO_JS = function(cfg){
     }
   }
   function $to_str(x){
-    if (typeof x == 'undefined'){
-      return 'void';
+    if (typeof x == 'undefined' || x == null){
+      return 'null';
     }else if (typeof x != 'object'){
       return x.toString();
     }else if ($numtyps.includes(x.__type)){
@@ -284,7 +284,9 @@ var TO_JS = function(cfg){
     function cast(a,b,ins){
       let ta = lookup[a];
       let tb = lookup[b];
-      if (ta == 'str'){
+      if (ta == 'void'){
+        o.push(`${get_ptr(a)} = null`);
+      }else if (ta == 'str'){
         o.push(`${get_ptr(a)} = $to_str(${get_ptr(b)})`);
       }else if ($numtyps.includes(ta) && $numtyps.includes(tb)){
         o.push(`${get_ptr(a)} = new $typed_cons.${ta}([${get_ptr(b)}])[0]`);
@@ -321,7 +323,7 @@ var TO_JS = function(cfg){
 
     function math(op,a,b,c){
       let os = {
-        add:'+',sub:'-',mul:'*',div:'/',pow:'**',mod:'%',band:'&',bor:'|'
+        add:'+',sub:'-',mul:'*',div:'/',pow:'**',mod:'%',band:'&',bor:'|',xor:'^'
       }[op];
       let typ = lookup[a];
       if (typ.con == 'vec'){
@@ -341,6 +343,10 @@ var TO_JS = function(cfg){
       let tc = lookup[c];
       if ($numtyps.includes(tb) || $numtyps.includes(tb) || typeof b == 'number' || typeof c == 'number'){
         o.push(`${get_ptr(a)}=Number(${get_ptr(b)}${os}${get_ptr(c)});`);
+      }else if (op == 'eq' && tb == 'str'){
+        o.push(`${get_ptr(a)}=Number(${get_ptr(b)}==$to_str(${get_ptr(c)}));`);
+      }else if (op == 'eq' && tc == 'str'){
+        o.push(`${get_ptr(a)}=Number(${get_ptr(c)}==$to_str(${get_ptr(b)}));`);
       }else{
         UNIMPL();
       }
@@ -566,7 +572,7 @@ var TO_JS = function(cfg){
         o.push(`${get_ptr(a)} = $value(${get_ptr(b)});`);
       }else if (['add','sub','mul','div','mod','pow'].includes(ins[0])){
         math(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
-      }else if (['band','bor'].includes(ins[0])){
+      }else if (['band','bor','xor'].includes(ins[0])){
         math(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
       }else if (ins[0] == 'bnot'){
         o.push(`${get_ptr(clean(ins[1]))} = ~${get_ptr(clean(ins[2]))};`);

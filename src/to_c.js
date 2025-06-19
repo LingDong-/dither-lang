@@ -49,9 +49,11 @@ var TO_C = function(cfg){
   #define OP_DIV(a,b) ((a)/(b))
   #define OP_BAND(a,b) ((a)&(b))
   #define OP_BOR(a,b) ((a)|(b))
+  #define OP_XOR(a,b) ((a)^(b))
   #define OP_MOD(a,b) ((a)%(b))
   #define OP_MODF(a,b) (fmod(a,b))
   #define OP_POW(a,b)  (pow(a,b))
+  #define VOID_T int
   typedef struct ret_st {
     void* var;
     int n;
@@ -242,6 +244,7 @@ var TO_C = function(cfg){
     __stack = malloc(__stack_cap*sizeof(int));
   }
   void __gc_mark(void* ptr){
+    if (ptr == NULL) return;
     __mem_node_t* node = (__mem_node_t*) ((void*)ptr-sizeof(__mem_node_t));
     if (node->flag & 0x80){
       return;
@@ -360,7 +363,10 @@ var TO_C = function(cfg){
   }
   char* __to_str(void* ptr, int vart, int w){
     char* o;
-    if (vart == VART_LST){
+    if (*(void**)ptr == NULL){
+      o = malloc(5);
+      strcpy(o,"null");
+    }else if (vart == VART_LST){
       
       __list_t* lst = *(__list_t**)ptr;
       o = calloc(3,1);
@@ -554,7 +560,7 @@ var TO_C = function(cfg){
 
   let typmap = {
     ...nummap,
-    'void':'int',
+    'void':'VOID_T',
     'str':'char*',
   }
 
@@ -782,6 +788,7 @@ var TO_C = function(cfg){
     function cast(a,b,ins){
       let ta = lookup[a];
       let tb = lookup[b];
+      // console.log(a,b,ta,tb)
       if (ta == 'char*' && intpam[tb]){
         o.push(`${a}=__gc_alloc(VART_STR,32);`);
         o.push(`__put_var(${varcnt++},${a});`);
@@ -794,6 +801,8 @@ var TO_C = function(cfg){
         o.push(`${a}=__gc_alloc(VART_STR,32);`);
         o.push(`__put_var(${varcnt++},${a});`);
         o.push(`sprintf(${a},"%f",(double)${b});`);
+      }else if (ta == 'VOID_T'){
+        o.push(`${a}=0;`);
       }else if (ta == 'char*' && tb.con == 'vec'){
         let df;
         let cst = "";
@@ -864,6 +873,7 @@ var TO_C = function(cfg){
         let no = shortid();
         let na = shortid();
         o.push(`char* ${tmp} = calloc(1,2); ${tmp}[0] = '{';`);
+        o.push(`if (${b}){`);
         o.push(`char* ${tmp1}; int ${no},${na};`);
         let lo = layout[tb];
         for (let i = 0; i < lo.fields.length; i++){
@@ -884,6 +894,9 @@ var TO_C = function(cfg){
             ${tmp}[${no}+${lo.fields[i][1].length+2}+${na}] = 0;\
           `)
         };
+        o.push(`}else{`);
+        o.push(`${tmp} = realloc(${tmp},5); strcpy(${tmp},"null");`);
+        o.push('}');
         o.push(`${a} = __gc_alloc(VART_STR, strlen(${tmp})+1);`);
         o.push(`__put_var(${varcnt++},${a});`);
         o.push(`strcpy(${a},${tmp});`);
@@ -925,6 +938,10 @@ var TO_C = function(cfg){
         for (let i = 0; i < ta.elt[1]; i++){
           o.push(`${a}[${i}] = ${b}[${i}];`);
         }
+      }else if (ta == 'char*' && tb == 'VOID_T'){
+        o.push(`${a}=__gc_alloc(VART_STR,5);`);
+        o.push(`__put_var(${varcnt++},${a});`);
+        o.push(`sprintf(${a},"null");`);
       }else{
         console.log(a,b,ta,tb);
         UNIMPL();
@@ -1082,11 +1099,11 @@ var TO_C = function(cfg){
     }
     function write_decl(typ,nom){
       if (typ.con == 'list'){
-        o.push(`__list_t* ${nom};`)
+        o.push(`__list_t* ${nom} = 0;`)
       }else if (typ.con == 'arr'){
-        o.push(`__arr_t* ${nom};`)
+        o.push(`__arr_t* ${nom} = 0;`)
       }else if (typ.con == 'dict'){
-        o.push(`__dict_t* ${nom};`)
+        o.push(`__dict_t* ${nom} = 0;`)
       }else if (typ.con == 'vec'){
         o.push(`${typ.elt[0]} ${nom}[${typ.elt[1]}];`)
       }else if (typ.con == 'tup'){
@@ -1096,7 +1113,7 @@ var TO_C = function(cfg){
       }else if (typ.con == 'union'){
         o.push(`__union_t* ${nom};`);
       }else{
-        o.push(`${typ} ${nom};`);
+        o.push(`${typ} ${nom} = 0;`);
       }
     }
 
@@ -1344,7 +1361,7 @@ var TO_C = function(cfg){
         }
       }else if (['add','sub','mul','div','mod','pow'].includes(ins[0])){
         math(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
-      }else if (['band','bor'].includes(ins[0])){
+      }else if (['band','bor','xor'].includes(ins[0])){
         math(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
       }else if (ins[0] == 'bnot'){
         o.push(`${clean(ins[1])} = ~${clean(ins[2])};`);
@@ -1545,7 +1562,7 @@ if (typeof module !== 'undefined'){
     let txt = fs.readFileSync(inp_pth).toString();
     let [ir,layout] = to_c.parse_ir(txt);
     // console.dir(layout,{depth:Infinity})
-    fs.writeFileSync(out_pth,to_c.transpile_c(ir,layout));
+    fs.writeFileSync(out_pth,to_c.transpile(ir,layout));
   }
 }
 

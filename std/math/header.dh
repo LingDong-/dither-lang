@@ -4,6 +4,7 @@ namespace math {
   func random():f32;
   func abs(x:f32):f32;
   func floor(x:f32):f32;
+  func ceil(x:f32):f32;
   func round(x:f32):f32;
   func min(x:f32,y:f32):f32;
   func max(x:f32,y:f32):f32;
@@ -14,6 +15,7 @@ namespace math {
   func cos[N](x:vec[f32,N]):vec[f32,N]{return x.map(cos);};
   func abs[N](x:vec[f32,N]):vec[f32,N]{return x.map(abs);};
   func floor[N](x:vec[f32,N]):vec[f32,N]{return x.map(floor);};
+  func ceil[N](x:vec[f32,N]):vec[f32,N]{return x.map(ceil);};
   func round[N](x:vec[f32,N]):vec[f32,N]{return x.map(round);};
   func min[N](x:vec[f32,N],y:vec[f32,N]):vec[f32,N]{
     return x.map(func(a:f32,i:i32):f32{return min(a,y[i]);});

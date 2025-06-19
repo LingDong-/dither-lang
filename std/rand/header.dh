@@ -1,0 +1,11 @@
+namespace rand {
+  func noise(x:f32,y:f32,z:f32):f32;
+  func noise(x:f32,y:f32):f32{return noise(x,y,0)};
+  func noise(x:f32):f32{return noise(x,0,0);}
+  func noise_reseed();
+  func noise_detail(lod:i32,falloff:f32);
+  func random():f32;
+  func random(a:f32,b:f32):f32{return a+random(b)};
+  func random(a:f32):f32{return random()*a};
+  func seed(x:u32);
+}
