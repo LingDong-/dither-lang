@@ -75,7 +75,10 @@ int is_fill=1;
 GLint fbo_zero;
 
 void gx_impl__size(int w, int h, uint64_t ctx){
+  #ifndef __APPLE__
   glewInit();
+  #endif
+  
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
 
   glViewport(0, 0, w, h);
