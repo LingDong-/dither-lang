@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 include config.env
 ifeq ($(dbg),1)
 	OPT = -DDBG
@@ -56,7 +57,7 @@ run_c: build/config.h to_c
 	source config.env;\
 	eval $$(head -n 1 "build/out.c" | cut -c 3-);\
 	echo $$CFLAGS;\
-	gcc -include build/config.h -I. -O3 build/out.c $$CFLAGS -o build/a.out && build/a.out;
+	gcc -include build/config.h -I. -O3 build/out.c $$CFLAGS -lm -o build/a.out && build/a.out;
 nwedit:
 	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
 gledit:

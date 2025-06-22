@@ -75,6 +75,7 @@ int is_fill=1;
 GLint fbo_zero;
 
 void gx_impl__size(int w, int h, uint64_t ctx){
+  glewInit();
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
 
   glViewport(0, 0, w, h);
@@ -587,7 +588,7 @@ void gx_impl_point(float x, float y){
 GLuint font_texture = -1;
 GLuint text_vbo = 0;
 
-uint8_t font_bitmap[] = {
+uint8_t font_bitmap[FONT_N*FONT_H] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
   0x00,0x00,0x00,0x00,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x00,0x08,0x08,0x00,0x00,
   0x00,0x00,0x22,0x22,0x22,0x22,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -692,7 +693,7 @@ void build_font_texture() {
     int gx = (ch % FONT_COLS) * FONT_W;
     int gy = (ch / FONT_COLS) * FONT_H;
     for (int row = 0; row < FONT_H; ++row) {
-      unsigned char bits = font_bitmap[ch*FONT_H+row];
+      uint8_t bits = font_bitmap[ch*FONT_H+row];
       for (int col = 0; col < FONT_W; ++col) {
         if (bits & (1 << (7 - col))) {
           tex_data[gy + row][gx + col] = 255;
