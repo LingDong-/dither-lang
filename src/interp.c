@@ -2959,9 +2959,14 @@ list_node_t* execute_instr(list_node_t* ins_node){
         uint64_t cv = get_val_int(c);
         if (v->type->vart % 2 == VART_U08){
           v->u.u64 = bv % cv;
+        }else if (v->type->vart == VART_I08){
+          v->u.i8 = (* ((int8_t*)(&bv))) % (* ((int8_t*)(&cv)));
+        }else if (v->type->vart == VART_I16){
+          v->u.i16 = (* ((int16_t*)(&bv))) % (* ((int16_t*)(&cv)));
+        }else if (v->type->vart == VART_I32){
+          v->u.i32 = (* ((int32_t*)(&bv))) % (* ((int32_t*)(&cv)));
         }else{
-          int64_t vv = (* ((int64_t*)(&bv))) % (* ((int64_t*)(&cv)));
-          v->u.i64 = vv;
+          v->u.i64 = (* ((int64_t*)(&bv))) % (* ((int64_t*)(&cv)));
         }
       }else if (v->type->vart == VART_F32){
         v->u.f32 = fmod(get_val_f32(b),get_val_f32(c));

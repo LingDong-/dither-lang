@@ -12,7 +12,7 @@ globalThis.$rand = new function(){
   var PERLIN_ZWRAPB = 8; var PERLIN_ZWRAP = 1<<PERLIN_ZWRAPB;
   var PERLIN_SIZE = 4095;
   var perlin_octaves = 4;var perlin_amp_falloff = 0.5;
-  var scaled_cosine = function(i) {return 0.5*(1.0-Math.cos(i*PI));};
+  var scaled_cosine = function(i) {return 0.5*(1.0-Math.cos(i*Math.PI));};
   var perlin;
 
   function noise(x,y,z) {

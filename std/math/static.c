@@ -74,3 +74,10 @@ void math__ceil(){
   float y = ceilf(x);
   __put_ret(&y);
 }
+
+void math__abs(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = fabsf(x);
+  __put_ret(&y);
+}

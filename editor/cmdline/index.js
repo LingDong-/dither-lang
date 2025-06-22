@@ -30,6 +30,7 @@ for (let i = 0; i < args0.length; i++){
   }
 }
 let do_run = 0;
+let verbose = 0;
 let targ = 'vm'
 let out_pth = null;
 let inc_pth = [];
@@ -53,6 +54,8 @@ for (let i = 0; i < args.length; i++){
   }else if (args[i] == '--version' || args[i] == '-V'){
     console.log(version);
     did_info = 1;
+  }else if (args[i] == '--verbose' || args[i] == '-v'){
+    verbose = 1;
   }else if (args[i] == '--command' || args[i] == '-c'){
     fs.writeFileSync(inp_pth = "/tmp/dither/in.dh",args[++i]);
   }else{
@@ -144,7 +147,7 @@ function miniServer(ENTRY_FILE){
       });
     });
     server.listen(port, () => {
-      console.log(`serving ${ENTRY_FILE} at http://localhost:${port}/ ...`);
+      if (verbose) console.log(`[info] serving ${ENTRY_FILE} at http://localhost:${port}/ ...`);
     });
   }
   findAvailablePort(PORT, startServer);
@@ -172,6 +175,7 @@ if (targ == 'vm'){
   fs.writeFileSync(out_pth,irlo);
   if (do_run){
     fs.writeFileSync('/tmp/dither/vm', fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
+    if (verbose) console.log("[info] compiled, running...");
     let cmd = `/tmp/dither/vm ${out_pth} --map /tmp/dither/ir.map`;
     execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: '/tmp/dither' }});
   }
@@ -181,11 +185,12 @@ if (targ == 'vm'){
   let c = to_c.transpile(ir,layout);
   fs.writeFileSync(out_pth,c);
   if (do_run){
+    if (verbose) console.log("[info] dither compiled. compiling C...");
     fs.writeFileSync('/tmp/dither/config.env', fs.readFileSync(__dirname+'/../../config.env'), { mode: 0o755 })
     let c = `cd /tmp/dither && source config.env && eval $(head -n 1 "${out_pth}" | cut -c 3-) && echo $CFLAGS`
     let cflags = execSync(c).toString().replace(/\n/g,' ');
     fs.writeFileSync('/tmp/dither/config.h', fs.readFileSync(__dirname+'/../../build/config.h'), { mode: 0o755 });
-    let cmd = `gcc -include /tmp/dither/config.h -I/tmp/dither -O3 ${cflags} ${out_pth} -o /tmp/dither/a.out && /tmp/dither/a.out`;
+    let cmd = `gcc -include /tmp/dither/config.h -I/tmp/dither -O3 ${cflags} ${out_pth} -o /tmp/dither/a.out ${verbose?'&& echo "[info] C compiled, running..."':''} && /tmp/dither/a.out`;
     execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: '/tmp/dither' }});
   }
 }else if (targ == 'js'){
@@ -193,6 +198,7 @@ if (targ == 'vm'){
   let [ir,layout] = to_js.parse_ir(irlo);
   fs.writeFileSync(out_pth,to_js.transpile(ir,layout));
   if (do_run){
+    if (verbose) console.log("[info] compiled, running...");
     eval(fs.readFileSync(out_pth).toString());
   }
 }else if (targ == 'html'){
@@ -201,6 +207,7 @@ if (targ == 'vm'){
   let js = to_js.transpile(ir,layout);
   fs.writeFileSync(out_pth,`<body></body><script>${js.replace(/<\/script>/gi, '<\\/script>')}</script>`);
   if (do_run){
+    if (verbose) console.log("[info] compiled, running...");
     miniServer(out_pth)
   }
 }

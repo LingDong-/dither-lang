@@ -2897,7 +2897,9 @@ var PARSER = function(sys,extensions={}){
           ast.typ = "str";
           ast.rhs = ast.rhs.val.slice(1,-1);
         }else{
-          ast.typ = 'void';
+          if (!ast.typ){
+            ast.typ = 'void';
+          }
         }
       }
     }

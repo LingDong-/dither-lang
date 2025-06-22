@@ -50,6 +50,7 @@ namespace gx {
   func rotate_deg(x:f32);
   func translate(x:f32,y:f32);
   func scale(x:f32,y:f32);
+  func scale(x:f32){scale(x,x);}
   func apply_matrix(x:vec[f32,3,3]);
   func text(s:str,x:f32,y:f32);
   func poll():win.Event{return win.poll()};

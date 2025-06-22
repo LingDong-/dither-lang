@@ -31,3 +31,17 @@ void list__length(){
   __put_ret(&(a->n));
 }
 
+void list__erase(){  
+  int32_t __ARG(j);
+  int32_t __ARG(i);
+
+  __list_t* a = NULL;
+  __pop_arg(&a, 8);
+
+
+  memmove(a->data+((i)*a->w), a->data + (j*a->w), (a->n-j)*a->w);
+
+  a->n-=(j-i);
+
+  __put_ret(&(a->n));
+}

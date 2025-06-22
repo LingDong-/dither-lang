@@ -29,4 +29,13 @@ namespace math {
   func hypot[N](x:vec[f32,N],y:vec[f32,N]):vec[f32,N]{
     return x.map(func(a:f32,i:i32):f32{return hypot(a,y[i]);});
   };
+  func lerp[T](x:T,y:T,t:f32):T{
+    return x*(1-t)+y*t;
+  }
+  func clamp[T](x:T, a:T, b:T):T{
+    return min(max(x,a),b);
+  }
+  func linmap[T](x:T, ilo:T, ihi:T, olo:T, ohi:T):T{
+    return olo + (ohi - olo) * ((x - ilo) / (ihi - ilo));
+  }
 }
