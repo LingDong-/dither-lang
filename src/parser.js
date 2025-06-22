@@ -2398,7 +2398,7 @@ var PARSER = function(sys,extensions={}){
           }
           // console.log(',,,,,,,,,,,,,,,,,',ast.fun)
           let fd;
-          if (!ast.fun.typ.startsWith('__vec_map')){
+          if (typeof ast.fun.typ != 'string' || !ast.fun.typ.startsWith('__vec_map')){
             fd = findvar(get_scope(),ast.fun,false);
             if (!fd){
               for (let i = 0; i < scozoo.length; i++){
@@ -3495,7 +3495,7 @@ var PARSER = function(sys,extensions={}){
 
         let n1 = mktmpvar(ast.fun.rty.elt[1]);
 
-        if (ast.fun.typ.startsWith("__vec_map")){
+        if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith("__vec_map")){
           let n = ast.fun.rty.elt[1].elt[1];
           let t = ast.fun.rty.elt[1].elt[0];
           for (let i = 0; i <n; i++){

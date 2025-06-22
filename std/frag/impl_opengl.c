@@ -74,6 +74,7 @@ GLuint vbo;
 
 
 void frag_impl__size(int w, int h, uint64_t ctx){
+  glewInit();
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
   width = w;
   height = h;

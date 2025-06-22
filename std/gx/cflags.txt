@@ -6,5 +6,5 @@ if [ "$(uname)" = "Darwin" ]; then
     CFLAGS="$CFLAGS -framework CoreGraphics"
   fi
 else
-  CFLAGS="$CFLAGS -lGLEW -lGL"
+  CFLAGS="$CFLAGS -lGLEW -lGL -lGLU"
 fi
