@@ -4,8 +4,27 @@ const PARSER = require('../../src/parser.js');
 
 let html = [`
 <style>
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: #222;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 4px;
+    border: 2px solid #222;
+  }
+  ::-webkit-scrollbar-corner {
+    background: #222;
+  }
   input[type=number]::-webkit-inner-spin-button {
-    opacity: 1
+    opacity: 1;
+    filter: invert(90%);
+  }
+  input[type=range],input[type=checkbox] {
+    filter: invert(90%);
   }
   .menubtn{
     font-size:12px;
@@ -24,7 +43,7 @@ let html = [`
     cursor:pointer;
   }
 </style>
-<body style="min-width:960px;position:absolute;width:100%;height:100%;left:0px;top:0px;margin:0px;padding-0px;"></body>
+<body style="color:white;background:black;min-width:960px;position:absolute;width:100%;height:100%;left:0px;top:0px;margin:0px;padding-0px;"></body>
 `];
 
 html.push(`<script>${fs.readFileSync("src/parser.js").toString()}</script>`);
@@ -96,7 +115,7 @@ function main(){
     oper:"mediumseagreen",
     misc:"mediumpurple",
     litr:"salmon",
-    iden:"dimgray",
+    iden:"grey",
     stdl:"firebrick",
   }
   let Dmenu = document.createElement("div");
@@ -104,22 +123,22 @@ function main(){
   document.body.appendChild(Dmenu);
 
   let Dtabs = document.createElement("div");
-  Dtabs.style = "position:absolute;left:0px;top:24px;background:white;width:320px;height:55px;overflow:hidden";
+  Dtabs.style = "position:absolute;left:0px;top:24px;background:#333;width:320px;height:55px;overflow:hidden";
   document.body.appendChild(Dtabs);
   let Dpalette = document.createElement("div");
-  Dpalette.style = "position:absolute;left:0px;top:76px;background:whitesmoke;width:320px;height:calc(100% - 80px);overflow:scroll";
+  Dpalette.style = "position:absolute;left:0px;top:76px;background:#222;width:320px;height:calc(100% - 80px);overflow:scroll";
   document.body.appendChild(Dpalette)
   let Dprogram = document.createElement("div");
-  Dprogram.style = "position:absolute;left:320px;top:24px;border-left:1px solid black;border-right:1px solid black;width:calc(100% - 682px);height:calc(100% - 24px);overflow:scroll";
+  Dprogram.style = "background:#333;position:absolute;left:320px;top:24px;border-left:1px solid black;border-right:1px solid black;width:calc(100% - 682px);height:calc(100% - 24px);overflow:scroll";
   document.body.appendChild(Dprogram)
   window.Dprogram = Dprogram;
 
   let Dout = document.createElement("div");
-  Dout.style = "position:absolute;right:0px;top:24px;width:360px;height:70%;background:whitesmoke;"
+  Dout.style = "color:gainsboro;position:absolute;right:0px;top:24px;width:360px;height:70%;background:#333;"
   document.body.appendChild(Dout)
 
   let Dtext = document.createElement("textarea");
-  Dtext.style = "white-space: pre;font-size:11px;border:none;border-top:1px solid black;position:absolute;right:0px;bottom:0px;width:360px;height:calc(30% - 24px);background:whitesmoke;"
+  Dtext.style = "color:gainsboro;white-space: pre;font-size:11px;border:none;border-top:1px solid black;position:absolute;right:0px;bottom:0px;width:360px;height:calc(30% - 24px);background:#222;"
   document.body.appendChild(Dtext)
 
   let btn_load = document.createElement("button");
@@ -400,6 +419,19 @@ function main(){
     that.next = null;
     that.prev = null;
   }
+  function destroy(that){
+    // console.log(that);
+    // pluck(that);
+    for (let i = 0; i < that.slots.length; i++){
+      if (that.slot_types[i] == 'L'){
+        that.slots[i].map(destroy)
+      }else if (that.slot_types[i] == 'X' && that.slots[i]){
+        destroy(that.slots[i]);
+      }
+    }
+    Blocks.splice(Blocks.indexOf(that),1);
+    that.elt.main.parentElement.removeChild(that.elt.main);
+  }
 
   function reshape_checkbox_matrix(slot,nc,nr){
     while (slot.getElementsByTagName('div').length < nr){
@@ -467,11 +499,11 @@ function main(){
       }
     }
 
-    div.style="display:block;font-family:sans-serif;font-size:12px;min-width:32px;min-height:16px;border:1px solid black;border-radius:2px;cursor:grab;-webkit-user-select: none;-ms-user-select: none;user-select: none;padding-top:2px;padding-left:1px";
+    div.style="color:gainsboro;display:block;font-family:sans-serif;font-size:12px;min-width:32px;min-height:16px;border:1px solid black;border-radius:2px 3px 3px 2px;cursor:grab;-webkit-user-select: none;-ms-user-select: none;user-select: none;padding-top:2px;padding-left:1px";
     div.style.borderWidth = "0px 1px 1px 0px"
     div.style.borderLeft = "3px solid "+Colormap[cfg.page]
     div.style.position = 'absolute';
-    div.style.background = "lightgray";
+    div.style.background = "#444";
     // div.style.color = Colormap[cfg.page];
     div.style.left = that.x+'px';
     div.style.top = that.y+'px';
@@ -616,12 +648,15 @@ function main(){
 
         if (div.parentElement = document.body){
           Dprogram.appendChild(div);
-          div.style.left = (x - that.drag_x - div.parentElement.offsetLeft) + "px";
-          div.style.top = (y - that.drag_y -  div.parentElement.offsetTop ) + "px";
         }
         div.style.left = (x - that.drag_x - div.parentElement.offsetLeft +  div.parentElement.scrollLeft) + "px";
         div.style.top = (y - that.drag_y -  div.parentElement.offsetTop   + div.parentElement.scrollTop ) + "px";
 
+        if (div.parentElement == Dprogram){
+          if (x-div.parentElement.offsetLeft+div.parentElement.scrollLeft<0){
+            destroy(that);
+          }
+        }
 
         div.style.opacity = "1"
         div.style.boxShadow = "none"
@@ -722,8 +757,10 @@ function main(){
         slot = document.createElement("input");
       }else if ('S'.includes(that.slot_types[i])){
         slot = document.createElement("textarea");
+      }else if ('F'.includes(that.slot_types[i])){
+        slot = document.createElement("div");
       }
-      slot.style="min-width:32px;min-height:16px;background:white;border:1px solid black;border-radius:2px;vertical-align: middle;"
+      slot.style="color:gainsboro;min-width:32px;min-height:16px;background:#333;border:1px solid black;border-radius:3px;vertical-align: middle;"
       slot.style.borderWidth="1px 0px 0px 1px"
       // slot.style.margin = "3px 3px 3px 3px";
       slot.style.margin = "0px 2px 2px 2px";
@@ -831,6 +868,15 @@ function main(){
         }
         nw.addEventListener('change',reshape);
         nh.addEventListener('change',reshape);
+
+      }else if (that.slot_types[i] == 'F'){
+        slot.style = "";
+        slot.style.display = "block";
+        let svg = document.createElement("svg");
+        svg.setAttribute("xmlns","http://www.w3.org/2000/svg");
+        svg.setAttribute("width",100);
+        svg.setAttribute("height",100);
+        slot.appendChild(svg);
       }
 
       if ('NIS'.includes(that.slot_types[i])){
@@ -1020,7 +1066,7 @@ function main(){
     {page:"litr",tag:'lkvp',texts:['Entry with <b>key</b>','and <b>value</b>',''],slot_types:['X','X'],},
     {page:"litr",tag:'lidx',texts:['Dimensional index',''],slot_types:['L'],},
     {page:"litr",tag:'lbmp',texts:['Bitmap','x','',''],slot_types:['I','I','B'],},
-    // {page:"litr",tag:'lfun',texts:['Shaping function',''],slot_types:['F'],},
+    {page:"litr",tag:'lfun',texts:['Shaping function',''],slot_types:['F'],},
     {page:"litr",tag:'lcmt',texts:['Comment ',''],slot_types:['S'],},
     {page:"misc",tag:'asgn',texts:['<b>Set</b>','to',''],slot_types:['X','X'],},
     {page:"misc",tag:'retn',texts:['<b>Return</b>',''],slot_types:['X'],},
@@ -1059,7 +1105,7 @@ function main(){
 
   for (let k in Tabs){
     let btn = document.createElement("button");
-    btn.style = "height:21.5px;margin:2px;font-size:13px;border:1px solid black;border-radius: 2px;background:gainsboro;cursor:pointer"
+    btn.style = "color:gainsboro;height:21.5px;margin:2px;font-size:13px;border:1px solid black;border-radius: 2px;background:#444;cursor:pointer"
     btn.style.borderTop = `3px solid ${Colormap[k]}`
     // btn.innerHTML = `<span><span style="display:inline-block;width:8px;height:8px;border-radius:8px;vertical-align:middle;background:${Colormap[k]}"></span>&nbsp;${Tabs[k].name}</span>`;
     btn.innerHTML = `${Tabs[k].name}`;
@@ -1069,9 +1115,10 @@ function main(){
       Dpalette.innerHTML = "";
       if (k == "iden"){
         let inp = document.createElement("input");
-        inp.style = "margin:5px;"
+        inp.style = "margin:5px;filter:invert(80%);"
         Dpalette.appendChild(inp);
         let btm = document.createElement("button");
+        btm.style="filter:invert(80%);"
         btm.innerHTML = "Add"
         Dpalette.appendChild(btm);
         Dpalette.appendChild(document.createElement("br"))

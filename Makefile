@@ -67,6 +67,8 @@ gledit:
 webedit:
 	node editor/site/make_site.js;\
 	npx html-minifier-terser build/site.html -o build/site.min.html --collapse-whitespace --minify-js --minify-css
+blockedit:
+	node editor/blocks/make_site.js;
 cmdline:
 	cd editor/cmdline;\
 	npx pkg package.json;\
