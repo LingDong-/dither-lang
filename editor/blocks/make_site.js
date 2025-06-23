@@ -5,15 +5,15 @@ const PARSER = require('../../src/parser.js');
 let html = [`
 <style>
   *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
   *::-webkit-scrollbar-track {
     background: #222;
   }
   *::-webkit-scrollbar-thumb {
     background-color: #444;
-    border-radius: 4px;
+    border-radius: 5px;
     border: 2px solid #222;
   }
   ::-webkit-scrollbar-corner {
@@ -28,7 +28,7 @@ let html = [`
   }
   .menubtn{
     font-size:12px;
-    background:#222;color:white;height:24px;
+    background:#171717;color:white;height:24px;
     border-top:2px solid dimgray;
     border-left:2px solid dimgray;
     border-right:2px solid black;
@@ -119,7 +119,7 @@ function main(){
     stdl:"firebrick",
   }
   let Dmenu = document.createElement("div");
-  Dmenu.style = "position:absolute;left:0px;top:0px;background:#222;width:100%;height:24px;overflow:hidden";
+  Dmenu.style = "position:absolute;left:0px;top:0px;background:#171717;width:100%;height:24px;overflow:hidden";
   document.body.appendChild(Dmenu);
 
   let Dtabs = document.createElement("div");
@@ -872,11 +872,18 @@ function main(){
       }else if (that.slot_types[i] == 'F'){
         slot.style = "";
         slot.style.display = "block";
-        let svg = document.createElement("svg");
-        svg.setAttribute("xmlns","http://www.w3.org/2000/svg");
+        let svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
         svg.setAttribute("width",100);
         svg.setAttribute("height",100);
+        let pth = document.createElementNS("http://www.w3.org/2000/svg","path");
+        pth.setAttribute("fill","none");
+        pth.setAttribute("stroke","gainsboro");
+        pth.setAttribute("stroke-width","2");
+        pth.setAttribute("d","M 0 100 C 50 100 50 0 100 0");
+        svg.style="border:1px solid black; border-radius:2px; margin: 2px"
+        svg.appendChild(pth);
         slot.appendChild(svg);
+        
       }
 
       if ('NIS'.includes(that.slot_types[i])){
@@ -1066,7 +1073,7 @@ function main(){
     {page:"litr",tag:'lkvp',texts:['Entry with <b>key</b>','and <b>value</b>',''],slot_types:['X','X'],},
     {page:"litr",tag:'lidx',texts:['Dimensional index',''],slot_types:['L'],},
     {page:"litr",tag:'lbmp',texts:['Bitmap','x','',''],slot_types:['I','I','B'],},
-    {page:"litr",tag:'lfun',texts:['Shaping function',''],slot_types:['F'],},
+    {page:"litr",tag:'lfun',texts:[`Shaping function with${NL}domain`,'to',`${NL}and range`,'to','',''],slot_types:['N','N','N','N','F'],},
     {page:"litr",tag:'lcmt',texts:['Comment ',''],slot_types:['S'],},
     {page:"misc",tag:'asgn',texts:['<b>Set</b>','to',''],slot_types:['X','X'],},
     {page:"misc",tag:'retn',texts:['<b>Return</b>',''],slot_types:['X'],},
