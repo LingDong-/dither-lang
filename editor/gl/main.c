@@ -1382,6 +1382,10 @@ int main(int argc, char** argv) {
 
   windowing_init(WIN_W, WIN_H);
 
+#ifndef __APPLE__
+  glewInit();
+#endif
+
   reshape();
 
   build_font_texture();

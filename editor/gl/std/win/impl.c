@@ -25,7 +25,7 @@ uint64_t win_impl_init(int w, int h, int flags){
   cb_init_found = *cb_init_ptr;
   void **cb_poll_ptr = dlsym(RTLD_DEFAULT, "__win_intern_hook_poll");
   cb_poll_found = *cb_poll_ptr;
-  // printf("%p %p %p %p\n",cb_init_ptr,cb_init,cb_poll_ptr,cb_poll);
+  // printf("%p %p %p %p\n",cb_init_ptr,cb_init_found,cb_poll_ptr,cb_poll_found);
   cb_init_found(w,h);
   return 0;
 }
