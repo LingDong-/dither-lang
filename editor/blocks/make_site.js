@@ -284,7 +284,7 @@ function main(){
     Dout.appendChild(iframe);
     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
     const htmlContent = `
-      <body style="font-size:13px;font-family:monospace;margin:0px">${"<"}${"/"}body>
+      <body style="color:gainsboro;font-size:13px;font-family:monospace;margin:0px">${"<"}${"/"}body>
       <script>
       let last_call = performance.now();
       globalThis.__io_intern_hooked_print = async function(s){
@@ -465,6 +465,65 @@ function main(){
         rows[i].removeChild(rows[i].lastChild);
       }
     }
+  }
+  function add_bezier_point(slot,x0,y0,x1,y1){
+    let cnt = slot.firstChild;
+
+    let pt = document.createElement("div");
+    pt.style = `position:absolute;left:${x0}px;top:${y0}px;width:7px;height:7px;background:white;border: 1px solid black;border-radius:4px;cursor:move`
+    let cc = document.createElement("div");
+    cc.style = `position:absolute;left:${x1}px;top:${y1}px;width:7px;height:7px;background:white;border: 1px solid black;cursor:move`
+    cnt.appendChild(pt);
+    cnt.appendChild(cc);
+
+    function render(){
+      let cs = Array.from(cnt.children);
+      if (cs.length < 5){
+        return;
+      }
+      function XY(e){
+        return parseFloat(e.style.left)+","+parseFloat(e.style.top);
+      }
+      let [svg,p0,c0,p1,c1] = cs;
+      let pth = svg.firstChild;
+      let pcl = pth.nextSibling;
+      let d = `M ${XY(p0)} C ${XY(c0)} ${XY(c1)} ${XY(p1)}`;
+      let q = `M ${XY(p0)} L ${XY(c0)} M ${XY(p1)} L ${XY(c1)}`;
+      pth.setAttribute("d",d);
+      pcl.setAttribute("d",q);
+    }
+    
+    let drag = [0,0];
+    pt.addEventListener("mousedown",function(e){
+      drag[0] = 1;
+      e.stopPropagation();
+    })
+    cc.addEventListener("mousedown",function(e){
+      drag[1] = 1;
+      e.stopPropagation();
+    })
+    document.addEventListener("mousemove",function(e){
+      let r = pt.parentElement.getBoundingClientRect();
+      if (drag[0]){
+        let y = e.clientY - r.top-4;
+        y = Math.min(Math.max(y,0),100);
+        pt.style.top = y+"px";
+      }else if (drag[1]){
+        let x = e.clientX - r.left-4;
+        let y = e.clientY - r.top-4;
+        x = Math.min(Math.max(x,0),100);
+        y = Math.min(Math.max(y,0),100);
+        cc.style.left = (x)+"px";
+        cc.style.top = (y)+"px";
+      }
+      render();
+    });
+    document.addEventListener("mouseup",function(e){
+      drag[0] = 0;
+      drag[1] = 0;
+      render();
+    });
+    render();
   }
 
   function make_block(cfg){
@@ -872,6 +931,10 @@ function main(){
       }else if (that.slot_types[i] == 'F'){
         slot.style = "";
         slot.style.display = "block";
+        let cnt = document.createElement("div");
+        cnt.style = "position:relative;width:100px;height:100px;margin:4px;padding:4px;overflow:hidden;cursor:crosshair;";
+        slot.appendChild(cnt);
+
         let svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
         svg.setAttribute("width",100);
         svg.setAttribute("height",100);
@@ -879,11 +942,25 @@ function main(){
         pth.setAttribute("fill","none");
         pth.setAttribute("stroke","gainsboro");
         pth.setAttribute("stroke-width","2");
-        pth.setAttribute("d","M 0 100 C 50 100 50 0 100 0");
-        svg.style="border:1px solid black; border-radius:2px; margin: 2px"
+        pth.setAttribute("d","");
+
+        let pcl = document.createElementNS("http://www.w3.org/2000/svg","path");
+        pcl.setAttribute("fill","none");
+        pcl.setAttribute("stroke","gainsboro");
+        pcl.setAttribute("stroke-width","1");
+        pcl.setAttribute("d","");
+
+        svg.style="border:1px solid black; border-radius:2px; pointer-events:none";
         svg.appendChild(pth);
-        slot.appendChild(svg);
-        
+        svg.appendChild(pcl);
+        cnt.appendChild(svg);
+
+        add_bezier_point(slot,0,100,50,100);
+        add_bezier_point(slot,100,0,50,0);
+
+        cnt.onmousedown = function(e){
+          e.stopPropagation();
+        }
       }
 
       if ('NIS'.includes(that.slot_types[i])){
@@ -1073,7 +1150,7 @@ function main(){
     {page:"litr",tag:'lkvp',texts:['Entry with <b>key</b>','and <b>value</b>',''],slot_types:['X','X'],},
     {page:"litr",tag:'lidx',texts:['Dimensional index',''],slot_types:['L'],},
     {page:"litr",tag:'lbmp',texts:['Bitmap','x','',''],slot_types:['I','I','B'],},
-    {page:"litr",tag:'lfun',texts:[`Shaping function with${NL}domain`,'to',`${NL}and range`,'to','',''],slot_types:['N','N','N','N','F'],},
+    {page:"litr",tag:'lfun',texts:[`Shaping function`,''],slot_types:['F'],},
     {page:"litr",tag:'lcmt',texts:['Comment ',''],slot_types:['S'],},
     {page:"misc",tag:'asgn',texts:['<b>Set</b>','to',''],slot_types:['X','X'],},
     {page:"misc",tag:'retn',texts:['<b>Return</b>',''],slot_types:['X'],},
