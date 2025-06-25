@@ -1503,7 +1503,6 @@ var PARSER = function(sys,extensions={}){
       // console.log("-----")
       let scores = [];
       let fts = [];
-
       funs.sort((a,b)=>(Number(b.typ.con=='func')-Number(a.typ.con=='func')));
 
       // console.log(funs.length)
@@ -1667,7 +1666,7 @@ var PARSER = function(sys,extensions={}){
 
       if (scores.length < 2){
         killlosers(0);
-        return [fts[scores[0][0]],scores[0][2]];
+        return [fts[scores[0][0]],scores[0][2],funs[scores[0][0]]];
       }
       
       if (scores[0][1] == scores[1][1]){
@@ -1680,7 +1679,7 @@ var PARSER = function(sys,extensions={}){
       }
 
       killlosers(0);
-      return [fts[scores[0][0]],scores[0][2]];
+      return [fts[scores[0][0]],scores[0][2],funs[scores[0][0]]];
     }
 
     
@@ -2039,7 +2038,7 @@ var PARSER = function(sys,extensions={}){
           // console.log("_______________________________________",namesp)
           if (ast.val){
             doinfer(ast.val);
-            // realizefunc(ast.val);
+            realizefunc(ast.val);
           }
 
           if (ast.nom.key == 'tlit'){
@@ -2140,7 +2139,7 @@ var PARSER = function(sys,extensions={}){
           
           doinfer(ast.lhs);
           doinfer(ast.rhs);
-          // realizefunc(ast.rhs);
+          realizefunc(ast.rhs);
           let typ = maxtypf(ast.lhs.typ,ast.rhs.typ,ast.rhs);
           ast.typ = ast.lhs.typ;
 
@@ -2331,7 +2330,7 @@ var PARSER = function(sys,extensions={}){
               let f;
               add_func(f={
                 typ:o,
-                ipl:Object.assign({},ast),
+                ipl:Object.assign({tem:[]},ast),
                 ctx:scostk.slice(),
                 agt,
                 did:false,
@@ -2344,6 +2343,8 @@ var PARSER = function(sys,extensions={}){
               ast.ori = cur_scope().__names;
               ast.is_fun_alias = 1;
               ast.key = 'term';
+              ast.tty = o;
+              ast.pos = somepos(ast);
             }else{
               add_func({
                 typ:o,
@@ -2404,7 +2405,10 @@ var PARSER = function(sys,extensions={}){
               for (let i = 0; i < scozoo.length; i++){
                 for (let k in scozoo[i]){
                   if (scozoo[i][k].typ == ast.fun.typ){
-                    fd = scozoo[i][k];
+                    if (Array.isArray(scozoo[i][k].val)){
+                      fd = scozoo[i][k];
+                      break;
+                    }
                   }
                 }
               }
@@ -2440,23 +2444,23 @@ var PARSER = function(sys,extensions={}){
             }
           }
           // console.log(arg2)
-          let ret;
+          let ret,mfun;
           
           if (ast.fun.typ.con == 'func'){
             ast.fun.rty = ast.fun.typ;
             ret = ast.fun.typ.elt[1];
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__vec_map')){
             let e = {typ:arg2[0].typ.elt[0]};
-            let r,t;
+            let r,t,f;
             try{
               nonlethal = -1;
-              ;[r,t] = matchftmpl([e,{typ:'i32'}],arg2[1].val,{},[]);
+              ;[r,t,f] = matchftmpl([e,{typ:'i32'}],arg2[1].val,{},[]);
               if (nonlethal < -1){
                 throw 'up';
               }
             }catch(_){
               // console.log(arg2[1])
-              ;[r,t] = matchftmpl([e],arg2[1].val,{},[]);
+              ;[r,t,f] = matchftmpl([e],arg2[1].val,{},[]);
             }
             // console.dir(t,{depth:Infinity});
             ast.fun.rty = {
@@ -2465,11 +2469,16 @@ var PARSER = function(sys,extensions={}){
                 t,
               ]}, arg2[0].typ]}
             ret = arg2[0].typ;
+            mfun = f;
             
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__func_ovld_')){
             // console.dir(ast,{depth:100000});
             // console.log(fd.val);
-            ;[ret,ast.fun.rty] = matchftmpl(arg2,fd.val,{},ast.fun.pte);
+            // let fdval = fd.val;
+            // if (!Array.isArray(fdval)){
+            //   fdval = [fdval];
+            // }
+            ;[ret,ast.fun.rty,mfun] = matchftmpl(arg2,fd.val,{},ast.fun.pte);
             
           }else{
             
@@ -2483,6 +2492,27 @@ var PARSER = function(sys,extensions={}){
           // }
           // ast.typ = ast.fun.rty;
 
+          let caps = (scozoo[mfun.agt].__captr??[]).slice();
+          if (caps.length){
+            for (let i = scostk.length-1; i>=0; i--){
+              for (let j = caps.length-1; j>=0; j--){
+                if (scozoo[scostk[i]][caps[j].nom]){
+                  caps.splice(j,1);
+                }
+              }
+              if (scozoo[scostk[i]].__isfun){
+                if (!scozoo[scostk[i]].__captr){
+                  scozoo[scostk[i]].__captr = [];
+                }
+                let ns = scozoo[scostk[i]].__captr.map(x=>x.nom);
+                for (let j = 0; j < caps.length; j++){
+                  if (!ns.includes(caps[j].nom)){
+                    scozoo[scostk[i]].__captr.push(caps[j]);
+                  }
+                }
+              }
+            }
+          } 
 
         }else if (ast.key == 'retn'){
           
@@ -2980,7 +3010,6 @@ var PARSER = function(sys,extensions={}){
               
               
               if (scopes[i][k].val[j].ipl.bdy){
-
                 let caps = scopes[scopes[i][k].val[j].agt].__captr;
                 if (caps){
                   for (let c of caps){
@@ -3232,13 +3261,18 @@ var PARSER = function(sys,extensions={}){
           }else{
             typ = ast.val.typ;
           }
-          // if (typeof typ != 'string' || !typ.startsWith("__func_ovld_")){
+          if (typeof typ != 'string' || !typ.startsWith("__func_ovld_")){
             pushins('decl',nom,typ);
-          // }
+          }else{
+            pushins('decl',nom,ast.val.tty);
+          }
           if (ast.val){
             let n2 = docompile(ast.val);
-            if (ast.val && !typeeq(typ,ast.val.typ)){
+            if (!typeeq(typ,ast.val.typ)){
               n2 = docast(n2, ast.val.typ, typ);
+            }else if (typeof typ == 'string' && typ.startsWith("__func_ovld_")){
+              
+              n2 = docast(n2, typ, ast.val.tty);
             }
             // if (typeof n2 != 'string' || !n2.startsWith("__func_ovld_")){
               pushins('mov',nom,n2);

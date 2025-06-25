@@ -62,8 +62,6 @@ for (let i = 0; i < ff.length; i++){
 }
 html.push(`};</script>`)
 
-
-
 let parser = new PARSER(
   {fs,path,process,search_paths:[path.resolve(".")]},
   {},
@@ -466,6 +464,23 @@ function main(){
       }
     }
   }
+  function render_bezier(slot){
+    let cnt = slot.firstChild;
+    let cs = Array.from(cnt.children);
+    if (cs.length < 5){
+      return;
+    }
+    function XY(e){
+      return parseFloat(e.style.left)+","+parseFloat(e.style.top);
+    }
+    let [svg,p0,c0,p1,c1] = cs;
+    let pth = svg.firstChild;
+    let pcl = pth.nextSibling;
+    let d = `M ${XY(p0)} C ${XY(c0)} ${XY(c1)} ${XY(p1)}`;
+    let q = `M ${XY(p0)} L ${XY(c0)} M ${XY(p1)} L ${XY(c1)}`;
+    pth.setAttribute("d",d);
+    pcl.setAttribute("d",q);
+  }
   function add_bezier_point(slot,x0,y0,x1,y1){
     let cnt = slot.firstChild;
 
@@ -477,20 +492,7 @@ function main(){
     cnt.appendChild(cc);
 
     function render(){
-      let cs = Array.from(cnt.children);
-      if (cs.length < 5){
-        return;
-      }
-      function XY(e){
-        return parseFloat(e.style.left)+","+parseFloat(e.style.top);
-      }
-      let [svg,p0,c0,p1,c1] = cs;
-      let pth = svg.firstChild;
-      let pcl = pth.nextSibling;
-      let d = `M ${XY(p0)} C ${XY(c0)} ${XY(c1)} ${XY(p1)}`;
-      let q = `M ${XY(p0)} L ${XY(c0)} M ${XY(p1)} L ${XY(c1)}`;
-      pth.setAttribute("d",d);
-      pcl.setAttribute("d",q);
+      render_bezier(slot);
     }
     
     let drag = [0,0];
@@ -948,6 +950,7 @@ function main(){
         pcl.setAttribute("fill","none");
         pcl.setAttribute("stroke","gainsboro");
         pcl.setAttribute("stroke-width","1");
+        pcl.setAttribute("stroke-dasharray","2");
         pcl.setAttribute("d","");
 
         svg.style="border:1px solid black; border-radius:2px; pointer-events:none";
@@ -1018,6 +1021,17 @@ function main(){
             cols[x].checked = that.slots[i][y][x]!=0;
           }
         }
+      }else if (that.slot_types[i] == 'F' && that.slots[i] !== null){
+        let [svg,p0,c0,p1,c1] = that.elt.slots[i].firstChild.children;
+        p0.style.left = (that.slots[i][0][0]*100)+"px";
+        p0.style.top  = (that.slots[i][0][1]*100)+"px";
+        c0.style.left = (that.slots[i][1][0]*100)+"px";
+        c0.style.top  = (that.slots[i][1][1]*100)+"px";
+        p1.style.left = (that.slots[i][3][0]*100)+"px";
+        p1.style.top  = (that.slots[i][3][1]*100)+"px";
+        c1.style.left = (that.slots[i][2][0]*100)+"px";
+        c1.style.top  = (that.slots[i][2][1]*100)+"px";
+        render_bezier(that.elt.slots[i]);
       }
     }
 
@@ -1058,6 +1072,14 @@ function main(){
       }else if (b.slot_types[i] == 'B'){
         // o.slots.push(Array.from(b.elt.slots[i].getElementsByTagName("input")).map(x=>Number(x.checked)));
         o.slots.push(Array.from(b.elt.slots[i].getElementsByTagName("div")).map(x=>Array.from(x.getElementsByTagName("input")).map(y=>Number(y.checked))));
+      }else if (b.slot_types[i] == 'F'){
+        let [svg,p0,c0,p1,c1] = b.elt.slots[i].firstChild.children;
+        o.slots.push([
+          [parseFloat(p0.style.left)/100,parseFloat(p0.style.top)/100],
+          [parseFloat(c0.style.left)/100,parseFloat(c0.style.top)/100],
+          [parseFloat(c1.style.left)/100,parseFloat(c1.style.top)/100],
+          [parseFloat(p1.style.left)/100,parseFloat(p1.style.top)/100],
+        ])
       }else{
         o.slots.push(null);
       }
@@ -1443,6 +1465,36 @@ function main(){
         return ``
       }else if (tree.tag == 'lbmp'){
         return `arr[u8,2]{${tree.slots[2].map(x=>x.join(',')).join(';')}}`
+      }else if (tree.tag == 'lfun'){
+        return `func(x:f32):f32{
+          p0 := {${tree.slots[0][0].map(x=>x.toFixed(3))}};
+          p1 := {${tree.slots[0][1].map(x=>x.toFixed(3))}};
+          p2 := {${tree.slots[0][2].map(x=>x.toFixed(3))}};
+          p3 := {${tree.slots[0][3].map(x=>x.toFixed(3))}};
+          func bez(t:f32):vec[f32,2] {
+            u := 1 - t;
+            tt := t * t;
+            uu := u * u;
+            return u*uu*p0 + 3*uu*t*p1 + 3*u*tt*p2 + t*tt*p3;
+          }
+          func x_to_t(targ:f32):f32{
+            tolerance := 0.00001;
+            t := 0.5;
+            iter := 0;
+            while (iter < 1000) {
+              p := bez(t);
+              diff := p.x - targ;
+              if (-tolerance < diff && diff < tolerance) {
+                return t;
+              } else {
+                t -= diff / 2;
+              }
+              iter++;
+            }
+            return t;
+          }
+          return bez(x_to_t(x)).y;
+        }`
       }else if (tree.tag == 'lcmt'){
         return `/*${tree.slots[0]}*/`
       }else if (tree.tag == 'omul'){

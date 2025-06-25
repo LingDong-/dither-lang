@@ -1416,6 +1416,7 @@ var TO_C = function(cfg){
       }else if (ins[0] == 'fpak'){
         let nom = clean(ins[1]);
         let ptr = clean(ins[3]);
+        lookup[nom] = read_type(ins[2]);
         
         let {dcap} = funcs[ptr];
         let n = "0";
