@@ -2491,28 +2491,29 @@ var PARSER = function(sys,extensions={}){
           //   mkerr('typecheck',`calling a non-function (${printtype(ast.fun.typ)})`,somepos(ast));
           // }
           // ast.typ = ast.fun.rty;
-
-          let caps = (scozoo[mfun.agt].__captr??[]).slice();
-          if (caps.length){
-            for (let i = scostk.length-1; i>=0; i--){
-              for (let j = caps.length-1; j>=0; j--){
-                if (scozoo[scostk[i]][caps[j].nom]){
-                  caps.splice(j,1);
+          if (mfun && mfun.agt !== undefined){
+            let caps = (scozoo[mfun.agt].__captr??[]).slice();
+            if (caps.length){
+              for (let i = scostk.length-1; i>=0; i--){
+                for (let j = caps.length-1; j>=0; j--){
+                  if (scozoo[scostk[i]][caps[j].nom]){
+                    caps.splice(j,1);
+                  }
                 }
-              }
-              if (scozoo[scostk[i]].__isfun){
-                if (!scozoo[scostk[i]].__captr){
-                  scozoo[scostk[i]].__captr = [];
-                }
-                let ns = scozoo[scostk[i]].__captr.map(x=>x.nom);
-                for (let j = 0; j < caps.length; j++){
-                  if (!ns.includes(caps[j].nom)){
-                    scozoo[scostk[i]].__captr.push(caps[j]);
+                if (scozoo[scostk[i]].__isfun){
+                  if (!scozoo[scostk[i]].__captr){
+                    scozoo[scostk[i]].__captr = [];
+                  }
+                  let ns = scozoo[scostk[i]].__captr.map(x=>x.nom);
+                  for (let j = 0; j < caps.length; j++){
+                    if (!ns.includes(caps[j].nom)){
+                      scozoo[scostk[i]].__captr.push(caps[j]);
+                    }
                   }
                 }
               }
-            }
-          } 
+            } 
+          }
 
         }else if (ast.key == 'retn'){
           
