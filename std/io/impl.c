@@ -35,7 +35,7 @@ char* io_impl_read_file(char* s, int* n){
   long file_size = ftell(fd);
   rewind(fd);
   char *buffer = malloc(file_size);
-  fread(buffer, 1, file_size, fd);
+  volatile size_t _ = fread(buffer, 1, file_size, fd);
   fclose(fd);
   *n = file_size;
   return buffer;

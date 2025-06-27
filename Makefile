@@ -71,8 +71,8 @@ blockedit:
 	node editor/blocks/make_site.js;
 cmdline:
 	cd editor/cmdline;\
-	npx pkg package.json;\
-	cp ../../build/dither /usr/local/bin
+	pkg package.json;\
+	sudo cp ../../build/dither /usr/local/bin
 profile: ir
 	FILENAME=$$(date +%s%N | shasum -a 256 | head -c 10).trace;\
 	arch -arm64 zsh -c "xcrun xctrace record --template 'Time Profiler' --output /tmp/$$FILENAME --launch -- build/vm build/ir.dsm"
