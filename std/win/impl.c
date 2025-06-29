@@ -1,10 +1,19 @@
 //
 
 #include <math.h>
-#include <dlfcn.h>
 #include <string.h>
 #include <stdio.h>
-#include <libgen.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#define dlopen(filename,flag) LoadLibrary(filename)
+#define dlsym(handle,symbol) GetProcAddress(handle,symbol)
+#define dlerror() ""
+#else
+#include <dlfcn.h>
+#endif
+
 
 #define CONTEXT_2D  1
 #define CONTEXT_3D  2
@@ -33,6 +42,12 @@ uint64_t win_impl_init(int w, int h, int flag){
         #else
           ""
         #endif
+      #elif DITHER_WIN_USE_WINAPI
+        #if DITHER_2D_USE_OPENGL
+          "std/win/platform/wgl.dll"
+        #else
+          ""
+        #endif
       #else
         ""
       #endif
@@ -43,6 +58,8 @@ uint64_t win_impl_init(int w, int h, int flag){
         "std/win/platform/glcocoa.so"
       #elif DITHER_WIN_USE_X11
         "std/win/platform/glx.so"
+      #elif DITHER_WIN_USE_WINAPI
+        "std/win/platform/wgl.dll"
       #else
         ""
       #endif
@@ -62,9 +79,9 @@ void win_impl_poll(void* data){
   int n_events = 1;
   event_t* event = windowing_poll(&n_events);
   if (n_events){
-    memcpy(data+8, event, sizeof(event_t));
+    memcpy((char*)data+8, event, sizeof(event_t));
   }else{
-    memset(data+8, 0, sizeof(event_t));
+    memset((char*)data+8, 0, sizeof(event_t));
   }
 }
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+// #include <unistd.h>
 #include <stdint.h>
 #define no_segfault_yet printf("no segfault yet on line %d %s!\n",__LINE__,__FILE__);
 
@@ -22,13 +22,18 @@
   name.cap = 8; \
   name.data = (dtype*) malloc((name.cap)*sizeof(dtype));
 
+#ifdef _WIN32
+#define ARR_ITEM_FORCE_CAST(dtype,item) item
+#else
+#define ARR_ITEM_FORCE_CAST(dtype,item) (dtype)item
+#endif
 #define ARR_PUSH(dtype,name,item) \
   if (name.cap < name.len+1){ \
     int hs = name.cap/2; \
     name.cap = name.len+MAX(1,hs); \
     name.data = (dtype*)realloc(name.data, (name.cap)*sizeof(dtype) ); \
   }\
-  name.data[name.len] = (dtype)item;\
+  name.data[name.len] = ARR_ITEM_FORCE_CAST(dtype,item);\
   name.len += 1;
 
 #define ARR_POP(dtype,name) (name.data[--name.len])

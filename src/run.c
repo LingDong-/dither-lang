@@ -13,13 +13,13 @@ int main(int argc, char** argv){
 
   FILE* fd;
   global_init();
-  fd = fopen(pth_inp,"r");
+  fd = fopen(pth_inp,"rb");
   list_t instrs = read_ir(fd);
   _G.layouts = read_layout(fd);
 
   if (pth_map){
     fclose(fd);
-    fd = fopen(pth_map,"r");
+    fd = fopen(pth_map,"rb");
     read_srcmap(&instrs, fd);
   }
 

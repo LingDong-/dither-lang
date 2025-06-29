@@ -1,3 +1,8 @@
+: << 'EOF'
+set CFLAGS=%CFLAGS% opengl32.lib glu32.lib
+goto :eof
+EOF
+
 if [ "$(uname)" = "Darwin" ]; then
   if [ "$DITHER_2D_USE_OPENGL" -eq 1 ]; then
     CFLAGS="$CFLAGS -framework OpenGL"

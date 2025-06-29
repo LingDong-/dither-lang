@@ -5,6 +5,8 @@ build/*
 !build/.gitkeep
 *.so
 **/*.so
+*.dll
+**/*.dll
 **/node_modules/
 **/__pycache__/
 third_party/*

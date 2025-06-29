@@ -1,20 +1,65 @@
 //CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lGLEW -lGL")
 
+#define _USE_MATH_DEFINES
 #include <math.h>
-#include <dlfcn.h>
 #include <string.h>
 #include <stdio.h>
-#include <libgen.h>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
+#elif defined(_WIN32)
+#include <gl/GL.h>
+#include <gl/GLU.h>
+#ifndef APIENTRYP
+#define APIENTRYP APIENTRY *
+#endif
+#define GL_ARRAY_BUFFER 0x8892
+#define GL_DYNAMIC_DRAW 0x88E8
+#define GL_FRAMEBUFFER 0x8D40
+#define GL_COLOR_ATTACHMENT0 0x8CE0
+#define GL_FRAMEBUFFER_BINDING 0x8CA6
+#define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME 0x8CD1
+#define GL_TEXTURE_WRAP_S 0x2802
+#define GL_TEXTURE_WRAP_T 0x2803
+#define GL_TEXTURE_MAG_FILTER 0x2800
+#define GL_TEXTURE_MIN_FILTER 0x2801
+#define GL_CLAMP_TO_EDGE 0x812F
+#define GL_TEXTURE_WIDTH 0x1000
+#define GL_TEXTURE_HEIGHT 0x1001
+#define GL_MULTISAMPLE 0x809D
+typedef ptrdiff_t GLsizeiptr;
+typedef void (APIENTRYP PFNGLGENBUFFERSPROC)(GLsizei, GLuint*);
+typedef void (APIENTRYP PFNGLBINDBUFFERPROC)(GLenum, GLuint);
+typedef void (APIENTRYP PFNGLBUFFERDATAPROC)(GLenum, GLsizeiptr, const void*, GLenum);
+typedef void (APIENTRYP PFNGLDELETEBUFFERSPROC)(GLsizei, const GLuint*);
+typedef void (APIENTRYP PFNGLGENFRAMEBUFFERSPROC)(GLsizei, GLuint*);
+typedef void (APIENTRYP PFNGLBINDFRAMEBUFFERPROC)(GLenum, GLuint);
+typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DPROC)(GLenum, GLenum, GLenum, GLuint, GLint);
+typedef void (APIENTRYP PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)(GLenum, GLenum, GLenum, GLint*);
+static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
+static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
+static PFNGLBUFFERDATAPROC glBufferData = NULL;
+static PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
+static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
+static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
+static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
+static PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC glGetFramebufferAttachmentParameteriv = NULL;
+static void glewInit(){
+  glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+  glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+  glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+  glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+  glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
+  glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
+  glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
+  glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)wglGetProcAddress("glGetFramebufferAttachmentParameteriv");
+}
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-//#include <GL/glext.h>
 #endif
 
 #if !defined(_WIN32)
@@ -41,13 +86,19 @@
   name.data = (dtype*) malloc((name.cap)*sizeof(dtype));
 
 #undef ARR_PUSH
+#undef ARR_ITEM_FORCE_CAST
+#ifdef _WIN32
+#define ARR_ITEM_FORCE_CAST(dtype,item) item
+#else
+#define ARR_ITEM_FORCE_CAST(dtype,item) (dtype)item
+#endif
 #define ARR_PUSH(dtype,name,item) \
   if (name.cap < name.len+1){ \
     int hs = name.cap/2; \
     name.cap = name.len+MAX(1,hs); \
     name.data = (dtype*)realloc(name.data, (name.cap)*sizeof(dtype) ); \
   }\
-  name.data[name.len] = (dtype)item;\
+  name.data[name.len] = ARR_ITEM_FORCE_CAST(dtype,item);\
   name.len += 1;
 
 #undef ARR_POP
@@ -75,7 +126,7 @@ int is_fill=1;
 GLint fbo_zero;
 
 void gx_impl__size(int w, int h, uint64_t ctx){
-  #ifndef __APPLE__
+  #if !defined(__APPLE__)
   glewInit();
   #endif
   
@@ -201,8 +252,8 @@ void gx_impl__write_pixels(int fbo, void* pixels){
 
   void* row = malloc(w*4);
   for (int y = 0; y < h / 2; y++) {
-    void* top = pixels + y * w*4;
-    void* bot = pixels + (h - 1 - y) * w*4;
+    void* top = (char*)pixels + y * w*4;
+    void* bot = (char*)pixels + (h - 1 - y) * w*4;
     memcpy(row, top, w*4);
     memcpy(top, bot, w*4);
     memcpy(bot, row, w*4);
@@ -213,8 +264,8 @@ void gx_impl__write_pixels(int fbo, void* pixels){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
 
   for (int y = 0; y < h / 2; y++) {
-    void* top = pixels + y * w*4;
-    void* bot = pixels + (h - 1 - y) * w*4;
+    void* top = (char*)pixels + y * w*4;
+    void* bot = (char*)pixels + (h - 1 - y) * w*4;
     memcpy(row, top, w*4);
     memcpy(top, bot, w*4);
     memcpy(bot, row, w*4);

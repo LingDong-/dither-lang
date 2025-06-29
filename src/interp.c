@@ -3,7 +3,14 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#ifdef _WIN32
+#include <windows.h>
+#define dlopen(filename,flag) LoadLibrary(filename)
+#define dlsym(handle,symbol) GetProcAddress(handle,symbol)
+#define dlerror() ""
+#else
 #include <dlfcn.h>
+#endif
 #include <math.h>
 #include <inttypes.h>
 #include "common.h"
@@ -269,7 +276,7 @@ void* mem_alloc(mem_list_t* l, int sz){
   return n->data;
 }
 void mem_free(mem_list_t* l, void* ptr){
-  mem_node_t* node = ptr - sizeof(mem_node_t);
+  mem_node_t* node = (mem_node_t*)((char*)ptr - sizeof(mem_node_t));
   int sz = node->size;
   if (node == l->tail){
     if (node == l->head){
@@ -3288,13 +3295,19 @@ list_node_t* execute_instr(list_node_t* ins_node){
     int l = strlen(name);
     char *nname;
     if (name[l-1] == 'o' && name[l-2] == 's' && name[l-3] == '.'){ 
-      nname = name;
+      nname = name; 
     }else{
       nname = malloc(l+16);
       strcpy(nname,name);
-      strcpy(nname+l,"/dynamic.so");
+      strcpy(nname+l,
+      #ifdef _WIN32
+        "/dynamic.dll"
+      #else
+        "/dynamic.so"
+      #endif
+      );
     }
-    
+    // printf("%s",nname);
     char buf[32] = "lib_init_";
     int i = 9;
     while (lid[0] != '.' && i < 31 && lid[0] != 0){

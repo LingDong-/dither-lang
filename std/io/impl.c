@@ -1,5 +1,12 @@
 #include <stdio.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#define dlsym(handle,symbol) GetProcAddress(handle,symbol)
+#define RTLD_DEFAULT GetModuleHandle(NULL)
+#else
 #include <dlfcn.h>
+#endif
 
 void (*__io_intern_hook_print_found)(char*);
 int __io_intern_hooked_print = 0;

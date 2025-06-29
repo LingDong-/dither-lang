@@ -5,7 +5,11 @@
 #define MOUSE_RIGHT    2
 #define MOUSE_PRESSED  1
 #define MOUSE_RELEASED 2
+#ifdef _WIN32
+#define MOUSE_M0VED    3
+#else
 #define MOUSE_MOVED    3
+#endif
 #define KEY_PRESSED    4
 #define KEY_RELEASED   5
 #define WHEEL_SCROLLED 6
