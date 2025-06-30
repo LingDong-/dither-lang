@@ -3,6 +3,7 @@
 #include <windowsx.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "windowing.h"
 
@@ -99,12 +100,54 @@ EXPORTED void** window_init(int w, int h, int flags){
   return NULL;
 }
 
+int get_key_code(MSG* msg){
+  BYTE keyboardState[256];
+  WCHAR unicodeChar[4];
+  GetKeyboardState(keyboardState);
+  UINT scanCode = (msg->lParam >> 16) & 0xFF;
+  int len = ToUnicode((UINT)msg->wParam, scanCode, keyboardState, unicodeChar, 4, 0);
+  if (len == 1 && unicodeChar[0] >= 32 && unicodeChar[0] < 127) {
+    return (int)unicodeChar[0];
+  } else {
+    UINT vk = msg->wParam;
+    if (vk == VK_SHIFT || vk == VK_CONTROL || vk == VK_MENU) {
+        vk = MapVirtualKey(scanCode, MAPVK_VSC_TO_VK_EX);
+    }
+    switch (vk){
+      case VK_F1      : return KEY_F1    ;
+      case VK_F2      : return KEY_F2    ;
+      case VK_F3      : return KEY_F3    ;
+      case VK_F4      : return KEY_F4    ;
+      case VK_F5      : return KEY_F5    ;
+      case VK_F6      : return KEY_F6    ;
+      case VK_F7      : return KEY_F7    ;
+      case VK_F8      : return KEY_F8    ;
+      case VK_F9      : return KEY_F9    ;
+      case VK_F10     : return KEY_F10   ;
+      case VK_F11     : return KEY_F11   ;
+      case VK_F12     : return KEY_F12   ;
+      case VK_LEFT    : return KEY_LARR  ;
+      case VK_UP      : return KEY_UARR  ;
+      case VK_RIGHT   : return KEY_RARR  ;
+      case VK_DOWN    : return KEY_DARR  ;
+      case VK_LSHIFT  : return KEY_LSHIFT;
+      case VK_RSHIFT  : return KEY_RSHIFT;
+      case VK_LCONTROL: return KEY_LCTRL ;
+      case VK_RCONTROL: return KEY_RCTRL ;
+      case VK_LMENU   : return KEY_LALT  ;
+      case VK_RMENU   : return KEY_RALT  ;
+      case VK_LWIN    : return KEY_LCMD  ;
+      case VK_RWIN    : return KEY_RCMD  ;
+    }
+  }
+  return 0;
+}
+
 
 EXPORTED event_t* window_poll(int* out_count){
   SwapBuffers(hdc);
   MSG msg;
-  BYTE keyboardState[256];
-  WCHAR unicodeChar[4];
+
   while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
     if (msg.message == WM_MOUSEMOVE) {
       add_event(
@@ -142,22 +185,19 @@ EXPORTED event_t* window_poll(int* out_count){
         GET_Y_LPARAM(msg.lParam)
       );
     }else if (msg.message == WM_KEYDOWN){
-      GetKeyboardState(keyboardState);
-      UINT scanCode = (msg.lParam >> 16) & 0xFF;
-      int len = ToUnicode((UINT)msg.wParam, scanCode, keyboardState, unicodeChar, 4, 0);
-      if (len == 1 && unicodeChar[0] >= 32 && unicodeChar[0] < 127) {
-        printf("Key down: ASCII %d ('%c')\n", unicodeChar[0], unicodeChar[0]);
-      } else {
-        UINT virtualCode = (UINT)msg.wParam;
-        printf("Key down: Special Key (VK 0x%02X)\n", virtualCode);
-      }
       add_event(
         KEY_PRESSED,
-        msg.wParam,
+        get_key_code(&msg),
         0,
         0
       );
     }else if (msg.message == WM_KEYUP){
+      add_event(
+        KEY_RELEASED,
+        get_key_code(&msg),
+        0,
+        0
+      );
     }
     TranslateMessage(&msg);
     DispatchMessage(&msg);

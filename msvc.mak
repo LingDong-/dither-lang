@@ -8,6 +8,8 @@ VM_CHOICE = vm.exe
 MSVCFLAGS = /Fo:%TEMP%\a.obj /wd4098 /wd4133 /wd4047 /wd4477 /wd4311 /wd4113
 build\config.bat: config.env
 	node -e "const fs=require('fs');const s=fs.readFileSync('config.env').toString().replace(/\$$\(pwd\)/g, process.cwd()).split('\n').map(l=>l&&!l.startsWith('#')?'set '+l:'').join('\n');fs.writeFileSync('build\\config.bat', s);"
+build\config.h: config.env
+	node -e "const fs=require('fs');const s=fs.readFileSync('config.env').toString().replace(/\$$\(pwd\)/g, JSON.stringify(process.cwd())).split('\n').map(l=>l&&!l.startsWith('#')?'#define '+l.split('=').join(' '):'').join('\n');fs.writeFileSync('build\\config.h', s);"
 build\vm.exe: src\run.c src\common.h src\interp.c
 	cl src\run.c /Fe:build\vm.exe $(MSVCFLAGS)
 build\vm_dbg.exe: src\run.c src\common.h src\interp.c

@@ -1,13 +1,16 @@
 //CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework CoreAudio -framework AudioToolbox -framework CoreServices -framework Foundation" || echo "-lportaudio")
 
-
 #include "../../src/interp.c"
 #include <math.h>
 #include <stdio.h>
 
 
 #ifndef EXPORTED
+#ifdef _WIN32
+#define EXPORTED __declspec(dllexport)
+#else
 #define EXPORTED __attribute__ ((visibility ("default")))
+#endif
 #endif
 
 #define QUOTED(x) QUOTE(x)

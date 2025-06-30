@@ -1,3 +1,8 @@
+: << 'EOF'
+
+goto :eof
+EOF
+
 if [ "$DITHER_SND_USE_COREAUDIO" -eq 1 ]; then
   CFLAGS="$CFLAGS -framework CoreAudio -framework AudioToolbox -framework CoreServices -framework Foundation"
 fi
