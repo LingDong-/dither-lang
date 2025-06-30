@@ -15,6 +15,6 @@ build\vm_dbg.exe: src\run.c src\common.h src\interp.c
 ir:
 	node src\parser.js $(src) -o build\ir.dsm --map build\ir.map
 std_one: build\config.h
-	cmd /V:ON /C "call build\config.bat && cd std\$(li6) && copy /Y cflags.txt cflags.bat && call cflags.bat && del cflags.bat && cl /FI !DITHER_ROOT!\build\config.h $(OPT) /LD dynamic.c /Fe:dynamic.dll $(MSVCFLAGS) !CFLAGS! && del dynamic.lib && del dynamic.exp"
+	cmd /V:ON /C "set CFLAGS= && call build\config.bat && cd std\$(li6) && copy /Y cflags.txt cflags.bat && call cflags.bat && del cflags.bat && cl /FI !DITHER_ROOT!\build\config.h $(OPT) /LD dynamic.c /Fe:dynamic.dll $(MSVCFLAGS) !CFLAGS! && del dynamic.lib && del dynamic.exp"
 run_vm: build\vm.exe build\vm_dbg.exe ir
 	build\$(VM_CHOICE) build\ir.dsm --map build\ir.map

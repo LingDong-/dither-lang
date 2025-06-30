@@ -103,28 +103,61 @@ EXPORTED void** window_init(int w, int h, int flags){
 EXPORTED event_t* window_poll(int* out_count){
   SwapBuffers(hdc);
   MSG msg;
+  BYTE keyboardState[256];
+  WCHAR unicodeChar[4];
   while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
     if (msg.message == WM_MOUSEMOVE) {
-      int x = GET_X_LPARAM(msg.lParam);
-      int y = GET_Y_LPARAM(msg.lParam);
       add_event(
         MOUSE_M0VED,
-        MOUSE_LEFT,
-        x,
-        y
+        0,
+        GET_X_LPARAM(msg.lParam),
+        GET_Y_LPARAM(msg.lParam)
       );
     }else if (msg.message == WM_LBUTTONDOWN){
-
+      add_event(
+        MOUSE_PRESSED,
+        MOUSE_LEFT,
+        GET_X_LPARAM(msg.lParam),
+        GET_Y_LPARAM(msg.lParam)
+      );
     }else if (msg.message == WM_LBUTTONUP){
-
+      add_event(
+        MOUSE_RELEASED,
+        MOUSE_LEFT,
+        GET_X_LPARAM(msg.lParam),
+        GET_Y_LPARAM(msg.lParam)
+      );
     }else if (msg.message == WM_RBUTTONDOWN){
-
+      add_event(
+        MOUSE_PRESSED,
+        MOUSE_RIGHT,
+        GET_X_LPARAM(msg.lParam),
+        GET_Y_LPARAM(msg.lParam)
+      );
     }else if (msg.message == WM_RBUTTONUP){
-
+      add_event(
+        MOUSE_RELEASED,
+        MOUSE_RIGHT,
+        GET_X_LPARAM(msg.lParam),
+        GET_Y_LPARAM(msg.lParam)
+      );
     }else if (msg.message == WM_KEYDOWN){
-
+      GetKeyboardState(keyboardState);
+      UINT scanCode = (msg.lParam >> 16) & 0xFF;
+      int len = ToUnicode((UINT)msg.wParam, scanCode, keyboardState, unicodeChar, 4, 0);
+      if (len == 1 && unicodeChar[0] >= 32 && unicodeChar[0] < 127) {
+        printf("Key down: ASCII %d ('%c')\n", unicodeChar[0], unicodeChar[0]);
+      } else {
+        UINT virtualCode = (UINT)msg.wParam;
+        printf("Key down: Special Key (VK 0x%02X)\n", virtualCode);
+      }
+      add_event(
+        KEY_PRESSED,
+        msg.wParam,
+        0,
+        0
+      );
     }else if (msg.message == WM_KEYUP){
-
     }
     TranslateMessage(&msg);
     DispatchMessage(&msg);

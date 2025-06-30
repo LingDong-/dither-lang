@@ -3,10 +3,18 @@
 // #define DBG 1
 #include "../../src/interp.c"
 
-#include "impl.c"
+#ifdef _WIN32
+#include "impl_winapi.c"
+#else
+#include "impl_posix.c"
+#endif
 
 #ifndef EXPORTED
+#ifdef _WIN32
+#define EXPORTED __declspec(dllexport)
+#else
 #define EXPORTED __attribute__ ((visibility ("default")))
+#endif
 #endif
 
 EXPORTED void time_fps(var_t* ret,  gstate_t* _g){

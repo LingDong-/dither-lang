@@ -4,7 +4,11 @@
 #include "../../src/interp.c"
 
 #ifndef EXPORTED
+#ifdef _WIN32
+#define EXPORTED __declspec(dllexport)
+#else
 #define EXPORTED __attribute__ ((visibility ("default")))
+#endif
 #endif
 
 EXPORTED void c_slice(var_t* ret,  gstate_t* _g){
