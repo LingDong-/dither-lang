@@ -1,5 +1,7 @@
 : << 'EOF'
-
+IF "%DITHER_SND_USE_DIRECTSOUND%"=="1" (
+  set CFLAGS=%CFLAGS% dsound.lib
+)
 goto :eof
 EOF
 

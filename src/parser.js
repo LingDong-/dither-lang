@@ -2507,7 +2507,8 @@ var PARSER = function(sys,extensions={}){
                   let ns = scozoo[scostk[i]].__captr.map(x=>x.nom);
                   for (let j = 0; j < caps.length; j++){
                     if (!ns.includes(caps[j].nom)){
-                      scozoo[scostk[i]].__captr.push(caps[j]);
+                      if (typeof caps[j].typ != 'string' || !caps[j].typ.startsWith("__func_ovld"))
+                        scozoo[scostk[i]].__captr.push(caps[j]);
                     }
                   }
                 }
