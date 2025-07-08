@@ -6,6 +6,7 @@ namespace gx {
   func _draw_texture(tex:i32,x:f32,y:f32,w:f32,h:f32);
   func _read_pixels(fbo:i32):arr[u8,3];
   func _write_pixels(fbo:i32,pix:arr[u8,3]);
+  func _flush();
   typedef Graphics = {
     fbo  : i32;
     w    : i32;
@@ -53,7 +54,7 @@ namespace gx {
   func scale(x:f32){scale(x,x);}
   func apply_matrix(x:vec[f32,3,3]);
   func text(s:str,x:f32,y:f32);
-  func poll():win.Event{return win.poll()};
+  func poll():win.Event{_flush();return win.poll()};
   func _init_graphics(pg:Graphics,w:i32,h:i32);
   func create_graphics(w:i32,h:i32):Graphics{pg:=Graphics{};_init_graphics(pg,w,h);return pg;};
 }

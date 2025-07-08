@@ -8,3 +8,5 @@ coregraphics:
 	gcc -O3 -dead_strip -shared -o coregraphics.so -fPIC -fvisibility=hidden window_coregraphics.m -framework Cocoa -framework CoreGraphics
 wgl:
 	cl /LD window_wgl.c /Fe:wgl.dll user32.lib gdi32.lib opengl32.lib & del wgl.lib & del wgl.exp & del window_wgl.obj
+winuser:
+	cl /LD window_winuser.c /Fe:winuser.dll user32.lib & del winuser.lib & del winuser.exp & del window_winuser.obj

@@ -154,6 +154,9 @@ void gx_impl__size(int w, int h, uint64_t ctx){
   height = h;
 }
 
+void gx_impl__flush(){
+  
+}
 
 void gx_impl__init_graphics(void* data, int w, int h){
 

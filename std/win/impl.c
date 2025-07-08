@@ -45,6 +45,8 @@ uint64_t win_impl_init(int w, int h, int flag){
       #elif DITHER_WIN_USE_WINAPI
         #if DITHER_2D_USE_OPENGL
           "std/win/platform/wgl.dll"
+        #elif DITHER_2D_USE_DIRECT2D
+          "std/win/platform/winuser.dll"
         #else
           ""
         #endif

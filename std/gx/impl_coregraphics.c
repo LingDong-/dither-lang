@@ -72,6 +72,9 @@ void gx_impl__size(int w, int h, uint64_t _ctx){
   
 }
 
+void gx_impl__flush(){
+  
+}
 
 void gx_impl__init_graphics(void* data, int w, int h){
   size_t bytesPerRow = w * 4;

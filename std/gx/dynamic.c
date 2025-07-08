@@ -212,6 +212,11 @@ EXPORTED void gx_text(var_t* ret, gstate_t* _g){
 }
 
 
+EXPORTED void gx__flush(var_t* ret, gstate_t* _g){
+  gx_impl__flush();
+}
+
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "gx." QUOTE(name), gx_ ## name);
 
 EXPORTED void lib_init_gx(gstate_t* _g){
@@ -249,6 +254,8 @@ EXPORTED void lib_init_gx(gstate_t* _g){
 
   QK_REG(_read_pixels)
   QK_REG(_write_pixels)
+
+  QK_REG(_flush)
 }
 
 
