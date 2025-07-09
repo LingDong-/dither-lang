@@ -58,6 +58,7 @@ EXPORTED void** window_init(int w, int h, int flags){
   wc.lpfnWndProc = WndProc;
   wc.hInstance = GetModuleHandle(NULL);
   wc.lpszClassName = CLASS_NAME;
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   RegisterClass(&wc);
   RECT rect = { 0, 0, w,h };
   AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);

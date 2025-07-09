@@ -23,6 +23,7 @@ namespace gx {
   func size(w:i32,h:i32){_size(w,h,win.init(w,h,win.CONTEXT_2D));}
   func begin_shape();
   func end_shape(close:i32);
+  func end_shape(){end_shape(0);}
   func vertex(x:f32,y:f32);
   func background(r:f32,g:f32,b:f32,a:f32);
   func background(r:f32,g:f32,b:f32){background(r,g,b,1.0);};

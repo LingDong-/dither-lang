@@ -3,7 +3,7 @@ IF "%DITHER_2D_USE_OPENGL%"=="1" (
   set CFLAGS=%CFLAGS% opengl32.lib glu32.lib
 )
 IF "%DITHER_2D_USE_DIRECT2D%"=="1" (
-  set CFLAGS=%CFLAGS% d2d1.lib user32.lib dwrite.lib
+  set CFLAGS=%CFLAGS% d2d1.lib user32.lib dwrite.lib windowscodecs.lib ole32.lib
 )
 goto :eof
 EOF
