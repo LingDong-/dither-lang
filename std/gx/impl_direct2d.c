@@ -12,7 +12,11 @@
 #define WINBOOL long
 #define _D2D1_H_
 #include "../../third_party/d2d1.h"
+#include "../../third_party/d2d1_1.h"
+#include <d3d11_1.h>
+#include <dxgi1_2.h>
 #include "../../third_party/dwrite.h"
+#include <tmmintrin.h>
 
 #undef ARR_DEF
 #define ARR_DEF(dtype) \
@@ -58,9 +62,9 @@ int is_fill=1;
 float line_width = 1;
 
 typedef struct fbo_st {
-  ID2D1RenderTarget* rt;
-  IWICBitmap* bmp;
-  ID2D1SolidColorBrush* brush;
+  ID3D11Texture2D* gpuTexture;
+  ID3D11Texture2D* stagingTexture;
+  ID2D1Bitmap1* d2dTargetBitmap;
   int w;
   int h;
 } fbo_t;
@@ -72,10 +76,13 @@ D2D1_COLOR_F color_fill = {1.0f, 1.0f, 1.0f, 1.0f};
 D2D1_COLOR_F color_stroke = {0.0f, 0.0f, 0.0f, 1.0f};
 
 HWND hwnd;
-
-ID2D1Factory* pFactory = NULL;
-ID2D1HwndRenderTarget* pRenderTarget = NULL;
-ID2D1SolidColorBrush* brush0 = NULL;
+ID3D11Device*           d3dDevice = NULL;
+ID3D11DeviceContext*    d3dContext = NULL;
+IDXGISwapChain*         swapChain = NULL;
+ID2D1Factory1*          d2dFactory = NULL;
+ID2D1Device*            d2dDevice = NULL;
+ID2D1DeviceContext*     d2dContext = NULL;
+ID2D1Bitmap1*           d2dTargetBitmap = NULL;
 ID2D1SolidColorBrush* brush = NULL;
 
 IDWriteFactory* writeFactory = NULL;
@@ -84,10 +91,7 @@ IDWriteTextFormat* textFormat = NULL;
 ID2D1PathGeometry* geometry = NULL;
 ID2D1GeometrySink* sink = NULL;
 
-ID2D1RenderTarget* ctx0;
 ID2D1RenderTarget* ctx;
-
-IWICImagingFactory* wicFactory = NULL;
 
 void gx_impl__size(int w, int h, uint64_t _hwnd){
 
@@ -95,40 +99,52 @@ void gx_impl__size(int w, int h, uint64_t _hwnd){
   width = w;
   height = h;
 
-  // printf("%p\n",hwnd);
-  D2D1CreateFactory(
-    D2D1_FACTORY_TYPE_SINGLE_THREADED,
-    &IID_ID2D1Factory,
-    NULL,
-    (void**)&pFactory
-  );
-
-  RECT rc;
-  GetClientRect(hwnd, &rc);
-
-  D2D1_RENDER_TARGET_PROPERTIES props = {
-    D2D1_RENDER_TARGET_TYPE_DEFAULT,
-    { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-    0.0f,
-    0.0f,
-    D2D1_RENDER_TARGET_USAGE_NONE,
-    D2D1_FEATURE_LEVEL_DEFAULT
+  DXGI_SWAP_CHAIN_DESC sd = {
+    .BufferCount = 2,
+    .BufferDesc = {
+      .Width = w,
+      .Height = h,
+      .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+      .RefreshRate = { 0, 1 }  // No fixed refresh
+    },
+    .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+    .OutputWindow = hwnd,
+    .SampleDesc = { 1, 0 },
+    .Windowed = TRUE,
+    .SwapEffect = DXGI_SWAP_EFFECT_DISCARD,
+    .Flags = 0
   };
-
-  D2D1_SIZE_U size = { (UINT)(rc.right - rc.left), (UINT)(rc.bottom - rc.top) };
-
-  D2D1_HWND_RENDER_TARGET_PROPERTIES hwndProps = {
-    hwnd,
-    size,
-    D2D1_PRESENT_OPTIONS_NONE
-  };
-
-  ID2D1Factory_CreateHwndRenderTarget(
-    pFactory,
-    &props,
-    &hwndProps,
-    &pRenderTarget
+  UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+  D3D_FEATURE_LEVEL featureLevel;
+  D3D11CreateDeviceAndSwapChain(
+    NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
+    createDeviceFlags, NULL, 0,
+    D3D11_SDK_VERSION, &sd,
+    &swapChain, &d3dDevice, &featureLevel, &d3dContext
   );
+  D2D1_FACTORY_OPTIONS opts = {0};
+  D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &IID_ID2D1Factory1, &opts, (void**)&d2dFactory);
+  IDXGIDevice* dxgiDevice = NULL;
+  d3dDevice->lpVtbl->QueryInterface(d3dDevice, &IID_IDXGIDevice, (void**)&dxgiDevice);
+  ID2D1Factory1_CreateDevice(d2dFactory, dxgiDevice, &d2dDevice);
+  ID2D1Device_CreateDeviceContext(d2dDevice, D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2dContext);
+  dxgiDevice->lpVtbl->Release(dxgiDevice);
+  IDXGISurface* dxgiSurface = NULL;
+  swapChain->lpVtbl->GetBuffer(swapChain, 0, &IID_IDXGISurface, (void**)&dxgiSurface);
+  D2D1_BITMAP_PROPERTIES1 bp = {
+    .pixelFormat = {
+      .format = DXGI_FORMAT_B8G8R8A8_UNORM,
+      .alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED
+    },
+    .dpiX = 96.0f,
+    .dpiY = 96.0f,
+    .bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW
+  };
+  d2dContext->lpVtbl->CreateBitmapFromDxgiSurface(d2dContext, dxgiSurface, &bp, &d2dTargetBitmap);
+  dxgiSurface->lpVtbl->Release(dxgiSurface);
+
+  d2dContext->lpVtbl->SetTarget(d2dContext, (ID2D1Image*)d2dTargetBitmap);
+  ctx = (ID2D1RenderTarget*)d2dContext;
 
   DWriteCreateFactory(
     DWRITE_FACTORY_TYPE_SHARED,
@@ -148,61 +164,69 @@ void gx_impl__size(int w, int h, uint64_t _hwnd){
     &textFormat
   );
 
-  CoCreateInstance(
-    &CLSID_WICImagingFactory,
-    NULL,
-    CLSCTX_INPROC_SERVER,
-    &IID_IWICImagingFactory,
-    (LPVOID*)&wicFactory
-  );
-
-  ID2D1HwndRenderTarget_CreateSolidColorBrush(pRenderTarget, &color_stroke, NULL, &brush0);
-  ID2D1HwndRenderTarget_BeginDraw(pRenderTarget);
-  ctx = pRenderTarget;
-  ctx0 = ctx;
-  brush = brush0;
+  ctx->lpVtbl->CreateSolidColorBrush(ctx,&color_stroke,NULL,&brush);
+  ctx->lpVtbl->BeginDraw(ctx);
 }
 
 void gx_impl__flush(){
-  ID2D1HwndRenderTarget_EndDraw(pRenderTarget,NULL,NULL);
-  ID2D1HwndRenderTarget_BeginDraw(pRenderTarget);    
+  ctx->lpVtbl->EndDraw(ctx,NULL,NULL);
+  swapChain->lpVtbl->Present(swapChain, 0, 0); 
+  ctx->lpVtbl->BeginDraw(ctx); 
 }
 
-ID2D1RenderTarget* CreateWICRenderTarget(ID2D1Factory* d2dFactory, IWICImagingFactory* wicFactory, UINT w, UINT h, IWICBitmap** outBitmap) {
-  IWICBitmap* wicBitmap = NULL;
-  ID2D1RenderTarget* wicRenderTarget = NULL;
-  IWICImagingFactory_CreateBitmap(
-    wicFactory, w, h,
-    &GUID_WICPixelFormat32bppPBGRA,
-    WICBitmapCacheOnLoad,
-    &wicBitmap
+
+
+
+fbo_t createBuffer(
+  ID3D11Device* d3dDevice,
+  ID2D1DeviceContext* d2dContext,
+  UINT width,
+  UINT height
+) {
+  fbo_t outBuffer;
+  D3D11_TEXTURE2D_DESC texDesc = {
+    .Width = width,
+    .Height = height,
+    .MipLevels = 1,
+    .ArraySize = 1,
+    .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+    .SampleDesc = {1, 0},
+    .Usage = D3D11_USAGE_DEFAULT,
+    .BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+    .CPUAccessFlags = 0,
+    .MiscFlags = D3D11_RESOURCE_MISC_SHARED
+  };
+  d3dDevice->lpVtbl->CreateTexture2D(d3dDevice, &texDesc, NULL, &outBuffer.gpuTexture);
+  texDesc.Usage = D3D11_USAGE_STAGING;
+  texDesc.BindFlags = 0;
+  texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+  texDesc.MiscFlags = 0;
+  d3dDevice->lpVtbl->CreateTexture2D(d3dDevice, &texDesc, NULL, &outBuffer.stagingTexture);
+  IDXGISurface* dxgiSurface = NULL;
+  outBuffer.gpuTexture->lpVtbl->QueryInterface(
+    outBuffer.gpuTexture, &IID_IDXGISurface, (void**)&dxgiSurface
   );
-  D2D1_RENDER_TARGET_PROPERTIES props = {
-    .type = D2D1_RENDER_TARGET_TYPE_SOFTWARE,
+  D2D1_BITMAP_PROPERTIES1 bp = {
     .pixelFormat = {
       .format = DXGI_FORMAT_B8G8R8A8_UNORM,
       .alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED
     },
     .dpiX = 96.0f,
     .dpiY = 96.0f,
-    .usage = D2D1_RENDER_TARGET_USAGE_NONE,
-    .minLevel = D2D1_FEATURE_LEVEL_DEFAULT
+    .bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET ,
+    .colorContext = NULL
   };
-  ID2D1Factory_CreateWicBitmapRenderTarget(
-    d2dFactory, wicBitmap, &props, &wicRenderTarget
+  d2dContext->lpVtbl->CreateBitmapFromDxgiSurface(
+    d2dContext, dxgiSurface, &bp, &outBuffer.d2dTargetBitmap
   );
-
-  *outBitmap = wicBitmap;
-  return wicRenderTarget;
+  dxgiSurface->lpVtbl->Release(dxgiSurface);
+  outBuffer.w = width;
+  outBuffer.h = height;
+  return outBuffer;
 }
 
-
 void gx_impl__init_graphics(void* data, int w, int h){
-  fbo_t offscreen;
-  offscreen.w = w;
-  offscreen.h = h;
-  offscreen.rt = CreateWICRenderTarget(pFactory, wicFactory, w, h, &(offscreen.bmp));
-  ID2D1RenderTarget_CreateSolidColorBrush(offscreen.rt, &color_stroke, NULL, &(offscreen.brush));
+  fbo_t offscreen = createBuffer(d3dDevice,d2dContext,w,h);
   ARR_PUSH(fbo_t,fbos,offscreen);
   ((int32_t*)(data))[2] = fbos.len-1;
   ((int32_t*)(data))[3] = w;
@@ -212,83 +236,162 @@ void gx_impl__init_graphics(void* data, int w, int h){
 int cur_fbo = -1;
 void gx_impl__begin_fbo(int fbo){
   cur_fbo = fbo;
-  ID2D1RenderTarget* offscreen = fbos.data[fbo].rt;
-  ctx = offscreen;
-  brush = fbos.data[fbo].brush;
-  ID2D1RenderTarget_BeginDraw(offscreen);
+  fbo_t offscreen = fbos.data[fbo];
+  ctx->lpVtbl->EndDraw(ctx,NULL,NULL);
+  d2dContext->lpVtbl->SetTarget(d2dContext, (ID2D1Image*)offscreen.d2dTargetBitmap);
+  ctx->lpVtbl->BeginDraw(ctx);
 }
 
 void gx_impl__end_fbo(){
-  ID2D1RenderTarget* offscreen = fbos.data[cur_fbo].rt;
-  // ID2D1RenderTarget_Flush(offscreen,NULL,NULL);
-  ID2D1RenderTarget_EndDraw(offscreen,NULL,NULL);
+  ctx->lpVtbl->EndDraw(ctx,NULL,NULL);
+  d2dContext->lpVtbl->SetTarget(d2dContext, (ID2D1Image*)d2dTargetBitmap);
+  ctx->lpVtbl->BeginDraw(ctx);
   cur_fbo = -1;
-  ctx = ctx0;
-  brush = brush0;
 }
 
 
-void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
-  uint8_t* dst = malloc(fbos.data[fbo].w*fbos.data[fbo].h*4);
-  IWICBitmapLock* lock = NULL;
-  int w = fbos.data[fbo].w;
-  int h = fbos.data[fbo].h;
-  WICRect rect = { 0, 0, w, h };
-  IWICBitmap_Lock(fbos.data[fbo].bmp, &rect, WICBitmapLockRead, &lock);
 
-  UINT stride = 0, size = 0;
-  BYTE* pixels = NULL;
-  IWICBitmapLock_GetStride(lock, &stride);
-  IWICBitmapLock_GetDataPointer(lock, &size, &pixels);
-  for (UINT y = 0; y < h; y++) {
-    for (UINT x = 0; x < w; x++) {
-      dst[(y * w + x) * 4 + 0] = pixels[y * stride + x * 4 + 2];
-      dst[(y * w + x) * 4 + 1] = pixels[y * stride + x * 4 + 1];
-      dst[(y * w + x) * 4 + 2] = pixels[y * stride + x * 4 + 0];
-      dst[(y * w + x) * 4 + 3] = pixels[y * stride + x * 4 + 3];
+uint8_t* readPixels(ID3D11DeviceContext* context, fbo_t* buffer) {
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  uint8_t* pixels = (uint8_t*)malloc(buffer->w * buffer->h * 4);
+  if (!pixels) return NULL;
+  context->lpVtbl->CopyResource(context, (ID3D11Resource*)buffer->stagingTexture, (ID3D11Resource*)buffer->gpuTexture);
+  context->lpVtbl->Map(
+    context,
+    (ID3D11Resource*)buffer->stagingTexture,
+    0,
+    D3D11_MAP_READ,
+    0,
+    &mapped
+  );
+  // for (UINT y = 0; y < buffer->h; ++y) {
+  //   memcpy(
+  //     pixels + y * buffer->w * 4,
+  //     (uint8_t*)mapped.pData + y * mapped.RowPitch,
+  //     buffer->w * 4
+  //   );
+  // }
+  // for (int y = 0; y < buffer->h; ++y){
+  //   for (int x = 0; x < buffer->w; ++x){
+  //     int idx0 = (y*buffer->w+x)*4;
+  //     int idx1 = y*mapped.RowPitch+x*4;
+  //     pixels[idx0+0] = ((uint8_t*)mapped.pData)[idx1+2];
+  //     pixels[idx0+1] = ((uint8_t*)mapped.pData)[idx1+1];
+  //     pixels[idx0+2] = ((uint8_t*)mapped.pData)[idx1+0];
+  //     pixels[idx0+3] = ((uint8_t*)mapped.pData)[idx1+3];
+  //   }
+  // }
+  for (int y = 0; y < buffer->h; ++y) {
+    uint8_t* dst = pixels + y * buffer->w * 4;
+    uint8_t* src = (uint8_t*)mapped.pData + y * mapped.RowPitch;
+    int x = 0;
+    for (; x <= buffer->w - 4; x += 4) {
+      __m128i bgra = _mm_loadu_si128((__m128i*)(src + x * 4));
+      const __m128i mask = _mm_set_epi8(
+        15, 12, 13, 14,
+        11, 8, 9, 10,
+        7, 4, 5, 6,
+        3, 0, 1, 2
+      );
+      __m128i rgba = _mm_shuffle_epi8(bgra, mask);
+      _mm_storeu_si128((__m128i*)(dst + x * 4), rgba);
+    }
+    for (; x < buffer->w; ++x) {
+      int dst_idx = x * 4;
+      int src_idx = x * 4;
+      dst[dst_idx + 0] = src[src_idx + 2];
+      dst[dst_idx + 1] = src[src_idx + 1];
+      dst[dst_idx + 2] = src[src_idx + 0];
+      dst[dst_idx + 3] = src[src_idx + 3];
     }
   }
-  IWICBitmapLock_Release(lock);
+
+  context->lpVtbl->Unmap(context, (ID3D11Resource*)buffer->stagingTexture, 0);
+  return pixels;
+}
+
+
+void writePixels(ID3D11DeviceContext* context, fbo_t* buffer, const uint8_t* pixels) {
+  D3D11_MAPPED_SUBRESOURCE mapped;
+  context->lpVtbl->Map(
+    context,
+    (ID3D11Resource*)buffer->stagingTexture,
+    0,
+    D3D11_MAP_WRITE,
+    0,
+    &mapped
+  );
+  // for (UINT y = 0; y < buffer->h; ++y) {
+  //   memcpy(
+  //     (uint8_t*)mapped.pData + y * mapped.RowPitch,
+  //     pixels + y * buffer->w * 4,
+  //     buffer->w * 4
+  //   );
+  // }
+  // for (int y = 0; y < buffer->h; ++y){
+  //   for (int x = 0; x < buffer->w; ++x){
+  //     int idx0 = (y*buffer->w+x)*4;
+  //     int idx1 = y*mapped.RowPitch+x*4;
+  //     ((uint8_t*)mapped.pData)[idx1+2] = pixels[idx0+0];
+  //     ((uint8_t*)mapped.pData)[idx1+1] = pixels[idx0+1];
+  //     ((uint8_t*)mapped.pData)[idx1+0] = pixels[idx0+2];
+  //     ((uint8_t*)mapped.pData)[idx1+3] = pixels[idx0+3];
+  //   }
+  // }
+  for (int y = 0; y < buffer->h; ++y) {
+    const uint8_t* src = pixels + y * buffer->w * 4;
+    uint8_t* dst = (uint8_t*)mapped.pData + y * mapped.RowPitch;
+    int x = 0;
+    for (; x <= buffer->w - 4; x += 4) {
+      __m128i bgra = _mm_loadu_si128((__m128i*)(src + x * 4));
+      const __m128i mask = _mm_set_epi8(
+        15, 12, 13, 14,
+        11, 8, 9, 10,
+        7, 4, 5, 6,
+        3, 0, 1, 2
+      );
+      __m128i rgba = _mm_shuffle_epi8(bgra, mask);
+      _mm_storeu_si128((__m128i*)(dst + x * 4), rgba);
+    }
+    for (; x < buffer->w; ++x) {
+      int dst_idx = x * 4;
+      int src_idx = x * 4;
+      dst[dst_idx + 0] = src[src_idx + 2];
+      dst[dst_idx + 1] = src[src_idx + 1];
+      dst[dst_idx + 2] = src[src_idx + 0];
+      dst[dst_idx + 3] = src[src_idx + 3];
+    }
+  }
+  context->lpVtbl->Unmap(context, (ID3D11Resource*)buffer->stagingTexture, 0);
+  context->lpVtbl->CopyResource(context, (ID3D11Resource*)buffer->gpuTexture, (ID3D11Resource*)buffer->stagingTexture);
+}
+
+
+
+void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+  uint8_t* pixels = readPixels(d3dContext, &(fbos.data[fbo]));
+  int w = fbos.data[fbo].w;
+  int h = fbos.data[fbo].h;
   *_w = w;
   *_h = h;
-  return dst;
+  return pixels;
 }
 
 
 void gx_impl__write_pixels(int fbo, void* pixels){
-  ID2D1RenderTarget* offscreen = fbos.data[fbo].rt;
-  int w = fbos.data[fbo].w;
-  int h = fbos.data[fbo].h;
-  WICRect rect = { 0, 0, w, h };
-  IWICBitmapLock* lock = NULL;
-  IWICBitmap_Lock(fbos.data[fbo].bmp, &rect, WICBitmapLockWrite, &lock);
-  UINT stride, size;
-  BYTE* dst = NULL;
-  IWICBitmapLock_GetStride(lock, &stride);
-  IWICBitmapLock_GetDataPointer(lock, &size, &dst);
-  for (UINT y = 0; y < h; y++) {
-    for (UINT x = 0; x < w; x++) {
-      dst[y * stride + x * 4 + 2] = ((uint8_t*)pixels)[(y * w + x) * 4 + 0];
-      dst[y * stride + x * 4 + 1] = ((uint8_t*)pixels)[(y * w + x) * 4 + 1];
-      dst[y * stride + x * 4 + 0] = ((uint8_t*)pixels)[(y * w + x) * 4 + 2];
-      dst[y * stride + x * 4 + 3] = ((uint8_t*)pixels)[(y * w + x) * 4 + 3];
-    }
-  }
-  IWICBitmapLock_Release(lock);
+  writePixels(d3dContext,&(fbos.data[fbo]),pixels);
 }
 
 void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
-  ID2D1RenderTarget* offscreen = fbos.data[fbo].rt;
-  ID2D1Bitmap* bitmap = NULL;
-  ID2D1RenderTarget_CreateBitmapFromWicBitmap(
-    ctx,
-    fbos.data[fbo].bmp,
-    NULL,
-    &bitmap
-  );
   D2D1_RECT_F rect = {x,y,x+w,y+h};
-  ctx->lpVtbl->DrawBitmap(ctx, bitmap, &rect, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, NULL);
-  ID2D1Bitmap_Release(bitmap);
+  ctx->lpVtbl->DrawBitmap(
+    ctx,
+    (ID2D1Bitmap*)fbos.data[fbo].d2dTargetBitmap,
+    &rect,
+    1.0f,
+    D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+    NULL
+  );
 }
 
 
@@ -393,7 +496,7 @@ void gx_impl_stroke_weight(float x){
 int is_first = 0;
 
 void gx_impl_begin_shape(){
-  ID2D1Factory_CreatePathGeometry(pFactory, &geometry);
+  ID2D1Factory_CreatePathGeometry(d2dFactory, &geometry);
   ID2D1PathGeometry_Open(geometry, &sink);
   is_first = 1;
 }
