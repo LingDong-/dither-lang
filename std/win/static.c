@@ -22,7 +22,7 @@ void win__poll(){
   __push_stack();
   void* o = __gc_alloc(VART_STT,28);
   __put_var(0,o);
-  void* oo = o+4;
+  void* oo = (char*)o+4;
 
   ((void**)(oo))[0] = o;
 

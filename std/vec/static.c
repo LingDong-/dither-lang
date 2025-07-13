@@ -4,7 +4,11 @@
 
 void vec__mag(){
   int n = __peek_arg_size()/sizeof(float);
+#ifdef _WIN32
+  float* v = (float*)_alloca(n*sizeof(float));
+#else
   float v[n];
+#endif
   __pop_arg(v, n*sizeof(float));
 
   float s = 0;
@@ -18,9 +22,14 @@ void vec__mag(){
 
 void vec__dir(){
   int n = __peek_arg_size()/sizeof(float);
+#ifdef _WIN32
+  float* v = (float*)_alloca(n*sizeof(float));
+  float* u = (float*)_alloca(n*sizeof(float));
+#else
   float v[n];
-  __pop_arg(v, n*sizeof(float));
   float u[n];
+#endif
+  __pop_arg(v, n*sizeof(float));
 
   float s = 0;
   for (int i = 0; i < n; i++){

@@ -17,6 +17,14 @@
 #include <dxgi1_2.h>
 #include "../../third_party/dwrite.h"
 #include <tmmintrin.h>
+#define DECLARE_INTERFACE(iface) typedef interface iface { struct iface ## Vtbl FAR* lpVtbl; } iface; typedef struct iface ## Vtbl iface ## Vtbl; struct iface ## Vtbl
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
 
 #undef ARR_DEF
 #define ARR_DEF(dtype) \
@@ -94,7 +102,6 @@ ID2D1GeometrySink* sink = NULL;
 ID2D1RenderTarget* ctx;
 
 void gx_impl__size(int w, int h, uint64_t _hwnd){
-
   hwnd = (HWND)(void*)(uintptr_t)_hwnd;
   width = w;
   height = h;

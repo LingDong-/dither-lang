@@ -20,7 +20,7 @@ void gx___init_graphics(){
   void* o;
   __pop_arg(&o, sizeof(o));
 
-  gx_impl__init_graphics(o+4,w,h);
+  gx_impl__init_graphics((char*)o+4,w,h);
 }
 
 void gx___begin_fbo(){
@@ -206,3 +206,6 @@ void gx__text(){
   gx_impl_text(s,x,y);
 }
 
+void gx___flush(){
+  gx_impl__flush();
+}

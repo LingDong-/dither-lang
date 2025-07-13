@@ -130,7 +130,7 @@ var TO_C = function(cfg){
     return n->data;
   }
   void* __gc_realloc(void* ptr, int sz){
-    __mem_node_t* node = ptr - sizeof(__mem_node_t);
+    __mem_node_t* node = (__mem_node_t*)((char*)ptr - sizeof(__mem_node_t));
     int h = (__gc_list.head == node);
     int t = (__gc_list.tail == node);
     node = realloc(node,sz+sizeof(__mem_node_t));
@@ -141,7 +141,7 @@ var TO_C = function(cfg){
     return node->data;
   }
   void __gc_free(void* ptr){
-    __mem_node_t* node = ptr - sizeof(__mem_node_t);
+    __mem_node_t* node = (__mem_node_t*)((char*)ptr - sizeof(__mem_node_t));
     if (node == __gc_list.tail){
       if (node == __gc_list.head){
         __gc_list.head = NULL;
@@ -245,7 +245,7 @@ var TO_C = function(cfg){
   }
   void __gc_mark(void* ptr){
     if (ptr == NULL) return;
-    __mem_node_t* node = (__mem_node_t*) ((void*)ptr-sizeof(__mem_node_t));
+    __mem_node_t* node = (__mem_node_t*) ((char*)ptr-sizeof(__mem_node_t));
     if (node->flag & 0x80){
       return;
     }
@@ -272,16 +272,16 @@ var TO_C = function(cfg){
       int n = ((int*)ptr)[0];
       for (int i = 0; i < n; i++){
         int ofs = ((int*)ptr)[i+1];
-        __gc_mark( *((void**)(ptr + ofs)) );
+        __gc_mark( *((void**)((char*)ptr + ofs)) );
       }
     }else if (vt == VART_TUP){
       int i = 0;
       while (1){
-        char typ = ((char*)(ptr + i*5))[0];
+        char typ = ((char*)ptr + i*5)[0];
         if (typ == 0) break;
         if (${collectible.map(x=>"typ=="+x).join('||')}){
-          int ofs = ((int*)(ptr + i*5 +1))[0];
-          __gc_mark( *(void**)(ptr + ofs));
+          int ofs = ((int*)((char*)ptr + i*5 +1))[0];
+          __gc_mark( *(void**)((char*)ptr + ofs));
         }
         i++;
       }
@@ -290,22 +290,22 @@ var TO_C = function(cfg){
       if (${collectible.map(x=>"dic->kt=="+x).join('||')}){
         for (int i = 0; i < __NUM_DICT_SLOTS; i++){
           for (int j = 0; j < dic->slots[i].n; j++){
-            __gc_mark( *(void**)(dic->slots[i].data + (dic->kw+dic->vw) * j) );
+            __gc_mark( *(void**)((char*)(dic->slots[i].data) + (dic->kw+dic->vw) * j) );
           }
         }
       }
       if (${collectible.map(x=>"dic->vt=="+x).join('||')}){
         for (int i = 0; i < __NUM_DICT_SLOTS; i++){
           for (int j = 0; j < dic->slots[i].n; j++){
-            __gc_mark( *(void**)(dic->slots[i].data + (dic->kw+dic->vw) * j + dic->kw) );
+            __gc_mark( *(void**)((char*)(dic->slots[i].data) + (dic->kw+dic->vw) * j + dic->kw) );
           }
         }
       }
     }else if (vt == VART_FUN){
       __func_t* fun = (__func_t*) ptr;
-      void* top = fun->captr + fun->siz;
+      char* top = (char*)(fun->captr) + fun->siz;
       while (top > fun->captr){
-        char vvt = *((char*)(top-=1));
+        char vvt = *(top-=1);
         int sz;
         memcpy(&sz, (top-=4), 4);
         void* p = (top-=sz);
@@ -323,7 +323,7 @@ var TO_C = function(cfg){
   int __gc_off = 0;
   void __gc_run(){
     if (__gc_off) return;
-    if (DBG_GC) {printf("stack "); for (int i = 0; i < __vars_top; i++) printf("%p %d ",(void*)__vars[i], (char)(((__mem_node_t*)(((void*)__vars[i])-sizeof(__mem_node_t)))->flag )); printf("\\n");}
+    if (DBG_GC) {printf("stack "); for (int i = 0; i < __vars_top; i++) printf("%p %d ",(char*)__vars[i], (char)(((__mem_node_t*)(((char*)__vars[i])-sizeof(__mem_node_t)))->flag )); printf("\\n");}
     for (int i = 0; i < __vars_top; i++){
       __gc_mark((void*)(__vars[i]));
     }
@@ -352,7 +352,7 @@ var TO_C = function(cfg){
     }
   }
   void __put_var(int idx, void* ptr){
-    if (DBG_GC) printf("put %d %p %d\\n", idx, ptr, (char)(((__mem_node_t*)(ptr-sizeof(__mem_node_t)))->flag));
+    if (DBG_GC) printf("put %d %p %d\\n", idx, ptr, (char)(((__mem_node_t*)((char*)ptr-sizeof(__mem_node_t)))->flag));
     if (__vars_stack+idx+1>__vars_cap){
       __vars = realloc(__vars,(__vars_stack+idx+1)*2);
     }
@@ -414,7 +414,7 @@ var TO_C = function(cfg){
       }
       if (!arr->n) o[1] = '}';
     }else if (vart == VART_TUP) {
-      void* tup = *(void**)ptr;
+      char* tup = *(char**)ptr;
       o = calloc(2,1);
       o[0] = '[';
       int i = 0;
@@ -484,7 +484,7 @@ var TO_C = function(cfg){
           o = calloc(2,1);
           o[0] = '{';
           for (int i = 0; i < n; i++){
-            char* a = __to_str(ptr + (i*dw), ${vart}, dw);
+            char* a = __to_str((char*)ptr + (i*dw), ${vart}, dw);
             int no = strlen(o);
             int na = strlen(a);
             o = realloc(o, no+na+2);
@@ -525,7 +525,7 @@ var TO_C = function(cfg){
         ok = memcmp(k,idx,dic->kw) == 0;
       }
       if (ok){
-        return k + dic->kw;
+        return (char*)k + dic->kw;
       }
     }
     if (dic->slots[s].n >= dic->slots[s].cap){
@@ -536,7 +536,7 @@ var TO_C = function(cfg){
     memcpy( k,  idx, dic->kw);
     dic->slots[s].n++;
     dic->n++;
-    return k + dic->kw;
+    return (char*)k + dic->kw;
   }
   `
   let intmap = {
@@ -1048,7 +1048,7 @@ var TO_C = function(cfg){
           idx = Number(idx);
           let nc = tup_size(t, idx);
 
-          return [`(char**) ((((void*)${v}) + (${nc})))`, t.elt[idx], type_size(t.elt[idx])]
+          return [`(char**) ((((char*)${v}) + (${nc})))`, t.elt[idx], type_size(t.elt[idx])]
           
         }else if (typeof t == 'string'){
           let lo = layout[t];
@@ -1062,7 +1062,7 @@ var TO_C = function(cfg){
           }
           ofs += lo.collect.length*4+4;
           let [tt,tn] = writable_type(typ);
-          return [`(${tt}*)((void*)${v} + ${ofs}) `, typ, type_size(typ)];
+          return [`(${tt}*)((char*)${v} + ${ofs}) `, typ, type_size(typ)];
         }else{
           // console.log(v,t,idx)
           UNIMPL();
@@ -1222,11 +1222,11 @@ var TO_C = function(cfg){
           let nc = tup_size(typ,Infinity);
           o.push(`${nom} = __gc_alloc(VART_TUP,(${nc}));`);
           for (let i = 0; i < typ.elt.length; i++){
-            o.push(`((char*)((void*)${nom} + ${i}*5))[0] = ${vart(typ.elt[i])};`);
-            o.push(`((int*)((void*)${nom} + ${i}*5 + 1))[0] = ${tup_size(typ,i)};`);
+            o.push(`((char*)${nom} + ${i}*5)[0] = ${vart(typ.elt[i])};`);
+            o.push(`((int*)((char*)${nom} + ${i}*5 + 1))[0] = ${tup_size(typ,i)};`);
           }
-          o.push(`((char*)((void*)${nom} + ${typ.elt.length}*5))[0] = 0;`);
-          o.push(`((int*)((void*)${nom} + ${typ.elt.length}*5 + 1))[0] = ${tup_size(typ,Infinity)};`);
+          o.push(`((char*)${nom} + ${typ.elt.length}*5)[0] = 0;`);
+          o.push(`((int*)((char*)${nom} + ${typ.elt.length}*5 + 1))[0] = ${tup_size(typ,Infinity)};`);
 
           o.push(`__put_var(${varcnt++},${nom});`);
         }else if (typ.con == 'union'){
@@ -1492,7 +1492,7 @@ var TO_C = function(cfg){
         
         o.push(`void* ${tmp} = malloc(${fun}->siz);`);
         o.push(`memcpy(${tmp},${fun}->captr,${fun}->siz);`);
-        o.push(`void* ${top} = ${tmp} + ${fun}->siz;`);
+        o.push(`char* ${top} = ${tmp} + ${fun}->siz;`);
         o.push(`while (${top} > ${tmp}){`);
         o.push(`char vt = *((char*)(${top}-=1));`);
         o.push(`int sz;`);

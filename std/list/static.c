@@ -1,7 +1,11 @@
 //
 void list__insert(){
   int sz = __peek_arg_size();
+#ifdef _WIN32
+  char* item = (char*)_alloca(sz*sizeof(char));
+#else
   char item[sz];
+#endif
   __pop_arg(item, sz);
   
   int i;

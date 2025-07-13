@@ -20,3 +20,9 @@ std_one: build\config.h build\config.bat
 	cmd /V:ON /C "set CFLAGS= && call build\config.bat && cd std\$(src) && copy /Y cflags.txt cflags.bat && call cflags.bat && del cflags.bat && cl /FI !DITHER_ROOT!\build\config.h $(OPT) /LD dynamic.c /Fe:dynamic.dll $(MSVCFLAGS) !CFLAGS! && del dynamic.lib && del dynamic.exp"
 run_vm: build\vm.exe build\vm_dbg.exe ir
 	build\$(VM_CHOICE) build\ir.dsm --map build\ir.map
+to_c: ir
+	node src\to_c.js build\ir.dsm -o build\out.c
+run_c: to_c build/config.h
+	node -e "fs.writeFileSync('build/cflags.bat',[...fs.readFileSync('build/out.c').toString().split('\n')[0].matchAll(new RegExp('cat (.*?)\\)','g'))].map(x=>fs.readFileSync(x[1]).toString().split('goto :eof')[0]).join('\n'))"
+	cmd /V:ON /C "set CFLAGS= && call build\config.bat && call build\cflags.bat && cl /I. /FI build/config.h /Fe:build/a.exe $(MSVCFLAGS) !CFLAGS! build/out.c"
+	build\a.exe

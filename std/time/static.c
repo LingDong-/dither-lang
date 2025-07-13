@@ -1,5 +1,9 @@
 
-#include "impl.c"
+#ifdef _WIN32
+#include "impl_winapi.c"
+#else
+#include "impl_posix.c"
+#endif
 
 void time__fps(){
   float __ARG(x); 
@@ -28,7 +32,7 @@ void time__local(){
   
   double __ARG(x);
 
-  void* tup = __gc_alloc(VART_TUP,59);
+  char* tup = __gc_alloc(VART_TUP,59);
   ((char*)tup)[0]  = VART_I32;
   ((char*)tup)[5]  = VART_I32;
   ((char*)tup)[10] = VART_I32;
