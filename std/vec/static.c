@@ -42,5 +42,5 @@ void vec__dir(){
       u[i] = v[i]*s;
     }
   }
-  __put_ret(&u);
+  __put_ret(u);
 }

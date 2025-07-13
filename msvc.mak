@@ -24,5 +24,5 @@ to_c: ir
 	node src\to_c.js build\ir.dsm -o build\out.c
 run_c: to_c build/config.h
 	node -e "fs.writeFileSync('build/cflags.bat',[...fs.readFileSync('build/out.c').toString().split('\n')[0].matchAll(new RegExp('cat (.*?)\\)','g'))].map(x=>fs.readFileSync(x[1]).toString().split('goto :eof')[0]).join('\n'))"
-	cmd /V:ON /C "set CFLAGS= && call build\config.bat && call build\cflags.bat && cl /I. /FI build/config.h /Fe:build/a.exe $(MSVCFLAGS) !CFLAGS! build/out.c"
+	cmd /V:ON /C "set CFLAGS= && call build\config.bat && call build\cflags.bat && cl /I. /FI build/config.h /Fe:build/a.exe $(MSVCFLAGS) $(OPT) !CFLAGS! build/out.c"
 	build\a.exe

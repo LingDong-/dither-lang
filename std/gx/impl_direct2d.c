@@ -17,6 +17,8 @@
 #include <dxgi1_2.h>
 #include "../../third_party/dwrite.h"
 #include <tmmintrin.h>
+// unhack
+#undef DECLARE_INTERFACE
 #define DECLARE_INTERFACE(iface) typedef interface iface { struct iface ## Vtbl FAR* lpVtbl; } iface; typedef struct iface ## Vtbl iface ## Vtbl; struct iface ## Vtbl
 
 #ifndef MIN

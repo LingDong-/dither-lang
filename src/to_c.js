@@ -304,7 +304,7 @@ var TO_C = function(cfg){
     }else if (vt == VART_FUN){
       __func_t* fun = (__func_t*) ptr;
       char* top = (char*)(fun->captr) + fun->siz;
-      while (top > fun->captr){
+      while ((void*)top > fun->captr){
         char vvt = *(top-=1);
         int sz;
         memcpy(&sz, (top-=4), 4);
