@@ -54,6 +54,11 @@ var TO_C = function(cfg){
   #define OP_MODF(a,b) (fmod(a,b))
   #define OP_POW(a,b)  (pow(a,b))
   #define VOID_T int
+  #if _WIN32
+  #define __vla(dtype,name,n) dtype* name = (dtype*)_alloca((n)*sizeof(dtype));
+  #else
+  #define __vla(dtype,name,n) dtype name[n];
+  #endif
   typedef struct ret_st {
     void* var;
     int n;

@@ -4,8 +4,8 @@
   "pkg": {
     "assets": [
       "../../std/**",
-      "../../build/vm",
-      "../../build/config.h",
+      "../../build/vm*",
+      "../../build/config.*",
       "../../config.env"
     ],
     "targets": ["node18"],

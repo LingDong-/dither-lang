@@ -21,6 +21,12 @@
 #undef DECLARE_INTERFACE
 #define DECLARE_INTERFACE(iface) typedef interface iface { struct iface ## Vtbl FAR* lpVtbl; } iface; typedef struct iface ## Vtbl iface ## Vtbl; struct iface ## Vtbl
 
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "dwrite.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3d11.lib")
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif

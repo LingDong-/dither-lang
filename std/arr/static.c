@@ -7,7 +7,8 @@ void arr__shape(){
 
 void arr__reshape(){
   int ndim = __peek_arg_size()/sizeof(int32_t);
-  int32_t v[ndim];
+  __vla(int32_t,v,ndim);
+
   __pop_arg(v, ndim*sizeof(int32_t));
 
   __arr_t* a;
@@ -28,11 +29,11 @@ void arr__reshape(){
 void arr__make(){
   int t = __peek_arg_type();
   int w = __peek_arg_size();
-  char e[w];
+  __vla(char,e,w);
   __pop_arg(e, w);
   
   int ndim = __peek_arg_size()/sizeof(int32_t);
-  int32_t v[ndim];
+  __vla(int32_t,v,ndim);
   __pop_arg(v, ndim*sizeof(int32_t));
 
   int n = 1;

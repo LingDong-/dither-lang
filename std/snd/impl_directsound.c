@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#pragma comment(lib, "dsound.lib")
+
 #define BUF_SIZE (2048)
 #define DS_BUF_SIZE (rate*chan)
 

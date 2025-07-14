@@ -1,3 +1,5 @@
+const os = require('os');
+const _WIN32 = os.platform() == 'win32';
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -5,6 +7,13 @@ const PARSER = require('../../src/parser.js');
 const TO_JS = require('../../src/to_js.js');
 const TO_C = require('../../src/to_c.js');
 const embed_glsl = require('../../src/embed_glsl.js');
+
+function tmpth(){
+  // let t = _WIN32 ? os.tmpdir() : '/tmp';
+  let t = _WIN32 ? process.env.LOCALAPPDATA : '/tmp';
+  return path.join(t,"dither",...arguments);
+}
+
 
 let version = "v0.0.1"
 let help = `
@@ -35,7 +44,7 @@ let targ = 'vm'
 let out_pth = null;
 let inc_pth = [];
 let inp_pth = null;
-let map_pth = '/tmp/dither/ir.map';
+let map_pth = tmpth('ir.map');
 let did_info = 0;
 if (args.length == 0){
   console.log(help);
@@ -57,7 +66,7 @@ for (let i = 0; i < args.length; i++){
   }else if (args[i] == '--verbose' || args[i] == '-v'){
     verbose = 1;
   }else if (args[i] == '--command' || args[i] == '-c'){
-    fs.writeFileSync(inp_pth = "/tmp/dither/in.dh",args[++i]);
+    fs.writeFileSync(inp_pth = tmpth("in.dh"),args[++i]);
   }else{
     inp_pth = args[i];
   }
@@ -74,24 +83,21 @@ if (out_pth == null){
     console.warn("[warning] no output file.");
   }
   if (targ == 'vm'){
-    out_pth = '/tmp/dither/out.dsm'
+    out_pth = tmpth('out.dsm');
   }else if (targ == 'c'){
-    out_pth = '/tmp/dither/out.c';
+    out_pth = tmpth('out.c');
   }else if (targ == 'js'){
-    out_pth = '/tmp/dither/out.js';
+    out_pth = tmpth('out.js');
   }else if (targ == 'html'){
-    out_pth = '/tmp/dither/out.html';
+    out_pth = tmpth('out.html');
   }
 }
-fs.mkdirSync('/tmp/dither/', { recursive: true });
+fs.mkdirSync(tmpth(), { recursive: true });
 
-fs.writeFileSync('/tmp/dither/vm', fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
-
-let search_paths = Array.from(new Set([...inc_pth,".","/tmp/dither"].map(x=>path.resolve(x))));
+let search_paths = Array.from(new Set([...inc_pth,".",tmpth()].map(x=>path.resolve(x))));
 // console.log(search_paths);
 // console.log(fs.readdirSync(search_paths[1]));
 // console.log(fs.readdirSync('/snapshot/dither-lang/'+fs.readdirSync(search_paths[1])[1]));
-
 
 function copyDirSync(srcDir, destDir) {
   if (!fs.existsSync(destDir)) {
@@ -153,7 +159,7 @@ function miniServer(ENTRY_FILE){
   findAvailablePort(PORT, startServer);
 }
 
-copyDirSync(__dirname+"/../../std","/tmp/dither/std");
+copyDirSync(path.join(__dirname,'..','..','std'),tmpth("std"));
 
 let parser = new PARSER(
   {fs,path,process,search_paths},
@@ -171,13 +177,21 @@ fs.writeFileSync(map_pth,parser.writesrcmap(instrs));
 let irlo = ir+lo;
 
 
+
 if (targ == 'vm'){
   fs.writeFileSync(out_pth,irlo);
   if (do_run){
-    fs.writeFileSync('/tmp/dither/vm', fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
-    if (verbose) console.log("[info] compiled, running...");
-    let cmd = `/tmp/dither/vm ${out_pth} --map /tmp/dither/ir.map`;
-    execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: '/tmp/dither' }});
+    if (_WIN32){
+      fs.writeFileSync(tmpth('vm.exe'), fs.readFileSync(__dirname+'\\..\\..\\build\\vm.exe'), { mode: 0o755 });
+      if (verbose) console.log("[info] compiled, running...");
+      let cmd = `${tmpth('vm.exe')} ${out_pth} --map ${tmpth('ir.map')}`;
+      execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
+    }else{
+      fs.writeFileSync(tmpth('vm'), fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
+      if (verbose) console.log("[info] compiled, running...");
+      let cmd = `${tmpth('vm')} ${out_pth} --map ${tmpth('ir.map')}`;
+      execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
+    }
   }
 }else if (targ == 'c'){
   let to_c = new TO_C({});
@@ -186,12 +200,41 @@ if (targ == 'vm'){
   fs.writeFileSync(out_pth,c);
   if (do_run){
     if (verbose) console.log("[info] dither compiled. compiling C...");
-    fs.writeFileSync('/tmp/dither/config.env', fs.readFileSync(__dirname+'/../../config.env'), { mode: 0o755 })
-    let c = `cd /tmp/dither && source config.env && eval $(head -n 1 "${out_pth}" | cut -c 3-) && echo $CFLAGS`
-    let cflags = execSync(c).toString().replace(/\n/g,' ');
-    fs.writeFileSync('/tmp/dither/config.h', fs.readFileSync(__dirname+'/../../build/config.h'), { mode: 0o755 });
-    let cmd = `gcc -include /tmp/dither/config.h -I/tmp/dither -O3 ${cflags} ${out_pth} -o /tmp/dither/a.out ${verbose?'&& echo "[info] C compiled, running..."':''} && /tmp/dither/a.out`;
-    execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: '/tmp/dither' }});
+    if (_WIN32){
+      function get_vs() {
+        let vswhere = null;
+        for (let p of [
+          process.env['ProgramFiles(x86)'] + '\\Microsoft Visual Studio\\Installer\\vswhere.exe',
+          process.env['ProgramFiles'] + '\\Microsoft Visual Studio\\Installer\\vswhere.exe',
+        ]) {
+          if (fs.existsSync(p)){
+            vswhere = p;
+            break;
+          }
+        }
+        if (!vswhere){
+          console.error('[error] no msvc installation found.');
+          process.exit(1);
+        }
+        let vspath = execSync(`"${vswhere}" -latest -products * -property installationPath`, { encoding: 'utf-8' }).trim();
+        let vcvars = path.join(vspath, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat');
+        return vcvars;
+      }
+      if (verbose) console.log("[info] finding msvc installation...");
+      let vcvars = get_vs();
+      fs.writeFileSync(tmpth('config.h'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.h'), { mode: 0o755 });
+      fs.writeFileSync(tmpth('config.bat'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.bat'), { mode: 0o755 })
+      let cmd = `call ${tmpth('config.bat')} >nul && "${vcvars}" && cl /I. /FI ${tmpth('config.h')} /Fe:${tmpth('a.exe')} /Fo:"%TEMP%\\a.obj" /w /O2 ${out_pth} ${verbose?'&& echo [info] C compiled, running...':''} && ${tmpth('a.exe')}`;
+      if (verbose) console.log("[info] compiling with cl.exe...");
+      execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
+    }else{
+      fs.writeFileSync(tmpth('config.env'), fs.readFileSync(__dirname+'/../../config.env'), { mode: 0o755 })
+      let c = `cd ${tmpth()} && source config.env && eval $(head -n 1 "${out_pth}" | cut -c 3-) && echo $CFLAGS`
+      let cflags = execSync(c).toString().replace(/\n/g,' ');
+      fs.writeFileSync(tmpth('config.h'), fs.readFileSync(__dirname+'/../../build/config.h'), { mode: 0o755 });
+      let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${cflags} ${out_pth} -o ${tmpth('a.out')} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')}`;
+      execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
+    }
   }
 }else if (targ == 'js'){
   let to_js = new TO_JS({preclude:1});
