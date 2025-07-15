@@ -5,7 +5,8 @@ namespace rand {
   func noise_reseed();
   func noise_detail(lod:i32,falloff:f32);
   func random():f32;
-  func random(a:f32,b:f32):f32{return a+random(b-a)};
   func random(a:f32):f32{return random()*a};
+  func random[N](a:vec[f32,N]):vec[f32,N]{return a.map(func(x:f32):f32{return random()*x;})}
+  func random[T](a:T,b:T):T{return a+random(b-a)};
   func seed(x:u32);
 }

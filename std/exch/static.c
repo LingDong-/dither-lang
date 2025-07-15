@@ -184,12 +184,22 @@ void exch___encode_json(){
   void* obj;
   __pop_arg(&obj, sizeof(obj));
 
+#ifdef _WIN32
+  FILE *fd = tmpfile();
+  _jencode(fd, obj);
+  size_t len = ftell(fd);
+  char* buf = malloc(len);
+  rewind(fd);
+  fread(buf, 1, len, fd);
+  fclose(fd);
+#else
   char *buf;
   size_t len;
   FILE *fd = open_memstream(&buf, &len);
   _jencode(fd, obj);
   fflush(fd);
   fclose(fd);
+#endif
   
   char* ss = __gc_alloc(VART_STR,len+1);
   memcpy(ss, buf, len);

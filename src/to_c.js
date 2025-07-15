@@ -1310,7 +1310,7 @@ var TO_C = function(cfg){
           o.push(`((int*)${nom})[0] = ${nf.length};`);
           for (let i = 0; i < nf.length; i++){
             // console.log(nf[i])
-            o.push(`((int*)(${nom}+${4+i*4}))[0] = ${nf[i]+nf.length*4+4};`);
+            o.push(`((int*)((char*)${nom}+${4+i*4}))[0] = ${nf[i]+nf.length*4+4};`);
           }
         }else{
           UNIMPL();

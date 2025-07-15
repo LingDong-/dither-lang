@@ -1503,6 +1503,13 @@ var PARSER = function(sys,extensions={}){
       // console.log("-----")
       let scores = [];
       let fts = [];
+      // console.log(new Set(funs.slice()))
+      let nodup = Array.from(new Set(funs));
+      funs.splice(0,Infinity,...nodup);
+      // console.log(pte);
+
+      // console.log(funs.map(x=>x.ipl.arg));
+
       funs.sort((a,b)=>(Number(b.typ.con=='func')-Number(a.typ.con=='func')));
 
       // console.log(funs.length)
@@ -1539,11 +1546,12 @@ var PARSER = function(sys,extensions={}){
           }
           // tms = funs[i].ipl.tem.map(x=>x.val.val);
         }
-        
-        if (fas.length < args.length || funs[i].mac > args.length){
+        if (fas.length != args.length || funs[i].mac > args.length){
+          s = 0;
           scores.push([i,0]);
           continue;
         }
+        // console.log("<",s,args.map(x=>x.typ))
         for (let j = 0; j < args.length; j++){
           // console.log(printtype(args[j].typ) , printtype(fas[j]));
           if (printtype(args[j].typ) != printtype(fas[j])){
@@ -1559,6 +1567,7 @@ var PARSER = function(sys,extensions={}){
             }
           }
         }
+        // console.log(s,'>')
         
         if (!s){
           continue;
@@ -1567,9 +1576,8 @@ var PARSER = function(sys,extensions={}){
           s-=0.0001;
         }
         let n = funs[i].ctx.length;
-
         if (funs[i].typ.con == 'func'){
-
+          // console.log(".",funs[i].ipl,s)
           fts[i] =funs[i].ipl.ano.typ;
           scores.push([i,s,funs[i].typ]);
           
@@ -1591,6 +1599,8 @@ var PARSER = function(sys,extensions={}){
             
           }
         }else{
+          // console.log("???",map)
+          
           scostk.push(...funs[i].ctx);
           
           add_scope(new_scope());
@@ -1611,6 +1621,16 @@ var PARSER = function(sys,extensions={}){
             ctx: funs[i].ctx,
             agt: scostk.at(-1),
             did: true,
+            tmp: true,
+          }
+          let same = funs.map(x=>printtype(x.typ)).indexOf(printtype(nf.typ));
+          if (same != -1 && JSON.stringify(funs[same].ipl.arg) == JSON.stringify(funs[i].ipl.arg)){
+            scores.push([i,0]);
+            pop_scope();
+            for (let j = 0; j < n; j++){
+              scostk.pop();
+            }
+            continue;
           }
           funs.push(nf);
 
@@ -1632,7 +1652,7 @@ var PARSER = function(sys,extensions={}){
           scores.push([i,s-0.01,nf.typ,()=>funs.splice(funs.indexOf(nf),1)]);
         }
 
-
+        // console.log(s)
         if (s == 100){
           break;
         }
@@ -1647,7 +1667,7 @@ var PARSER = function(sys,extensions={}){
       }
       // console.log(funs.length)
       scores.sort((a,b)=>(b[1]-a[1]));
-
+      // console.log(scores)
       // console.log("________",funs)
       // console.dir(scores,{depth:1000000})
 
@@ -1663,7 +1683,7 @@ var PARSER = function(sys,extensions={}){
       // console.log(funs);
       // process.exit();
       // console.dir(scores,{depth:5000000});
-
+      
       if (scores.length < 2){
         killlosers(0);
         return [fts[scores[0][0]],scores[0][2],funs[scores[0][0]]];
@@ -1672,10 +1692,14 @@ var PARSER = function(sys,extensions={}){
       if (scores[0][1] == scores[1][1]){
         // console.dir(funs,{depth:7});
         // console.log(funs)
-        // console.dir(scores,{depth:10});
+        // console.dir(scores,{depth:3});
+        
         let t0 = scores[0][2]
         let t1 = scores[1][2]
-        mkerr('typecheck',`found tie in funciton matching: ${printtype(t0)} and ${printtype(t1)}`,somepos(args));
+        // console.dir(funs[scores[0][0]],{depth:10})
+        // console.dir(funs[scores[1][0]],{depth:10})
+        // console.log(funs[scores[0][0]]==funs[scores[1][0]])
+        mkerr('typecheck',`found tie in function matching: ${printtype(t0)} and ${printtype(t1)}`,somepos(args));
       }
 
       killlosers(0);
@@ -3530,7 +3554,7 @@ var PARSER = function(sys,extensions={}){
             }
           }
         }
-
+        
         let n1 = mktmpvar(ast.fun.rty.elt[1]);
 
         if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith("__vec_map")){

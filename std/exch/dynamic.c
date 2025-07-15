@@ -6,7 +6,11 @@
 #include "impl_json.c"
 
 #ifndef EXPORTED
+#ifdef _WIN32
+#define EXPORTED __declspec(dllexport)
+#else
 #define EXPORTED __attribute__ ((visibility ("default")))
+#endif
 #endif
 
 #define OBJ_THIS(o) (((void**)((o)->data))[0])
@@ -79,13 +83,23 @@ void jencode(FILE* fd, obj_t* o){
 EXPORTED void exch__encode_json(var_t* ret,  gstate_t* _g){
   obj_t* obj = ARG_POP(_g,obj);
 
+#ifdef _WIN32
+  FILE *fd = tmpfile();
+  jencode(fd, obj);
+  size_t len = ftell(fd);
+  char* buf = malloc(len);
+  rewind(fd);
+  fread(buf, 1, len, fd);
+  fclose(fd);
+#else
   char *buf;
   size_t len;
   FILE *fd = open_memstream(&buf, &len);
   jencode(fd, obj);
   fflush(fd);
   fclose(fd);
-  
+#endif
+
   stn_t* ss = (stn_t*)gc_alloc(sizeof(stn_t)+len+1);
   ss->n = len;
   ss->w = 1;

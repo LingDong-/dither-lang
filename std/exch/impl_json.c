@@ -100,7 +100,11 @@ int exch_impl__decode_json(char* src){
           idx ++;
         }
         int n = idx-idx0+1;
+        #if _WIN32
+        char* s = (char*)_alloca(n);
+        #else
         char s[n];
+        #endif
         memcpy(s,src+idx0,n-1);
         s[n-1] = 0;
         if (strcmp(s,"true")==0){
