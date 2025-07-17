@@ -64,14 +64,20 @@ EXPORTED void** window_init(int w, int h, int flags){
   WNDCLASS wc = {0};
   wc.lpfnWndProc = WndProc;
   wc.hInstance = GetModuleHandle(NULL);
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.lpszClassName = CLASS_NAME;
   RegisterClass(&wc);
   RECT rect = { 0, 0, w,h };
   AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
   int windowWidth = rect.right - rect.left;
   int windowHeight = rect.bottom - rect.top;
+  RECT workArea;
+  SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+  int x = workArea.left + (workArea.right - workArea.left - windowWidth) / 2;
+  int y = workArea.top + (workArea.bottom - workArea.top - windowHeight) / 2;
+
   HWND hwnd = CreateWindow(wc.lpszClassName, "", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                            CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, NULL, NULL, wc.hInstance, NULL);
+                            x, y, windowWidth, windowHeight, NULL, NULL, wc.hInstance, NULL);
   hdc = GetDC(hwnd);
 
   PIXELFORMATDESCRIPTOR pfd = {

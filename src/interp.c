@@ -2355,7 +2355,9 @@ void var_assign(var_t* v, term_t* b){
     if (b->mode == TERM_IDEN){
       var_t* u = find_var(&(b->u.str));
       v->u.lst = u->u.lst;
-
+    }else if (b->mode == TERM_ADDR){
+      lst_t* u = *((lst_t**)get_addr(b,NULL));
+      v->u.lst = u;
     }else{
       UNIMPL;
     }

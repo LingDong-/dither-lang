@@ -64,8 +64,13 @@ EXPORTED void** window_init(int w, int h, int flags){
   AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
   int windowWidth = rect.right - rect.left;
   int windowHeight = rect.bottom - rect.top;
+  RECT workArea;
+  SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+  int x = workArea.left + (workArea.right - workArea.left - windowWidth) / 2;
+  int y = workArea.top + (workArea.bottom - workArea.top - windowHeight) / 2;
+
   hwnd = CreateWindow(wc.lpszClassName, "", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                            CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, NULL, NULL, wc.hInstance, NULL);
+                      x,y, windowWidth, windowHeight, NULL, NULL, wc.hInstance, NULL);
   
   width = w;
   height = h;
