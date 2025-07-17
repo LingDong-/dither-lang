@@ -1,4 +1,5 @@
 include "std/frag"
+include "std/win"
 include "std/math"
 include "std/img"
 include "std/io"
@@ -6,38 +7,39 @@ include "std/arr"
 include "std/vec"
 include "std/time"
 
+resolution := {256,256};
+frag.init(win.init(...resolution,win.CONTEXT_3D));
+
 pixels := img.decode(io.read_file("examples/assets/pepper.png"));
+image := frag.texture(...resolution);
+image.write_pixels(pixels);
 
-resolution := {256.0,256.0};
-t : f32;
-image : frag.Texture;
-
-frag.size(...resolution);
-
-
-func ripple(fragCoord:vec[f32,2]):vec[f32,4]{
-  uv := fragCoord/resolution;
+func ripple(
+  v_uv:vec[f32,2],
+  u_image:frag.Texture,
+  u_t:f32
+):vec[f32,4]{
+  
   center := {0.5,0.5}
-  d := uv-center;
+  d := v_uv-center;
   l := vec.mag(d);
   u := vec.dir(d);
-  w := math.sin(l*50.0-t*0.015);
-  color := image.sample(uv+u*w*0.075*math.cos(t*0.001));
+  w := math.sin(l*50.0-u_t*0.015);
+  color := u_image.sample(v_uv+u*w*0.075*math.cos(u_t*0.001));
   return {color.r,color.g,color.b,1.0};
 }
 
 shader := frag.program(embed ripple as "fragment");
 
-image = frag.texture();
-image.write_pixels(pixels);
 
 while (1){
   time.fps(120);
 
   frag.begin(shader);
-  frag.uniform("t", t=time.millis()); 
-  frag.uniform("image", image);
+  frag.uniform("u_t", time.millis() as f32); 
+  frag.uniform("u_image", image);
+  frag.render();
   frag.end();
   
-  frag.poll();
+  win.poll();
 }

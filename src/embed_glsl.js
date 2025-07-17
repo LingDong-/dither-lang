@@ -30,7 +30,7 @@ function embed_glsl_frag(ast,scopes){
       }
     }else if (ast.key == 'retn'){
       out.push(`return ${docompile(ast.val)};`);
-    }else if (['+','-','*','/'].includes(ast.key)){
+    }else if (['+','-','*','/','==','||','&&','>','<','>=','<='].includes(ast.key)){
       o += `${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)}`
     }else if (ast.key == 'swiz'){
       o += `${docompile(ast.lhs)}.${ast.rhs.val}`;
@@ -70,7 +70,16 @@ function embed_glsl_frag(ast,scopes){
       }else{
         out.push(`${printtype(typ)} ${ast.nom.val};`);
       }
-      
+    }else if (ast.key == '='){
+      out.push(`${docompile(ast.lhs)} = ${docompile(ast.rhs)};`);
+    }else if (ast.key == 'cond'){
+      out.push(`if (${docompile(ast.chk)}){`);
+      out.push(docompile(ast.lhs));
+      if (ast.rhs){
+        out.push('}else{')
+        out.push(docompile(ast.rhs));
+      }
+      out.push('}')
     }else{
       console.log(ast)
     }
@@ -130,7 +139,8 @@ function embed_glsl_frag(ast,scopes){
           if (a.val !== null){
             out.push(`${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
           }else{
-            out.push(`uniform ${printtype(a.typ)} ${k};`);
+            // out.push(`uniform ${printtype(a.typ)} ${k};`);
+            out.push(`${printtype(a.typ)} ${k};`);
           }
           
           
@@ -155,10 +165,28 @@ function embed_glsl_frag(ast,scopes){
   // console.dir(ast,{depth:10000});
   // console.dir(scopes,{depth:10000});
 
+  let vargs = ast.ipl.arg.map(x=>[x.lhs.val,x.rhs.typ]);
+  for (let i = 0; i < vargs.length; i++){
+    if (vargs[i][0].startsWith('v_')){
+      out.push(`varying ${printtype(vargs[i][1])} ${vargs[i][0]};`);
+    }else if (vargs[i][0].startsWith('u_')){
+      out.push(`uniform ${printtype(vargs[i][1])} ${vargs[i][0]};`);
+    }
+  }
+  function maybe_builtin(x){
+    if (x.startsWith('g_')){
+      return {
+        'g_frag_coord':'gl_FragCoord',
+        'g_front_facing':'gl_FrontFacing',
+        'g_point_coord':'gl_PointCoord',
+      }[x];
+    }
+    return x;
+  }
   compilefunc(ast);
 
   out.push(`void main(){`);
-  out.push(`gl_FragColor = ${ast.ipl.nom.val}(gl_FragCoord.xy);`);
+  out.push(`gl_FragColor = ${ast.ipl.nom.val}(${[vargs.map(x=>maybe_builtin(x[0]))].join(',')});`);
   out.push(`}`);
   let ret = "#version 120\n"+out.join('\n');
   console.log(ret);

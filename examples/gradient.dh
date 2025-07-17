@@ -1,17 +1,18 @@
 include "std/frag"
+include "std/win"
 include "std/math"
 include "std/io"
 // an example showcasing code-sharing between shader and CPU code
 // -- learn one language, write your code once
-resolution := {640.0,480.0}; // initialized => glsl global
-t : f32;                     // uninitialized => glsl uniform
+resolution := {640.0,480.0};
+t : f32;
 image : frag.Texture; // == sampler2D in GLSL, fbo in OpenGL
 
-frag.size(...resolution);
+frag.init(win.init(...resolution,win.CONTEXT_3D));
 // define a function for the entry point of first shader,
 // just like writing a normal function in dither.
-func pass0(fragCoord:vec[f32,2]):vec[f32,4]{
-  return {fragCoord.x/resolution.x,fragCoord.y/resolution.y,0.5,1.0};
+func pass0(v_uv:vec[f32,2]):vec[f32,4]{
+  return {v_uv.x,v_uv.y,0.5,1.0};
 }
 // required helper functions are crawled and included in glsl
 // compilation automatically
@@ -20,14 +21,13 @@ func offset(p:vec[f32,2]):vec[f32,2]{
 }
 // dither function for second shader, which uses the helper function
 // xyz.sample(...) is compiled to texture2D(xyz,...)
-func pass1(fragCoord:vec[f32,2]):vec[f32,4]{
-  uv := fragCoord/resolution;
-  color := image.sample(uv+offset(uv+{t,0.0}));
-  return {color.r, color.g, math.sin(t)*0.2+0.5, 1.0};
+func pass1(u_image:frag.Texture,v_uv:vec[f32,2],u_t:f32):vec[f32,4]{
+  color := u_image.sample(v_uv+offset(v_uv+{u_t,0.0}));
+  return {color.r, color.g, math.sin(u_t)*0.2+0.5, 1.0};
 }
 // you can call these shader functions in CPU too!
 // great for sanity checks...
-io.println(pass0({100.0,100.0}));
+io.println(pass0({0.5,0.5}));
 
 // use the "embed" statement to generate a fragment shader
 // from an entry point -- the result is a string containing
@@ -36,16 +36,18 @@ io.println(pass0({100.0,100.0}));
 shader0 := frag.program(embed pass0 as "fragment");
 shader1 := frag.program(embed pass1 as "fragment");
 
-image = frag.texture();
+image = frag.texture(...resolution);
 t = 0;
 while (1){
   frag.begin(shader0,image); // rendering shader0 onto image
+  frag.render();
   frag.end();
   
   frag.begin(shader1); // rendering shader1 onto main screen
-  frag.uniform("t", t+=0.0005); 
-  frag.uniform("image", image); // put in the output of the first pass
+  frag.uniform("u_t", t+=0.0005); 
+  frag.uniform("u_image", image); // put in the output of the first pass
+  frag.render();
   frag.end();
   
-  frag.poll(); // display & read windowing events
+  win.poll(); // display & read windowing events
 }

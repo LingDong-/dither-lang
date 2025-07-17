@@ -1,0 +1,60 @@
+namespace g3d{
+  MODE_TRIG_LIST :=0x0004;
+  MODE_TRIG_STRIP:=0x0005;
+  MODE_LINE_LIST :=0x0001;
+  MODE_LINE_STRIP:=0x0003;
+  MODE_POINT_LIST:=0x0000;
+  DIRTY_VERTICES := 1
+  DIRTY_INDICES  := 2
+  DIRTY_COLORS   := 4
+  DIRTY_UVS      := 8
+  DIRTY_NORMALS  := 16
+  AXIS_X := {1.,0.,0.};
+  AXIS_Y := {0.,1.,0.};
+  AXIS_Z := {0.,0.,1.};
+  namespace mat{
+    id := {1.,0.,0.,0.; 0.,1.,0.,0.; 0.,0.,1.,0.; 0.,0.,0.,1.};
+    func translate(x:f32,y:f32,z:f32):vec[f32,4,4]{
+      return {1.,0.,0.,0.; 0.,1.,0.,0.; 0.,0.,1.,0.; x,y,z,1.}
+    }
+    func rotate_deg(axis:vec[f32,3],ang:f32):vec[f32,4,4];
+    func scale(x:f32,y:f32,z:f32):vec[f32,4,4]{
+      return {x,0.,0.,0.; 0.,y,0.,0.; 0.,0.,z,0.; 0.,0.,0.,1.}
+    }
+    func scale(x:f32):vec[f32,4,4]{
+      return scale(x,x,x);
+    }
+  }
+  func init(ctx:u64);
+  func flush();
+  func background(r:f32,g:f32,b:f32,a:f32);
+  func background(r:f32,g:f32,b:f32){background(r,g,b,1.0);};
+  func background(r:f32){background(r,r,r,1.0);};
+  func _update_mesh(vao:i32,flags:i32,vertices:list[vec[f32,3]],indices:list[i32],colors:list[vec[f32,4]],uvs:list[vec[f32,2]],normals:list[vec[f32,3]]):i32;
+  func _draw_mesh(vao:i32,mode:i32,transform:vec[f32,4,4]);
+  typedef Mesh = {
+    vao:=-1;
+    mode:=MODE_TRIG_LIST;
+    vertices:=list[vec[f32,3]]{};
+    indices:=list[i32]{};
+    colors:=list[vec[f32,4]]{};
+    uvs:=list[vec[f32,2]]{};
+    normals:=list[vec[f32,3]]{};
+    func update(flags:i32){.vao=_update_mesh(.vao,flags,.vertices,.indices,.colors,.uvs,.normals);};
+    func draw(transform:vec[f32,4,4]){if (.vao==-1){.update(0xff);};_draw_mesh(.vao,.mode,transform)};
+  };
+  func _perspective(fov:f32,aspect:f32,near:f32,far:f32):vec[f32,4,4];
+  func _ortho(left:f32,right:f32,bottom:f32,top:f32,near:f32,far:f32):vec[f32,4,4];
+  func _look_at(eye:vec[f32,3],targ:vec[f32,3],up:vec[f32,3]):vec[f32,4,4];
+  func _camera_begin(view:vec[f32,4,4],proj:vec[f32,4,4]);
+  func _camera_end();
+  typedef Camera = {
+    view:={1.,0.,0.,0.; 0.,1.,0.,0.; 0.,0.,1.,0.; 0.,0.,0.,1.};
+    proj:={1.,0.,0.,0.; 0.,1.,0.,0.; 0.,0.,1.,0.; 0.,0.,0.,1.};
+    func look_at(eye:vec[f32,3],targ:vec[f32,3],up:vec[f32,3]){.view=_look_at(eye,targ,up);}
+    func perspective(fovy:f32,aspect:f32,near:f32,far:f32){.proj=_perspective(fovy,aspect,near,far);}
+    func ortho(left:f32,right:f32,bottom:f32,top:f32,near:f32,far:f32){.proj=_ortho(left,right,bottom,top,near,far);};
+    func begin(){_camera_begin(.view,.proj);}
+    func end(){_camera_end();};
+  }
+}

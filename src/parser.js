@@ -1586,6 +1586,8 @@ var PARSER = function(sys,extensions={}){
             funs[i].did = true;
             
             scostk.push(...funs[i].ctx);
+            let oldnamesp = [...namesp.splice(0,Infinity)];
+            namesp.push(...scozoo[funs[i].ctx.at(-1)].__names.split("."))
 
             scostk.push(funs[i].agt);
             retyps.push(fts[i]);
@@ -1596,13 +1598,17 @@ var PARSER = function(sys,extensions={}){
               scostk.pop();
             }
             retyps.pop();
+
+            namesp.splice(0,Infinity,...oldnamesp);
             
           }
         }else{
           // console.log("???",map)
           
           scostk.push(...funs[i].ctx);
-          
+          let oldnamesp = [...namesp.splice(0,Infinity)];
+          namesp.push(...scozoo[funs[i].ctx.at(-1)].__names.split("."))
+
           add_scope(new_scope());
 
           for (let k in map){ 
@@ -1630,6 +1636,7 @@ var PARSER = function(sys,extensions={}){
             for (let j = 0; j < n; j++){
               scostk.pop();
             }
+            namesp.splice(0,Infinity,...oldnamesp);
             continue;
           }
           funs.push(nf);
@@ -1649,6 +1656,8 @@ var PARSER = function(sys,extensions={}){
           for (let j = 0; j < n; j++){
             scostk.pop();
           }
+          namesp.splice(0,Infinity,...oldnamesp);
+          
           scores.push([i,s-0.01,nf.typ,()=>funs.splice(funs.indexOf(nf),1)]);
         }
 
@@ -2762,8 +2771,11 @@ var PARSER = function(sys,extensions={}){
             let sco = ast.lhs.typ.elt[0];
             // console.log(scozoo[sco]);
             scostk.push(sco);
+            let oldnamesp = [...namesp.splice(0,Infinity)];
+            namesp.push(...scozoo[sco].__names.split("."));
             doinfer(ast.rhs);
             scostk.pop();
+            namesp.splice(0,Infinity,...oldnamesp);
             typ = ast.rhs.typ;
           }else{
             typ = fieldtype(ast.lhs.typ,ast.rhs);
@@ -2972,6 +2984,17 @@ var PARSER = function(sys,extensions={}){
     let layout = {};
 
     let tmpvarcnt = 0;
+    function shortori(ori){
+      // return ori.split(".").at(-1);
+      ori = ori.split(".");
+      for (let i = ori.length-1; i >=0; i--){
+        if (ori[i].startsWith("__")){
+          if (i+1 < ori.length) i++;
+          return ori.slice(i).join(".")
+        }
+      }
+      return ori.join(".")
+    }
     function tmpvar(){
       return '__r_'+(tmpvarcnt++);
     }
@@ -3030,8 +3053,7 @@ var PARSER = function(sys,extensions={}){
 
               let ks = Object.keys(scopes[scopes[i][k].val[j].agt]).reverse();
               // let ori = scopes[scopes[i][k].val[j].agt].__names;//.replace(/\?\.?/g,'');
-              let ori = scopes[scopes[i][k].val[j].agt].__names.split(".").at(-1);
-
+              let ori = shortori(scopes[scopes[i][k].val[j].agt].__names);
               // console.log(scopes[i][k].typ,scopes[i][k].val[j].ipl.bdy)
               
               
@@ -3041,7 +3063,7 @@ var PARSER = function(sys,extensions={}){
                   for (let c of caps){
                     if (c.nom == 'this') continue;
                     if (typeof c.typ != 'string' || !c.typ.startsWith("__func_ovld"))
-                    _pushins(scopes[i][k].val[j],'dcap',c.ori.split(".").at(-1)+"."+c.nom,c.typ)
+                    _pushins(scopes[i][k].val[j],'dcap',shortori(c.ori)+"."+c.nom,c.typ)
                   }
                 }
 
@@ -3116,7 +3138,7 @@ var PARSER = function(sys,extensions={}){
           pushins('fpak',nom,printtypeser(trg),src+'_'+printtypeser(trg));
           for (let i = 0; i < cs.length; i++){
             // pushins('cap',nom,cs[i].ori+'.'+cs[i].nom,cs[i].typ);
-            pushins('cap',nom,cs[i].ori.split('.').at(-1)+'.'+cs[i].nom,cs[i].typ);
+            pushins('cap',nom,shortori(cs[i].ori)+'.'+cs[i].nom,cs[i].typ);
           }
           return nom;
         }else{
@@ -3213,9 +3235,9 @@ var PARSER = function(sys,extensions={}){
         if (ast.tag == 'ident'){
           if (ast.is_fun_alias){
             // return ast.ori.split(".").at(-1)+"."+ast.typ+ast.pos;
-            return ast.ori.split(".").at(-1)+"."+ast.typ+"."+ast.pos.join(".");
+            return shortori(ast.ori)+"."+ast.typ+"."+ast.pos.join(".");
           }
-          return ast.ori.split(".").at(-1)+"."+ast.val;
+          return shortori(ast.ori)+"."+ast.val;
         }else{
           return ast.val;
         }
@@ -3230,7 +3252,7 @@ var PARSER = function(sys,extensions={}){
       }else if (ast.key == 'decl'){
 
         // let pth = ast.ori.join('.')+".";
-        let pth = ast.ori.at(-1)+".";
+        let pth = shortori(ast.ori.join('.'))+".";
 
         if (ast.nom.key == 'tlit'){
           for (let i = 0; i < ast.nom.val.length; i++){
@@ -3620,7 +3642,7 @@ var PARSER = function(sys,extensions={}){
           }else{
             
             try{
-              pushins('rcall',n1, ast.fun.ori.split(".").at(-1)+"."+ast.fun.val);
+              pushins('rcall',n1, shortori(ast.fun.ori)+"."+ast.fun.val);
             }catch(e){
               pushins('call',n1,ast.fun.typ+'_'+printtypeser(ast.fun.rty));
             }

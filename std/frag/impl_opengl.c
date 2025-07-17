@@ -14,136 +14,7 @@
 #include <gl/GLU.h>
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
-#ifndef APIENTRYP
-#define APIENTRYP APIENTRY *
-#endif
-#define GL_FRAMEBUFFER 0x8D40
-#define GL_COLOR_ATTACHMENT0 0x8CE0
-#define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME 0x8CD1
-#define GL_FRAMEBUFFER_BINDING 0x8CA6
-#define GL_COMPILE_STATUS 0x8B81
-#define GL_LINK_STATUS 0x8B82
-#define GL_VERTEX_SHADER 0x8B31
-#define GL_FRAGMENT_SHADER 0x8B30
-#define GL_ARRAY_BUFFER 0x8892
-#define GL_STATIC_DRAW 0x88E4
-#define GL_CURRENT_PROGRAM 0x8B8D
-#define GL_TEXTURE0 0x84C0
-typedef ptrdiff_t GLsizeiptr;
-#ifndef GLchar
-typedef char GLchar;
-#endif
-typedef void (APIENTRYP PFNGLGENBUFFERSPROC)(GLsizei, GLuint*);
-typedef void (APIENTRYP PFNGLBINDBUFFERPROC)(GLenum, GLuint);
-typedef void (APIENTRYP PFNGLBUFFERDATAPROC)(GLenum, GLsizeiptr, const void*, GLenum);
-typedef void (APIENTRYP PFNGLDELETEBUFFERSPROC)(GLsizei, const GLuint*);
-typedef GLuint (APIENTRYP PFNGLCREATESHADERPROC)(GLenum);
-typedef void (APIENTRYP PFNGLSHADERSOURCEPROC)(GLuint, GLsizei, const GLchar**, const GLint*);
-typedef void (APIENTRYP PFNGLCOMPILESHADERPROC)(GLuint);
-typedef void (APIENTRYP PFNGLGETSHADERIVPROC)(GLuint, GLenum, GLint*);
-typedef void (APIENTRYP PFNGLGETSHADERINFOLOGPROC)(GLuint, GLsizei, GLsizei*, GLchar*);
-typedef GLuint (APIENTRYP PFNGLCREATEPROGRAMPROC)(void);
-typedef void (APIENTRYP PFNGLATTACHSHADERPROC)(GLuint, GLuint);
-typedef void (APIENTRYP PFNGLLINKPROGRAMPROC)(GLuint);
-typedef void (APIENTRYP PFNGLGETPROGRAMIVPROC)(GLuint, GLenum, GLint*);
-typedef void (APIENTRYP PFNGLUSEPROGRAMPROC)(GLuint);
-typedef void (APIENTRYP PFNGLGETPROGRAMIVPROC)(GLuint, GLenum, GLint*);
-typedef void (APIENTRYP PFNGLGETPROGRAMINFOLOGPROC)(GLuint, GLsizei, GLsizei*, GLchar*);
-typedef void (APIENTRYP PFNGLDELETEPROGRAMPROC)(GLuint);
-typedef void (APIENTRYP PFNGLDELETESHADERPROC)(GLuint);
-typedef void (APIENTRYP PFNGLGENFRAMEBUFFERSPROC)(GLsizei, GLuint*);
-typedef void (APIENTRYP PFNGLBINDFRAMEBUFFERPROC)(GLenum, GLuint);
-typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DPROC)(GLenum, GLenum, GLenum, GLuint, GLint);
-typedef GLenum (APIENTRYP PFNGLCHECKFRAMEBUFFERSTATUSPROC)(GLenum);
-typedef GLint (APIENTRYP PFNGLGETATTRIBLOCATIONPROC)(GLuint, const GLchar*);
-typedef void (APIENTRYP PFNGLENABLEVERTEXATTRIBARRAYPROC)(GLuint);
-typedef void (APIENTRYP PFNGLVERTEXATTRIBPOINTERPROC)(GLuint, GLint, GLenum, GLboolean, GLsizei, const void*);
-typedef void (APIENTRYP PFNGLDISABLEVERTEXATTRIBARRAYPROC)(GLuint);
-typedef GLint (APIENTRYP PFNGLGETUNIFORMLOCATIONPROC)(GLuint, const GLchar*);
-typedef void (APIENTRYP PFNGLUNIFORM1FPROC)(GLint, GLfloat);
-typedef void (APIENTRYP PFNGLUNIFORM2FPROC)(GLint, GLfloat, GLfloat);
-typedef void (APIENTRYP PFNGLUNIFORM3FPROC)(GLint, GLfloat, GLfloat, GLfloat);
-typedef void (APIENTRYP PFNGLUNIFORM4FPROC)(GLint, GLfloat, GLfloat, GLfloat, GLfloat);
-typedef void (APIENTRYP PFNGLUNIFORM1IPROC)(GLint, GLint);
-typedef void (APIENTRYP PFNGLUNIFORM2IPROC)(GLint, GLint, GLint);
-typedef void (APIENTRYP PFNGLUNIFORM3IPROC)(GLint, GLint, GLint, GLint);
-typedef void (APIENTRYP PFNGLUNIFORM4IPROC)(GLint, GLint, GLint, GLint, GLint);
-typedef void (APIENTRYP PFNGLACTIVETEXTUREPROC)(GLenum);
-typedef void (APIENTRYP PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)(GLenum, GLenum, GLenum, GLint*);
-static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
-static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
-static PFNGLBUFFERDATAPROC glBufferData = NULL;
-static PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
-static PFNGLCREATESHADERPROC glCreateShader = NULL;
-static PFNGLSHADERSOURCEPROC glShaderSource = NULL;
-static PFNGLCOMPILESHADERPROC glCompileShader = NULL;
-static PFNGLGETSHADERIVPROC glGetShaderiv = NULL;
-static PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = NULL;
-static PFNGLCREATEPROGRAMPROC glCreateProgram = NULL;
-static PFNGLATTACHSHADERPROC glAttachShader = NULL;
-static PFNGLLINKPROGRAMPROC glLinkProgram = NULL;
-static PFNGLUSEPROGRAMPROC glUseProgram = NULL;
-static PFNGLGETPROGRAMIVPROC glGetProgramiv = NULL;
-static PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = NULL;
-static PFNGLDELETEPROGRAMPROC glDeleteProgram = NULL;
-static PFNGLDELETESHADERPROC glDeleteShader = NULL;
-static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
-static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
-static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
-static PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = NULL;
-static PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation = NULL;
-static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
-static PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
-static PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = NULL;
-static PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = NULL;
-static PFNGLUNIFORM1FPROC glUniform1f = NULL;
-static PFNGLUNIFORM2FPROC glUniform2f = NULL;
-static PFNGLUNIFORM3FPROC glUniform3f = NULL;
-static PFNGLUNIFORM4FPROC glUniform4f = NULL;
-static PFNGLUNIFORM1IPROC glUniform1i = NULL;
-static PFNGLUNIFORM2IPROC glUniform2i = NULL;
-static PFNGLUNIFORM3IPROC glUniform3i = NULL;
-static PFNGLUNIFORM4IPROC glUniform4i = NULL;
-static PFNGLACTIVETEXTUREPROC glActiveTexture = NULL;
-static PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC glGetFramebufferAttachmentParameteriv = NULL;
-static void glewInit(void) {
-  glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
-  glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
-  glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
-  glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
-  glCreateShader = (PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader");
-  glShaderSource = (PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource");
-  glCompileShader = (PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader");
-  glGetShaderiv = (PFNGLGETSHADERIVPROC)wglGetProcAddress("glGetShaderiv");
-  glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetShaderInfoLog");
-  glCreateProgram = (PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram");
-  glAttachShader = (PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader");
-  glLinkProgram = (PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram");
-  glUseProgram = (PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram");
-  glGetProgramiv = (PFNGLGETPROGRAMIVPROC)wglGetProcAddress("glGetProgramiv");
-  glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)wglGetProcAddress("glGetProgramInfoLog");
-  glDeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
-  glDeleteShader = (PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader");
-  glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
-  glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
-  glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
-  glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)wglGetProcAddress("glCheckFramebufferStatus");
-  glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)wglGetProcAddress("glGetFramebufferAttachmentParameteriv");
-  glGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)wglGetProcAddress("glGetAttribLocation");
-  glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glEnableVertexAttribArray");
-  glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)wglGetProcAddress("glVertexAttribPointer");
-  glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC)wglGetProcAddress("glDisableVertexAttribArray");
-  glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)wglGetProcAddress("glGetUniformLocation");
-  glUniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
-  glUniform2f = (PFNGLUNIFORM2FPROC)wglGetProcAddress("glUniform2f");
-  glUniform3f = (PFNGLUNIFORM3FPROC)wglGetProcAddress("glUniform3f");
-  glUniform4f = (PFNGLUNIFORM4FPROC)wglGetProcAddress("glUniform4f");
-  glUniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
-  glUniform2i = (PFNGLUNIFORM2IPROC)wglGetProcAddress("glUniform2i");
-  glUniform3i = (PFNGLUNIFORM3IPROC)wglGetProcAddress("glUniform3i");
-  glUniform4i = (PFNGLUNIFORM4IPROC)wglGetProcAddress("glUniform4i");
-  glActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture");
-}
+#include "../win/platform/wgl_patcher.h"
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -184,41 +55,45 @@ static void glewInit(void) {
 #undef ARR_CLEAR
 #define ARR_CLEAR(dtype,name) {name.len = 0;}
 
-int width;
-int height;
 GLint fbo_zero;
 
 int tex_cnt = 0;
 
 const char* vertexShaderSource = "#version 120\n"
-"attribute vec2 a_position;\n"
+"attribute vec3 a_position;\n"
+"attribute vec4 a_color;\n"
+"attribute vec2 a_uv;\n"
+"attribute vec3 a_normal;\n"
+"varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
+"varying vec3 v_normal;\n"
+"uniform mat4 model;\n"
+"uniform mat4 view;\n"
+"uniform mat4 projection;\n"
+"uniform mat3 normal_matrix;\n"
 "void main() {\n"
-"  v_uv = (a_position + 1.0) * 0.5;\n"
-"  gl_Position = vec4(a_position, 0.0, 1.0);\n"
+"  v_color = a_color;\n"
+"  v_uv = a_uv;\n"
+"  v_normal = normalize(normal_matrix * a_normal);\n"
+"  gl_Position = projection*view*model*vec4(a_position, 1.0);\n"
 "}\n";
 
-GLfloat vertices[] = {
-  -1.0f, -1.0f,
-   1.0f, -1.0f,
-  -1.0f,  1.0f,
-   1.0f,  1.0f
+GLfloat vertices[12] = {
+  -1.0f, -1.0f, 0.0,
+   1.0f, -1.0f, 0.0,
+  -1.0f,  1.0f, 0.0,
+   1.0f,  1.0f, 0.0
 };
 
-GLint posAttrib;
-GLuint vbo;
 
-
-void frag_impl__size(int w, int h, uint64_t ctx){
+void frag_impl_init(uint64_t ctx){
   #ifndef __APPLE__
   glewInit();
   #endif
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
-  width = w;
-  height = h;
 }
 
-void frag_impl__init_texture(void* data){
+void frag_impl__init_texture(void* data, int w, int h){
   glEnable(GL_TEXTURE_2D);
 
   GLuint fbo, fboTexture;
@@ -226,7 +101,7 @@ void frag_impl__init_texture(void* data){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glGenTextures(1, &fboTexture);
   glBindTexture(GL_TEXTURE_2D, fboTexture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w,h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -284,24 +159,60 @@ void frag_impl__begin(int prgm, int fbo){
   if (fbo == 0) fbo = fbo_zero;
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-  glClear(GL_COLOR_BUFFER_BIT);
   glUseProgram(prgm);
+  tex_cnt = 0;
+}
+
+void frag_impl_render(){
+  glClear(GL_COLOR_BUFFER_BIT);
+  GLint shader = 0;
+  GLuint vbo, vbo_uvs;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &shader);
+  
+  float model[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+  float view[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+  float proj[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+  glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, model);
+  glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, view);
+  glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, proj);
+
+
+  float uvs[8];
+  for (int i = 0; i < 4; i++){
+    uvs[i*2] = (vertices[i*3]+1.0)*0.5;
+    uvs[i*2+1] = (vertices[i*3+1]+1.0)*0.5;
+  }
+  glGenBuffers(1, &vbo_uvs);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
+
+  GLint loc_uv = glGetAttribLocation(shader, "a_uv");
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
+  glEnableVertexAttribArray(loc_uv);
+  glVertexAttribPointer(loc_uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+  GLint loc_color = glGetAttribLocation(shader, "a_color");
+  glDisableVertexAttribArray(loc_color);
+  glVertexAttrib4f(loc_color, 1.0f, 1.0f, 1.0f, 1.0f);
+
+  GLint loc_normal = glGetAttribLocation(shader, "a_normal");
+  glDisableVertexAttribArray(loc_normal);
+  glVertexAttrib3f(loc_normal, 0.0f, 0.0f, 1.0f);
 
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  posAttrib = glGetAttribLocation(prgm, "a_position");
+  GLuint posAttrib = glGetAttribLocation(shader, "a_position");
   glEnableVertexAttribArray(posAttrib);
-  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-  tex_cnt = 0;
-}
-
-void frag_impl_end(){
-
+  glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glDisableVertexAttribArray(posAttrib);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glDeleteBuffers(1, &vbo);
+  glDeleteBuffers(1, &vbo_uvs);
+}
+
+void frag_impl_end(){
 
   glUseProgram(0);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);

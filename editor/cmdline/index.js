@@ -200,6 +200,7 @@ if (targ == 'vm'){
   fs.writeFileSync(out_pth,c);
   if (do_run){
     if (verbose) console.log("[info] dither compiled. compiling C...");
+    copyDirSync(path.join(__dirname,'..','..','third_party'),tmpth("third_party"));
     if (_WIN32){
       function get_vs() {
         let vswhere = null;

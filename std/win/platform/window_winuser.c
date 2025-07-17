@@ -22,7 +22,7 @@ event_t out_buffer[MAX_EVENTS];
 int event_count = 0;
 
 void add_event(int type, int key, float x, float y) {
-  if (event_count && type == MOUSE_MOVED && event_buffer[event_count-1].type == type){
+  if (event_count && type == MOUSE_M0VED && event_buffer[event_count-1].type == type){
     event_buffer[event_count-1].x = x;
     event_buffer[event_count-1].y = y;
     return;
@@ -64,8 +64,13 @@ EXPORTED void** window_init(int w, int h, int flags){
   AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
   int windowWidth = rect.right - rect.left;
   int windowHeight = rect.bottom - rect.top;
+  RECT workArea;
+  SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+  int x = workArea.left + (workArea.right - workArea.left - windowWidth) / 2;
+  int y = workArea.top + (workArea.bottom - workArea.top - windowHeight) / 2;
+
   hwnd = CreateWindow(wc.lpszClassName, "", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                            CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, NULL, NULL, wc.hInstance, NULL);
+                      x,y, windowWidth, windowHeight, NULL, NULL, wc.hInstance, NULL);
   
   width = w;
   height = h;

@@ -4,6 +4,7 @@
   "pkg": {
     "assets": [
       "../../std/**",
+      "../../third_party/**",
       "../../build/vm*",
       "../../build/config.*",
       "../../config.env"

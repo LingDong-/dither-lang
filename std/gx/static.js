@@ -184,4 +184,7 @@ globalThis.$gx = new function(){
       ctx.fillText(s[i],x+i*8,y+1);
     }
   }
+  that._flush = function(){
+    
+  }
 }

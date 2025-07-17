@@ -14,50 +14,7 @@
 #include <gl/GLU.h>
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
-#ifndef APIENTRYP
-#define APIENTRYP APIENTRY *
-#endif
-#define GL_ARRAY_BUFFER 0x8892
-#define GL_DYNAMIC_DRAW 0x88E8
-#define GL_FRAMEBUFFER 0x8D40
-#define GL_COLOR_ATTACHMENT0 0x8CE0
-#define GL_FRAMEBUFFER_BINDING 0x8CA6
-#define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME 0x8CD1
-#define GL_TEXTURE_WRAP_S 0x2802
-#define GL_TEXTURE_WRAP_T 0x2803
-#define GL_TEXTURE_MAG_FILTER 0x2800
-#define GL_TEXTURE_MIN_FILTER 0x2801
-#define GL_CLAMP_TO_EDGE 0x812F
-#define GL_TEXTURE_WIDTH 0x1000
-#define GL_TEXTURE_HEIGHT 0x1001
-#define GL_MULTISAMPLE 0x809D
-typedef ptrdiff_t GLsizeiptr;
-typedef void (APIENTRYP PFNGLGENBUFFERSPROC)(GLsizei, GLuint*);
-typedef void (APIENTRYP PFNGLBINDBUFFERPROC)(GLenum, GLuint);
-typedef void (APIENTRYP PFNGLBUFFERDATAPROC)(GLenum, GLsizeiptr, const void*, GLenum);
-typedef void (APIENTRYP PFNGLDELETEBUFFERSPROC)(GLsizei, const GLuint*);
-typedef void (APIENTRYP PFNGLGENFRAMEBUFFERSPROC)(GLsizei, GLuint*);
-typedef void (APIENTRYP PFNGLBINDFRAMEBUFFERPROC)(GLenum, GLuint);
-typedef void (APIENTRYP PFNGLFRAMEBUFFERTEXTURE2DPROC)(GLenum, GLenum, GLenum, GLuint, GLint);
-typedef void (APIENTRYP PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)(GLenum, GLenum, GLenum, GLint*);
-static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
-static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
-static PFNGLBUFFERDATAPROC glBufferData = NULL;
-static PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
-static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = NULL;
-static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = NULL;
-static PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = NULL;
-static PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC glGetFramebufferAttachmentParameteriv = NULL;
-static void glewInit(){
-  glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
-  glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
-  glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
-  glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
-  glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)wglGetProcAddress("glGenFramebuffers");
-  glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)wglGetProcAddress("glBindFramebuffer");
-  glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)wglGetProcAddress("glFramebufferTexture2D");
-  glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)wglGetProcAddress("glGetFramebufferAttachmentParameteriv");
-}
+#include "../win/platform/wgl_patcher.h"
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>

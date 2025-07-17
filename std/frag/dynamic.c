@@ -14,18 +14,18 @@
 #define QUOTED(x) QUOTE(x)
 #define QUOTE(x) #x
 
-EXPORTED void frag__size(var_t* ret, gstate_t* _g){
+EXPORTED void frag_init(var_t* ret, gstate_t* _g){
   
   uint64_t ctx = ARG_POP(_g,u64);
-  int h = ARG_POP(_g,i32);
-  int w = ARG_POP(_g,i32);
 
-  frag_impl__size(w,h,ctx);
+  frag_impl_init(ctx);
 }
 
 EXPORTED void frag__init_texture(var_t* ret, gstate_t* _g){
+  int h = ARG_POP(_g,i32);
+  int w = ARG_POP(_g,i32);
   obj_t* o = ARG_POP(_g,obj);
-  frag_impl__init_texture(o->data);
+  frag_impl__init_texture(o->data,w,h);
 }
 
 EXPORTED void frag_program(var_t* ret, gstate_t* _g){
@@ -39,6 +39,10 @@ EXPORTED void frag__begin(var_t* ret, gstate_t* _g){
   int prgm = ARG_POP(_g,i32);
 
   frag_impl__begin(prgm, fbo);
+}
+
+EXPORTED void frag_render(var_t* ret, gstate_t* _g){
+  frag_impl_render();
 }
 
 EXPORTED void frag_end(var_t* ret, gstate_t* _g){
@@ -84,7 +88,7 @@ EXPORTED void frag__write_pixels(var_t* ret, gstate_t* _g){
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "frag." QUOTE(name), frag_ ## name);
 
 EXPORTED void lib_init_frag(gstate_t* _g){
-  QK_REG(_size)
+  QK_REG(init)
   QK_REG(_init_texture)
   QK_REG(program)
   QK_REG(_begin)
@@ -92,6 +96,7 @@ EXPORTED void lib_init_frag(gstate_t* _g){
   QK_REG(uniform)
   QK_REG(_sample)
   QK_REG(_write_pixels)
+  QK_REG(render)
 }
 
 

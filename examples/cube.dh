@@ -1,0 +1,49 @@
+include "std/g3d"
+include "std/win"
+include "std/time"
+include "std/list"
+
+W := 320;
+H := 240;
+
+context := win.init(W,H,win.CONTEXT_3D);
+g3d.init(context);
+
+mesh := g3d.Mesh{
+  vertices:list[vec[f32,3]]{
+    vec[f32,3]{-1.,-1.,-1.}, vec[f32,3]{ 1.,-1.,-1.},
+    vec[f32,3]{ 1., 1.,-1.}, vec[f32,3]{-1., 1.,-1.},
+    vec[f32,3]{-1.,-1., 1.}, vec[f32,3]{ 1.,-1., 1.},
+    vec[f32,3]{ 1., 1., 1.}, vec[f32,3]{-1., 1., 1.}
+  },
+  indices:list[i32]{
+    0,1,2, 2,3,0,  4,5,6, 6,7,4,
+    0,4,7, 7,3,0,  1,5,6, 6,2,1,
+    3,2,6, 6,7,3,  0,1,5, 5,4,0
+  }
+}
+for (i := 0; i < 8; i++){
+  mesh.colors.push({i&1, (i>>1)&1, (i>>2)&1, 1.0});
+}
+
+cam := g3d.Camera{}
+cam.look_at({0,0,4},{0,0,0},g3d.AXIS_Y);
+cam.perspective(60,W/(H as f32),0.1,100.0);
+
+frame := 0;
+while (1){
+  time.fps(120);
+
+  g3d.background(0.5);
+
+  cam.begin();
+  mesh.draw(
+    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) @* 
+    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1)
+  );
+  cam.end();
+
+  g3d.flush();
+  win.poll();
+  frame++;
+}
