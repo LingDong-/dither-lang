@@ -162,6 +162,7 @@ void g3d_impl_init(uint64_t ctx){
 
 void g3d_impl_flush(){
 
+  
 }
 
 void g3d_impl_background(float r, float g, float b, float a){
