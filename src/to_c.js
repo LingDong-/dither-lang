@@ -368,7 +368,7 @@ var TO_C = function(cfg){
   }
   char* __to_str(void* ptr, int vart, int w){
     char* o;
-    if (*(void**)ptr == NULL){
+    if (*(void**)ptr == NULL && (vart > VART_VEC || vart == VART_STR)){
       o = malloc(5);
       strcpy(o,"null");
     }else if (vart == VART_LST){
@@ -750,7 +750,7 @@ var TO_C = function(cfg){
     }else if (typmap[x]){
       return `sizeof(${typmap[x]})`
     }else if (x.con == 'vec'){
-      return `(sizeof(${x.elt[0]})*${x.elt[1]})`
+      return `(sizeof(${x.elt[0]})*${x.elt.slice(1).join('*')})`
     }
     return 8;
   }
@@ -790,6 +790,9 @@ var TO_C = function(cfg){
     let lookup = {};
     let cflags = [];
 
+    function vec_type_flat_n(tb){
+      return eval(tb.elt.slice(1).join('*'))
+    }
     function cast(a,b,ins){
       let ta = lookup[a];
       let tb = lookup[b];
@@ -823,7 +826,7 @@ var TO_C = function(cfg){
           df = `"%f" `;
           cst = `(double)`
         }
-        let n = Number(tb.elt[1]);
+        let n = vec_type_flat_n(tb);
         df = new Array(n).fill(df).join(` "," `);
         let ar = new Array(n).fill(0).map((x,i)=>`${cst}${b}[${i}]`).join(",");
         o.push(`${a}=__gc_alloc(VART_STR,snprintf(NULL, 0, "{" ${df} "}", ${ar})+1);`);
@@ -834,7 +837,7 @@ var TO_C = function(cfg){
       }else if (numpam[ta] && numpam[tb]){
         o.push(`${a} = ${b};`);
       }else if (ta.con == 'vec' && (numpam[tb] || typeof b == 'number')){
-        o.push(`{for (int i = 0; i < ${ta.elt[1]}; i++){`);
+        o.push(`{for (int i = 0; i < ${ta.elt.slice(1).join('*')}; i++){`);
         o.push(`${a}[i] = ${b};`);
         o.push(`}}`);
       }else if (ta == "char*" && tb.con == 'list'){
@@ -888,7 +891,7 @@ var TO_C = function(cfg){
           let ds = (last ? lo.size : lo.fields[i+1][0])-ofs;
           ofs += lo.collect.length*4+4;
           o.push(`\
-            ${tmp1} = __to_str(${b} + ${ofs}, ${vart(typ)}, ${ds});
+            ${tmp1} = __to_str((char*)${b} + ${ofs}, ${vart(typ)}, ${ds});
             ${no} = strlen(${tmp});
             ${na} = strlen(${tmp1});
             ${tmp} = realloc(${tmp}, ${no}+${na}+${lo.fields[i][1].length+3});
@@ -940,7 +943,7 @@ var TO_C = function(cfg){
       }else if (tb.con == 'union'){
         o.push(`memcpy( &(${a}), &(${b}->data), ${type_size(ta)} );`);
       }else if (ta.con == 'vec' && tb.con == 'vec'){
-        for (let i = 0; i < ta.elt[1]; i++){
+        for (let i = 0; i < vec_type_flat_n(ta); i++){
           o.push(`${a}[${i}] = ${b}[${i}];`);
         }
       }else if (ta == 'char*' && tb == 'VOID_T'){
@@ -962,7 +965,7 @@ var TO_C = function(cfg){
         if (op == "mod" && (typ.elt[0] == 'float' || typ.elt[0] == 'double')){
           os+="F";
         }
-        o.push(`{for (int i = 0; i < ${typ.elt[1]}; i++){`);
+        o.push(`{for (int i = 0; i < ${typ.elt.slice(1).join('*')}; i++){`);
         o.push(`${a}[i] = ${os}(${b}[i],${c}[i]);`);
         o.push(`}}`);
       }else if (typ == "char*"){
@@ -989,7 +992,7 @@ var TO_C = function(cfg){
       let t = lookup[b];
       if (t.con == "vec"){
         let s = [];
-        let n = Number(t.elt[1]);
+        let n = vec_type_flat_n(t);
         for (let i = 0; i < n; i++){
           s.push(`${b}[${i}]==${c}[${i}]`);
         }
@@ -1110,7 +1113,7 @@ var TO_C = function(cfg){
       }else if (typ.con == 'dict'){
         o.push(`__dict_t* ${nom} = 0;`)
       }else if (typ.con == 'vec'){
-        o.push(`${typ.elt[0]} ${nom}[${typ.elt[1]}];`)
+        o.push(`${typ.elt[0]} ${nom}[${typ.elt.slice(1).join('*')}];`)
       }else if (typ.con == 'tup'){
         o.push(`void* ${nom};`);
       }else if (typ.con == 'func'){
@@ -1222,7 +1225,9 @@ var TO_C = function(cfg){
         lookup[nom] = typ;
         write_decl(typ,nom);
         if (typ.con == 'vec'){
-          o.push(`memset(${nom},0,${type_size(typ)});`);
+          if (infun){
+            o.push(`memset(${nom},0,${type_size(typ)});`);
+          }
         }else if (typ.con == 'tup'){
           let nc = tup_size(typ,Infinity);
           o.push(`${nom} = __gc_alloc(VART_TUP,(${nc}));`);
@@ -1321,7 +1326,7 @@ var TO_C = function(cfg){
         lookup[nom] = typ;
 
         if (typ.con == 'vec'){
-          o.push(`${typ.elt[0]} (*_${nom})[${typ.elt[1]}];`);
+          o.push(`${typ.elt[0]} (*_${nom})[${typ.elt.slice(1).join('*')}];`);
         }else{
           // console.log(typ,nom);
           o.push(`${writable_type(typ)[0]} *_${nom};`);
@@ -1378,6 +1383,33 @@ var TO_C = function(cfg){
         o.push(`${clean(ins[1])} = ${clean(ins[2])} >> ${clean(ins[3])};`);
       }else if (['leq','geq','lt','gt','neq','eq'].includes(ins[0])){
         compare(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
+      }else if (ins[0] == 'matmul'){
+        let c = clean(ins[1]);
+        let a = clean(ins[2]);
+        let b = clean(ins[3]);
+        let ta = lookup[a];
+        let tb = lookup[b];
+        let nr0 = ta.elt[1];
+        let nc0 = 1;
+        let nr1 = tb.elt[1];
+        let nc1 = 1;
+        if (ta.elt.length == 3){
+          nc0 = ta.elt[2];
+        }
+        if (tb.elt.length == 3){
+          nc1 = tb.elt[2];
+        }
+        let nr = nr0;
+        let nc = nc1;
+        for (let i = 0; i < nr; i++){
+          for (let j = 0; j < nc; j++){
+            let s = "0";
+            for (let k = 0; k < nc0; k++){
+              s += `+${a}[${i*nc0+k}]*${b}[${k*nc1+j}]`;
+            }
+            o.push(`${c}[${i*nc1+j}]=${s};`);
+          }
+        }
       }else if (ins[0] == 'utag'){
         let a = clean(ins[1]);
         let b = clean(ins[2]);

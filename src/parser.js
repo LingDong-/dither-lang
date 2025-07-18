@@ -3153,7 +3153,8 @@ var PARSER = function(sys,extensions={}){
         if (typeof x == 'string' && 'iuf'.includes(x[0])){
           return Number(x.slice(1))/8;
         }else if (x.con == 'vec'){
-          return Math.max(sizeof(x.elt[0])*x.elt[1], 8);
+          let n = x.elt.slice(1).reduce((a,b)=>(a*b),1);
+          return Math.max(sizeof(x.elt[0])*n, 8);
         }else{
           return 8;
         }
