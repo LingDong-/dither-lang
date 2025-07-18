@@ -5,18 +5,17 @@
 
 #include "impl.c"
 
-void frag___size(){
+void frag__init(){
   uint64_t __ARG(ctx);
-  int32_t __ARG(h);
-  int32_t __ARG(w);
-
-  frag_impl__size(w,h,ctx);
+  frag_impl_init(ctx);
 }
 
 void frag___init_texture(){
+  int32_t __ARG(h);
+  int32_t __ARG(w);
   void* o;
   __pop_arg(&o, sizeof(o));
-  frag_impl__init_texture(o+4);
+  frag_impl__init_texture((char*)o+4,w,h);
 }
 
 void frag__program(){
@@ -39,24 +38,27 @@ void frag__uniform(){
   int t = __peek_arg_type();
   int n = __peek_arg_size();
   if (t == VART_I32){
-    int32_t x[n/4];
+    __vla(int32_t,x,(n/4));
     __pop_arg(x,n);
     char* __ARG(s);
     frag_impl_uniformi(s,x,n/4);
   }else if (t == VART_F32){
-    float x[n/4];
+    __vla(float,x,(n/4));
     __pop_arg(x,n);
     char* __ARG(s);
     frag_impl_uniformf(s,x,n/4);
   }else if (t == VART_STT){
     void* o;
     __pop_arg(&o, sizeof(o));
-    int fbo = ((int32_t*)(o+4))[2];
+    int fbo = ((int32_t*)((char*)o+4))[2];
     char* __ARG(s);
     frag_impl_uniform_sampler(s,fbo);
   }
 }
 
+void frag__render(){
+  frag_impl_render();
+}
 
 void frag___sample(){
   float uv[2];
@@ -72,3 +74,4 @@ void frag___write_pixels(){
 
   frag_impl__write_pixels(fbo,a->data);
 }
+

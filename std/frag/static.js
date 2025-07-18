@@ -7,17 +7,29 @@ globalThis.$frag = new function(){
   let tex_cnt = 0;
 
   const vertexSrc = `
-    attribute vec2 a_position;
-    void main() {
-      gl_Position = vec4(a_position, 0.0, 1.0);
-    }`;
+attribute vec3 a_position;
+attribute vec4 a_color;
+attribute vec2 a_uv;
+attribute vec3 a_normal;
+varying vec4 v_color;
+varying vec2 v_uv;
+varying vec3 v_normal;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+uniform mat3 normal_matrix;
+void main() {
+  v_color = a_color;
+  v_uv = a_uv;
+  v_normal = normalize(normal_matrix * a_normal);
+  gl_Position = projection*view*model*vec4(a_position, 1.0);
+}
+  `;
   const vertices = new Float32Array([
-    -1, -1,
-     1, -1,
-    -1,  1,
-    -1,  1,
-     1, -1,
-     1,  1,
+  -1.0, -1.0, 0.0,
+   1.0, -1.0, 0.0,
+  -1.0,  1.0, 0.0,
+   1.0,  1.0, 0.0
   ]);
   function compileShader(type, source) {
     const shader = gl.createShader(type);
@@ -30,12 +42,10 @@ globalThis.$frag = new function(){
     }
     return shader;
   }
-  that._size = function(){
-    let [w,h,_] = $pop_args(3);
+  that.init = function(){
+    let [_] = $pop_args(1);
     cnv = document.getElementById("canvas");
     gl = cnv.getContext('webgl');
-    width = w;
-    height = h;
   }
   
   that.program = function(){
@@ -53,13 +63,13 @@ globalThis.$frag = new function(){
   }
 
   that._init_texture = function(){
-    let [obj] = $pop_args(1);
+    let [obj,w,h] = $pop_args(3);
     
     const fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -73,6 +83,8 @@ globalThis.$frag = new function(){
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);
     fbo._tex = tex;
+    fbo._w = w;
+    fbo._h = h;
 
     fbos.push(fbo);
 
@@ -82,26 +94,64 @@ globalThis.$frag = new function(){
   that._begin = function(){
     let [prgm, fbo] = $pop_args(2);
 
-    const buffer = gl.createBuffer();
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[fbo]);
 
     gl.useProgram(programs[prgm]);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-    const posAttrib = gl.getAttribLocation(programs[prgm], 'a_position');
-    gl.enableVertexAttribArray(posAttrib);
-    gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0);
-
     tex_cnt = 0;
   }
+
+  that.render = function(){
+    let shader = gl.getParameter(gl.CURRENT_PROGRAM);
+    let vbo, vbo_uvs;
+
+    let iden = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+    let nm = new Float32Array([1,0,0, 0,1,0, 0,0,1])
+    gl.uniformMatrix4fv(gl.getUniformLocation(shader,"model"),false,iden)
+    gl.uniformMatrix4fv(gl.getUniformLocation(shader,"view"),false,iden)
+    gl.uniformMatrix4fv(gl.getUniformLocation(shader,"projection"),false,iden)
+    gl.uniformMatrix3fv(gl.getUniformLocation(shader,"normal_matrix"),false,nm)
+
+    let uvs = new Float32Array(8);
+    for (let i = 0; i < 4; i++){
+      uvs[i*2] = (vertices[i*3]+1.0)*0.5;
+      uvs[i*2+1] = (vertices[i*3+1]+1.0)*0.5;
+    }
+    vbo_uvs = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo_uvs);
+    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+
+    let loc_uv = gl.getAttribLocation(shader,'a_uv');
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo_uvs);
+    gl.enableVertexAttribArray(loc_uv);
+    gl.vertexAttribPointer(loc_uv,2,gl.FLOAT,false,0,0);
+
+    let loc_color = gl.getAttribLocation(shader,'a_color');
+    gl.disableVertexAttribArray(loc_color);
+    gl.vertexAttrib4f(loc_color,1,1,1,1);
+    
+    let loc_normal = gl.getAttribLocation(shader,'a_normal');
+    gl.disableVertexAttribArray(loc_normal);
+    gl.vertexAttrib3f(loc_normal,0,0,1);
+    
+    vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+    gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);
+
+    const posAttrib = gl.getAttribLocation(shader, 'a_position');
+    gl.enableVertexAttribArray(posAttrib);
+    gl.vertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    gl.disableVertexAttribArray(posAttrib);
+    gl.bindBuffer(gl.ARRAY_BUFFER,null);
+    gl.deleteBuffer(vbo);
+    gl.deleteBuffer(vbo_uvs);
+  }
+
   that.end = function(){
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
   }
 
   that.uniform = function(){
@@ -138,8 +188,8 @@ globalThis.$frag = new function(){
       gl.TEXTURE_2D,
       0,
       0, 0,
-      width,
-      height,
+      fbos[fbo]._w,
+      fbos[fbo]._h,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
       new Uint8Array(pix)

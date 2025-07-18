@@ -30,3 +30,12 @@ cmdline:
 	cd editor\cmdline
 	pkg package.json
 	copy ..\..\build\dither.exe "%LOCALAPPDATA%\Microsoft\WindowsApps\"
+to_js: ir
+	node src\to_js.js build\ir.dsm -o build\out.js
+run_js: to_js
+	if not exist "%TEMP%\site\examples" mkdir "%TEMP%\site\examples"
+	copy build\out.js "%TEMP%\site"
+	xcopy examples\assets "%TEMP%\site\examples\assets" /E /I /Y 
+	cd "%TEMP%\site"
+	echo ^<body^>^</body^>^<script src="out.js"^>^</script^> > index.html
+	npx http-server

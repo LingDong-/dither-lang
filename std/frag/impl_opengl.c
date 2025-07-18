@@ -169,12 +169,12 @@ void frag_impl_render(){
   GLuint vbo, vbo_uvs;
   glGetIntegerv(GL_CURRENT_PROGRAM, &shader);
   
-  float model[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-  float view[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-  float proj[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-  glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, model);
-  glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, view);
-  glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, proj);
+  float iden[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+  glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, iden);
+  glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, iden);
+  glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, iden);
+  float nm[9] = {1,0,0, 0,1,0, 0,0,1};
+  glUniformMatrix4fv(glGetUniformLocation(shader, "normal_matrix"), 1, GL_FALSE, nm);
 
 
   float uvs[8];
