@@ -13,12 +13,10 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 #pragma comment(lib, "opengl32.lib")
-#pragma comment(lib, "glu32.lib")
 #include "../win/platform/wgl_patcher.h"
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <GL/glu.h>
 //#include <GL/glext.h>
 #endif
 
@@ -70,22 +68,25 @@
 GLint fbo_zero;
 
 typedef struct vao_st {
-  GLuint vao;
   GLuint vbo_vertices;
   GLuint vbo_colors;
   GLuint vbo_uvs;
   GLuint vbo_normals;
   GLuint ebo_indices;
-  int n_indices;
+  int n_vertices;
   int n_colors;
+  int n_uvs;
+  int n_normals;
+  int n_indices;
 } vao_t;
+
 
 ARR_DEF(vao_t);
 vao_t_arr_t vaos;
 
 GLuint shader = 0;
 
-char* vertex_src = "#version 120\n"
+const char* vertex_src = "#version 120\n"
 "attribute vec3 a_position;\n"
 "attribute vec4 a_color;\n"
 "attribute vec2 a_uv;\n"
@@ -104,7 +105,7 @@ char* vertex_src = "#version 120\n"
 "  gl_Position = projection*view*model*vec4(a_position, 1.0);\n"
 "}\n";
 
-char* fragment_src = "#version 120\n"
+const char* fragment_src = "#version 120\n"
 "varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
 "varying vec3 v_normal;\n"
@@ -130,7 +131,7 @@ void checkCompileError(GLuint shader, const char* type) {
   }
 }
 
-int compileShader(char* vertex_src, char* fragment_src){
+int compileShader(const char* vertex_src, const char* fragment_src){
   GLuint shaderProgram;
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertex_src, NULL);
@@ -178,20 +179,24 @@ int g3d_impl__update_mesh(int vao, int flags,
   float* normals, int n_normals
 ){
   vao_t mesh;
+  int need_push = 0;
   if (vao == -1) {
-    glGenVertexArrays(1, &mesh.vao);
-    glBindVertexArray(mesh.vao);
     glGenBuffers(1, &mesh.vbo_vertices);
     glGenBuffers(1, &mesh.vbo_colors);
     glGenBuffers(1, &mesh.vbo_uvs);
+
+    float dummy[8] = {0};
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_uvs);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(float)*8,dummy,GL_STATIC_DRAW);
+
     glGenBuffers(1, &mesh.vbo_normals);
     glGenBuffers(1, &mesh.ebo_indices);
-    vao = vaos.len;
-    ARR_PUSH(vao_t,vaos,mesh);
+    need_push = 1;
   } else {
     mesh = vaos.data[vao];
-    glBindVertexArray(mesh.vao);
   }
+
+
   if ((flags & DIRTY_VERTICES) && vertices && n_vertices > 0) {
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_vertices * 3, vertices, GL_STATIC_DRAW);
@@ -212,10 +217,18 @@ int g3d_impl__update_mesh(int vao, int flags,
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normals);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_normals * 3, normals, GL_STATIC_DRAW);
   }
-  glBindVertexArray(0);
 
+  if (need_push){
+    vao = vaos.len;
+    ARR_PUSH(vao_t,vaos,mesh);
+  }
+  vaos.data[vao].n_vertices = n_vertices;
   vaos.data[vao].n_indices = n_indices;
+  vaos.data[vao].n_normals = n_normals;
+  vaos.data[vao].n_uvs = n_uvs;
   vaos.data[vao].n_colors = n_colors;
+
+
   return vao;
 }
 
@@ -262,6 +275,7 @@ void g3d_impl__look_at(float* out, float* eye, float* center, float* up) {
   out[3*4+0] =-(s[0]*eye[0]+s[1]*eye[1]+s[2]*eye[2]);
   out[3*4+1] =-(u[0]*eye[0]+u[1]*eye[1]+u[2]*eye[2]);
   out[3*4+2] = (f[0]*eye[0]+f[1]*eye[1]+f[2]*eye[2]);
+
 }
 
 void g3d_mat_impl_rotate(float* out, float* axis, float ang){
@@ -299,6 +313,7 @@ void g3d_mat_impl_rotate(float* out, float* axis, float ang){
 }
 
 void compute_normal_mat(float* out, const float* modelMatrix) {
+
   float m[9] = {
     modelMatrix[0], modelMatrix[1], modelMatrix[2],
     modelMatrix[4], modelMatrix[5], modelMatrix[6],
@@ -329,6 +344,7 @@ void compute_normal_mat(float* out, const float* modelMatrix) {
 }
 GLint currentProgram = 0;
 void g3d_impl__camera_begin(float* view, float* proj){
+
   glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
   if (!currentProgram){
     glUseProgram(shader);
@@ -339,6 +355,7 @@ void g3d_impl__camera_begin(float* view, float* proj){
   if (loc_view >= 0) glUniformMatrix4fv(loc_view, 1, GL_FALSE, view);
   GLint loc_proj = glGetUniformLocation(program, "projection");
   if (loc_proj >= 0) glUniformMatrix4fv(loc_proj, 1, GL_FALSE, proj);
+  
 }
 
 void g3d_impl__camera_end(){
@@ -348,42 +365,31 @@ void g3d_impl__camera_end(){
   currentProgram = 0;
 }
 
+
 void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
-  GLint program = 0;
-  glGetIntegerv(GL_CURRENT_PROGRAM, &program);
 
   vao_t mesh = vaos.data[vao];
-  glBindVertexArray(mesh.vao);
-  
+  GLint program = 0;
+  GLuint vbo;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+
+
   GLint loc_model = glGetUniformLocation(program, "model");
   if (loc_model >= 0) glUniformMatrix4fv(loc_model, 1, GL_FALSE, model_matrix);
 
   float nm[9] = {1,0,0, 0,1,0, 0,0,1};
   compute_normal_mat(nm,model_matrix);
-  // printf("%f %f %f\n%f %f %f\n%f %f %f\n\n",nm[0],nm[1],nm[2],nm[3],nm[4],nm[5],nm[6],nm[7],nm[8]);
   GLint loc_nm = glGetUniformLocation(program, "normal_matrix");
   if (loc_nm >= 0) glUniformMatrix3fv(loc_nm, 1, GL_FALSE, nm);
 
-  GLint loc_pos = glGetAttribLocation(program, "a_position");
-  if (loc_pos >= 0) {
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
-    glEnableVertexAttribArray(loc_pos);
-    glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-  }
-  GLint loc_norm = glGetAttribLocation(program, "a_normal");
-  if (loc_norm >= 0 && mesh.vbo_normals) {
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normals);
-    glEnableVertexAttribArray(loc_norm);
-    glVertexAttribPointer(loc_norm, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-  }
+  
   GLint loc_uv = glGetAttribLocation(program, "a_uv");
-  if (loc_uv >= 0 && mesh.vbo_uvs) {
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_uvs);
-    glEnableVertexAttribArray(loc_uv);
-    glVertexAttribPointer(loc_uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-  }
+  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_uvs);
+  glEnableVertexAttribArray(loc_uv);
+  glVertexAttribPointer(loc_uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
   GLint loc_color = glGetAttribLocation(program, "a_color");
-  if (loc_color >= 0 && mesh.vbo_colors) {
+  if (loc_color >= 0) {
     if (mesh.n_colors){
       glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_colors);
       glEnableVertexAttribArray(loc_color);
@@ -393,14 +399,32 @@ void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
       glVertexAttrib4f(loc_color, 1.0f, 1.0f, 1.0f, 1.0f);
     }
   }
-  
+  GLint loc_norm = glGetAttribLocation(program, "a_normal");
+  if (loc_norm >= 0) {
+    if (mesh.n_normals){
+      glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normals);
+      glEnableVertexAttribArray(loc_norm);
+      glVertexAttribPointer(loc_norm, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    }else{
+      glDisableVertexAttribArray(loc_norm);
+      glVertexAttrib3f(loc_norm, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
+  GLuint loc_pos = glGetAttribLocation(shader, "a_position");
+  glEnableVertexAttribArray(loc_pos);
+  glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-  glDrawElements(mode, mesh.n_indices, GL_UNSIGNED_INT, 0);
+
+  glDrawElements(mode,mesh.n_indices,GL_UNSIGNED_INT,(void*)0);
+
   if (loc_pos >= 0)   glDisableVertexAttribArray(loc_pos);
   if (loc_norm >= 0)  glDisableVertexAttribArray(loc_norm);
   if (loc_uv >= 0)    glDisableVertexAttribArray(loc_uv);
   if (loc_color >= 0) glDisableVertexAttribArray(loc_color);
-  glBindVertexArray(0);
 
 
 }

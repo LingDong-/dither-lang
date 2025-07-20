@@ -45,7 +45,7 @@ EXPORTED void g3d__update_mesh(var_t* ret, gstate_t* _g){
   vao = g3d_impl__update_mesh(
     vao,flags,
     p_vertices, vertices->n,
-    indices->data, indices->n,
+    (int32_t*)(indices->data), indices->n,
     p_colors, colors->n,
     p_uvs, uvs->n,
     p_normals, normals->n
@@ -62,7 +62,7 @@ EXPORTED void g3d__draw_mesh(var_t* ret, gstate_t* _g){
   vec_t* transform= ARG_POP(_g,vec);
   int32_t mode= ARG_POP(_g,i32);
   int32_t vao = ARG_POP(_g,i32);
-  g3d_impl__draw_mesh(vao,mode,transform->data);
+  g3d_impl__draw_mesh(vao,mode,(float*)(transform->data));
 }
 
 EXPORTED void g3d_flush(var_t* ret, gstate_t* _g){
@@ -86,7 +86,7 @@ EXPORTED void g3d__look_at(var_t* ret, gstate_t* _g){
   out->n = 16;
   out->type = ret->type;
   out->w = sizeof(float);
-  g3d_impl__look_at(out->data,eye->data,targ->data,up->data);
+  g3d_impl__look_at((float*)(out->data),(float*)(eye->data),(float*)(targ->data),(float*)(up->data));
   ret->u.vec = out;
 }
 
@@ -100,14 +100,14 @@ EXPORTED void g3d__perspective(var_t* ret, gstate_t* _g){
   out->n = 16;
   out->type = ret->type;
   out->w = sizeof(float);
-  g3d_impl__perspective(out->data,fov*M_PI/180.0,aspect,znear,zfar);
+  g3d_impl__perspective((float*)(out->data),fov*M_PI/180.0,aspect,znear,zfar);
   ret->u.vec = out;
 }
 
 EXPORTED void g3d__camera_begin(var_t* ret, gstate_t* _g){
   vec_t* proj = ARG_POP(_g,vec);
   vec_t* view = ARG_POP(_g,vec);
-  g3d_impl__camera_begin(view->data,proj->data);
+  g3d_impl__camera_begin((float*)(view->data),(float*)(proj->data));
 }
 
 EXPORTED void g3d__camera_end(var_t* ret, gstate_t* _g){
@@ -121,7 +121,7 @@ EXPORTED void g3d_mat_rotate_deg(var_t* ret, gstate_t* _g){
   out->n = 16;
   out->type = ret->type;
   out->w = sizeof(float);
-  g3d_mat_impl_rotate(out->data,axis->data,ang*M_PI/180.0);
+  g3d_mat_impl_rotate((float*)(out->data),(float*)(axis->data),ang*M_PI/180.0);
   ret->u.vec = out;
 }
 

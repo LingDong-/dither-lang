@@ -21,11 +21,11 @@ void g3d___update_mesh(){
   // printf("%p %d\n",vertices->data,vertices->w);
   vao = g3d_impl__update_mesh(
     vao,flags,
-    vertices->data, vertices->n,
-    indices->data, indices->n,
-    colors->data, colors->n,
-    uvs->data, uvs->n,
-    normals->data,normals->n
+    (float*)(vertices->data), vertices->n,
+    (int32_t*)(indices->data), indices->n,
+    (float*)(colors->data), colors->n,
+    (float*)(uvs->data), uvs->n,
+    (float*)(normals->data),normals->n
   );
   // printf("----- %d\n",vao);
   __put_ret(&vao);
