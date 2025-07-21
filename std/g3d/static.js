@@ -130,9 +130,9 @@ void main() {
   }
   function compute_normal_mat(modelMatrix) {
     let m = [
-      modelMatrix[0], modelMatrix[1], modelMatrix[2],
-      modelMatrix[4], modelMatrix[5], modelMatrix[6],
-      modelMatrix[8], modelMatrix[9], modelMatrix[10],
+      modelMatrix[0], modelMatrix[4], modelMatrix[8],
+      modelMatrix[1], modelMatrix[5], modelMatrix[9],
+      modelMatrix[2], modelMatrix[6], modelMatrix[10],
     ];
     let a00 = m[0], a01 = m[3], a02 = m[6];
     let a10 = m[1], a11 = m[4], a12 = m[7];
@@ -157,13 +157,24 @@ void main() {
     out[8] = (a11 * a00 - a01 * a10) * invDet;
     return out;
   }
+  function glUniformMatrix4fv(loc,transpose,m){
+    if (transpose) {
+      m = new Float32Array([
+        m[0], m[4], m[8],  m[12],
+        m[1], m[5], m[9],  m[13],
+        m[2], m[6], m[10], m[14],
+        m[3], m[7], m[11], m[15],
+      ]);
+    }
+    return gl.uniformMatrix4fv(loc, false, m);
+  }
   that._draw_mesh = function(){
     let [vao,mode,model_matrix] = $pop_args(3);
     let mesh = vaos[vao];
     let program = gl.getParameter(gl.CURRENT_PROGRAM);
 
     let loc_model = gl.getUniformLocation(program, "model");
-    gl.uniformMatrix4fv(loc_model, false, model_matrix);
+    glUniformMatrix4fv(loc_model, true, model_matrix);
 
     let nm = compute_normal_mat(model_matrix);
     let loc_nm = gl.getUniformLocation(program, "normal_matrix");
@@ -238,20 +249,19 @@ void main() {
     ];
     let out = new Float32Array(16);
     out[0] = out[5] = out[10] = out[15] = 1;
-    out[10] = 1;
-    out[15] = 1;
-    out[0*4+0] = s[0];
-    out[1*4+0] = s[1];
-    out[2*4+0] = s[2];
-    out[0*4+1] = u[0];
-    out[1*4+1] = u[1];
-    out[2*4+1] = u[2];
-    out[0*4+2] =-f[0];
-    out[1*4+2] =-f[1];
-    out[2*4+2] =-f[2];
-    out[3*4+0] =-(s[0]*eye[0]+s[1]*eye[1]+s[2]*eye[2]);
-    out[3*4+1] =-(u[0]*eye[0]+u[1]*eye[1]+u[2]*eye[2]);
-    out[3*4+2] = (f[0]*eye[0]+f[1]*eye[1]+f[2]*eye[2]);
+
+    out[0 ] = s[0];
+    out[1 ] = s[1];
+    out[2 ] = s[2];
+    out[4 ] = u[0];
+    out[5 ] = u[1];
+    out[6 ] = u[2];
+    out[8 ] =-f[0];
+    out[9 ] =-f[1];
+    out[10] =-f[2];
+    out[3 ] =-(s[0]*eye[0]+s[1]*eye[1]+s[2]*eye[2]);
+    out[7 ] =-(u[0]*eye[0]+u[1]*eye[1]+u[2]*eye[2]);
+    out[11] = (f[0]*eye[0]+f[1]*eye[1]+f[2]*eye[2]);
     return out;
   }
   that._perspective = function(){
@@ -262,8 +272,8 @@ void main() {
     out[0]  = 1.0 / (tanHalfFov * aspect);
     out[5]  = 1.0 / tanHalfFov;
     out[10] = - (farZ+nearZ) / (farZ-nearZ);
-    out[11] = - 1.0;
-    out[14] = -(2.0 * farZ * nearZ) / (farZ-nearZ);
+    out[14] = - 1.0;
+    out[11] = -(2.0 * farZ * nearZ) / (farZ-nearZ);
     return out;
   }
   that.background = function(){
@@ -278,11 +288,11 @@ void main() {
       gl.useProgram(shader);
     }
     let program = gl.getParameter(gl.CURRENT_PROGRAM);
-    gl.uniformMatrix4fv(
-      gl.getUniformLocation(program,"view"),false,view
+    glUniformMatrix4fv(
+      gl.getUniformLocation(program,"view"),true,view
     );
-    gl.uniformMatrix4fv(
-      gl.getUniformLocation(program,"projection"),false,proj
+    glUniformMatrix4fv(
+      gl.getUniformLocation(program,"projection"),true,proj
     );
   }
   that._camera_end = function(){
@@ -309,21 +319,21 @@ void main() {
       let c = Math.cos(ang);
       let s = Math.sin(ang);
       let t = 1.0 - c;
-      out[0]  = t*x*x + c;
-      out[1]  = t*x*y + s*z;
-      out[2]  = t*x*z - s*y;
-      out[3]  = 0.0;
-      out[4]  = t*x*y - s*z;
-      out[5]  = t*y*y + c;
-      out[6]  = t*y*z + s*x;
-      out[7]  = 0.0;
-      out[8]  = t*x*z + s*y;
-      out[9]  = t*y*z - s*x;
-      out[10] = t*z*z + c;
-      out[11] = 0.0;
+      out[0 ] = t*x*x + c;
+      out[4 ] = t*x*y + s*z;
+      out[8 ] = t*x*z - s*y;
       out[12] = 0.0;
+      out[1 ] = t*x*y - s*z;
+      out[5 ] = t*y*y + c;
+      out[9 ] = t*y*z + s*x;
       out[13] = 0.0;
+      out[2 ] = t*x*z + s*y;
+      out[6 ] = t*y*z - s*x;
+      out[10] = t*z*z + c;
       out[14] = 0.0;
+      out[3 ] = 0.0;
+      out[7 ] = 0.0;
+      out[11] = 0.0;
       out[15] = 1.0;
       return out;
     }

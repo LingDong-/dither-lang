@@ -238,8 +238,8 @@ void g3d_impl__perspective(float* out, float fov, float aspect, float nearZ, flo
   out[0]  = 1.0f / (tanHalfFov * aspect);
   out[5]  = 1.0f / tanHalfFov;
   out[10] = - (farZ+nearZ) / (farZ-nearZ);
-  out[11] = - 1.0f;
-  out[14] = -(2.0f * farZ * nearZ) / (farZ-nearZ);
+  out[14] = - 1.0f;
+  out[11] = -(2.0f * farZ * nearZ) / (farZ-nearZ);
 }
 
 void g3d_impl__look_at(float* out, float* eye, float* center, float* up) {
@@ -260,20 +260,19 @@ void g3d_impl__look_at(float* out, float* eye, float* center, float* up) {
   };
   memset(out, 0, sizeof(float) * 16);
   out[0] = out[5] = out[10] = out[15] = 1;
-  out[10] = 1;
-  out[15] = 1;
-  out[0*4+0] = s[0];
-  out[1*4+0] = s[1];
-  out[2*4+0] = s[2];
-  out[0*4+1] = u[0];
-  out[1*4+1] = u[1];
-  out[2*4+1] = u[2];
-  out[0*4+2] =-f[0];
-  out[1*4+2] =-f[1];
-  out[2*4+2] =-f[2];
-  out[3*4+0] =-(s[0]*eye[0]+s[1]*eye[1]+s[2]*eye[2]);
-  out[3*4+1] =-(u[0]*eye[0]+u[1]*eye[1]+u[2]*eye[2]);
-  out[3*4+2] = (f[0]*eye[0]+f[1]*eye[1]+f[2]*eye[2]);
+
+  out[0 ] = s[0];
+  out[1 ] = s[1];
+  out[2 ] = s[2];
+  out[4 ] = u[0];
+  out[5 ] = u[1];
+  out[6 ] = u[2];
+  out[8 ] =-f[0];
+  out[9 ] =-f[1];
+  out[10] =-f[2];
+  out[3 ] =-(s[0]*eye[0]+s[1]*eye[1]+s[2]*eye[2]);
+  out[7 ] =-(u[0]*eye[0]+u[1]*eye[1]+u[2]*eye[2]);
+  out[11] = (f[0]*eye[0]+f[1]*eye[1]+f[2]*eye[2]);
 
 }
 
@@ -291,32 +290,30 @@ void g3d_mat_impl_rotate(float* out, float* axis, float ang){
   float c = cosf(ang);
   float s = sinf(ang);
   float t = 1.0f - c;
-  out[0]  = t*x*x + c;
-  out[1]  = t*x*y + s*z;
-  out[2]  = t*x*z - s*y;
-  out[3]  = 0.0f;
-  out[4]  = t*x*y - s*z;
-  out[5]  = t*y*y + c;
-  out[6]  = t*y*z + s*x;
-  out[7]  = 0.0f;
-  out[8]  = t*x*z + s*y;
-  out[9]  = t*y*z - s*x;
-  out[10] = t*z*z + c;
-  out[11] = 0.0f;
+  out[0 ] = t*x*x + c;
+  out[4 ] = t*x*y + s*z;
+  out[8 ] = t*x*z - s*y;
   out[12] = 0.0f;
-  out[13] = 0.0f;
+  out[1 ] = t*x*y - s*z;
+  out[5 ] = t*y*y + c;
+  out[9 ] = t*y*z + s*x;
+  out[13]  = 0.0f;
+  out[2 ] = t*x*z + s*y;
+  out[6 ] = t*y*z - s*x;
+  out[10] = t*z*z + c;
   out[14] = 0.0f;
+  out[3 ] = 0.0f;
+  out[7 ] = 0.0f;
+  out[11] = 0.0f;
   out[15] = 1.0f;
-  // memset(out, 0, sizeof(float) * 16);
-  // out[0] = out[5] = out[10] = out[15] = 1;
 }
 
 void compute_normal_mat(float* out, const float* modelMatrix) {
 
   float m[9] = {
-    modelMatrix[0], modelMatrix[1], modelMatrix[2],
-    modelMatrix[4], modelMatrix[5], modelMatrix[6],
-    modelMatrix[8], modelMatrix[9], modelMatrix[10],
+    modelMatrix[0], modelMatrix[4], modelMatrix[8],
+    modelMatrix[1], modelMatrix[5], modelMatrix[9],
+    modelMatrix[2], modelMatrix[6], modelMatrix[10],
   };
   float a00 = m[0], a01 = m[3], a02 = m[6];
   float a10 = m[1], a11 = m[4], a12 = m[7];
@@ -350,9 +347,9 @@ void g3d_impl__camera_begin(float* view, float* proj){
   GLint program = 0;
   glGetIntegerv(GL_CURRENT_PROGRAM, &program);
   GLint loc_view = glGetUniformLocation(program, "view");
-  if (loc_view >= 0) glUniformMatrix4fv(loc_view, 1, GL_FALSE, view);
+  if (loc_view >= 0) glUniformMatrix4fv(loc_view, 1, GL_TRUE, view);
   GLint loc_proj = glGetUniformLocation(program, "projection");
-  if (loc_proj >= 0) glUniformMatrix4fv(loc_proj, 1, GL_FALSE, proj);
+  if (loc_proj >= 0) glUniformMatrix4fv(loc_proj, 1, GL_TRUE, proj);
   
 }
 
@@ -373,7 +370,7 @@ void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
 
 
   GLint loc_model = glGetUniformLocation(program, "model");
-  if (loc_model >= 0) glUniformMatrix4fv(loc_model, 1, GL_FALSE, model_matrix);
+  if (loc_model >= 0) glUniformMatrix4fv(loc_model, 1, GL_TRUE, model_matrix);
 
   float nm[9] = {1,0,0, 0,1,0, 0,0,1};
   compute_normal_mat(nm,model_matrix);

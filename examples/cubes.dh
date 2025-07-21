@@ -119,9 +119,9 @@ while (1){
   frag.begin(shader0);
   cam.begin();
   mesh.draw(
+    g3d.mat.translate(-2,-2,0) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1) @*
-    g3d.mat.translate(-2,-2,0)
+    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1)
   );
   cam.end();
   frag.end();
@@ -130,9 +130,9 @@ while (1){
   frag.uniform("u_light",{0.1,0.2,0.3});
   cam.begin();
   mesh.draw(
+    g3d.mat.translate(2,-2,0) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame*1) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*2) @*
-    g3d.mat.translate(2,-2,0)
+    g3d.mat.rotate_deg(g3d.AXIS_X,frame*2)
   );
   cam.end();
   frag.end();
@@ -141,18 +141,18 @@ while (1){
   frag.uniform("u_image",image);
   cam.begin();
   mesh.draw(
+    g3d.mat.translate(2,2,0) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_Z,frame*1) @*
-    g3d.mat.translate(2,2,0)
+    g3d.mat.rotate_deg(g3d.AXIS_Z,frame*1)
   );
   cam.end();
   frag.end();
 
   cam.begin();
   wire.draw(
+    g3d.mat.translate(-2,2,0) @*
     g3d.mat.rotate_deg(g3d.AXIS_X,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_Z,frame*1) @*
-    g3d.mat.translate(-2,2,0)
+    g3d.mat.rotate_deg(g3d.AXIS_Z,frame*1)
   );
   cam.end();
 

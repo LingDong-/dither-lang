@@ -15,7 +15,7 @@ namespace g3d{
   namespace mat{
     id := {1.,0.,0.,0.; 0.,1.,0.,0.; 0.,0.,1.,0.; 0.,0.,0.,1.};
     func translate(x:f32,y:f32,z:f32):vec[f32,4,4]{
-      return {1.,0.,0.,0.; 0.,1.,0.,0.; 0.,0.,1.,0.; x,y,z,1.}
+      return {1.,0.,0.,x; 0.,1.,0.,y; 0.,0.,1.,z; 0.,0.,0.,1.}
     }
     func rotate_deg(axis:vec[f32,3],ang:f32):vec[f32,4,4];
     func scale(x:f32,y:f32,z:f32):vec[f32,4,4]{
