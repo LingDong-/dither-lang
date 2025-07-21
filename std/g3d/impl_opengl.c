@@ -234,7 +234,6 @@ int g3d_impl__update_mesh(int vao, int flags,
 
 void g3d_impl__perspective(float* out, float fov, float aspect, float nearZ, float farZ) {
   float tanHalfFov = tanf(fov / 2.0f);
-  float zRange = nearZ - farZ;
   memset(out, 0, sizeof(float) * 16);
   out[0]  = 1.0f / (tanHalfFov * aspect);
   out[5]  = 1.0f / tanHalfFov;
@@ -319,7 +318,6 @@ void compute_normal_mat(float* out, const float* modelMatrix) {
     modelMatrix[4], modelMatrix[5], modelMatrix[6],
     modelMatrix[8], modelMatrix[9], modelMatrix[10],
   };
-  float inv[9];
   float a00 = m[0], a01 = m[3], a02 = m[6];
   float a10 = m[1], a11 = m[4], a12 = m[7];
   float a20 = m[2], a21 = m[5], a22 = m[8];
@@ -370,7 +368,7 @@ void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
 
   vao_t mesh = vaos.data[vao];
   GLint program = 0;
-  GLuint vbo;
+
   glGetIntegerv(GL_CURRENT_PROGRAM, &program);
 
 
@@ -412,7 +410,7 @@ void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
-  GLuint loc_pos = glGetAttribLocation(shader, "a_position");
+  GLuint loc_pos = glGetAttribLocation(program, "a_position");
   glEnableVertexAttribArray(loc_pos);
   glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE, 0, 0);
 

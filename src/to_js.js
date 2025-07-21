@@ -280,7 +280,9 @@ var TO_JS = function(cfg){
 
     let o = [];
     let lookup = {};
-
+    function vec_type_flat_n(tb){
+      return eval(tb.elt.slice(1).join('*'))
+    }
     function cast(a,b,ins){
       let ta = lookup[a];
       let tb = lookup[b];
@@ -293,7 +295,7 @@ var TO_JS = function(cfg){
       }else if ($numtyps.includes(ta) && typeof b == 'number'){
         o.push(`${get_ptr(a)} = new $typed_cons.${ta}([${get_ptr(b)}])[0]`);
       }else if (ta.con == 'vec' && ($numtyps.includes(tb) || typeof b == 'number')){
-        for (let i = 0; i < ta.elt[1]; i++){
+        for (let i = 0; i < vec_type_flat_n(ta); i++){
           o.push(`${a}[${i}] = ${get_ptr(b)}`);
         }
       }else if (ta.con == 'union'){
@@ -312,7 +314,7 @@ var TO_JS = function(cfg){
       }else if (tb.con == 'union'){
         o.push(`${a} = $value(${b}.__val);`);
       }else if (ta.con == 'vec' && tb.con == 'vec'){
-        for (let i = 0; i < ta.elt[1]; i++){
+        for (let i = 0; i < vec_type_flat_n(ta); i++){
           o.push(`${a}[${i}] = ${b}[${i}]`);
         }
       }else{
@@ -327,7 +329,7 @@ var TO_JS = function(cfg){
       }[op];
       let typ = lookup[a];
       if (typ.con == 'vec'){
-        for (let i = 0; i < Number(typ.elt[1]); i++){
+        for (let i = 0; i < vec_type_flat_n(typ); i++){
           o.push(`${a}[${i}]=${b}[${i}]${os}${c}[${i}];`);
         }
       }else{
@@ -398,7 +400,7 @@ var TO_JS = function(cfg){
 
     function type_zero(typ,nowrap){
       if (typ.con == 'vec'){
-        return `Object.assign(new $typed_cons.${typ.elt[0]}(${typ.elt[1]}),{__type:${JSON.stringify(typ)}})`
+        return `Object.assign(new $typed_cons.${typ.elt[0]}(${typ.elt.slice(1).join('*')}),{__type:${JSON.stringify(typ)}})`
       }else if (typ.con == 'tup'){
         return `Object.assign([${typ.elt.map(x=>type_zero(x)).join(',')}],{__type:${JSON.stringify(typ)}})`
       }else if (typ == 'str'){
@@ -584,8 +586,33 @@ var TO_JS = function(cfg){
         o.push(`${get_ptr(clean(ins[1]))} = ${get_ptr(clean(ins[2]))} >> ${get_ptr(clean(ins[3]))};`);
       }else if (['leq','geq','lt','gt','neq','eq'].includes(ins[0])){
         compare(ins[0], clean(ins[1]), clean(ins[2]), clean(ins[3]));
-      }else if (ins[0] == 'lt'){
-        o.push(`${clean(ins[1])} = ${clean(ins[2])} < ${clean(ins[3])};`);
+      }else if (ins[0] == 'matmul'){
+        let c = clean(ins[1]);
+        let a = clean(ins[2]);
+        let b = clean(ins[3]);
+        let ta = lookup[a];
+        let tb = lookup[b];
+        let nr0 = ta.elt[1];
+        let nc0 = 1;
+        let nr1 = tb.elt[1];
+        let nc1 = 1;
+        if (ta.elt.length == 3){
+          nc0 = ta.elt[2];
+        }
+        if (tb.elt.length == 3){
+          nc1 = tb.elt[2];
+        }
+        let nr = nr0;
+        let nc = nc1;
+        for (let i = 0; i < nr; i++){
+          for (let j = 0; j < nc; j++){
+            let s = "0";
+            for (let k = 0; k < nc0; k++){
+              s += `+${a}[${i*nc0+k}]*${b}[${k*nc1+j}]`;
+            }
+            o.push(`${c}[${i*nc1+j}]=${s};`);
+          }
+        }
       }else if (ins[0] == 'cast'){
         cast(clean(ins[1]),clean(ins[2]),ins);
       }else if (ins[0] == 'ccall'){
