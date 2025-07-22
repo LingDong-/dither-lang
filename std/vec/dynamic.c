@@ -15,7 +15,7 @@
 #define QUOTE(x) #x
 
 
-EXPORTED void c_v_mag(var_t* ret,  gstate_t* _g){
+EXPORTED void vec_mag(var_t* ret,  gstate_t* _g){
   vec_t* vec = ARG_POP(_g,vec);
 
   float s = 0;
@@ -28,7 +28,7 @@ EXPORTED void c_v_mag(var_t* ret,  gstate_t* _g){
   ret->u.f32 = s;
 }
 
-EXPORTED void c_v_dir(var_t* ret,  gstate_t* _g){
+EXPORTED void vec_dir(var_t* ret,  gstate_t* _g){
   vec_t* vec = ARG_POP(_g,vec);
   vec_t* uec = vec_copy_(_g,vec);
 
@@ -46,13 +46,25 @@ EXPORTED void c_v_dir(var_t* ret,  gstate_t* _g){
   ret->u.vec = uec;
 }
 
+EXPORTED void vec_dot(var_t* ret,  gstate_t* _g){
+  vec_t* vec = ARG_POP(_g,vec);
+  vec_t* uec = ARG_POP(_g,vec);
 
-#define QK_REG(name) register_cfunc(&(_g->cfuncs), "vec." QUOTE(name), c_v_ ## name);
+  float s = 0;
+  for (int i = 0; i < vec->n; i++){
+    s+= ((float*)(vec->data))[i]*((float*)(uec->data))[i];
+  }
+  ret->u.f32 = s;
+}
+
+
+#define QK_REG(name) register_cfunc(&(_g->cfuncs), "vec." QUOTE(name), vec_ ## name);
 
 
 EXPORTED void lib_init_vec(gstate_t* _g){
   QK_REG(mag)
   QK_REG(dir)
+  QK_REG(dot)
 }
 
 

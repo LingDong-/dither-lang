@@ -23,4 +23,12 @@ globalThis.$vec = new function(){
     }
     return u;
   }
+  that.dot = function(){
+    let [u,v] = $pop_args(2);
+    let s = 0;
+    for (let i = 0; i < v.length; i++){
+      s += u[i]*v[i];
+    }
+    return s;
+  }
 }

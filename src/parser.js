@@ -17,7 +17,7 @@ var PARSER = function(sys,extensions={}){
     "+=","-=","*=",'/=',"!=","==",">=","<=","&=","^=","|=","%=","++","--",
     "<?=",">?=",
     "&&","||","**","@*",">>","<<",
-    "+","-","*","/","?",":","<",">",",",".","~","=","&","|","%","!","^",
+    "+","-","*","/","?",":","<",">",",",".","~","=","&","|","%","!","^","@",
     "{","}","[","]","(",")",";","\n"
   ];
   let biord = [
@@ -366,12 +366,13 @@ var PARSER = function(sys,extensions={}){
       
       let out0 = [];
 
-      function ggroup(k){
-        // console.log(k,tmp)
+      function ggroup(k,force_expr){
         let lvl = 0;
         let val = [];
         while (i < tmp.length){
-          val.push(tmp[i]);
+          if (k != '{}' || !force_expr || !tokis(tmp[i],'sigil:\n')){
+            val.push(tmp[i]);
+          } 
 
           if (tokis(tmp[i],'sigil:'+k[0])){
             lvl++;
@@ -379,7 +380,7 @@ var PARSER = function(sys,extensions={}){
             lvl--;
             
             if (lvl == 0){            
-              if (k == '{}'){
+              if (k == '{}' && !force_expr){
                 // console.log('~',val);
                 let v = parse(val.slice(1,-1));
                 // console.dir(v,{depth:10000});
@@ -401,10 +402,17 @@ var PARSER = function(sys,extensions={}){
         if (tokis(tmp[i],"sigil:(")){
           
           let g = ggroup('()');
-          let prv = -1; while (tokis(out0.at(prv),'sigil:\n')){i--}
-          if (out0.at(prv) && gtok(out0.at(prv)).tag != 'sigil' && gtok(out0.at(prv)).tag != 'keywr'){
+          let prv = -1; while (tokis(out0.at(prv),'sigil:\n')){prv--}
+          if (out0.at(prv) && gtok(out0.at(prv)).tag != 'sigil' && gtok(out0.at(prv)).tag != 'keywr' ){
             
-            out0.push({key:'call',lhs:out0.pop(),rhs:g.val});
+            let pprv = prv-1; while (tokis(out0.at(prv),'sigil:\n')){pprv--}
+            if (tokis(out0.at(pprv),'sigil:@')){
+              g.val.hnt = out0.pop();
+              out0.pop();
+              out0.push(g.val);
+            }else{
+              out0.push({key:'call',lhs:out0.pop(),rhs:g.val});
+            }
           }else{
             
             out0.push(g);
@@ -419,31 +427,35 @@ var PARSER = function(sys,extensions={}){
           }
         }else if (tokis(tmp[i],"sigil:{")){
 
-          let g = ggroup('{}');
+          
                   
           let prv = -1; while (tokis(out0.at(prv),'sigil:\n')){prv--}
           let pprv = prv-1; while (tokis(out0.at(pprv),'sigil:\n')){pprv--};
           let ppprv = pprv-1; while (tokis(out0.at(ppprv),'sigil:\n')){ppprv--};
           let pppprv = ppprv-1; while (tokis(out0.at(pppprv),'sigil:\n')){pppprv--};
           // console.log(',',out0.at(prv), g.val);
-          if ( /*g.val.length <= 1 && */
-            out0.at(prv) && (gtok(out0.at(prv)).tag == 'ident' || gtok(out0.at(prv)).key == 'subs' || gtok(out0.at(prv)).key == 'a.b') &&
+          if (out0.at(prv) && (gtok(out0.at(prv)).tag == 'ident' || gtok(out0.at(prv)).key == 'subs' || gtok(out0.at(prv)).key == 'a.b') &&
             
             (!out0.at(pprv) || ( 
               (!tokis(out0.at(pprv),'sigil::') || tokis(out0.at(pppprv),'sigil:,') || out0.at(pppprv)===undefined  )
               && !tokis(out0.at(pprv),'sigil:]')  ))
           ){
             if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='vec' || gtok(out0.at(prv)).lhs.val=='arr')){
-              
+              let g = ggroup('{}');
               out0.push({key:gtok(out0.at(prv)).lhs.val[0]+'lit',ano:out0.pop(),val:g.val});
-            }else if (g.val.length <= 1){
-              
-              out0.push({key:'olit',lhs:out0.pop(),rhs:g.val[0]});
+            }else if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='list')){
+              let g = ggroup('{}',true);
+              out0.push({key:'olit',lhs:out0.pop(),rhs:(g.val.key=='noop'?undefined:g.val)});
             }else{
-              out0.push(g);
+              let g = ggroup('{}');
+              if (g.val.length <= 1){
+                out0.push({key:'olit',lhs:out0.pop(),rhs:g.val[0]});
+              }else{
+                out0.push(g);
+              }
             }
           }else{
-            
+            let g = ggroup('{}');
             out0.push(g);
             // console.dir(out0,{depth:10000});
           }
@@ -518,7 +530,26 @@ var PARSER = function(sys,extensions={}){
 
       let out2 = dounary(out1,['sigil:++','sigil:--','sigil:+','sigil:-','sigil:~','sigil:!','sigil:...'],false);
 
-    
+            function dohint(out0){
+        let out1 = [];
+        let i = 0;
+        while (i < out0.length){
+          if (tokis(out0[i],"sigil:@")){
+            if ((out0[i-1] == undefined || out0[i-1].tag == 'sigil')){
+              let lhs = out0[++i];
+              let rhs = out0[++i];
+              rhs.hnt = lhs;
+              out1.push(rhs)
+            }
+          }else{
+            out1.push(out0[i])
+          }
+          i++;
+        }
+        return out1;
+      }
+
+      out2 = dohint(out2,["sigil:@"]);
 
       function dobinary(out0,ks,dir=1){
         let out1 = [];
@@ -1135,6 +1166,7 @@ var PARSER = function(sys,extensions={}){
         }
       }
     }
+    if (cst.hnt) ast.hnt = cst.hnt;
     return ast;
   }
 

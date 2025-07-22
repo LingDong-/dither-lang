@@ -16,20 +16,26 @@ context := win.init(W,H,win.CONTEXT_3D);
 g3d.init(context);
 frag.init(context);
 
-func normal_material(v_normal:vec[f32,3]):vec[f32,4]{
-  c := v_normal*0.5+0.5;
+func normal_material(@varying normal:vec[f32,3]):vec[f32,4]{
+  c := normal*0.5+0.5;
   return {c.x,c.y,c.z,1.0};
 }
-func lambert_material(v_normal:vec[f32,3],u_light:vec[f32,3]):vec[f32,4]{
-  l := u_light.dir();
-  c := v_normal.x*l.x + 
-       v_normal.y*l.y +
-       v_normal.z*l.z ;
+func lambert_material(
+  @varying normal:vec[f32,3],
+  @uniform light:vec[f32,3]
+):vec[f32,4]{
+
+  l := light.dir();
+  c := normal.dot(l);
   c = math.max(c,0.0)*0.75 + 0.25;
   return {c,c,c,1.0};
 }
-func textured_material(v_uv:vec[f32,2],u_image:frag.Texture):vec[f32,4]{
-  c := u_image.sample(v_uv);
+func textured_material(
+  @varying uv:vec[f32,2],
+  @uniform image:frag.Texture
+):vec[f32,4]{
+
+  c := image.sample(uv);
   return {c.x,c.y,c.z,1.0};
 }
 
@@ -38,18 +44,12 @@ shader1 := frag.program(embed lambert_material as "fragment");
 shader2 := frag.program(embed textured_material as "fragment");
 
 cube_vertices:=list[vec[f32,3]]{
-  vec[f32,3]{ 1.,-1.,-1.}, vec[f32,3]{ 1., 1.,-1.}, 
-  vec[f32,3]{ 1., 1., 1.}, vec[f32,3]{ 1.,-1., 1.}, 
-  vec[f32,3]{-1.,-1., 1.}, vec[f32,3]{-1., 1., 1.}, 
-  vec[f32,3]{-1., 1.,-1.}, vec[f32,3]{-1.,-1.,-1.}, 
-  vec[f32,3]{-1., 1.,-1.}, vec[f32,3]{-1., 1., 1.}, 
-  vec[f32,3]{ 1., 1., 1.}, vec[f32,3]{ 1., 1.,-1.}, 
-  vec[f32,3]{-1.,-1., 1.}, vec[f32,3]{-1.,-1.,-1.}, 
-  vec[f32,3]{ 1.,-1.,-1.}, vec[f32,3]{ 1.,-1., 1.}, 
-  vec[f32,3]{ 1.,-1., 1.}, vec[f32,3]{ 1., 1., 1.}, 
-  vec[f32,3]{-1., 1., 1.}, vec[f32,3]{-1.,-1., 1.}, 
-  vec[f32,3]{-1.,-1.,-1.}, vec[f32,3]{-1., 1.,-1.}, 
-  vec[f32,3]{ 1., 1.,-1.}, vec[f32,3]{ 1.,-1.,-1.}
+  { 1.,-1.,-1.}, { 1., 1.,-1.}, { 1., 1., 1.}, { 1.,-1., 1.}, 
+  {-1.,-1., 1.}, {-1., 1., 1.}, {-1., 1.,-1.}, {-1.,-1.,-1.}, 
+  {-1., 1.,-1.}, {-1., 1., 1.}, { 1., 1., 1.}, { 1., 1.,-1.}, 
+  {-1.,-1., 1.}, {-1.,-1.,-1.}, { 1.,-1.,-1.}, { 1.,-1., 1.}, 
+  { 1.,-1., 1.}, { 1., 1., 1.}, {-1., 1., 1.}, {-1.,-1., 1.}, 
+  {-1.,-1.,-1.}, {-1., 1.,-1.}, { 1., 1.,-1.}, { 1.,-1.,-1.}
 };
 
 mesh := g3d.Mesh{
@@ -64,28 +64,18 @@ mesh := g3d.Mesh{
     20, 21, 22, 20, 22, 23 
   },
   normals:list[vec[f32,3]]{
-    vec[f32,3]{ 1., 0.,0.}, vec[f32,3]{ 1., 0.,0.},
-    vec[f32,3]{ 1., 0.,0.}, vec[f32,3]{ 1., 0.,0.},
-    vec[f32,3]{-1., 0.,0.}, vec[f32,3]{-1., 0.,0.},
-    vec[f32,3]{-1., 0.,0.}, vec[f32,3]{-1., 0.,0.},
-    vec[f32,3]{ 0., 1.,0.}, vec[f32,3]{ 0., 1.,0.},
-    vec[f32,3]{ 0., 1.,0.}, vec[f32,3]{ 0., 1.,0.},
-    vec[f32,3]{ 0.,-1.,0.}, vec[f32,3]{ 0.,-1.,0.},
-    vec[f32,3]{ 0.,-1.,0.}, vec[f32,3]{ 0.,-1.,0.},
-    vec[f32,3]{ 0.,0., 1.}, vec[f32,3]{ 0.,0., 1.},
-    vec[f32,3]{ 0.,0., 1.}, vec[f32,3]{ 0.,0., 1.},
-    vec[f32,3]{ 0.,0.,-1.}, vec[f32,3]{ 0.,0.,-1.},
-    vec[f32,3]{ 0.,0.,-1.}, vec[f32,3]{ 0.,0.,-1.},
+    { 1., 0.,0.}, { 1., 0.,0.}, { 1., 0.,0.}, { 1., 0.,0.},
+    {-1., 0.,0.}, {-1., 0.,0.}, {-1., 0.,0.}, {-1., 0.,0.},
+    { 0., 1.,0.}, { 0., 1.,0.}, { 0., 1.,0.}, { 0., 1.,0.},
+    { 0.,-1.,0.}, { 0.,-1.,0.}, { 0.,-1.,0.}, { 0.,-1.,0.},
+    { 0.,0., 1.}, { 0.,0., 1.}, { 0.,0., 1.}, { 0.,0., 1.},
+    { 0.,0.,-1.}, { 0.,0.,-1.}, { 0.,0.,-1.}, { 0.,0.,-1.},
   },
   uvs:list[vec[f32,2]]{
-    vec[f32,2]{0., 0.}, vec[f32,2]{0., 1.}, vec[f32,2]{1., 1.},
-    vec[f32,2]{1., 0.}, vec[f32,2]{0., 0.}, vec[f32,2]{0., 1.},
-    vec[f32,2]{1., 1.}, vec[f32,2]{1., 0.}, vec[f32,2]{0., 0.},
-    vec[f32,2]{0., 1.}, vec[f32,2]{1., 1.}, vec[f32,2]{1., 0.},
-    vec[f32,2]{0., 0.}, vec[f32,2]{0., 1.}, vec[f32,2]{1., 1.},
-    vec[f32,2]{1., 0.}, vec[f32,2]{0., 0.}, vec[f32,2]{0., 1.},
-    vec[f32,2]{1., 1.}, vec[f32,2]{1., 0.}, vec[f32,2]{0., 0.},
-    vec[f32,2]{0., 1.}, vec[f32,2]{1., 1.}, vec[f32,2]{1., 0.}
+    {0., 0.}, {0., 1.}, {1., 1.}, {1., 0.}, {0., 0.}, {0., 1.},
+    {1., 1.}, {1., 0.}, {0., 0.}, {0., 1.}, {1., 1.}, {1., 0.},
+    {0., 0.}, {0., 1.}, {1., 1.}, {1., 0.}, {0., 0.}, {0., 1.},
+    {1., 1.}, {1., 0.}, {0., 0.}, {0., 1.}, {1., 1.}, {1., 0.}
   }
 }
 
@@ -127,7 +117,7 @@ while (1){
   frag.end();
 
   frag.begin(shader1);
-  frag.uniform("u_light",{0.1,0.2,0.3});
+  frag.uniform("light",{0.1,0.2,0.3});
   cam.begin();
   mesh.draw(
     g3d.mat.translate(2,-2,0) @*
@@ -138,7 +128,7 @@ while (1){
   frag.end();
 
   frag.begin(shader2);
-  frag.uniform("u_image",image);
+  frag.uniform("image",image);
   cam.begin();
   mesh.draw(
     g3d.mat.translate(2,2,0) @*

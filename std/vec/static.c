@@ -37,3 +37,17 @@ void vec__dir(){
   }
   __put_ret(u);
 }
+
+void vec__dot(){
+  int n = __peek_arg_size()/sizeof(float);
+  __vla(float,v,n);
+  __vla(float,u,n);
+  __pop_arg(v, n*sizeof(float));
+  __pop_arg(u, n*sizeof(float));
+
+  float s = 0;
+  for (int i = 0; i < n; i++){
+    s += u[i]*v[i];
+  }
+  __put_ret(&s);
+}

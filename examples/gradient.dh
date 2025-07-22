@@ -11,8 +11,8 @@ image : frag.Texture; // == sampler2D in GLSL, fbo in OpenGL
 frag.init(win.init(...resolution,win.CONTEXT_3D));
 // define a function for the entry point of first shader,
 // just like writing a normal function in dither.
-func pass0(v_uv:vec[f32,2]):vec[f32,4]{
-  return {v_uv.x,v_uv.y,0.5,1.0};
+func pass0(@varying uv:vec[f32,2]):vec[f32,4]{
+  return {uv.x,uv.y,0.5,1.0};
 }
 // required helper functions are crawled and included in glsl
 // compilation automatically
@@ -21,9 +21,13 @@ func offset(p:vec[f32,2]):vec[f32,2]{
 }
 // dither function for second shader, which uses the helper function
 // xyz.sample(...) is compiled to texture2D(xyz,...)
-func pass1(u_image:frag.Texture,v_uv:vec[f32,2],u_t:f32):vec[f32,4]{
-  color := u_image.sample(v_uv+offset(v_uv+{u_t,0.0}));
-  return {color.r, color.g, math.sin(u_t)*0.2+0.5, 1.0};
+func pass1(
+  @uniform image:frag.Texture,
+  @varying uv:vec[f32,2],
+  @uniform t:f32
+):vec[f32,4]{
+  color := image.sample(uv+offset(uv+{t,0.0}));
+  return {color.r, color.g, math.sin(t)*0.2+0.5, 1.0};
 }
 // you can call these shader functions in CPU too!
 // great for sanity checks...
@@ -44,8 +48,8 @@ while (1){
   frag.end();
   
   frag.begin(shader1); // rendering shader1 onto main screen
-  frag.uniform("u_t", t+=0.0005); 
-  frag.uniform("u_image", image); // put in the output of the first pass
+  frag.uniform("t", t+=0.0005); 
+  frag.uniform("image", image); // put in the output of the first pass
   frag.render();
   frag.end();
   

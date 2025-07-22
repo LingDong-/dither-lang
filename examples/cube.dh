@@ -11,10 +11,10 @@ g3d.init(context);
 
 mesh := g3d.Mesh{
   vertices:list[vec[f32,3]]{
-    vec[f32,3]{-1.,-1.,-1.}, vec[f32,3]{ 1.,-1.,-1.},
-    vec[f32,3]{ 1., 1.,-1.}, vec[f32,3]{-1., 1.,-1.},
-    vec[f32,3]{-1.,-1., 1.}, vec[f32,3]{ 1.,-1., 1.},
-    vec[f32,3]{ 1., 1., 1.}, vec[f32,3]{-1., 1., 1.}
+    {-1.,-1.,-1.}, { 1.,-1.,-1.},
+    { 1., 1.,-1.}, {-1., 1.,-1.},
+    {-1.,-1., 1.}, { 1.,-1., 1.},
+    { 1., 1., 1.}, {-1., 1., 1.}
   },
   indices:list[i32]{
     0,1,2, 2,3,0,  4,5,6, 6,7,4,
@@ -38,8 +38,8 @@ while (1){
 
   cam.begin();
   mesh.draw(
-    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1)
+    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1) @*
+    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) 
   );
   cam.end();
 

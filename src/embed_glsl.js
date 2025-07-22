@@ -48,6 +48,8 @@ function embed_glsl_frag(ast,scopes){
             o += `length(${ast.arg.map(docompile).join(',')})`
           }else if (nom == 'dir'){
             o += `normalize(${ast.arg.map(docompile).join(',')})`
+          }else if (nom == 'dot'){
+            o += `dot(${ast.arg.map(docompile).join(',')})`
           }
         }
         
@@ -164,29 +166,30 @@ function embed_glsl_frag(ast,scopes){
 
   // console.dir(ast,{depth:10000});
   // console.dir(scopes,{depth:10000});
-
-  let vargs = ast.ipl.arg.map(x=>[x.lhs.val,x.rhs.typ]);
+  let vargs = ast.ipl.arg.map(x=>({val:x.lhs.val,typ:x.rhs.typ,hnt:x.lhs.hnt.val}));
   for (let i = 0; i < vargs.length; i++){
-    if (vargs[i][0].startsWith('v_')){
-      out.push(`varying ${printtype(vargs[i][1])} ${vargs[i][0]};`);
-    }else if (vargs[i][0].startsWith('u_')){
-      out.push(`uniform ${printtype(vargs[i][1])} ${vargs[i][0]};`);
+    if (vargs[i].hnt == 'varying' || vargs[i].hnt == 'v'){
+      out.push(`varying ${printtype(vargs[i].typ)} v_${vargs[i].val};`);
+    }else if (vargs[i].hnt == 'uniform' || vargs[i].hnt == 'u'){
+      out.push(`uniform ${printtype(vargs[i].typ)} ${vargs[i].val};`);
     }
   }
   function maybe_builtin(x){
-    if (x.startsWith('g_')){
+    if (x.hnt=='builtin'){
       return {
-        'g_frag_coord':'gl_FragCoord',
-        'g_front_facing':'gl_FrontFacing',
-        'g_point_coord':'gl_PointCoord',
-      }[x];
+        'frag_coord':'gl_FragCoord',
+        'front_facing':'gl_FrontFacing',
+        'point_coord':'gl_PointCoord',
+      }[x.val];
+    }else if (x.hnt=='varying' || x.hnt=='v'){
+      return 'v_'+x.val;
     }
-    return x;
+    return x.val;
   }
   compilefunc(ast);
 
   out.push(`void main(){`);
-  out.push(`gl_FragColor = ${ast.ipl.nom.val}(${[vargs.map(x=>maybe_builtin(x[0]))].join(',')});`);
+  out.push(`gl_FragColor = ${ast.ipl.nom.val}(${[vargs.map(x=>maybe_builtin(x))].join(',')});`);
   out.push(`}`);
   let ret = "#version 120\n"+out.join('\n');
   console.log(ret);

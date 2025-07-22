@@ -54,6 +54,7 @@ EXPORTED void** window_init(int w, int h, int flags){
   static int visual_attribs[] = {
     GLX_RGBA, GLX_DOUBLEBUFFER,
     GLX_ALPHA_SIZE, 8,
+    GLX_DEPTH_SIZE, 24,
     // GLX_SAMPLE_BUFFERS, 1,
     // GLX_SAMPLES, 4,
     None
