@@ -34,8 +34,7 @@ void g3d___update_mesh(){
 void g3d___draw_mesh(){
   float transform[16];
   __pop_arg(transform, 64);
-  // printf("%f %f %f\n",transform[0],transform[1],transform[2]);
-  
+
   int32_t __ARG(mode);
   int32_t __ARG(vao);
   // printf("%d %d\n",vao,mode);

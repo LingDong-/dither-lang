@@ -2527,6 +2527,7 @@ var PARSER = function(sys,extensions={}){
               // console.log(arg2[1])
               ;[r,t,f] = matchftmpl([e],arg2[1].val,{},[]);
             }
+            nonlethal = 0;
             // console.dir(t,{depth:Infinity});
             ast.fun.rty = {
               con:'func', elt:[ {con:'tup', elt:[
@@ -2619,8 +2620,11 @@ var PARSER = function(sys,extensions={}){
           if (typeof ast.con.typ == 'string' && ast.con.typ.startsWith('__func_ovld_')){
             Object.assign(ast,ast.con,{pte:ast.idx.map(abstype).map(x=>shrinktype(x))})
           }else{
-            ast.idx.map(doinfer);
-            
+            if (ast.idx.map){
+              ast.idx.map(doinfer);
+            }else{ // shit, hack!
+              ast.idx = [ast.idx]
+            }
             
             if (ast.con.typ.con != 'dict'){
               for (let i = 0; i < ast.idx.length; i++){

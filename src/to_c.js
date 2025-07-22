@@ -1094,7 +1094,7 @@ var TO_C = function(cfg){
       }else if (typ.con == 'dict'){
         return [`__dict_t*`,1];
       }else if (typ.con == 'vec'){
-        return typ.elt;
+        return [typ.elt[0],vec_type_flat_n(typ)];
       }else if (typ.con == 'func'){
         return [`__func_t*`,1];
       }else if (typ.con == 'tup'){
