@@ -2,4 +2,7 @@ namespace vec {
   func mag[N](v:vec[f32,N]) : f32;
   func dir[N](v:vec[f32,N]) : vec[f32,N];
   func dot[N](v:vec[f32,N],u:vec[f32,N]) : f32;
+  func cross(v:vec[f32,3],u:vec[f32,3]):vec[f32,3]{
+    return {v[1]*u[2]-v[2]*u[1], v[2]*u[0]-v[0]*u[2], v[0]*u[1]-v[1]*u[0]};
+  }
 }
