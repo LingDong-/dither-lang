@@ -26,12 +26,19 @@ function embed_glsl_frag(ast,scopes){
       }
     }else if (ast.key == 'bloc'){
       for (let i = 0; i < ast.val.length; i++){
-        o+=docompile(ast.val[i])
+        let r = docompile(ast.val[i]);
+        if (r.length) o += r+';';
       }
     }else if (ast.key == 'retn'){
       out.push(`return ${docompile(ast.val)};`);
     }else if (['+','-','*','/','==','||','&&','>','<','>=','<='].includes(ast.key)){
       o += `${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)}`
+    }else if (['u++','u--'].includes(ast.key)){
+      o += `${docompile(ast.val)}${ast.key.slice(1)}`
+    }else if (['+u','-u','++u','--u'].includes(ast.key)){
+      o += `${ast.key.slice(0,-1)}${docompile(ast.val)}`
+    }else if (ast.key == '%'){
+      o += `mod(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
     }else if (ast.key == 'swiz'){
       o += `${docompile(ast.lhs)}.${ast.rhs.val}`;
     }else if (ast.key == 'call'){
@@ -73,7 +80,8 @@ function embed_glsl_frag(ast,scopes){
         out.push(`${printtype(typ)} ${ast.nom.val};`);
       }
     }else if (ast.key == '='){
-      out.push(`${docompile(ast.lhs)} = ${docompile(ast.rhs)};`);
+      // o += `(${docompile(ast.lhs)} = ${docompile(ast.rhs)})`;
+      out.push(`${docompile(ast.lhs)} = ${docompile(ast.rhs)};`)
     }else if (ast.key == 'cond'){
       out.push(`if (${docompile(ast.chk)}){`);
       out.push(docompile(ast.lhs));
@@ -82,6 +90,13 @@ function embed_glsl_frag(ast,scopes){
         out.push(docompile(ast.rhs));
       }
       out.push('}')
+    }else if (ast.key == 'loop' && ast.chk && ast.ini && ast.stp && !ast.ck2){
+
+      out.push(`for (`);
+      docompile(ast.ini)
+      out.push(`${docompile(ast.chk)}; ${docompile(ast.stp)}){`)
+      out.push(docompile(ast.bdy));
+      out.push(`}`);
     }else{
       console.log(ast)
     }
