@@ -27,6 +27,30 @@ func lambert_material(
   return {base.x*g,base.y*g,base.z*g,1.0};
 }
 
+func blinn_material(
+  @varying normal:vec[f32,3], 
+  @varying position:vec[f32,3],
+  @uniform l:vec[f32,3], 
+  @uniform eye:vec[f32,3],
+  @uniform base:vec[f32,3],
+  @uniform spec:vec[f32,3],
+  @uniform shininess:f32,
+):vec[f32,4]{
+  
+  view_dir := eye - position;
+  half_vec := (l + view_dir).dir();
+
+  ndl := math.max(normal.dot(l),0.0);
+  ndh := math.max(normal.dot(half_vec),0.0);
+
+  df := base * (ndl*0.9+0.1);
+  hl := spec * (ndh ** shininess);
+
+  c := df + hl;
+  return {c.x,c.y,c.z,1.0};
+}
+
+
 func normal_material(@varying normal:vec[f32,3]):vec[f32,4]{
   c := normal*0.5+0.5;
   return {c.x,c.y,c.z,1.0};
@@ -70,7 +94,7 @@ func textured_material(@varying uv:vec[f32,2], @uniform image:frag.Texture):vec[
   return {c.x,c.y,c.z,1.0};
 }
 
-shader0 := frag.program(embed lambert_material as "fragment");
+shader0 := frag.program(embed blinn_material as "fragment");
 shader1 := frag.program(embed shadow_material as "fragment");
 shader2 := frag.program(embed textured_material as "fragment");
 
@@ -279,42 +303,50 @@ plane := g3d.Mesh{
 }
 
 func draw_scene(){
-  frag.uniform("base",{1.0,0.5,0.5})
+  frag.uniform("shininess",64.0);
+
+  frag.uniform("base",{1.0,0.5,0.5});
+  frag.uniform("spec",{0.0,0.0,0.0});
   tetrahedron.draw(
     g3d.mat.translate(-3,1,-1.5) @*
     g3d.mat.rotate_deg(g3d.AXIS_X,frame) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame)
   );
 
-  frag.uniform("base",{0.5,1.0,0.5})
+  frag.uniform("base",{0.5,1.0,0.5});
+  frag.uniform("spec",{0.9,1.0,0.8});
   hexahedron.draw(
     g3d.mat.translate(0,1,-1.5) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame) @*
     g3d.mat.rotate_deg(g3d.AXIS_Z,frame)
   );
 
-  frag.uniform("base",{0.5,0.5,1.0})
+  frag.uniform("base",{0.5,0.5,1.0});
+  frag.uniform("spec",{0.0,0.0,0.0});
   octahedron.draw(
     g3d.mat.translate(3,1,-1.5) @*
     g3d.mat.rotate_deg(g3d.AXIS_Z,frame) @*
     g3d.mat.rotate_deg(g3d.AXIS_X,frame)
   );
 
-  frag.uniform("base",{0.5,1.0,1.0})
+  frag.uniform("base",{0.5,1.0,1.0});
+  frag.uniform("spec",{0.8,0.9,1.0});
   dodecahedron.draw(
     g3d.mat.translate(-3,1,1.5) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame) @*
     g3d.mat.rotate_deg(g3d.AXIS_X,frame)
   );
 
-  frag.uniform("base",{1.0,0.5,1.0})
+  frag.uniform("base",{1.0,0.5,1.0});
+  frag.uniform("spec",{0.0,0.0,0.0});
   icosahedron.draw(
     g3d.mat.translate(0,1,1.5) @*
     g3d.mat.rotate_deg(g3d.AXIS_Z,frame) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame)
   );
 
-  frag.uniform("base",{1.0,1.0,0.5})
+  frag.uniform("base",{1.0,1.0,0.5});
+  frag.uniform("spec",{1.0,0.9,0.8});
   teapotahedron.draw(
     g3d.mat.translate(3,0.65,1.5) @*
     g3d.mat.rotate_deg(g3d.AXIS_Y,frame*1.5)
@@ -323,7 +355,7 @@ func draw_scene(){
 
 cam := g3d.Camera{}
 
-shadow := frag.texture(512,512);
+shadow := frag.texture(W,W);
 
 light := g3d.Camera{}
 ld := ({1,-1.5,-1}).dir();
@@ -346,7 +378,8 @@ while (1){
   light.end();
   frag.end();
 
-  cam.look_at({math.sin(frame*0.01)*6,8,math.cos(frame*0.01)*6},{0,0,0},g3d.AXIS_Y);
+  eye:={math.sin(frame*0.01)*6,8,math.cos(frame*0.01)*6};
+  cam.look_at(eye,{0,0,0},g3d.AXIS_Y);
   cam.perspective(60,W/(H as f32),0.1,100.0);
 
   frag.begin(shader2);
@@ -359,6 +392,7 @@ while (1){
 
   frag.begin(shader0);
   frag.uniform("l",ld*-1);
+  frag.uniform("eye",eye);
   cam.begin();
   draw_scene();
   cam.end();

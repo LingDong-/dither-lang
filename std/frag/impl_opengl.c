@@ -67,6 +67,7 @@ const char* vertexShaderSource = "#version 120\n"
 "varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
 "varying vec3 v_normal;\n"
+"varying vec3 v_position;\n"
 "uniform mat4 model;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
@@ -75,7 +76,10 @@ const char* vertexShaderSource = "#version 120\n"
 "  v_color = a_color;\n"
 "  v_uv = a_uv;\n"
 "  v_normal = normalize(normal_matrix * a_normal);\n"
-"  gl_Position = projection*view*model*vec4(a_position, 1.0);\n"
+"  vec4 world_pos = model * vec4(a_position, 1.0);\n"
+"  vec4 view_pos = view * world_pos;\n"
+"  v_position = world_pos.xyz;\n"
+"  gl_Position = projection * view_pos;\n"
 "}\n";
 
 GLfloat vertices[12] = {
@@ -85,12 +89,19 @@ GLfloat vertices[12] = {
    1.0f,  1.0f, 0.0
 };
 
+int width,height;
 
 void frag_impl_init(uint64_t ctx){
   #ifndef __APPLE__
   glewInit();
   #endif
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
+
+  GLint viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  width = viewport[2];
+  height = viewport[3];
+  
 }
 
 void frag_impl__init_texture(void* data, int w, int h){
@@ -155,9 +166,30 @@ int frag_impl_program(const char* src){
   return shaderProgram;
 }
 
+int oldw = 0;
+int oldh = 0;
+
 void frag_impl__begin(int prgm, int fbo){
+  GLint viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  oldw = viewport[2];
+  oldh = viewport[3];
+
   if (fbo == 0) fbo = fbo_zero;
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+  int w,h;
+  if (fbo == 0){
+    w = width;
+    h = height;
+  }else{
+    int tex;
+    glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+  }
+  glViewport(0,0,w,h);
 
   glUseProgram(prgm);
   tex_cnt = 0;
@@ -217,6 +249,7 @@ void frag_impl_end(){
   glUseProgram(0);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
   
+  if (oldw) glViewport(0,0,oldw,oldh);
 }
 
 void frag_impl_uniformf(const char* s, float* x, int n){

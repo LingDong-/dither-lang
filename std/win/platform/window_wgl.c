@@ -103,6 +103,7 @@ EXPORTED void** window_init(int w, int h, int flags){
   wglMakeCurrent(hdc, glrc);
   width = w;
   height = h;
+  glViewport(0, 0, width, height);
   return NULL;
 }
 

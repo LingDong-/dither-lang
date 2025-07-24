@@ -92,6 +92,8 @@ EXPORTED void** window_init(int w, int h, int flags){
   width = w;
   height = h;
 
+  glViewport(0, 0, width, height);
+
   //XSetStandardProperties(dis,win,window_name,"",None,NULL,0,NULL);
   return NULL;
 }

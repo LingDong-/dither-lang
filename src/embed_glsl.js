@@ -39,6 +39,8 @@ function embed_glsl_frag(ast,scopes){
       o += `${ast.key.slice(0,-1)}${docompile(ast.val)}`
     }else if (ast.key == '%'){
       o += `mod(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
+    }else if (ast.key == '**'){
+      o += `pow(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
     }else if (ast.key == 'swiz'){
       o += `${docompile(ast.lhs)}.${ast.rhs.val}`;
     }else if (ast.key == 'call'){

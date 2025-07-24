@@ -250,6 +250,8 @@ EXPORTED void** window_init(int width, int height) {
     [[g_glView openGLContext] makeCurrentContext];
     GLint sync = 0;
     [[g_glView openGLContext] setValues:&sync forParameter:NSOpenGLContextParameterSwapInterval];
+
+    glViewport(0, 0, width, height);
   }
   return NULL;
 }
