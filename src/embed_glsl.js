@@ -41,6 +41,8 @@ function embed_glsl_frag(ast,scopes){
       o += `mod(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
     }else if (ast.key == '**'){
       o += `pow(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
+    }else if (ast.key == '@*'){
+      o += `${docompile(ast.lhs)}*${docompile(ast.rhs)}`;
     }else if (ast.key == 'swiz'){
       o += `${docompile(ast.lhs)}.${ast.rhs.val}`;
     }else if (ast.key == 'call'){
@@ -107,7 +109,11 @@ function embed_glsl_frag(ast,scopes){
   function printtype(typ){
     if (typ.con == 'vec'){
       if (typ.elt[0] == 'f32'){
-        return typ.con+typ.elt[1];
+        if (typ.elt.length == 3){
+          return 'mat'+typ.elt[1];
+        }else{
+          return typ.con+typ.elt[1];
+        }
       }else if (typ.elt[0] == 'i32'){
         return 'i'+typ.con+typ.elt[1];
       }
