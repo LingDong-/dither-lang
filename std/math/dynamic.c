@@ -25,6 +25,12 @@ EXPORTED void math_cos(var_t* ret,  gstate_t* _g){
   ret->u.f32 = y;
 }
 
+EXPORTED void math_acos(var_t* ret,  gstate_t* _g){
+  float x = ARG_POP(_g,f32);
+  float y = acosf(x);
+  ret->u.f32 = y;
+}
+
 
 EXPORTED void math_random(var_t* ret,  gstate_t* _g){
   float y = (float)rand()/(float)RAND_MAX;
@@ -94,6 +100,7 @@ EXPORTED void lib_init_math(gstate_t* _g){
 
   register_cfunc(&(_g->cfuncs), "math.sin", math_sin);
   register_cfunc(&(_g->cfuncs), "math.cos", math_cos);
+  register_cfunc(&(_g->cfuncs), "math.acos", math_acos);
   register_cfunc(&(_g->cfuncs), "math.abs", math_abs);
   register_cfunc(&(_g->cfuncs), "math.floor", math_floor);
   register_cfunc(&(_g->cfuncs), "math.ceil", math_ceil);

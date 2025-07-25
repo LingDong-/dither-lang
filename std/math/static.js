@@ -12,6 +12,10 @@ globalThis.$math = new function(){
     let [x] = $pop_args(1);
     return Math.cos(x);
   }
+  that.acos = function(){
+    let [x] = $pop_args(1);
+    return Math.acos(x);
+  }
   that.max = function(){
     let [x,y] = $pop_args(2);
     return Math.max(x,y);

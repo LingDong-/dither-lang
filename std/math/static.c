@@ -16,6 +16,13 @@ void math__cos(){
   __put_ret(&y);
 }
 
+void math__acos(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = acosf(x);
+  __put_ret(&y);
+}
+
 
 void math__random(){
   float y = (float)rand()/(float)RAND_MAX;
