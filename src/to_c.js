@@ -535,10 +535,11 @@ var TO_C = function(cfg){
     }
     if (dic->slots[s].n >= dic->slots[s].cap){
       dic->slots[s].cap = (dic->slots[s].cap)*2+1;
-      dic->slots[s].data = realloc(dic->slots[s].data, dic->slots[s].cap);
+      dic->slots[s].data = realloc(dic->slots[s].data, (dic->kw + dic->vw)*dic->slots[s].cap);
     }
     void* k = dic->slots[s].data + (dic->kw+dic->vw) * dic->slots[s].n;
     memcpy( k,  idx, dic->kw);
+    memset( (char*)k + dic->kw, 0, dic->vw);
     dic->slots[s].n++;
     dic->n++;
     return (char*)k + dic->kw;
