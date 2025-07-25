@@ -43,6 +43,8 @@ void main() {
 }
   `;
   let vaos = [];
+  let index_cons = Uint16Array;
+  let index_type = 5123;//gl.UNSIGNED_SHORT;
   function compileShader(type, source) {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
@@ -67,6 +69,14 @@ void main() {
     gl.linkProgram(shader);
 
     gl.enable(gl.DEPTH_TEST);
+    gl.enable( gl.BLEND );
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    let ext = gl.getExtension('OES_element_index_uint');
+    if (ext){
+      index_type = gl.UNSIGNED_INT;
+      index_cons = Uint32Array;
+    }
   }
   function copy_list_vec_pack(lst,vn){
     let data = new Float32Array(lst.length*vn);
@@ -110,7 +120,7 @@ void main() {
     }
     if ((flags & DIRTY_INDICES) && indices.length){
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new index_cons(indices), gl.STATIC_DRAW);
     }
     if ((flags & DIRTY_COLORS) && colors.length){
       gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_colors);
@@ -223,7 +233,7 @@ void main() {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
     
-    gl.drawElements(mode,mesh.n_indices,gl.UNSIGNED_SHORT,0);
+    gl.drawElements(mode,mesh.n_indices,index_type,0);
 
     // if (loc_pos)   gl.disableVertexAttribArray(loc_pos);
     // if (loc_norm)  gl.disableVertexAttribArray(loc_norm);
