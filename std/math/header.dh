@@ -10,11 +10,13 @@ namespace math {
   func max(x:f32,y:f32):f32;
   func atan2(x:f32,y:f32):f32;
   func acos(x:f32):f32;
+  func exp(x:f32):f32;
   func hypot(x:f32,y:f32):f32;
   PI : f32 = 3.141592653589793;
   func sin[N](x:vec[f32,N]):vec[f32,N]{return x.map(sin);};
   func cos[N](x:vec[f32,N]):vec[f32,N]{return x.map(cos);};
   func acos[N](x:vec[f32,N]):vec[f32,N]{return x.map(acos);};
+  func exp[N](x:vec[f32,N]):vec[f32,N]{return x.map(exp);};
   func abs[N](x:vec[f32,N]):vec[f32,N]{return x.map(abs);};
   func floor[N](x:vec[f32,N]):vec[f32,N]{return x.map(floor);};
   func ceil[N](x:vec[f32,N]):vec[f32,N]{return x.map(ceil);};

@@ -163,6 +163,9 @@ void g3d_impl_init(uint64_t ctx){
   ARR_INIT(vao_t,vaos);
   shader = compileShader(vertex_src,fragment_src);
   glEnable(GL_DEPTH_TEST);
+  glEnable( GL_BLEND );
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 }
 
 void g3d_impl_flush(){

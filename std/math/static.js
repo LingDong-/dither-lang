@@ -40,5 +40,9 @@ globalThis.$math = new function(){
     let [x] = $pop_args(1);
     return Math.ceil(x);
   }
+  that.exp = function(){
+    let [x] = $pop_args(1);
+    return Math.exp(x);
+  }
 }
 

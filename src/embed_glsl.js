@@ -32,9 +32,9 @@ function embed_glsl_frag(ast,scopes){
     }else if (ast.key == 'retn'){
       out.push(`return ${docompile(ast.val)};`);
     }else if (['+','-','*','/','==','||','&&','>','<','>=','<='].includes(ast.key)){
-      o += `${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)}`
+      o += `(${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)})`
     }else if (['u++','u--'].includes(ast.key)){
-      o += `${docompile(ast.val)}${ast.key.slice(1)}`
+      o += `(${docompile(ast.val)}${ast.key.slice(1)})`
     }else if (['+u','-u','++u','--u'].includes(ast.key)){
       o += `${ast.key.slice(0,-1)}${docompile(ast.val)}`
     }else if (ast.key == '%'){
@@ -42,7 +42,7 @@ function embed_glsl_frag(ast,scopes){
     }else if (ast.key == '**'){
       o += `pow(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
     }else if (ast.key == '@*'){
-      o += `${docompile(ast.lhs)}*${docompile(ast.rhs)}`;
+      o += `(${docompile(ast.lhs)}*${docompile(ast.rhs)})`;
     }else if (ast.key == 'swiz'){
       o += `${docompile(ast.lhs)}.${ast.rhs.val}`;
     }else if (ast.key == 'call'){
