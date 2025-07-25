@@ -14,6 +14,7 @@ attribute vec3 a_normal;
 varying vec4 v_color;
 varying vec2 v_uv;
 varying vec3 v_normal;
+varying vec3 v_position;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
@@ -22,7 +23,10 @@ void main() {
   v_color = a_color;
   v_uv = a_uv;
   v_normal = normalize(normal_matrix * a_normal);
-  gl_Position = projection*view*model*vec4(a_position, 1.0);
+  vec4 world_pos = model * vec4(a_position, 1.0);
+  vec4 view_pos = view * world_pos;
+  v_position = world_pos.xyz/world_pos.w;
+  gl_Position = projection * view_pos;
 }
   `;
   const vertices = new Float32Array([

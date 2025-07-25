@@ -105,7 +105,7 @@ const char* vertex_src = "#version 120\n"
 "  v_normal = normalize(normal_matrix * a_normal);\n"
 "  vec4 world_pos = model * vec4(a_position, 1.0);\n"
 "  vec4 view_pos = view * world_pos;\n"
-"  v_position = world_pos.xyz;\n"
+"  v_position = world_pos.xyz/world_pos.w;\n"
 "  gl_Position = projection * view_pos;\n"
 "}\n";
 
