@@ -419,10 +419,12 @@ void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
   glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-
-  glDrawElements(mode,mesh.n_indices,GL_UNSIGNED_INT,(void*)0);
-
+  if (mesh.n_indices){
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
+    glDrawElements(mode,mesh.n_indices,GL_UNSIGNED_INT,(void*)0);
+  }else{
+    glDrawArrays(mode, 0, mesh.n_vertices);
+  }
   if (loc_pos >= 0)   glDisableVertexAttribArray(loc_pos);
   if (loc_norm >= 0)  glDisableVertexAttribArray(loc_norm);
   if (loc_uv >= 0)    glDisableVertexAttribArray(loc_uv);

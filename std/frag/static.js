@@ -7,6 +7,7 @@ globalThis.$frag = new function(){
   let tex_cnt = 0;
 
   const vertexSrc = `
+precision mediump float;
 attribute vec3 a_position;
 attribute vec4 a_color;
 attribute vec2 a_uv;

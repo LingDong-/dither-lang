@@ -12,14 +12,13 @@
 #include <dlfcn.h>
 #endif
 #include <math.h>
+#include <time.h>
 #include <inttypes.h>
 #include "common.h"
 
 #ifndef DBG
   #define DBG 0
 #endif
-
-#define GC_THRESH 16384
 
 #define UNIMPL {printf("UNIMPLEMENTED: %s line %d\n",__FILE__,__LINE__); exit(0);}
 
@@ -75,6 +74,9 @@
 
 #define GFLG_NOGC (1L<<0)
 #define GFLG_TRGC (1L<<1)
+
+#define GC_THRESH_SIZE 32768
+#define GC_THRESH_TIME (CLOCKS_PER_SEC*2)
 
 const char* vart_names = "NULU08I08U16I16U32I32U64I64F32F64STRVECARRLSTTUPDICSTTFUNUON";
 
@@ -259,6 +261,7 @@ typedef struct mem_list_st {
   mem_node_t *tail;
   int len;
   int prev_len;
+  clock_t prev_time;
 } mem_list_t;
 
 void* mem_alloc(mem_list_t* l, int sz){
@@ -2128,6 +2131,7 @@ void gc_run(){
   
   gc_sweep();
   _G.objs.prev_len = _G.objs.len;
+  _G.objs.prev_time = clock();
 }
 
 
@@ -2157,9 +2161,11 @@ map_t* frame_end(){
   }
   
   if (!(_G.flags & GFLG_NOGC)){
-    if (_G.objs.len - _G.objs.prev_len >= GC_THRESH){
+    int old_len = _G.objs.prev_len;
+    if (_G.objs.len - _G.objs.prev_len >= GC_THRESH_SIZE
+        && clock() - _G.objs.prev_time >= GC_THRESH_TIME
+    ){
       gc_run();
-    }else{
     }
   }
   return (map_t*)(_G.vars.tail->data);

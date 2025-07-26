@@ -11,6 +11,7 @@ globalThis.$g3d = new function(){
   let shader;
   let currentProgram = null;
   const vertexSrc = `
+precision mediump float;
 attribute vec3 a_position;
 attribute vec4 a_color;
 attribute vec2 a_uv;
@@ -230,15 +231,16 @@ void main() {
     gl.enableVertexAttribArray(loc_pos);
     gl.vertexAttribPointer(loc_pos, 3, gl.FLOAT, false, 0, 0);
 
-
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-    
-    gl.drawElements(mode,mesh.n_indices,index_type,0);
-
-    // if (loc_pos)   gl.disableVertexAttribArray(loc_pos);
-    // if (loc_norm)  gl.disableVertexAttribArray(loc_norm);
-    // if (loc_uv)    gl.disableVertexAttribArray(loc_uv);
-    // if (loc_color) gl.disableVertexAttribArray(loc_color);
+    if (mesh.n_indices){
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
+      gl.drawElements(mode,mesh.n_indices,index_type,0);
+    }else{
+      gl.drawArrays(mode,0,mesh.n_vertices);
+    }
+    if (loc_pos>=0)   gl.disableVertexAttribArray(loc_pos);
+    if (loc_norm>=0)  gl.disableVertexAttribArray(loc_norm);
+    if (loc_uv>=0)    gl.disableVertexAttribArray(loc_uv);
+    if (loc_color>=0) gl.disableVertexAttribArray(loc_color);
 
   }
 
