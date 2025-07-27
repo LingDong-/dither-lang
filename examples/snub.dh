@@ -1,0 +1,120 @@
+include "std/g3d"
+include "std/win"
+include "std/time"
+include "std/list"
+include "std/io"
+include "std/arr"
+include "std/vec"
+
+W := 256;
+H := 256;
+
+context := win.init(W,H,win.CONTEXT_3D);
+g3d.init(context);
+
+t := 1.83929
+verts:=list[vec[f32,3]]{
+  {-1,  t,  1/t},{ 1,  t, -1/t},{ 1, -t,  1/t},{-1, -t, -1/t},
+  { t,  1/t, -1},{ t, -1/t,  1},{-t,  1/t,  1},{-t, -1/t, -1},
+  { 1/t, -1,  t},{-1/t,  1,  t},{ 1/t,  1, -t},{-1/t, -1, -t},
+  { 1, -1/t, -t},{-1,  1/t, -t},{-1, -1/t,  t},{ 1,  1/t,  t},
+  {-1/t, -t,  1},{ 1/t, -t, -1},{-1/t,  t, -1},{ 1/t,  t,  1},
+  {-t,  1, -1/t},{-t, -1,  1/t},{ t, -1, -1/t},{ t,  1,  1/t},
+};
+faces := arr[i32,2]{
+  0 ,9 ,19,-1,2; 0 ,19,1 ,18,0; 0 ,18,20,-1,2; 0 ,20,6 ,-1,1; 0 ,6 ,9 ,-1,3;
+  1 ,10,18,-1,2; 1 ,19,23,-1,2; 9 ,6 ,14,-1,2; 6 ,21,14,-1,1; 6 ,20,7 ,21,0;
+  9 ,15,19,-1,1; 9 ,14,8 ,15,0; 19,15,23,-1,3; 5 ,15,8 ,-1,1; 5 ,23,15,-1,2;
+  1 ,23,4 ,-1,1; 1 ,4 ,10,-1,3; 18,10,13,-1,1; 18,13,20,-1,3; 10,12,11,13,0;
+  4 ,23,5 ,22,0; 4 ,22,12,-1,1; 4 ,12,10,-1,2; 13,11, 7,-1,1; 13, 7,20,-1,2;
+  14,21,16,-1,3; 14,16,8 ,-1,2; 2 ,5 ,8 ,-1,3; 2, 8 ,16,-1,1; 2, 22,5 ,-1,2;
+  2 ,16,3 ,17,0; 2 ,17,22,-1,1; 22,17,12,-1,3; 12,17,11,-1,2; 11,17,3 ,-1,1;
+  11,3 ,7 ,-1,3; 3 ,21,7 ,-1,2; 3 ,16,21,-1,1;
+};
+palette := list[vec[f32,4]]{
+  {0.47,0.35,0.67,1},{0.49,0.76,0.90,1},{0.85,0.34,0.54,1},{0.95,0.72,0.29,1}
+};
+
+mesh := g3d.Mesh{};
+
+for (i := 0; i < faces.shape()[0]; i++){
+  n := mesh.vertices.length();
+  p0 := verts[faces[i,0]];
+  p1 := verts[faces[i,1]];
+  p2 := verts[faces[i,2]];
+  mesh.vertices.push(p0);
+  mesh.vertices.push(p1);
+  mesh.vertices.push(p2);
+  mesh.indices.push(n);
+  mesh.indices.push(n+1);
+  mesh.indices.push(n+2);
+  mesh.colors.push(palette[faces[i,4]]);
+  mesh.colors.push(palette[faces[i,4]]);
+  mesh.colors.push(palette[faces[i,4]]);
+  if (faces[i,3] != -1){
+    mesh.vertices.push(verts[faces[i,3]]);
+    mesh.colors.push(palette[faces[i,4]]);
+    mesh.indices.push(n);
+    mesh.indices.push(n+2);
+    mesh.indices.push(n+3);
+  }
+}
+
+cam := g3d.Camera{}
+cam.look_at({0,0,5},{0,0,0},g3d.AXIS_Y);
+cam.perspective(60,W/(H as f32),0.1,100.0);
+
+hud := g3d.Camera{};
+hud.ortho(0,W,H,0,-1,1);
+
+frame := 0;
+
+model := g3d.mat.id;
+
+while (1){
+  fps := time.fps(120);
+
+  g3d.background(0.22,0.20,0.20);
+
+  cam.begin();
+  mesh.draw(model);
+  cam.end();
+
+  hud.begin();
+  for (i := 0; i < verts.length(); i++){
+    v := verts[i];
+    pop := g3d.mat.translate(0,0,0.1);
+    p := cam.proj @* cam.view @* pop @* model @* {v.x;v.y;v.z;1.0}
+    q := {
+      (0.5+p.x/p.w*0.5)*W -8,
+      (0.5-p.y/p.w*0.5)*H -8,
+      -p.z/p.w,
+      1.0,
+    }
+    g3d.text("#%{i}", g3d.mat.translate(...q.xyz));
+  }
+  g3d.text("fps: %{fps}", g3d.mat.translate(0,0,0));
+  if (frame < 180){
+    model = g3d.mat.rotate_deg(g3d.AXIS_Y,2) @* model;
+  }else{
+    g3d.text("arrow keys to rotate", g3d.mat.translate(96,240,0));
+  }
+  hud.end();
+
+  g3d.flush();
+  e := win.poll();
+  if (e.type == win.KEY_PRESSED){
+    if (e.key == win.KEY_LARR){
+      model = g3d.mat.rotate_deg(g3d.AXIS_Y,-1) @* model;
+    }else if (e.key == win.KEY_RARR){
+      model = g3d.mat.rotate_deg(g3d.AXIS_Y,1)  @* model;
+    }else if (e.key == win.KEY_UARR){
+      model = g3d.mat.rotate_deg(g3d.AXIS_X,-1) @* model;
+    }else if (e.key == win.KEY_DARR){
+      model = g3d.mat.rotate_deg(g3d.AXIS_X,1) @* model;
+    }else if (e.key == ' '){
+      frame = 0;
+    }
+  }
+  frame++;
+}

@@ -3,9 +3,12 @@
 #include <stdio.h>
 #include "../../src/interp.c"
 
-
 #ifndef EXPORTED
+#ifdef _WIN32
+#define EXPORTED __declspec(dllexport)
+#else
 #define EXPORTED __attribute__ ((visibility ("default")))
+#endif
 #endif
 
 EXPORTED void guts_gc_on(var_t* ret, gstate_t* _g){

@@ -57,4 +57,5 @@ namespace g3d{
     func begin(){_camera_begin(.view,.proj);}
     func end(){_camera_end();};
   }
+  func text(s:str,transform:vec[f32,4,4]);
 }

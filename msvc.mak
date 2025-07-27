@@ -18,6 +18,8 @@ ir:
 	node src\parser.js $(src) -o build\ir.dsm --map build\ir.map
 std_one: build\config.h build\config.bat
 	cmd /V:ON /C "call build\config.bat && cd std\$(src) && cl /FI !DITHER_ROOT!\build\config.h $(OPT) /LD dynamic.c /Fe:dynamic.dll $(MSVCFLAGS) && del dynamic.lib && del dynamic.exp"
+std_all: build\config.h build\config.bat
+	cmd /V:ON /C "call build\config.bat && FOR /D %%f in (std\*) DO (cd %%f && cl /FI !DITHER_ROOT!\build\config.h $(OPT) /LD dynamic.c /Fe:dynamic.dll $(MSVCFLAGS) && del dynamic.lib && del dynamic.exp && cd ..\..\)"
 run_vm: build\vm.exe build\vm_dbg.exe ir
 	build\$(VM_CHOICE) build\ir.dsm --map build\ir.map
 to_c: ir

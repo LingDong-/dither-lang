@@ -104,6 +104,22 @@ EXPORTED void g3d__perspective(var_t* ret, gstate_t* _g){
   ret->u.vec = out;
 }
 
+EXPORTED void g3d__ortho(var_t* ret, gstate_t* _g){
+  float zfar = ARG_POP(_g,f32);
+  float znear = ARG_POP(_g,f32);
+  float top = ARG_POP(_g,f32);
+  float bottom = ARG_POP(_g,f32);
+  float right = ARG_POP(_g,f32);
+  float left = ARG_POP(_g,f32);
+  vec_t* out = (vec_t*)gc_alloc_(_g,sizeof(vec_t)+(16*sizeof(float)));
+  out->n = 16;
+  out->type = ret->type;
+  out->w = sizeof(float);
+  g3d_impl__ortho((float*)(out->data),left,right,bottom,top,znear,zfar);
+  ret->u.vec = out;
+}
+
+
 EXPORTED void g3d__camera_begin(var_t* ret, gstate_t* _g){
   vec_t* proj = ARG_POP(_g,vec);
   vec_t* view = ARG_POP(_g,vec);
@@ -125,6 +141,12 @@ EXPORTED void g3d_mat_rotate_deg(var_t* ret, gstate_t* _g){
   ret->u.vec = out;
 }
 
+EXPORTED void g3d_text(var_t* ret, gstate_t* _g){
+  vec_t* transform = ARG_POP(_g,vec);
+  stn_t* s = ARG_POP(_g,str);
+  g3d_impl_text(s->data,(float*)(transform->data));
+}
+
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "g3d." QUOTE(name), g3d_ ## name);
 #define QK_REG_SUB(nmsp,name) register_cfunc(&(_g->cfuncs), "g3d." QUOTE(nmsp) "." QUOTE(name), g3d_ ## nmsp ## _ ## name);
@@ -137,8 +159,10 @@ EXPORTED void lib_init_g3d(gstate_t* _g){
   QK_REG(background);
   QK_REG(_look_at);
   QK_REG(_perspective);
+  QK_REG(_ortho);
   QK_REG(_camera_begin);
   QK_REG(_camera_end);
+  QK_REG(text);
   QK_REG_SUB(mat,rotate_deg);
 }
 
