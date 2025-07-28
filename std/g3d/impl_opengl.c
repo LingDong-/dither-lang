@@ -576,7 +576,7 @@ const char* text_vertex_src = "#version 120\n"
 
 const char* text_fragment_src = "#version 120\n"
 "varying vec2 v_uv;\n"
-"uniform sampler2D font_atlas;"
+"uniform sampler2D font_atlas;\n"
 "void main() {\n"
 "  gl_FragColor = texture2D(font_atlas,v_uv);\n"
 "}\n";
@@ -604,6 +604,7 @@ void build_font_texture() {
 
   glGenBuffers(1, &text_vbo);
   glGenBuffers(1, &text_uv_vbo);
+
   text_shader = compileShader(text_vertex_src,text_fragment_src);
 }
 
@@ -614,6 +615,7 @@ void g3d_impl_text(char* str, float* model_matrix){
   }
   GLint prev_prog = 0;
   GLint program = 0;
+
 
   glGetIntegerv(GL_CURRENT_PROGRAM, &prev_prog);
 
@@ -632,11 +634,12 @@ void g3d_impl_text(char* str, float* model_matrix){
   GLint loc_model = glGetUniformLocation(program, "model");
   glUniformMatrix4fv(loc_model, 1, GL_TRUE, model_matrix);
 
-  size_t len = strlen(str);
+  int len = strlen(str);
+
   float* vertices = malloc(len*18*sizeof(float));
   float* uvs = malloc(len*12*sizeof(float));
 
-  for (size_t i = 0; i < len; ++i) {
+  for (int i = 0; i < len; i++) {
     unsigned char ch = str[i]-' ';
     int cx = ch % FONT_COLS;
     int cy = ch / FONT_COLS;
@@ -664,9 +667,13 @@ void g3d_impl_text(char* str, float* model_matrix){
 
   glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
   glBufferData(GL_ARRAY_BUFFER, len*18*sizeof(float), vertices, GL_DYNAMIC_DRAW);
+  // glBufferData(GL_ARRAY_BUFFER, len*18*sizeof(float), NULL, GL_DYNAMIC_DRAW);
+  // glBufferSubData(GL_ARRAY_BUFFER, 0, len*18*sizeof(float), vertices);
 
   glBindBuffer(GL_ARRAY_BUFFER, text_uv_vbo);
   glBufferData(GL_ARRAY_BUFFER, len*12*sizeof(float), uvs, GL_DYNAMIC_DRAW);
+  // glBufferData(GL_ARRAY_BUFFER, len*12*sizeof(float), NULL, GL_DYNAMIC_DRAW);
+  // glBufferSubData(GL_ARRAY_BUFFER, 0, len*12*sizeof(float), uvs);
 
   GLint loc_uv = glGetAttribLocation(program, "a_uv");
   glBindBuffer(GL_ARRAY_BUFFER, text_uv_vbo);
@@ -682,7 +689,7 @@ void g3d_impl_text(char* str, float* model_matrix){
   glBindTexture(GL_TEXTURE_2D, font_texture);
   GLint tex_loc = glGetUniformLocation(program, "font_atlas");
   glUniform1i(tex_loc, 0);
-  glDrawArrays(GL_TRIANGLES, 0, len*18);
+  glDrawArrays(GL_TRIANGLES, 0, len*6);
 
   glDisableVertexAttribArray(loc_uv);
   glDisableVertexAttribArray(loc_pos);

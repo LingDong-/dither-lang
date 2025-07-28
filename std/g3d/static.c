@@ -75,6 +75,18 @@ void g3d___perspective(){
   __put_ret(out);
 }
 
+void g3d___ortho(){
+  float __ARG(zfar);
+  float __ARG(znear);
+  float __ARG(top);
+  float __ARG(bottom);
+  float __ARG(right);
+  float __ARG(left);
+  float out[16];
+  g3d_impl__ortho(out,left,right,bottom,top,znear,zfar);
+  __put_ret(out);
+}
+
 void g3d___camera_begin(){
   float proj[16];
   float view[16];
@@ -98,4 +110,11 @@ void g3d__mat__rotate_deg(){
   __pop_arg(axis,12);
   g3d_mat_impl_rotate(out,axis,ang*M_PI/180.0);
   __put_ret(out);
+}
+
+void g3d__text(){
+  float transform[16];
+  __pop_arg(transform, 64);
+  char* __ARG(s);
+  g3d_impl_text(s,transform);
 }

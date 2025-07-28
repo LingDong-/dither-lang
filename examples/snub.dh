@@ -105,13 +105,13 @@ while (1){
   e := win.poll();
   if (e.type == win.KEY_PRESSED){
     if (e.key == win.KEY_LARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_Y,-1) @* model;
+      model = g3d.mat.rotate_deg(g3d.AXIS_Y,-4) @* model;
     }else if (e.key == win.KEY_RARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_Y,1)  @* model;
+      model = g3d.mat.rotate_deg(g3d.AXIS_Y,4)  @* model;
     }else if (e.key == win.KEY_UARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_X,-1) @* model;
+      model = g3d.mat.rotate_deg(g3d.AXIS_X,-4) @* model;
     }else if (e.key == win.KEY_DARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_X,1) @* model;
+      model = g3d.mat.rotate_deg(g3d.AXIS_X,4) @* model;
     }else if (e.key == ' '){
       frame = 0;
     }
