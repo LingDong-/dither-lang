@@ -13,5 +13,9 @@ globalThis.$str = new function(){
     let [s] = $pop_args(1);
     return s.charCodeAt(0);
   }
+  that.decode = function(){
+    let [a,e] = $pop_args(2);
+    return new TextDecoder(e).decode(a);
+  }
 }
 

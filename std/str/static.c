@@ -14,3 +14,12 @@ void str__chr(){
   __put_ret(&(o));
 }
 
+void str__decode(){
+  char* __ARG(e);
+  __list_t* a;
+  __pop_arg(&a, 8);
+
+  char* o = __gc_alloc(VART_STR,a->n+1);
+  memcpy(o,a->data,a->n);
+  __put_ret(&(o));
+}

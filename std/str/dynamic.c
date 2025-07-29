@@ -29,11 +29,24 @@ EXPORTED void str_chr(var_t* ret,  gstate_t* _g){
   ret->u.str = s;
 }
 
+EXPORTED void str_decode(var_t* ret,  gstate_t* _g){
+  stn_t* e = ARG_POP(_g,str);
+  lst_t* a = ARG_POP(_g,lst);
+
+  stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+a->n+1);
+  s->n = a->n;
+  s->w = 1;
+  s->type = ret->type;
+  memcpy(s->data, a->data, a->n);
+  ret->u.str = s;
+}
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "str." QUOTE(name), str_ ## name);
 
 EXPORTED void lib_init_str(gstate_t* _g){
   QK_REG(length);
   QK_REG(chr);
+  QK_REG(decode);
 }
 
 

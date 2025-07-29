@@ -1,0 +1,21 @@
+
+namespace req {
+  typedef Request = {
+    method:="GET";
+    url:="";
+    headers:=list[str]{};
+    body:=list[u8]{};
+  };
+  typedef Response = {
+    status:i32;
+    url:="";
+    headers:=list[str]{};
+    body:=list[u8]{};
+  };
+  func _http(rq:Request,re:Response);
+  func http(rq:Request):Response{
+    re := Response{};
+    _http(rq,re);
+    return re;
+  }
+}

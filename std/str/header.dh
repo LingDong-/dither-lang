@@ -2,4 +2,6 @@ namespace str {
   func length(s:str): i32;
   func chr(i:u32) : str;
   func ord(s:str) : u32;
+  func encode(s:str,encoding:str):list[u8];
+  func decode(btyes:list[u8],encoding:str):str;
 }

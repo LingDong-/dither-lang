@@ -28,6 +28,8 @@ list_t jstack = {0};
 obj_t* root;
 char* tmp_key = NULL;
 
+gstate_t* gg;
+
 void jencode(FILE* fd, obj_t* o){
   uon_t* u = OBJ_UONV(o);
   if (u->var->type->vart == VART_LST){
@@ -100,7 +102,7 @@ EXPORTED void exch__encode_json(var_t* ret,  gstate_t* _g){
   fclose(fd);
 #endif
 
-  stn_t* ss = (stn_t*)gc_alloc(sizeof(stn_t)+len+1);
+  stn_t* ss = (stn_t*)gc_alloc_(gg,sizeof(stn_t)+len+1);
   ss->n = len;
   ss->w = 1;
   ss->type = jt_str;
@@ -133,14 +135,14 @@ uon_t* jinit(obj_t* o){
   o->type = jt_obj;
   o->data = calloc(16,1);
   OBJ_THIS(o) = o;
-  OBJ_UON(o) = gc_alloc(sizeof(uon_t));
+  OBJ_UON(o) = gc_alloc_(gg,sizeof(uon_t));
   uon_t* u = OBJ_UONV(o);
   u->type = jt_uon;
   return u;
 }
 
 void exch_impl__json_enter_dic(){
-  obj_t* o = jstack.len ? gc_alloc(sizeof(obj_t)) : root;
+  obj_t* o = jstack.len ? gc_alloc_(gg,sizeof(obj_t)) : root;
   uon_t* u = jinit(o);
   u->var = var_new_alloc(jt_dic,0);
   jinsert(o);
@@ -151,7 +153,7 @@ void exch_impl__json_exit_dic(){
 }
 
 void exch_impl__json_enter_lst(){
-  obj_t* o = jstack.len ? gc_alloc(sizeof(obj_t)) : root;
+  obj_t* o = jstack.len ? gc_alloc_(gg,sizeof(obj_t)) : root;
   uon_t* u = jinit(o);
   u->var = var_new_alloc(jt_lst,0);
   jinsert(o);
@@ -170,7 +172,7 @@ void exch_impl__json_key(char* s,int n){
 }
 
 void exch_impl__json_num(float x){
-  obj_t* o = jstack.len ? gc_alloc(sizeof(obj_t)) : root;
+  obj_t* o = jstack.len ? gc_alloc_(gg,sizeof(obj_t)) : root;
   uon_t* u = jinit(o);
 
   u->var = var_new(jt_num);
@@ -180,11 +182,11 @@ void exch_impl__json_num(float x){
 }
 
 void exch_impl__json_str(char* s,int n){
-  obj_t* o = jstack.len ? gc_alloc(sizeof(obj_t)) : root;
+  obj_t* o = jstack.len ? gc_alloc_(gg,sizeof(obj_t)) : root;
   uon_t* u = jinit(o);
 
   u->var = var_new(jt_str);
-  stn_t* ss = (stn_t*)gc_alloc(sizeof(stn_t)+n+1);
+  stn_t* ss = (stn_t*)gc_alloc_(gg,sizeof(stn_t)+n+1);
   ss->n = n;
   ss->w = 1;
   ss->type = jt_str;
@@ -214,7 +216,7 @@ EXPORTED void exch__decode_json(var_t* ret,  gstate_t* _g){
 
 
 EXPORTED void lib_init_exch(gstate_t* _g){
-  _G.objs = _g->objs;
+  gg = _g;
   register_cfunc(&(_g->cfuncs), "exch._encode_json", exch__encode_json);
   register_cfunc(&(_g->cfuncs), "exch._decode_json", exch__decode_json);
 }
