@@ -67,13 +67,14 @@ void req_impl__http(
   curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &final_url);
   *out_url = strdup(final_url);
 
-  int n_lines = -1;
+  int n_lines = 0;
   for (int i = 0; i < chunk_headers.size; i++){
     if (chunk_headers.data[i] == '\n'){
       chunk_headers.data[i-1]=0;
       n_lines++;
     }
   }
+  if (n_lines) n_lines--;
   char** lines = malloc(n_lines*sizeof(char*));
   int idx = 0;
   lines[idx++] = chunk_headers.data;
