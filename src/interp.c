@@ -196,6 +196,7 @@ typedef struct dic_st{
   map_t map;
 } dic_t;
 
+
 typedef struct fun_st{
   char flag;
   type_t* type;
@@ -1269,6 +1270,8 @@ int elem_vart(void* v){
   return ((type_t*)(((vec_t*)v)->type->u.elem.head->data))->vart;
 }
 
+vec_t* vec_copy(vec_t* u);
+tup_t* tup_copy(tup_t* u);
 
 
 void to_str_(int vart, void* u, str_t* s, int depth){
@@ -1377,7 +1380,11 @@ void to_str_(int vart, void* u, str_t* s, int depth){
             str_add(s,p.key);
           }
           str_addch(s,':');
-          to_str_(tb->vart, p.val, s, depth-1);
+          if (ta->vart == VART_VEC || ta->vart == VART_TUP){
+            to_str_(tb->vart, & (((pair_t*)(p.val))->val), s, depth-1);
+          }else{
+            to_str_(tb->vart, p.val, s, depth-1);
+          }
           n++;
           if (n != dic->map.len) str_addch(s,',');
         }
@@ -1425,11 +1432,6 @@ void to_str_(int vart, void* u, str_t* s, int depth){
 }
 void to_str(int vart, void* u, str_t* s){
   return to_str_(vart,u,s,1);
-}
-
-
-void to_key(int vart, void* u, str_t* s){
-  return to_str(vart,u,s);
 }
 
 
@@ -1648,16 +1650,31 @@ void* get_addr(term_t* a, int* nbytes){
     }else{
       str_t s = str_new();
       var_t* u = find_var(&(a->u.addr.offs));
-      to_key(u->type->vart, &(u->u), &s);
+      to_str(u->type->vart, &(u->u), &s);
       bs = s.data;
       bl = s.len;
     }
 
-    // printf("%s\n",bs);
+    if (ta->vart == VART_VEC || ta->vart == VART_TUP){
+      ds += 8;
+    }
+
     void* ptr = map_addr_raw(&(v->u.dic->map), bs, bl, ds, 1);
     free(bs);
 
-    // printf("%p\n",ptr);
+    if (ta->vart == VART_VEC || ta->vart == VART_TUP){
+      pair_t* p = (pair_t*)ptr;
+      if (p->key == NULL){
+        var_t* u = find_var(&(a->u.addr.offs));
+        if (ta->vart == VART_VEC){
+          p->key = vec_copy(u->u.vec);
+        }else if (ta->vart == VART_TUP){
+          p->key = tup_copy(u->u.tup);
+        }
+      }
+      return &(p->val);
+    }
+
     return ptr;
 
   }else if (v->type->vart == VART_STR){
@@ -1842,38 +1859,69 @@ obj_t* get_ref_obj(term_t* a){
   return NULL;
 }
 
+tup_t* tup_copy_(gstate_t* _g, tup_t* v){
+  int n = 0;
+  list_node_t* p = v->type->u.elem.head;
+  while (p){
+    type_t* t = (type_t*)(p->data);
+    n += type_size(t);
+    p = p->next;
+  }
+  tup_t* tup = (tup_t*)gc_alloc_(_g,sizeof(tup_t)+n);
+  tup->type = v->type;
+  p = v->type->u.elem.head;
+  n = 0;
+  while (p){
+    type_t* t = (type_t*)(p->data);
+    int ds = type_size(t);
+         if (t->vart == VART_VEC) ((vec_t**)  (tup->data+n))[0] = vec_copy(((vec_t**)(v->data+n))[0]);
+    else if (t->vart == VART_STR) ((stn_t**)  (tup->data+n))[0] = stn_copy(((stn_t**)(v->data+n))[0]);
+    else{
+      memcpy(tup->data+n, v->data+n, ds);
+    }
+    n += ds;
+    p = p->next;
+  }
+  return tup;
+}
+
+tup_t* tup_copy(tup_t* u){
+  return tup_copy_(&_G,u);
+}
 
 tup_t* get_val_tup(term_t* a){
   if (a->mode == TERM_IDEN){
     var_t* v = find_var(&(a->u.str));
-    int n = 0;
-    list_node_t* p = v->type->u.elem.head;
-    while (p){
-      type_t* t = (type_t*)(p->data);
-      n += type_size(t);
-      p = p->next;
-    }
-    tup_t* tup = (tup_t*)gc_alloc(sizeof(tup_t)+n);
-    tup->type = v->type;
-    p = v->type->u.elem.head;
-    n = 0;
-    while (p){
-      type_t* t = (type_t*)(p->data);
-      int ds = type_size(t);
-    
-           if (t->vart == VART_VEC) ((vec_t**)  (tup->data+n))[0] = vec_copy(((vec_t**)(v->u.tup->data+n))[0]);
-      else if (t->vart == VART_STR) ((stn_t**)  (tup->data+n))[0] = stn_copy(((stn_t**)(v->u.tup->data+n))[0]);
-      else{
-        memcpy(tup->data+n, v->u.tup->data+n, ds);
-      }
-      n += ds;
-      p = p->next;
-    }
-    return tup;
+    return tup_copy(v->u.tup);
   }else{
     UNIMPL;
   }
   return NULL;
+}
+
+int tup_eq(tup_t* u, tup_t* v){
+  list_node_t* p = v->type->u.elem.head;
+  int n = 0;
+  while (p){
+    type_t* t = (type_t*)(p->data);
+    int ds = type_size(t);
+    if (t->vart == VART_VEC){
+      if (!vec_eq( ((vec_t**)  (u->data+n))[0], ((vec_t**)  (v->data+n))[0])){
+        return 0;
+      }
+    }else if (t->vart == VART_STR){
+      if (strcmp( ((stn_t**)  (u->data+n))[0]->data,  ((stn_t**)(v->data+n))[0]->data )!=0){
+        return 0;
+      }
+    }else{
+      if (memcmp(u->data+n,v->data+n,ds)!=0){
+        return 0;
+      }
+    }    
+    n += ds;
+    p = p->next;
+  }
+  return 1;
 }
 
 var_t* var_new(type_t* typ);
@@ -1996,14 +2044,23 @@ void gc_mark_fun(fun_t* o){
 }
 
 void gc_mark_dic(dic_t* o){
+  type_t* ta = (type_t*)(o->type->u.elem.head->data);
   type_t* tb = (type_t*)(o->type->u.elem.tail->data);
-  if (tb->mode == TYPM_SIMP || tb->mode == TYPM_CONT){
+  int bada = ta->vart == VART_VEC || ta->vart == VART_TUP;
+  int badb = tb->mode == TYPM_SIMP || tb->mode == TYPM_CONT;
+  if (bada || badb){
     for (int k = 0; k < NUM_MAP_SLOTS; k++){
       if (o->map.slots[k].cap){
         for (int i = 0; i < o->map.slots[k].len;i++){
           pair_t p = o->map.slots[k].data[i];
-
-          gc_mark(*((obj_t**)p.val));
+          if (bada){
+            gc_mark((obj_t*) (((pair_t*)p.val)->key) );
+            if (badb){
+              gc_mark(*(obj_t**) (((pair_t*)p.val)->val) );
+            }
+          }else if (badb){
+            gc_mark(*((obj_t**)p.val));
+          }
         }
       }
     }

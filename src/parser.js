@@ -40,7 +40,7 @@ var PARSER = function(sys,extensions={}){
   let matyps = [...nmtyps,'vec'];
   let cntyps = ['vec','arr','list','tup'];
   let smtyps = [...nmtyps,'str'];
-  let hctyps = [...cntyps,'str'];
+  let hctyps = [...cntyps,'dict','str'];
 
   let state = {
     src:[],
@@ -1838,9 +1838,9 @@ var PARSER = function(sys,extensions={}){
         let xa = x.split(".").slice(0,-1).join('.');
         let xb = x.split(".").at(-1);
 
-
-        for (let i = scostk.length-1; i>= 0; i--){
-          let idx = scostk[i];
+        let scotest = scostk.slice().reverse().concat(scozoo.map((_,i)=>i));
+        for (let i = 0; i < scotest.length; i++){          
+          let idx = scotest[i];
 
           if (xa.length){
             for (let j = 0; j < scozoo.length; j++){
@@ -1855,6 +1855,7 @@ var PARSER = function(sys,extensions={}){
           }
           
           if (m = scozoo[idx].__types[idx+'.'+xb]){
+
             xb = idx+'.'+xb;
             if (m.typ.con){
               mkerr('typecheck',`incomplete type '${printtype(x)}', expected '${printtype(m.typ)}'`,somepos(ast));

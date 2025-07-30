@@ -4,7 +4,7 @@
 
 #pragma comment(lib, "winhttp.lib")
 
-int req_impl__http(
+void req_impl__http(
   char *method, char *url,
   char *body, int n_body, char **headers, int n_headers,
   int* out_status, char** out_body, int* out_n_body,

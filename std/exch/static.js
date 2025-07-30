@@ -69,7 +69,7 @@ globalThis.$exch = new function(){
     let jn = JSON.parse(s);
 
     o.data = jbuild(jn).data;
-    console.log(o);
+    // console.log(o);
   }
   that._encode_json = function(){
     let [o] = $pop_args(1);

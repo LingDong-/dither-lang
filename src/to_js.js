@@ -85,6 +85,8 @@ var TO_JS = function(cfg){
       return $to_str(x.__val);
     }else if (x.__type == 'str'){
       return x[0];
+    }else if (x.__type.con == 'tup'){
+      return '['+x.map($to_str).join(',')+']';
     }else{
       return '[object:'+JSON.stringify(x.__type)+']';
     }

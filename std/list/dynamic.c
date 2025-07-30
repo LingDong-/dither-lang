@@ -51,6 +51,8 @@ EXPORTED void c_make(var_t* ret,  gstate_t* _g){
       ptr = vec_copy_(_g,u->u.vec);
     }else if (ta->vart == VART_STR){
       ptr = stn_copy_(_g,u->u.str);
+    }else if (ta->vart == VART_TUP){
+      ptr = tup_copy_(_g,u->u.tup);
     }else{
       ptr = u->u.obj;
     }
