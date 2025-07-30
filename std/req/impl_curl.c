@@ -54,6 +54,7 @@ void req_impl__http(
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.88.1");
 
   CURLcode res = curl_easy_perform(curl);
   long status = 0;

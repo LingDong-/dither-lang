@@ -34,9 +34,9 @@ EXPORTED void dict_keys(var_t* ret,  gstate_t* _g){
       for (int i = 0; i < m->slots[k].len;i++){
         pair_t p = m->slots[k].data[i];
         if (ta->vart == VART_VEC){
-          ((vec_t**)(lst->data))[idx++] = vec_copy_(_g, ((pair_t*)p.val)->key );
+          ((vec_t**)(lst->data))[idx++] = vec_copy_(_g, (void*) (((pair_t*)p.val)->key) );
         }else if (ta->vart == VART_TUP){
-          ((tup_t**)(lst->data))[idx++] = tup_copy_(_g, ((pair_t*)p.val)->key );
+          ((tup_t**)(lst->data))[idx++] = tup_copy_(_g, (void*) (((pair_t*)p.val)->key) );
         }else if (ta->vart == VART_STR){
           stn_t* s = (stn_t*)gc_alloc_(_g,ds+1);
           s->n = ds;

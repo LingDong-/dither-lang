@@ -1272,7 +1272,7 @@ int elem_vart(void* v){
 
 vec_t* vec_copy(vec_t* u);
 tup_t* tup_copy(tup_t* u);
-
+int vec_eq(vec_t* u, vec_t* v);
 
 void to_str_(int vart, void* u, str_t* s, int depth){
   if (vart == VART_NUL){
@@ -1667,9 +1667,9 @@ void* get_addr(term_t* a, int* nbytes){
       if (p->key == NULL){
         var_t* u = find_var(&(a->u.addr.offs));
         if (ta->vart == VART_VEC){
-          p->key = vec_copy(u->u.vec);
+          p->key = (void*)vec_copy(u->u.vec);
         }else if (ta->vart == VART_TUP){
-          p->key = tup_copy(u->u.tup);
+          p->key = (void*)tup_copy(u->u.tup);
         }
       }
       return &(p->val);
