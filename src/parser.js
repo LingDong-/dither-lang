@@ -2518,6 +2518,7 @@ var PARSER = function(sys,extensions={}){
           }else if (typeof ast.fun.typ == 'string' && ast.fun.typ.startsWith('__vec_map')){
             let e = {typ:arg2[0].typ.elt[0]};
             let r,t,f;
+            let oldnonlethal = nonlethal;
             try{
               nonlethal = -1;
               ;[r,t,f] = matchftmpl([e,{typ:'i32'}],arg2[1].val,{},[]);
@@ -2525,10 +2526,11 @@ var PARSER = function(sys,extensions={}){
                 throw 'up';
               }
             }catch(_){
+              nonlethal = oldnonlethal;
               // console.log(arg2[1])
               ;[r,t,f] = matchftmpl([e],arg2[1].val,{},[]);
             }
-            nonlethal = 0;
+            nonlethal = oldnonlethal;
             // console.dir(t,{depth:Infinity});
             ast.fun.rty = {
               con:'func', elt:[ {con:'tup', elt:[
