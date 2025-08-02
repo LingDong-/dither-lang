@@ -1506,6 +1506,7 @@ var TO_C = function(cfg){
           }
           // o.push(`__gc_run();`);
         }else if (typds[funname]){
+          let oldlookup = Object.assign({},lookup);
           o.push("{")
           for (let i = 0; i < typds[funname].instrs.length; i++){
             if (typds[funname].instrs[i][0] == 'ret'){
@@ -1514,6 +1515,7 @@ var TO_C = function(cfg){
               trans_instr(typds[funname].instrs[i]);
             }
           }
+          Object.assign(lookup,oldlookup);
           o.push("}")
 
         }else{

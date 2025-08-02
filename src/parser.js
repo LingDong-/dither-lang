@@ -530,7 +530,7 @@ var PARSER = function(sys,extensions={}){
 
       let out2 = dounary(out1,['sigil:++','sigil:--','sigil:+','sigil:-','sigil:~','sigil:!','sigil:...'],false);
 
-            function dohint(out0){
+      function dohint(out0){
         let out1 = [];
         let i = 0;
         while (i < out0.length){
@@ -1148,7 +1148,7 @@ var PARSER = function(sys,extensions={}){
       }
     }else if (cst.key == 'embed'){
       ast.key = cst.key;
-      ast.lhs = cst.val.lhs;
+      ast.lhs = abstract(cst.val.lhs);
       ast.rhs = cst.val.rhs;
     }else{
       ast.key = cst.key;
@@ -2456,7 +2456,8 @@ var PARSER = function(sys,extensions={}){
               // process.exit();
             }else{
               // typ = fieldtype(ast.fun.lhs.typ,ast.fun.rhs);
-              doinfer(ast.fun);
+              if (!ast.fun.rty)
+                doinfer(ast.fun);
               // console.log(ast.fun.lhs.typ.con)
             }
             

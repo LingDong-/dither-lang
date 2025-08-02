@@ -653,6 +653,7 @@ var TO_JS = function(cfg){
           }
           o.push(`${v}=$assign(${v},await ${funname}());`);
         }else if (typds[funname]){
+          let oldlookup = Object.assign({},lookup);
           o.push("{")
           for (let i = 0; i < typds[funname].instrs.length; i++){
             if (typds[funname].instrs[i][0] == 'ret'){
@@ -661,6 +662,7 @@ var TO_JS = function(cfg){
               trans_instr(typds[funname].instrs[i]);
             }
           }
+          Object.assign(lookup,oldlookup);
           o.push("}")
         }
         

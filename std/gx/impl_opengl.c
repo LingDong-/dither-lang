@@ -10,6 +10,7 @@
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #elif defined(_WIN32)
+#include <windows.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
 #pragma comment(lib, "opengl32.lib")
