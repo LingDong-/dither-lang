@@ -137,7 +137,7 @@ namespace prim{
     };
     faces:=list[list[i32]]{
       list[i32]{0,3,2,1}, list[i32]{4,5,6,7},
-      list[i32]{0,4,7,3}, list[i32]{1,5,6,2},
+      list[i32]{0,4,7,3}, list[i32]{2,6,5,1},
       list[i32]{3,7,6,2}, list[i32]{0,1,5,4}
     };
     normals:=list[vec[f32,3]]{};
@@ -271,12 +271,10 @@ context := win.init(W,H,win.CONTEXT_3D);
 g3d.init(context);
 frag.init(context);
 
-func normal_material(@varying normal:vec[f32,3]):vec[f32,4]{
+shader0 := frag.program(embed(func(@varying normal:vec[f32,3]):vec[f32,4]{
   c := normal*0.5+0.5;
   return {c.x,c.y,c.z,1.0};
-}
-
-shader0 := frag.program(embed normal_material as "fragment");
+}) as "fragment");
 
 meshes := list[g3d.Mesh]{
   prim.cube().faceted(),

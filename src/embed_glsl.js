@@ -14,6 +14,13 @@ function embed_glsl_frag(ast,scopes){
         o += docompile(vs[i]);
       }
       o += ")";
+    }else if (ast.key == 'alit'){
+      o += `${printtype(ast.typ.elt[0])}[${ast.val[0].length}](`;
+      for (let i = 0; i < ast.val[0].length; i++){
+        if (i) o += ',';
+        o += docompile(ast.val[0][i]);
+      }
+      o += ")"
     }else if (ast.key == 'term'){
       if (ast.tag == 'numbr'){
         if (ast.typ == 'f32'){
@@ -101,6 +108,8 @@ function embed_glsl_frag(ast,scopes){
       out.push(`${docompile(ast.chk)}; ${docompile(ast.stp)}){`)
       out.push(docompile(ast.bdy));
       out.push(`}`);
+    }else if (ast.key == 'subs'){
+      o += `(${docompile(ast.con)}[int(${docompile(ast.idx)})])`;
     }else{
       console.log(ast)
     }
@@ -162,7 +171,13 @@ function embed_glsl_frag(ast,scopes){
           didvar[id] = 1;
           let a = scopes[i][k];
           if (a.val !== null){
-            out.push(`${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
+            if (a.typ.con == 'arr'){
+              if (a.val.key == 'alit'){
+                out.push(`${printtype(a.typ.elt[0])} ${k}[${a.val.val[0].length}] = ${docompile(a.val)};`);
+              }
+            }else{
+              out.push(`${printtype(a.typ)} ${k} = ${docompile(a.val)};`);
+            }
           }else{
             // out.push(`uniform ${printtype(a.typ)} ${k};`);
             out.push(`${printtype(a.typ)} ${k};`);
