@@ -29,7 +29,7 @@ std_one: build/config.h
 	echo $(lib) $$f ":" $$CFLAGS;\
 	gcc -include $$DITHER_ROOT/build/config.h $(OPT) $$DEADSTRIP -shared -o $${f%.*}.so -fPIC -fvisibility=hidden $$f $$CFLAGS;
 std_all: build/config.h
-	for folder in std/*; do\
+	for folder in std/*/; do\
 		name=$$(basename $$folder);\
 		make std_one lib=$$name;\
 	done;

@@ -45,7 +45,7 @@ function embed_glsl_frag(ast,scopes){
     }else if (['+u','-u','++u','--u'].includes(ast.key)){
       o += `${ast.key.slice(0,-1)}${docompile(ast.val)}`
     }else if (ast.key == '%'){
-      o += `mod(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
+      o += `${printtype(ast.typ)}(mod(float(${docompile(ast.lhs)}),float(${docompile(ast.rhs)})))`;
     }else if (ast.key == '**'){
       o += `pow(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
     }else if (ast.key == '@*'){
@@ -109,7 +109,12 @@ function embed_glsl_frag(ast,scopes){
       out.push(docompile(ast.bdy));
       out.push(`}`);
     }else if (ast.key == 'subs'){
-      o += `(${docompile(ast.con)}[int(${docompile(ast.idx)})])`;
+      
+      if (ast.con.typ.con != 'arr'){
+        o += `(${docompile(ast.con)}[int(${docompile(ast.idx)})])`;
+      }else{
+        o += `(${docompile(ast.con)}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${docompile(ast.idx)})/*ARRAY_SUBSCRIPT_END*/])`;
+      }
     }else{
       console.log(ast)
     }
@@ -173,7 +178,7 @@ function embed_glsl_frag(ast,scopes){
           if (a.val !== null){
             if (a.typ.con == 'arr'){
               if (a.val.key == 'alit'){
-                out.push(`${printtype(a.typ.elt[0])} ${k}[${a.val.val[0].length}] = ${docompile(a.val)};`);
+                out.push(`/*ARRAY_LITERAL_BEGIN*/${printtype(a.typ.elt[0])} ${k}[${a.val.val[0].length}]=${docompile(a.val)};/*ARRAY_LITERAL_END*/`);
               }
             }else{
               out.push(`${printtype(a.typ)} ${k} = ${docompile(a.val)};`);

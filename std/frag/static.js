@@ -56,6 +56,13 @@ void main() {
   that.program = function(){
     let [src] = $pop_args(1);
     src = src.replace(/#version +\d\d\d/g,`precision mediump float;`);
+    src = src.replace(/__/g,`GLES_DOUBLE_UNDERSCORE_REPLACEMENT`);
+    src = src.replace(/\/\*ARRAY_LITERAL_BEGIN\*\/(.*?) (.*?)\[.*?\]\=.*?\[.*?\]\((.*?)\)\;\/\*ARRAY_LITERAL_END\*\//,
+      function(match,p0,p1,p2){
+        return `${p0} ${p1}(int idx){${p2.split(',').map((x,i)=>`if (idx == ${i}) return ${x};`).join('\n')}}`;
+      });
+    src = src.replace(/\/\*ARRAY_SUBSCRIPT_BEGIN\*\/./,'(');
+    src = src.replace(/\/\*ARRAY_SUBSCRIPT_END\*\/./,')');
     console.log(src);
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSrc);
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, src);

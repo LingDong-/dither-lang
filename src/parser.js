@@ -860,12 +860,12 @@ var PARSER = function(sys,extensions={}){
               let urpth = sys.path.resolve(sys.path.join(mydir,urfil));
               // console.log(urpth);
               
-              if (urpth.endsWith(".dh")){
+              if (urpth.endsWith(".dh") || (sys.fs.existsSync(urpth+".dh")?urpth+=".dh":0) ){
                 let tks = tokenize(urpth);
                 let xst = parse(tks);
                 xst.val.forEach(x=>cst.val.push(x));
                 ok = 1;
-              }else if (urpth.endsWith(".so")){
+              }else if (urpth.endsWith(".so") || urpth.endsWith(".dll")){
                 let s = reader(urpth).split("/**BEGINHEADER**/")[1].split("/**ENDHEADER**/")[0];
                 
                 let rpath = sys.path.relative(sys.process.cwd(), urpth);
@@ -2123,6 +2123,7 @@ var PARSER = function(sys,extensions={}){
               if (ast.ano.typ.elt.length != ast.val.typ.elt.length){
                 mkerr('typecheck',`unpack tuple size mismatch, ${ast.ano.typ.elt.length} != ${ast.val.typ.elt.length}`,somepos(ast));
               }
+              curpos = somepos(ast.val);
               for (let i = 0; i < ast.val.typ.length; i++){
                 if (ast.val.key == 'tlit'){
                   maxtypf(ast.ano.typ.elt[i],ast.val.val[i].typ,ast.val.val[i]);
@@ -2165,6 +2166,7 @@ var PARSER = function(sys,extensions={}){
               if (l0 != l1){
                 mkerr('typecheck',`unpack vector dimension mismatch, ${l0} != ${l1}`,somepos(ast));
               }
+              curpos = somepos(ast.val);
               for (let i = 0; i < ast.val.typ.elt.length; i++){
                 maxtype(ast.ano.typ.elt[i], ast.val.typ.elt[i]);
               }
@@ -2193,6 +2195,7 @@ var PARSER = function(sys,extensions={}){
               cur_scope()[ast.nom.val] = {typ:ast.val.typ,val:ast.val};
             }
             if (ast.ano && ast.val){
+              curpos = somepos(ast.val);
               maxtypf(ast.ano.typ,ast.val.typ,ast.val);
             }
           }
@@ -2206,6 +2209,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           realizefunc(ast.rhs);
+          curpos = somepos(ast.lhs);
           let typ = maxtypf(ast.lhs.typ,ast.rhs.typ,ast.rhs);
           ast.typ = ast.lhs.typ;
 
@@ -2280,6 +2284,7 @@ var PARSER = function(sys,extensions={}){
             ast.key = 'llit';
             for (let i = 0; i < ast.rhs.length; i++){
               doinfer(ast.rhs[i]);
+              curpos = somepos(ast.rhs[i]);
               maxtype(ast.rhs[i].typ, lht.elt[0]);
             }
           }else if (lht.con && lht.con == 'dict'){
@@ -2663,7 +2668,7 @@ var PARSER = function(sys,extensions={}){
               }
               ast.typ = ast.con.typ.elt[1];
               ast.idx = ast.idx[0];
-              
+              curpos = somepos(ast.idx);
               maxtype(ast.con.typ.elt[0],ast.idx.typ);
             }else if (ast.con.typ.con == 'arr'){
               ast.typ = ast.con.typ.elt[0];
@@ -2829,6 +2834,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = [...matyps,'str'];
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           if (!allow.includes(typ) && !allow.includes(typ.con)){
 
@@ -2843,6 +2849,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = matyps;
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           if (!allow.includes(typ) && !allow.includes(typ.con)){
             mkerr('typecheck',`'${ast.key}' operator cannot be used on ${printtype(typ)}`,somepos(ast));
@@ -2852,6 +2859,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = matyps;
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
 
           if (!allow.includes(typ) && !allow.includes(typ.con)){
@@ -2863,6 +2871,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           // let allow = [...matyps,'str'];
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           // if (!allow.includes(typ) && !allow.includes(typ.con)){
           //   mkerr('typecheck',`'${ast.key}' operator cannot be used on ${printtype(typ)}`,somepos(ast));
@@ -2873,6 +2882,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = nmtyps;
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           if (!allow.includes(typ) && !allow.includes(typ.con)){
             mkerr('typecheck',`'${ast.key}' operator cannot be used on ${printtype(typ)}`,somepos(ast));
@@ -2883,6 +2893,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = intyps;
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           if (!allow.includes(typ) && !allow.includes(typ.con)){
             mkerr('typecheck',`'${ast.key}' operator cannot be used on ${printtype(typ)}`,somepos(ast));
@@ -2893,6 +2904,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = intyps;
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           if (!allow.includes(typ) && !allow.includes(typ.con)){
             mkerr('typecheck',`'${ast.key}' operator cannot be used on ${printtype(typ)}`,somepos(ast));
@@ -2903,6 +2915,7 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let allow = intyps;
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.lhs.typ,ast.rhs.typ);
           if (!allow.includes(typ) && !allow.includes(typ.con)){
             mkerr('typecheck',`'${ast.key}' operator cannot be used on ${printtype(typ)}`,somepos(ast));
@@ -2940,12 +2953,14 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           doinfer(ast.mhs);
           doinfer(ast.rhs);
+          curpos = somepos(ast.lhs);
           let typ = maxtype(ast.mhs.typ,ast.rhs.typ);
           ast.typ = typ;
         }else if (['@*','@*='].includes(ast.key)){
           doinfer(ast.lhs);
           doinfer(ast.rhs);
           let typ;
+          curpos = somepos(ast.lhs);
           if (nmtyps.includes(ast.lhs.typ)){
             if (nmtyps.includes(ast.rhs.typ)){
               typ = maxtype(ast.lhs.typ,ast.rhs.typ);
@@ -2959,6 +2974,7 @@ var PARSER = function(sys,extensions={}){
             let dim0 = ast.lhs.typ.elt.slice(1);
             let dim1 = ast.rhs.typ.elt.slice(1);
             let lisv = false, risv = false;
+            curpos = somepos(ast.lhs);
             let o = {con:'vec',elt:[maxtype(ast.lhs.typ.elt[0],ast.rhs.typ.elt[0])]};
             if (dim0.length > 2 || dim1.length > 2){
               mkerr('typecheck',`matrix multiply expects 1D or 2D`,somepos(ast));
