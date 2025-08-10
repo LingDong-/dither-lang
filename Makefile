@@ -1,5 +1,4 @@
 SHELL := /bin/bash
-include config.env
 ifeq ($(dbg),1)
 	OPT = -DDBG
 	VM_CHOICE = vm_dbg
@@ -7,6 +6,12 @@ else
 	OPT = -O3
 	VM_CHOICE = vm
 endif
+config.env:
+	@if [ "$$(uname -s)" = "Darwin" ]; then \
+	cp config/mac.env config.env;\
+	else \
+	cp config/linux.env config.env;\
+	fi
 build/config.h: config.env
 	rm -f build/config.h;
 	@set -a; \
@@ -19,19 +24,19 @@ build/config.h: config.env
 	done
 std_one: build/config.h
 	source config.env;\
-	cd std/$(lib);\
+	cd std/$(src);\
 	DEADSTRIP="-fdata-sections -ffunction-sections -Wl,--gc-sections";\
 	if [ "$$(uname)" == "Darwin" ]; then\
 		DEADSTRIP="-dead_strip";\
 	fi;\
 	f=dynamic.c;\
 	eval "$$(cat cflags.txt)";\
-	echo $(lib) $$f ":" $$CFLAGS;\
+	echo $(src) $$f ":" $$CFLAGS;\
 	gcc -include $$DITHER_ROOT/build/config.h $(OPT) $$DEADSTRIP -shared -o $${f%.*}.so -fPIC -fvisibility=hidden $$f $$CFLAGS;
 std_all: build/config.h
 	for folder in std/*/; do\
 		name=$$(basename $$folder);\
-		make std_one lib=$$name;\
+		make std_one src=$$name;\
 	done;
 build/vm: $(wildcard src/*)
 	gcc -O3 src/run.c -lm -o build/vm;

@@ -427,12 +427,12 @@ x.push(4);
 x.slice(2,4);
 ```
 
-You can nest object/list/vec literals, but vec literals must be written in full to avoid ambiguity in parsing.
+You can nest object/list/vec literals.
 
 ```
 x := list[vec[i32,5]]{
-  vec[i32,5]{ 1, 2, 3, 4, 5}, 
-  vec[i32,5]{ 6, 7, 8, 9, 0}
+  { 1, 2, 3, 4, 5},  // ok
+  vec[i32,5]{ 6, 7, 8, 9, 0} // also ok
 };
 x := list[P]{
   P{x:1,y:2}, 

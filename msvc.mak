@@ -6,6 +6,8 @@ OPT = /O2
 VM_CHOICE = vm.exe
 !endif
 MSVCFLAGS = /Fo:"%TEMP%\a.obj" /wd4098 /wd4133 /wd4047 /wd4477 /wd4311 /wd4113
+config.env:
+	copy config\win.env config.env
 build\config.bat: config.env
 	node -e "const fs=require('fs');const s=fs.readFileSync('config.env').toString().replace(/\$$\(pwd\)/g, process.cwd()).split('\n').map(l=>l&&!l.startsWith('#')?'set '+l:'').join('\n');fs.writeFileSync('build\\config.bat', s);"
 build\config.h: config.env

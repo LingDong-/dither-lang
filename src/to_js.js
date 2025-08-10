@@ -334,6 +334,8 @@ var TO_JS = function(cfg){
         for (let i = 0; i < vec_type_flat_n(typ); i++){
           o.push(`${a}[${i}]=${b}[${i}]${os}${c}[${i}];`);
         }
+      }else if (os == '/' && typ.startsWith && !typ.startsWith('f')){
+        o.push(`${get_ptr(a)}=new $typed_cons.${typ}([$unwrap(${get_ptr(b)})${os}$unwrap(${get_ptr(c)})])[0];`);
       }else{
         o.push(`${get_ptr(a)}=$unwrap(${get_ptr(b)})${os}$unwrap(${get_ptr(c)});`);
       }

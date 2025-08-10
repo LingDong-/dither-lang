@@ -58,6 +58,11 @@ for (let i = 0; i < ff.length; i++){
     let p = `"std/${ff[i]}/static.js":`+JSON.stringify(fs.readFileSync("std/"+ff[i]+"/static.js").toString())+`,`;
     html.push(q);
     html.push(p);
+  }else if (ff[i].endsWith(".dh")){
+    let f = ff[i].replace(/\.dh$/g,"");
+    let v = JSON.stringify(fs.readFileSync("std/"+ff[i]).toString());
+    html.push(`"std/${f}":`+v+",");
+    html.push(`"std/${ff[i]}":`+v+",");
   }
 }
 html.push(`};</script>`)
@@ -69,7 +74,11 @@ let parser = new PARSER(
 let idens = new Set();
 let std = fs.readdirSync("std").filter(x=>!x.startsWith("."));
 for (let i = 0; i < std.length; i++){
+  let isdir = fs.lstatSync("std/"+std[i]).isDirectory();
   let f = "std/"+std[i]+"/header.dh";
+  if (!isdir){
+    f = "std/"+std[i];
+  }
   let toks = parser.tokenize(f);
   let cst = parser.parse(toks);
   let nmsp = cst.val.filter(x=>x.key == "nmsp")[0];

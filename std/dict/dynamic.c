@@ -38,8 +38,9 @@ EXPORTED void dict_keys(var_t* ret,  gstate_t* _g){
         }else if (ta->vart == VART_TUP){
           ((tup_t**)(lst->data))[idx++] = tup_copy_(_g, (void*) (((pair_t*)p.val)->key) );
         }else if (ta->vart == VART_STR){
-          stn_t* s = (stn_t*)gc_alloc_(_g,ds+1);
-          s->n = ds;
+          int l = strlen(p.key);
+          stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+l+1);
+          s->n = l;
           s->w = 1;
           s->type = tb;
           memcpy(s->data, p.key, ds);

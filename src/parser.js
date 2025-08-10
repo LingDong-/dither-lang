@@ -860,7 +860,7 @@ var PARSER = function(sys,extensions={}){
               let urpth = sys.path.resolve(sys.path.join(mydir,urfil));
               // console.log(urpth);
               
-              if (urpth.endsWith(".dh") || (sys.fs.existsSync(urpth+".dh")?urpth+=".dh":0) ){
+              if (urpth.endsWith(".dh") || ((sys.fs.existsSync && sys.fs.existsSync(urpth+".dh"))?urpth+=".dh":0) ){
                 let tks = tokenize(urpth);
                 let xst = parse(tks);
                 xst.val.forEach(x=>cst.val.push(x));

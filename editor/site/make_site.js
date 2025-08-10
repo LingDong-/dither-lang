@@ -12,6 +12,7 @@ function download(url) {
 }
 
 let html = [`
+<meta charset="UTF-8">
 <style>
   html{
     height:100%;
@@ -198,7 +199,7 @@ function main(){
         }else{
           return new TextEncoder().encode(EXAMPLES[x]);
         }
-      }
+      },
     }
     let path = {
       resolve: (x)=>x,
@@ -486,6 +487,11 @@ for (let i = 0; i < ff.length; i++){
     let p = `"std/${ff[i]}/static.js":`+JSON.stringify(fs.readFileSync("std/"+ff[i]+"/static.js").toString())+`,`;
     html.push(q);
     html.push(p);
+  }else if (ff[i].endsWith(".dh")){
+    let f = ff[i].replace(/\.dh$/g,"");
+    let v = JSON.stringify(fs.readFileSync("std/"+ff[i]).toString());
+    html.push(`"std/${f}":`+v+",");
+    html.push(`"std/${ff[i]}":`+v+",");
   }
 }
 html.push(`};</script>`)
