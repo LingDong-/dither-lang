@@ -561,7 +561,7 @@ var unmark = (t)=>(t
 var bimg = fs.readFileSync("doc/logo.png").toString('base64');
 html.push(`<script>var LOGO = "data:image/png;base64,${bimg}" </script>`);
 
-let txt = fs.readFileSync("syntax.md").toString().replace(/</g,'&lt;').replace(/>/g,'&gt;');
+let txt = fs.readFileSync("SYNTAX.md").toString().replace(/</g,'&lt;').replace(/>/g,'&gt;');
 txt = txt.split("```");
 for (let i = 0; i < txt.length; i+=2){
   let un = unmark(txt[i]);;
