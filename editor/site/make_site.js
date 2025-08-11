@@ -598,5 +598,5 @@ html.push(`<script>${main.toString()};main();</script>`)
 
 
 
-fs.writeFileSync("build/site.html",html.join("\n"));
+fs.writeFileSync("build/editor.html",html.join("\n"));
 

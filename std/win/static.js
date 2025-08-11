@@ -28,7 +28,8 @@ globalThis.$win = new function(){
     let [w,h,flags] = $pop_args(3);
     let par = document.getElementById("out") ?? document.body;
     cnv = document.createElement("canvas");
-    cnv.id = "canvas";
+    let id = ~~(Math.random()*65535)
+    cnv.id = id;
     cnv.width = w;
     cnv.height = h;
     par.appendChild(cnv);
@@ -71,7 +72,7 @@ globalThis.$win = new function(){
       let key = mapkey(e.key);
       evtq.push({type:5,key,x:0,y:0});
     });
-    return 0n;
+    return BigInt(id);
   }
   function animation_frame() {
     return new Promise(resolve => requestAnimationFrame(resolve));

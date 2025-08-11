@@ -4,6 +4,13 @@ function embed_glsl_frag(ast,scopes){
   let didfun = {};
   let didvar = {};
 
+  function shortid(){
+    var id = "";
+    for (var i = 0; i < 6; i++){
+      id+=String.fromCharCode(~~(Math.random()*26)+0x41);
+    }
+    return id;
+  }
   function docompile(ast){
     let o = "";
     if (ast.key == 'vlit'){
@@ -15,10 +22,12 @@ function embed_glsl_frag(ast,scopes){
       }
       o += ")";
     }else if (ast.key == 'alit'){
-      o += `${printtype(ast.typ.elt[0])}[${ast.val[0].length}](`;
-      for (let i = 0; i < ast.val[0].length; i++){
-        if (i) o += ',';
-        o += docompile(ast.val[0][i]);
+      o += `${printtype(ast.typ.elt[0])}[${ast.val.length*ast.val[0].length}](`;
+      for (let i = 0; i < ast.val.length; i++){
+        for (let j = 0; j < ast.val[i].length; j++){
+          if (i||j) o += ',';
+          o += docompile(ast.val[i][j]);
+        }
       }
       o += ")"
     }else if (ast.key == 'term'){
@@ -113,7 +122,14 @@ function embed_glsl_frag(ast,scopes){
       if (ast.con.typ.con != 'arr'){
         o += `(${docompile(ast.con)}[int(${docompile(ast.idx)})])`;
       }else{
-        o += `(${docompile(ast.con)}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${docompile(ast.idx)})/*ARRAY_SUBSCRIPT_END*/])`;
+        if (ast.idx.typ.con == 'vec'){
+          let idx = shortid();
+          out.push(`ivec2 ${idx} = ${docompile(ast.idx)};`);
+          let con = docompile(ast.con);
+          o += `(${con}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${idx}.y*${con}__stride+${idx}.x)/*ARRAY_SUBSCRIPT_END*/])`;
+        }else{
+          o += `(${docompile(ast.con)}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${docompile(ast.idx)})/*ARRAY_SUBSCRIPT_END*/])`;
+        }
       }
     }else{
       console.log(ast)
@@ -178,7 +194,8 @@ function embed_glsl_frag(ast,scopes){
           if (a.val !== null){
             if (a.typ.con == 'arr'){
               if (a.val.key == 'alit'){
-                out.push(`/*ARRAY_LITERAL_BEGIN*/${printtype(a.typ.elt[0])} ${k}[${a.val.val[0].length}]=${docompile(a.val)};/*ARRAY_LITERAL_END*/`);
+                out.push(`/*ARRAY_LITERAL_BEGIN*/${printtype(a.typ.elt[0])} ${k}[${a.val.val.length*a.val.val[0].length}]=${docompile(a.val)};/*ARRAY_LITERAL_END*/`);
+                out.push(`int ${k}__stride = ${a.val.val[0].length};`);
               }
             }else{
               out.push(`${printtype(a.typ)} ${k} = ${docompile(a.val)};`);

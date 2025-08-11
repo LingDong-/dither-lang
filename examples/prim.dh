@@ -3,7 +3,6 @@ include "std/win"
 include "std/list"
 include "std/vec"
 include "std/frag"
-include "std/io"
 include "std/time"
 include "std/math"
 

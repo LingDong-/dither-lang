@@ -48,8 +48,8 @@ void main() {
     return shader;
   }
   that.init = function(){
-    let [_] = $pop_args(1);
-    cnv = document.getElementById("canvas");
+    let [id] = $pop_args(1);
+    cnv = document.getElementById(id);
     gl = cnv.getContext('webgl');
   }
   
