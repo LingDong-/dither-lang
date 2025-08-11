@@ -3,12 +3,18 @@
 
 Subject to change.
 
+Works on mac, windows and linux. On windows, the `make` command should be replaced with
+
+```
+nmake /f msvc.mak
+```
+
+followed by the same arguments.
+
 ### Required tools
 
-- gcc/clang
+- gcc/clang/msvc
 - node.js v18+
-
-Tested on macOS most extensively -- should also work on Linux. For windows, WSL is recommended.
 
 ### Run an example
 
@@ -47,10 +53,8 @@ make std_all
 Compile one standard library:
 
 ```
-make std_one lib=io
+make std_one src=io
 ```
-
-Currently, on non-macOS systems, you might need to install OpenGL/GLX for `win` and `gx` libraries, and portaudio for `snd` library.
 
 ### Compile the Windowing Backend
 
@@ -65,6 +69,16 @@ To compile X11/GLX backend (requires X11 / XQuartz):
 ```
 cd std/win/platform; make glx
 ```
+
+### Compile the commandline tool as single binary
+
+Requires node pkg. Requires calling `make std_all` and compiling windowing backend first.
+
+```
+make cmdline
+```
+
+Now the `dither` command will be available globally on your system.
 
 ### Other Commands
 
