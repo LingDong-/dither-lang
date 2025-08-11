@@ -35,8 +35,6 @@ options:
     --command, -c cmd  : program passed in as string
     --help,    -h      : print this help
     --version, -V      : print version
-
-[warning] no input file.
 ```
 
-Then follow the [syntax guide](SYNTAX.md) or start from one of the [examples](examples).
+Then follow the [syntax guide](SYNTAX.md) or start from one of the [examples](examples). **You can also check out [what the author is creating](https://github.com/LingDong-/dither-sketches) with Dither.**
