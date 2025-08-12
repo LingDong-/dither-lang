@@ -49,6 +49,9 @@ let did_info = 0;
 if (args.length == 0){
   console.log(help);
 }
+
+fs.mkdirSync(tmpth(), { recursive: true });
+
 for (let i = 0; i < args.length; i++){
   if (args[i] == '--execute' || args[i] == '-x'){
     do_run = 1;
@@ -92,7 +95,6 @@ if (out_pth == null){
     out_pth = tmpth('out.html');
   }
 }
-fs.mkdirSync(tmpth(), { recursive: true });
 
 let search_paths = Array.from(new Set([...inc_pth,".",tmpth()].map(x=>path.resolve(x))));
 // console.log(search_paths);

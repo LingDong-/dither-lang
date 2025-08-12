@@ -37,4 +37,25 @@ options:
     --version, -V      : print version
 ```
 
+### Typical usage
+
+Run a program in interpreted mode:
+
+```
+dither -x examples/helloworld.dh
+```
+
+Compile a program to C and run it (requires system C compiler gcc/clang/msvc):
+
+```
+dither -xvt c examples/helloworld.dh
+```
+
+Compile a program to JavaScript, and host a local server to run it:
+
+```
+dither -xvt html examples/tree.dh
+```
+
+
 Then follow the [syntax guide](SYNTAX.md) or start from one of the [examples](examples). **You can also check out [what the author is creating](https://github.com/LingDong-/dither-sketches) with Dither.**
