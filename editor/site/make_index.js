@@ -97,15 +97,15 @@ ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/
 <p>
 Dither is a programming language for creative coding.
 <ul>
-<li><b>Compiled or interpreted: your choice.</b>
+<li><b>Compiled<sup><a href="https://en.wikipedia.org/wiki/Compiler">?</a></sup> or interpreted<sup><a href="https://en.wikipedia.org/wiki/Interpreter_(computing)">?</a></sup>: your choice.</b>
 Use interpreted mode for fast iteration, and compile your code when
 you're done for fast execution.
 </li>
 <li><b>CPU and GPU, web or native: write once.</b>
-Dither code can be directly compiled to shaders.
+Dither code can be directly compiled to shaders<sup><a href="https://en.wikipedia.org/wiki/Shader">?</a></sup>.
 Dither and its standard libraries runs natively on windows, mac, linux and the web.
 </li>
-<li><b>Static type inference.</b>
+<li><b>Automatic inference of variable types.</b><sup><a href="https://en.wikipedia.org/wiki/Type_inference">?</a></sup>
 The merits of types without the hassle of writing them.
 </li>
 <li><b>Vector math, built-in.</b>

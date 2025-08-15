@@ -10,7 +10,7 @@ Dither is a programming language for creative coding.
 
 - **CPU and GPU, web or native: write once.** Dither code can be directly compiled to shaders. Dither and its standard libraries runs natively on windows, mac, linux and the web.
 
-- **Static type inference.** The merits of types without the hassle of writing them.
+- **Automatic inference of variable types.** The merits of a typed-system without the hassle of writing them.
 
 - **Vector math, built-in.** Vector and matrix operations are integrated into the syntax of Dither.
 
