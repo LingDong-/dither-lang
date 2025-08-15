@@ -26,6 +26,7 @@ options:
     --execute, -x      : execute generated code
     --include, -I path : add include path
     --command, -c cmd  : program passed in as string
+    --inter,   -i      : interactive shell (repl)
     --help,    -h      : print this help
     --version, -V      : print version
 `
@@ -71,7 +72,7 @@ for (let i = 0; i < args.length; i++){
     verbose = 1;
   }else if (args[i] == '--command' || args[i] == '-c'){
     fs.writeFileSync(inp_pth = tmpth("in.dh"),args[++i]);
-  }else if (args[i] == '--interactive' || args[i] == '-i'){
+  }else if (args[i] == '--inter' || args[i] == '-i'){
     is_repl = 1;
   }else{
     inp_pth = args[i];

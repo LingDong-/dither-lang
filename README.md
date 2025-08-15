@@ -33,6 +33,7 @@ options:
     --execute, -x      : execute generated code
     --include, -I path : add include path
     --command, -c cmd  : program passed in as string
+    --inter,   -i      : interactive shell (repl)
     --help,    -h      : print this help
     --version, -V      : print version
 ```
@@ -57,5 +58,10 @@ Compile a program to JavaScript, and host a local server to run it:
 dither -xvt html examples/tree.dh
 ```
 
+Enter interactive shell:
+
+```
+dither -i
+```
 
 Then follow the [syntax guide](SYNTAX.md) or start from one of the [examples](examples). **You can also check out [what the author is creating](https://github.com/LingDong-/dither-sketches) with Dither.**
