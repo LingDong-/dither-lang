@@ -482,7 +482,7 @@ function main(){
 
   function make_widget(par,text){
     let div = document.createElement("div");
-    div.style="font-size:15px;line-height:18px;width:720px;height:240px;border-radius:5px;border:1px solid silver;box-shadow: 2px 2px 2px rgba(0,0,0,0.3);overflow:hidden;"
+    div.style="font-size:14px;line-height:18px;width:720px;height:240px;border-radius:5px;border:1px solid silver;box-shadow: 2px 2px 2px rgba(0,0,0,0.3);overflow:hidden;"
     div.innerHTML = `
       <div style="position:relative">
         <div class="edit" style="width:480px;height:240px;position:absolute;"></div>
