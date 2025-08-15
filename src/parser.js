@@ -67,7 +67,7 @@ var PARSER = function(sys,extensions={}){
     console.error(`[${tag} error] ${msg} at file "${state.src[pthidx].pth}" line ${lino} column ${chno}`);
     console.error((lns.at(-1)+rest).replace(/\t/g,' '));
     console.error(' '.repeat(chno-1)+'^');
-    console.trace();
+    // console.trace();
     sys.process.exit(1);
   }
 
@@ -1377,10 +1377,10 @@ var PARSER = function(sys,extensions={}){
     
   }
 
-  function infertypes(ast){
-    let scozoo = [];
-    let scostk = [];
-    let namesp = [];
+  function infertypes(ast,scozoo=[],scostk=[],namesp=[]){
+    // let scozoo = [];
+    // let scostk = [];
+    // let namesp = [];
     let retyps = [];
 
     function new_scope(){
@@ -3031,7 +3031,7 @@ var PARSER = function(sys,extensions={}){
     return scozoo;
   }
 
-
+  let tmpvarcnt = 0;
   function compile(ast,scopes){
 
     let instrs = [];
@@ -3039,7 +3039,6 @@ var PARSER = function(sys,extensions={}){
     let looplbls = [];
     let layout = {};
 
-    let tmpvarcnt = 0;
     function shortori(ori){
       // return ori.split(".").at(-1);
       ori = ori.split(".");

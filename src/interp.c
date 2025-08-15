@@ -3502,21 +3502,7 @@ void free_instrs(list_t* instrs){
   memset(instrs,0,sizeof(list_t));
 }
 
-void global_exit(){
-  // uint64_t flags;
-  // list_t vars;
-  // map_t layouts;
-  // mem_list_t objs;
-  // map_t cfuncs;
-  // retp_t_arr_t ret_pts;
-  // uintptr_t_arr_t args;
-
-  while (_G.vars.len){
-    frame_end();
-  }
-  gc_sweep();
-
-  map_t* m = &(_G.layouts);
+void free_layouts(map_t* m){
   for (int k = 0; k < NUM_MAP_SLOTS; k++){
     for (int i = 0; i < m->slots[k].len;i++){
       pair_t p = m->slots[k].data[i];
@@ -3533,8 +3519,25 @@ void global_exit(){
     }
   }
   map_nuke(m);
+}
 
-  m = &(_G.cfuncs);
+void global_exit(){
+  // uint64_t flags;
+  // list_t vars;
+  // map_t layouts;
+  // mem_list_t objs;
+  // map_t cfuncs;
+  // retp_t_arr_t ret_pts;
+  // uintptr_t_arr_t args;
+
+  while (_G.vars.len){
+    frame_end();
+  }
+  gc_sweep();
+
+  free_layouts(&(_G.layouts));
+
+  map_t* m = &(_G.cfuncs);
   for (int k = 0; k < NUM_MAP_SLOTS; k++){
     if (m->slots[k].cap){
       for (int i = 0; i < m->slots[k].len;i++){
