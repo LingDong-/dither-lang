@@ -192,8 +192,6 @@ int vin_impl_create(int flag, char* path, int* w, int* h){
     v.settings = settings;
     v.videoTrack = videoTrack;
     vid_cnt++;
-  }else if (flag & SOURCE_FWRITE){
-    
   }
 
   ARR_PUSH(vid_t,vids,v);

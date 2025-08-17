@@ -9,7 +9,6 @@ void vin__create(){
 
   int w,h;
   int id = vin_impl_create(flag,pth,&w,&h);
-
   void* o = __gc_alloc(VART_STT,24);
   __put_var(0,o);
   void* oo = (char*)o+4;
