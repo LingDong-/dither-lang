@@ -1,0 +1,18 @@
+
+namespace vin {
+  SOURCE_WEBCAM := 1;
+  SOURCE_FILE   := 2;
+  RESO_VGA := 8;
+  RESO_HD  := 16;
+  RESO_FHD := 32;
+  EFFECT_MIRROR := 64;
+  func _read_pixels(id:i32):arr[u8,3];
+  typedef Video = {
+    id : i32;
+    w : i32;
+    h : i32;
+    func read_pixels():arr[u8,3]{return _read_pixels(this.id);};
+  };
+  func create(flag:i32,path:str):Video;
+  func create(flag:i32):Video{return create(flag,"");};
+}

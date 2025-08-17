@@ -5,6 +5,10 @@ build/*
 !build/.gitkeep
 *.so
 **/*.so
+*.o
+**/*.o
+*.obj
+**/*.obj
 *.dll
 **/*.dll
 **/node_modules/

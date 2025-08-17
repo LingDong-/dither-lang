@@ -1,0 +1,3 @@
+if [ "$DITHER_VID_USE_AVFOUNDATION" -eq 1 ]; then
+  CFLAGS="$CFLAGS $(clang -c $DITHER_ROOT/std/vin/impl_avfoundation.m) $DITHER_ROOT/std/vin/impl_avfoundation.o -framework AVFoundation -framework Foundation -framework CoreMedia -framework CoreVideo"
+fi

@@ -63,7 +63,9 @@ var TO_JS = function(cfg){
       dst[0] = src;
       return dst;
     }else{
-      return Object.assign(dst,src);
+      // return Object.assign(dst,src);
+      src.__type = dst.__type;
+      return src;
     }
   }
   function $to_str(x){
