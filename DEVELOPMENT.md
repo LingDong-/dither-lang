@@ -1,85 +1,67 @@
+## **Build Instructions**
 
-## Build Instructions
+These instructions are subject to change. They are compatible with macOS, Windows, and Linux.
 
-Subject to change.
+On Windows, replace the `make` command with `nmake /f msvc.mak` followed by the same arguments.
 
-Works on mac, windows and linux. On windows, the `make` command should be replaced with
+### **Required Tools**
 
-```
-nmake /f msvc.mak
-```
+You'll need the following to get started:
 
-followed by the same arguments.
+* A C/C++ compiler: **GCC**, **Clang**, or **MSVC**
+* **Node.js v18+**
 
-### Required tools
+### **Quick Start Examples**
 
-- gcc/clang/msvc
-- node.js v18+
+Here are some examples to help you compile and run a basic `helloworld` file.
 
-### Run an example
+* **Compile to C and run:**
+    `make run_c src=examples/helloworld.dh`
 
-Compile to C and run:
+* **Compile to JavaScript and run:** (This starts an HTTP server on localhost)
+    `make run_js src=examples/helloworld.dh`
 
-```
-make run_c src=examples/helloworld.dh
-```
+* **Run in VM:** (Requires standard library compilation, see below)
+    `make run_vm src=examples/helloworld.dh`
 
-Compile to JavaScript and run: (starts a http server on localhost)
+---
 
-```
-make run_js src=examples/helloworld.dh
-```
+### **Advanced Configuration**
 
-Run in VM (requires standard library compilation, see below)
+#### **Configure Backends**
 
-```
-make run_vm src=examples/helloworld.dh
-```
+To configure backends for various components, edit the `config.env` file. A backend is a specific implementation of a feature or a platform. Some backends are platform-specific, so choose one that is available on your system.
 
-### Configure
+#### **Compile the Standard Library**
 
-Edit `config.env` to configure backends for various components. Some backends are platform specific -- pick one that you have on your system.
+This step is only required if you plan to run scripts on the VM.
 
-### Compile the Standard Library
+* **Compile all standard libraries:**
+    `make std_all`
+* **Compile a single standard library:**
+    `make std_one src=io`
 
-This step is only required for running scripts on the VM.
+#### **Compile the Windowing Backend**
 
-Compile all standard libraries:
+If you want to run graphical applications locally (using the VM or C backends), you need to compile a windowing shared library.
 
-```
-make std_all
-```
+* **For macOS (Cocoa backend):**
+    `cd std/win/platform; make cocoa`
+* **For Linux/X11 (X11/GLX backend):**
+    This requires X11 development libraries. On Debian-based systems, you can install them with `sudo apt-get install libx11-dev libgl-dev`. Then, run the following command:
+    `cd std/win/platform; make glx`
 
-Compile one standard library:
+---
 
-```
-make std_one src=io
-```
+### **Building a Single Binary**
 
-### Compile the Windowing Backend
+You can compile the command-line tool into a single, standalone binary. This process requires the `pkg` tool, which is a Node.js package.
 
-For running graphical applications locally (VM/C backends), you need to compile the windowing shared library. To compile Cocoa backend (mac only):
+1.  First, ensure you have compiled all standard libraries by running `make std_all`.
+2.  Next, compile the windowing backend as described in the previous section.
+3.  Install the `pkg` tool globally:
+    `npm install -g pkg`
+4.  Finally, run the `make` command:
+    `make cmdline`
 
-```
-cd std/win/platform; make cocoa
-```
-
-To compile X11/GLX backend (requires X11 / XQuartz):
-
-```
-cd std/win/platform; make glx
-```
-
-### Compile the commandline tool as single binary
-
-Requires node pkg. Requires calling `make std_all` and compiling windowing backend first.
-
-```
-make cmdline
-```
-
-Now the `dither` command will be available globally on your system.
-
-### Other Commands
-
-See the Makefile for more detailed usage.
+The `dither` command will now be available globally on your system. To see all available options, you can try running `dither --help`.
