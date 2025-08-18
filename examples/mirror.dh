@@ -1,0 +1,47 @@
+include "std/vin"
+include "std/frag"
+include "std/win"
+include "std/io"
+include "std/arr"
+include "std/vec"
+include "std/math"
+include "std/time"
+
+video := vin.create(
+  vin.SOURCE_WEBCAM | vin.RESO_VGA | vin.EFFECT_MIRROR
+);
+frag.init(win.init(video.w,video.h,win.CONTEXT_3D));
+image := frag.texture(video.w,video.h);
+
+func filter(
+  @builtin frag_coord:vec[f32,4],
+  @varying uv:vec[f32,2],
+  @uniform image:frag.Texture,
+  @uniform t:f32
+):vec[f32,4]{
+  center := {0.5,0.5}
+  d := uv-center;
+  l := vec.mag(d);
+  u := vec.dir(d);
+  w := math.sin(l*50.0-t*0.015);
+  color := image.sample(uv+u*w*0.075*math.cos(t*0.001));
+  return {color.r,color.g,color.b,1.0};
+}
+
+shader := frag.program(embed filter as "fragment");
+
+while (1){
+  time.fps(120);
+  
+  pixels := video.read_pixels();
+  image.write_pixels(pixels);
+
+  frag.begin(shader);
+  frag.uniform("t", time.millis() as f32); 
+  frag.uniform("image", image);
+  frag.render();
+  frag.end();
+  
+  win.poll();
+}
+

@@ -71,7 +71,7 @@ globalThis.$vin = new function(){
       videoElement.style.position = "absolute";
       videoElement.style.opacity = "0.01"; 
       videoElement.style.pointerEvents = "none";
-      videoElement.src = "fingers.mp4";
+      videoElement.src = path;
       document.body.appendChild(videoElement);
       const canvas = document.createElement("canvas");
       canvas.width = v.w;

@@ -131,6 +131,12 @@ function embed_glsl_frag(ast,scopes){
           o += `(${docompile(ast.con)}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${docompile(ast.idx)})/*ARRAY_SUBSCRIPT_END*/])`;
         }
       }
+    }else if (ast.key == 'a.b'){
+      if (ast.lhs.tag == 'ident' && ast.lhs.val == 'math'){
+        if (ast.rhs.tag == 'ident' && ast.rhs.val == 'PI'){
+          o += `3.14159265357`;
+        }
+      }
     }else{
       console.log(ast)
     }
