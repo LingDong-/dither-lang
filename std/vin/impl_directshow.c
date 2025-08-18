@@ -118,6 +118,9 @@ typedef struct vid_st {
   char* data;
   int rw;
   int rh;
+  IMediaControl* pMC;
+  IMediaSeeking* pMS;
+  IMediaEventEx* pME;
 } vid_t;
 
 ARR_DEF(vid_t);
@@ -375,7 +378,13 @@ int vin_impl_create(int flag, char* path, int* w, int* h){
     grabInt->lpVtbl->SetCallback(grabInt, (ISampleGrabberCB*)cb, 1);
     graph->lpVtbl->QueryInterface(graph, &IID_IMediaControl, (void**)&ctrl);
     ctrl->lpVtbl->Run(ctrl);
-
+    IMediaSeeking *pMS = NULL;
+    IMediaEventEx *pME = NULL;
+    graph->lpVtbl->QueryInterface(graph, &IID_IMediaSeeking, (void**)&pMS);
+    graph->lpVtbl->QueryInterface(graph, &IID_IMediaEventEx, (void**)&pME);
+    v.pMS = pMS;
+    v.pMC = ctrl;
+    v.pME = pME;
   }
 
   ARR_PUSH(vid_t,vids,v);
@@ -387,6 +396,19 @@ int vin_impl_create(int flag, char* path, int* w, int* h){
 char* vin_impl__read_pixels(int idx, int* w, int* h){
   vid_t* vid = ((vid_t*)vids.data) + idx;
   char* pixels = malloc(vid->w*vid->h*4);
+  if (vid->flag & SOURCE_FREAD){
+    long evCode;
+    LONG_PTR param1, param2;
+    if (SUCCEEDED(vid->pME->lpVtbl->GetEvent(vid->pME, &evCode, &param1, &param2, 0))){
+      if (evCode == EC_COMPLETE) {
+        LONGLONG pos = 0;
+        vid->pMS->lpVtbl->SetPositions(
+          vid->pMS, &pos, AM_SEEKING_AbsolutePositioning, NULL, AM_SEEKING_NoPositioning
+        );
+        vid->pMC->lpVtbl->Run(vid->pMC);
+      }
+    }
+  }
   if (vid->data){
     memcpy(pixels,vid->data,vid->w*vid->h*4);
   }
