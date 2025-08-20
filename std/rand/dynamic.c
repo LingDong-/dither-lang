@@ -23,7 +23,7 @@ EXPORTED void rand_noise(var_t* ret,  gstate_t* _g){
 }
 EXPORTED void rand_noise_detail(var_t* ret,  gstate_t* _g){
   float falloff = ARG_POP(_g,f32);
-  int lod = ARG_POP(_g,f32);
+  int lod = ARG_POP(_g,i32);
   rand_impl_noise_detail(lod,falloff);
 }
 EXPORTED void rand_noise_reseed(var_t* ret,  gstate_t* _g){

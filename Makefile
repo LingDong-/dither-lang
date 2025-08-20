@@ -64,6 +64,7 @@ run_c: build/config.h to_c
 	echo $$CFLAGS;\
 	gcc -include build/config.h -I. -O3 build/out.c $$CFLAGS -lm -o build/a.out && build/a.out;
 nwedit:
+	source config.env;\
 	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
 gledit:
 	rm -rf /tmp/examples;\

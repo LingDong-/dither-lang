@@ -49,6 +49,8 @@ function embed_glsl_frag(ast,scopes){
       out.push(`return ${docompile(ast.val)};`);
     }else if (['+','-','*','/','==','||','&&','>','<','>=','<='].includes(ast.key)){
       o += `(${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)})`
+    }else if (['+=','-=','*=','/='].includes(ast.key)){
+      out.push(`${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)};`);
     }else if (['u++','u--'].includes(ast.key)){
       o += `(${docompile(ast.val)}${ast.key.slice(1)})`
     }else if (['+u','-u','++u','--u'].includes(ast.key)){

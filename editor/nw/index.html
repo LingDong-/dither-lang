@@ -103,6 +103,7 @@ const path = require('path');
 const child_process = require('child_process');
 
 eval(fs.readFileSync("../../src/parser.js").toString());
+eval(fs.readFileSync("../../src/embed_glsl.js").toString());
 
 CodeMirror.defineSimpleMode("ldcc", {
   meta:{
@@ -178,16 +179,16 @@ document.getElementById("btn-compile").onclick = function(){
       throw 'up';
     }
   });
-  let parser = new PARSER({fs,path,process:pro,search_paths:['../../']});
+  let parser = new PARSER({fs,path,process:pro,search_paths:['../../']},{fragment:embed_glsl_frag});
 
-  fs.writeFileSync("/tmp/source.txt",CML.getValue());
+  fs.writeFileSync("/tmp/source.dh",CML.getValue());
   
   let olderror = console.error;
   console.error=(x)=>CMR.replaceRange(x+'\n', CodeMirror.Pos(CMR.lastLine()))
   
   let bad = 0;
   try{
-    let toks = parser.tokenize("/tmp/source.txt");
+    let toks = parser.tokenize("/tmp/source.dh");
 
     let cst = parser.parse(toks);
 
@@ -220,7 +221,7 @@ function runbin(pth, args=[]){
   }
   let firsttime = 1;
   
-  childProcess = child_process.spawn(pth, args);
+  childProcess = child_process.spawn(pth, args, {env: { ...process.env, DITHER_ROOT:"../../"}});
   childProcess.stdout.on('data', (data) => {
     if (firsttime){
       CMR.setValue("");
