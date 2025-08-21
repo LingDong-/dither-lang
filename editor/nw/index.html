@@ -112,7 +112,7 @@ CodeMirror.defineSimpleMode("ldcc", {
   },
   start: [
     {regex: /"(?:[^\\]|\\.)*?(?:"|$)/mi, token: "string"},
-    {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as)\b/,
+    {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as|is|embed)\b/,
       token: "keyword"},
     {regex: /(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func)\b/,
       token: "type"},
@@ -120,7 +120,7 @@ CodeMirror.defineSimpleMode("ldcc", {
       token: "number"},
     {regex: /\/\*.*?\*\//, token: "comment"},
     {regex: /\/\/.*/, token: "comment"},
-    {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;]+/, token: "operator"},
+    {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\@]+/, token: "operator"},
     {regex: /[\{\[\(]/, indent: true, token: "bracket"},
     {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
     {regex: /[A-Za-z$][\w$]*/, token: "variable"},

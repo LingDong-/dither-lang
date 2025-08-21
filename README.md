@@ -22,7 +22,11 @@ On how to work with the Dither source code, check out the [development documenta
 
 ## Quick Start
 
-The easiest way to try Dither is with the [online editor](https://dither-lang.netlify.app/editor.html). You can also [download](https://github.com/LingDong-/dither-lang/releases) the stand-alone single-binary commandline tool for windows, mac or linux.
+The easiest way to try Dither is with the [online editor](https://dither-lang.netlify.app/editor.html). 
+
+[![](https://github.com/user-attachments/assets/85d6da4a-fbde-481c-aa7a-a6b03d3cce75)](https://dither-lang.netlify.app/editor.html)
+
+You can also [download](https://github.com/LingDong-/dither-lang/releases) the stand-alone single-binary commandline tool for windows, mac or linux.
 
 ```
 usage:
@@ -74,4 +78,3 @@ Then follow the [syntax guide](SYNTAX.md) or start from one of the [examples](ex
 When you write a program in Dither, it is first translated into an lower-level representation which then either gets translated again to C or JavaScript (compiled mode) or run directly by the Dither VM (interpreted mode).
 
 The Dither standard library maps hardware and system-related (such as graphics and sound) components to native API's on each operating system, exposing them to a Dither interface (with some higher level functionalities implemented directly in Dither).
-

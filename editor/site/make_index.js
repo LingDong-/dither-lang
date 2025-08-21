@@ -475,7 +475,7 @@ function main(){
       {regex: /[\{\[\(]/, indent: true, token: "bracket"},
       {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
       {regex: /\.(\b[A-Za-z_$][\w$]*)/, token: "property"},
-      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.]/, token: "operator"},
+      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.\@]/, token: "operator"},
       {regex: /[A-Za-z$][\w$]*/, token: "variable"},
     ],
   });

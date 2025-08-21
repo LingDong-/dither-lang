@@ -373,7 +373,7 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
       {regex: /[\{\[\(]/, indent: true, token: "bracket"},
       {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
       {regex: /\.(\b[A-Za-z_$][\w$]*)/, token: "property"},
-      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.]/, token: "operator"},
+      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.\@]/, token: "operator"},
       {regex: /[A-Za-z$][\w$]*/, token: "variable"},
     ],
   });
