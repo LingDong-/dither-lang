@@ -85,5 +85,6 @@ profile: ir
 	open /tmp/$$FILENAME;
 website:
 	node editor/site/make_site.js;
+	node editor/site/make_widget.js;
 	node editor/site/make_index.js;
 	node editor/blocks/make_site.js;
