@@ -65,3 +65,13 @@ dither -i
 ```
 
 Then follow the [syntax guide](SYNTAX.md) or start from one of the [examples](examples). **You can also check out [what the author is creating](https://github.com/LingDong-/dither-sketches) with Dither.**
+
+
+## How Dither Works
+
+![](doc/layers.png)
+
+When you write a program in Dither, it is first translated into an lower-level representation which then either gets translated again to C or JavaScript (compiled mode) or run directly by the Dither VM (interpreted mode).
+
+The Dither standard library maps hardware and system-related (such as graphics and sound) components to native API's on each operating system, exposing them to a Dither interface (with some higher level functionalities implemented directly in Dither).
+
