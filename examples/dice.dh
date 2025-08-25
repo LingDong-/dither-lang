@@ -1,0 +1,376 @@
+include "std/g3d"
+include "std/win"
+include "std/frag"
+include "std/list"
+include "std/vec"
+include "std/math"
+include "std/time"
+include "std/io"
+include "std/rand"
+
+W := 256
+H := 256
+PHI := 1.618034 
+
+context := win.init(W,H,win.CONTEXT_3D)
+g3d.init(context);
+frag.init(context);
+
+vertices := list[vec[f32,3]]{
+  {-1,PHI,0},{1,PHI,0},{-1,-PHI,0},{1,-PHI,0},
+  {0,-1,PHI},{0,1,PHI},{0,-1,-PHI},{0,1,-PHI},
+  {PHI,0,-1},{PHI,0,1},{-PHI,0,-1},{-PHI,0,1}
+};
+
+func generate_icosahedron():g3d.Mesh{
+  
+  faces := list[i32]{
+    11, 10, 2, 1, 5, 9, 7, 1, 8, 0, 5, 1, 0, 1, 7,
+    0, 11, 5, 0, 7, 10, 0, 10, 11, 5, 11, 4, 10, 7, 6,
+    4, 9, 5, 8, 6, 7, 3, 8, 9, 3, 9, 4, 3, 6, 8,
+    3, 4, 2, 3, 2, 6, 2, 4, 11, 6, 2, 10, 9, 8, 1
+  }
+  mesh := g3d.Mesh{};
+  for (i := 0; i < faces.length(); i+=3){
+    a := vertices[faces[i]];
+    b := vertices[faces[i+1]];
+    c := vertices[faces[i+2]];
+    mesh.vertices.push(a);
+    mesh.vertices.push(b);
+    mesh.vertices.push(c);
+    nml := (b-a).cross(c-b).dir();
+    mesh.normals.push(nml);
+    mesh.normals.push(nml);
+    mesh.normals.push(nml);
+    row := (i/3)/5;
+    col := (i/3)%5;
+    mesh.uvs.push({col*0.2+0.1,1-(row*0.2+0.03)});
+    mesh.uvs.push({col*0.2,    1-(row*0.2+0.2 )});
+    mesh.uvs.push({col*0.2+0.2,1-(row*0.2+0.2 )});
+  }
+  return mesh;
+};
+
+mesh := generate_icosahedron();
+
+plane := g3d.Mesh{
+  vertices:list[vec[f32,3]]{
+    {-4.,-4,0},{4.,-4,0},{4.,4,0},{-4.,4,0}
+  },
+  indices:list[i32]{
+    0,1,2, 0,2,3
+  },
+  normals:list[vec[f32,3]]{
+    {0,0,1},{0,0,1},{0,0,1},{0,0,1}
+  },
+  uvs:list[vec[f32,2]]{
+    {0,0},{1,0},{1,1},{0,1}
+  }
+}
+
+
+
+shader0 := frag.program(embed(func(
+  @varying uv         : vec[f32,2],
+  @uniform font_atlas : frag.Texture,
+):vec[f32,4]{
+  return font_atlas.sample(uv);
+}) as "fragment")
+
+func compute_tbn(
+  Ng : vec[f32,3],
+  dpdx:vec[f32,3],dpdy:vec[f32,3],
+  dtdx:vec[f32,2],dtdy:vec[f32,2],
+):vec[f32,3,3]{
+  det := dtdx.x*dtdy.y - dtdy.x*dtdx.y;
+
+  T := dpdx * (dtdy.y/det) + dpdy * (-dtdx.y/det);
+  B := dpdx * (-dtdy.x/det) + dpdy * (dtdx.x/det);
+  T = (T - Ng * Ng.dot(T)).dir();
+  B = (B - Ng * Ng.dot(B)).dir();
+  N := T.cross(B).dir();
+  return {
+    T.x, T.y, T.z;
+    B.x, B.y, B.z;
+    N.x, N.y, N.z;
+  }
+}
+
+func gradient(
+  htex:frag.Texture, uv:vec[f32,2], texel:vec[f32,2]
+):vec[f32,2]{
+  h  := 0.5-0.5*htex.sample(uv).r;
+  hU := 0.5-0.5*htex.sample({(uv.x+texel.x)%1.0,uv.y}).r;
+  hV := 0.5-0.5*htex.sample({uv.x,(uv.y+texel.y)%1.0}).r;
+  dhu := (hU - h) / texel.x;
+  dhv := (hV - h) / texel.y;
+  return {dhu,dhv};
+}
+
+func perturb(tbn:vec[f32,3,3], dhuv:vec[f32,2], scale:f32):vec[f32,3]{
+  T := {tbn[0,0],tbn[0,1],tbn[0,2]};
+  B := {tbn[1,0],tbn[1,1],tbn[1,2]};
+  N := {tbn[2,0],tbn[2,1],tbn[2,2]};
+  return (N - scale * (dhuv.x * T + dhuv.y * B)).dir();
+}
+
+shader1 := frag.program(embed(func(
+  @varying uv : vec[f32,2],
+  @uniform image : frag.Texture,
+  @varying normal : vec[f32,3],
+  @varying position : vec[f32,3],
+  @uniform eye : vec[f32,3],
+  @uniform spec : vec[f32,3],
+  @uniform shininess:f32,
+  @uniform ld : vec[f32,3],
+  @builtin frag_coord : vec[f32,4],
+  @compute d_position_dx : vec[f32,3],
+  @compute d_position_dy : vec[f32,3],
+  @compute d_uv_dx : vec[f32,2],
+  @compute d_uv_dy : vec[f32,2],
+):vec[f32,4]{
+  texel := uv/frag_coord.xy;
+  dhuv := gradient(image,uv,texel);
+  tbn := compute_tbn(
+    normal,d_position_dx,d_position_dy,
+    d_uv_dx,d_uv_dy
+  );
+  nml := perturb(tbn,dhuv,0.01);
+
+  g := image.sample(uv).x;
+  b := 1.0;
+  if (g < 0.5){
+    b = 0.0;
+  }
+  base := {1.0,b*0.9+0.1,b};
+
+  view_dir := eye - position;
+  half_vec := (ld + view_dir).dir();
+  ndl := math.max(nml.dot(ld),0.0);
+  ndh := math.max(nml.dot(half_vec),0.0);
+  df := base * (ndl*0.8+0.2);
+  hl := spec * (ndh ** shininess);
+  c := df + hl;
+
+  return {c.x,c.y,c.z,1.0};
+}) as "fragment");
+
+
+shader2 := frag.program(embed(func(
+  @varying uv : vec[f32,2],
+):vec[f32,4]{
+  a := uv.x*math.PI*2.;
+  b := uv.y;
+  if (uv.y > 0.5){
+    b = 1.0 - uv.y;
+  }
+  c := rand.noise(b*10.0,math.cos(a)*2.0+17.0,math.sin(a)*2.0+13.0);
+  return {c,c,c,1.0};
+}) as "fragment")
+
+shader3 := frag.program(embed(func(
+  @varying uv : vec[f32,2],
+  @uniform image : frag.Texture,
+  @uniform shadow : frag.Texture,
+  @varying normal : vec[f32,3],
+  @varying position : vec[f32,3],
+  @uniform eye : vec[f32,3],
+  @uniform spec : vec[f32,3],
+  @uniform shininess:f32,
+  @uniform ld : vec[f32,3],
+  @uniform offset : vec[f32,2],
+  @builtin frag_coord : vec[f32,4],
+  @compute d_position_dx : vec[f32,3],
+  @compute d_position_dy : vec[f32,3],
+  @compute d_uv_dx : vec[f32,2],
+  @compute d_uv_dy : vec[f32,2],
+):vec[f32,4]{
+  texel := uv/frag_coord.xy;
+  uvof := {(uv.x+offset.x)%1.0, (uv.y+offset.y)%1.0};
+  dhuv := gradient(image,uvof,texel);
+  tbn := compute_tbn(
+    normal,d_position_dx,d_position_dy,
+    d_uv_dx,d_uv_dy
+  );
+  nml := perturb(tbn,dhuv,0.01);
+
+  g := image.sample(uvof).x;
+
+  h := 0.;
+  ft := (uv-{0.5,0.5}).mag()*4.0;
+  n := 0;
+  for (i:=-2; i<=2; i++){
+    for (j:=-2; j<=2; j++){
+      h = h + shadow.sample(uv+{(i as f32),j}*texel*ft).x;
+      n++;
+    }
+  }
+  h = (h/(n as f32))*0.8+0.2;
+
+  base0 := {0.0,0.0,0.0};
+  base1 := {0.5,0.5,0.5};
+
+  view_dir := eye - position;
+  half_vec := (ld + view_dir).dir();
+  ndl := math.max(nml.dot(ld),0.0);
+  ndh := math.max(nml.dot(half_vec),0.0);
+  df := base0 * (1.-ndl) + base1 * ndl;
+  hl := spec * (ndh ** shininess);
+  c := df + hl;
+  c *= h;
+  return {c.x,c.y,c.z,1.0};
+}) as "fragment");
+
+
+shader4 := frag.program(embed(func(
+):vec[f32,4]{
+  return {0.,0.,0.,1.};
+}) as "fragment")
+
+
+image0 := frag.texture(150,150);
+image1 := frag.texture(W,H);
+shadow := frag.texture(W,H);
+
+cam := g3d.Camera{};
+cam.perspective(30,W/(H as f32),0.1,100.0);
+eye := {0.,0.,11.}
+cam.look_at(eye,{0,0,0},g3d.AXIS_Y);
+
+ld := ({-1.,1,2}).dir();
+
+light := g3d.Camera{}
+light.proj = g3d.mat.scale(0.25) @* {
+    1.0, 0.0, -ld.x/ld.z, 0.0;
+    0.0, 1.0, -ld.y/ld.z, 0.0;
+    0.0, 0.0,  0.0,       0.0;
+    0.0, 0.0,  0.0,       1.0
+}
+
+base_model := g3d.mat.id;
+model := g3d.mat.id;
+
+txtcam := g3d.Camera{};
+txtcam.ortho(0,150,150,0,-1,1);
+
+hud := g3d.Camera{};
+hud.ortho(0,W,H,0,-1,1);
+
+axis := g3d.AXIS_Z;
+targ_ang := 0.;
+curr_ang := 0.;
+
+bg_offset := {0.,0.};
+
+need_roll := 1;
+
+func roll(){
+  base_model = model @* base_model;
+
+  targ_nml := mesh.normals[rand.random(20) as i32 * 3];
+  targ_nml = (base_model @* {targ_nml.x; targ_nml.y; targ_nml.z; 1.0}).xyz;
+  axis = targ_nml.cross(g3d.AXIS_Z);
+  ndz := targ_nml.dot(g3d.AXIS_Z);
+  targ_ang = math.acos(math.min(math.max(ndz,-0.999),0.999));
+  targ_ang += math.PI*4;
+  curr_ang = 0.;
+  model = g3d.mat.id;
+
+}
+
+while (1){
+  time.fps(120)
+
+  minz := 0.;
+  for (i := 0; i < vertices.length(); i++){
+    v := vertices[i];
+    z := (model @* base_model @* {v.x;v.y;v.z;1.0}).z;
+    minz <?= z;
+  }
+
+  model = g3d.mat.rotate_deg(axis,curr_ang*180/math.PI);
+  da := math.abs(curr_ang-targ_ang);
+  old_ang := curr_ang;
+  if (da<0.0001){
+    if (need_roll){
+      roll();
+      need_roll = 0;
+    }
+  }else if (da<1.0){
+    curr_ang = curr_ang * 0.9 + targ_ang * 0.1;
+  }else if (curr_ang > targ_ang){
+    curr_ang -= 0.1;
+  }else if (curr_ang < targ_ang){
+    curr_ang += 0.1;
+  }
+  dang := math.abs(curr_ang-old_ang)
+
+  bg_offset += {axis.y,-axis.x}.dir()*0.15*dang;
+  bg_offset = {(bg_offset.x+1.0)%1.0,(bg_offset.y+1.0)%1.0}
+
+  frag.begin(shader0,image0);
+  g3d.background(0);
+  txtcam.begin();
+  for (i:=0; i < 5; i++){
+    for (j := 0; j < 5; j++){
+      idx := i*5+j+1;
+      if (idx < 10){
+        g3d.text("%{idx}%{(idx==6||idx==9)?".":""}",g3d.mat.translate(j*30+11,i*30+13,0));
+      }else{
+        g3d.text("%{idx}",g3d.mat.translate(j*30+7,i*30+13,0));
+      }
+    }
+  }
+  txtcam.end();
+  frag.end();
+
+  mmodel := g3d.mat.translate(0,0,-minz) @* model @* base_model;
+
+  frag.begin(shader2,image1);
+  frag.render();
+  frag.end();
+
+  frag.begin(shader4,shadow);
+  g3d.background(1);
+  light.begin();
+  mesh.draw(mmodel);
+  light.end();
+  frag.end();
+
+  frag.begin(shader1);
+  g3d.background(0.5);
+  frag.uniform("ld",ld);
+  frag.uniform("eye",eye);
+  frag.uniform("spec",{1.0,0.9,0.8});
+  frag.uniform("shininess",64.0);
+  frag.uniform("image",image0);
+  cam.begin();
+  mesh.draw(mmodel);
+  cam.end();
+  frag.end();
+
+  frag.begin(shader3);
+  frag.uniform("ld",ld);
+  frag.uniform("eye",eye);
+  frag.uniform("spec",{1.0,0.9,0.8});
+  frag.uniform("shininess",64.0);
+  frag.uniform("image",image1);
+  frag.uniform("shadow",shadow);
+  frag.uniform("offset",bg_offset);
+  cam.begin();
+  plane.draw(g3d.mat.id);
+  cam.end();
+  frag.end();
+
+  hud.begin();
+  g3d.text(" Press SPACE to roll ", g3d.mat.translate(W-21*8,H-16,0));
+  hud.end();
+
+
+  e := win.poll();
+  if (e.type == win.KEY_PRESSED){
+    if (e.key == ' '){
+      need_roll = 1;
+    }
+  }
+}
