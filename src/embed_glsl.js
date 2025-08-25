@@ -176,8 +176,7 @@ function embed_glsl_frag(ast,scopes){
       }else if (ast.con.typ.con == 'arr'){
         if (ast.idx.typ.con == 'vec'){
           let idx = shortid();
-          out.push(`ivec2 ${idx} = ${docompile(ast.idx)}]\]\
-          ;`);
+          out.push(`ivec2 ${idx} = ${docompile(ast.idx)};`);
           let con = docompile(ast.con);
           o += `(${con}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${idx}.y*${con}__stride+${idx}.x)/*ARRAY_SUBSCRIPT_END*/])`;
         }else{
