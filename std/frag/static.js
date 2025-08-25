@@ -50,12 +50,15 @@ void main() {
   that.init = function(){
     let [id] = $pop_args(1);
     cnv = document.getElementById(id);
-    gl = cnv.getContext('webgl',{premultipliedAlpha: false});
+    gl = cnv.getContext('webgl');
   }
   
   that.program = function(){
     let [src] = $pop_args(1);
-    src = src.replace(/#version +\d\d\d/g,`precision mediump float;`);
+    
+    gl.getExtension('OES_standard_derivatives');
+
+    src = src.replace(/#version +\d\d\d/g,`#extension GL_OES_standard_derivatives : enable\nprecision mediump float;`);
     src = src.replace(/__/g,`GLES_DOUBLE_UNDERSCORE_REPLACEMENT`);
     src = src.replace(/\/\*ARRAY_LITERAL_BEGIN\*\/(.*?) (.*?)\[.*?\]\=.*?\[.*?\]\((.*?)\)\;\/\*ARRAY_LITERAL_END\*\//,
       function(match,p0,p1,p2){
@@ -103,10 +106,17 @@ void main() {
     obj.fbo = fbos.length-1;
   }
 
+
   that._begin = function(){
     let [prgm, fbo] = $pop_args(2);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[fbo]);
+
+    if (fbo == 0){
+      gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+    }else{
+      gl.viewport(0,0,fbos[fbo]._w,fbos[fbo]._h);
+    }
 
     gl.useProgram(programs[prgm]);
     tex_cnt = 0;

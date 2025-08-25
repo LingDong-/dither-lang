@@ -3,6 +3,44 @@ function embed_glsl_frag(ast,scopes){
 
   let didfun = {};
   let didvar = {};
+  let need_noise_impl = 0;
+  let noise_impl = `
+  float GLSLIMPL_perlin_array(int idx){
+    return fract(sin(float(idx)*129.898)*43758.5453);
+  }
+  float GLSLIMPL_noise(float x, float y, float z) {
+    int xi, yi, zi, of;
+    float xf, yf, zf, rxf, ryf, r, ampl, n1, n2, n3;
+    if (x<0.0) { x=-x; } if (y<0.0) { y=-y; } if (z<0.0) { z=-z; }
+    xi=int(x); yi=int(y); zi=int(z);
+    xf = x - float(xi); yf = y - float(yi); zf = z - float(zi);
+    r=0.0; ampl=0.5;
+    for (int o=0; o<4; o++) {
+      of=xi+(yi*16)+(zi*256);
+      rxf = 0.5*(1.0-cos(xf*3.14159265)); 
+      ryf = 0.5*(1.0-cos(yf*3.14159265));
+      n1  = GLSLIMPL_perlin_array(of);
+      n1 += rxf*(GLSLIMPL_perlin_array((of+1))-n1);
+      n2  = GLSLIMPL_perlin_array(of+16);
+      n2 += rxf*(GLSLIMPL_perlin_array(of+17)-n2);
+      n1 += ryf*(n2-n1);
+      of += 256;
+      n2  = GLSLIMPL_perlin_array(of);
+      n2 += rxf*(GLSLIMPL_perlin_array(of+1)-n2);
+      n3  = GLSLIMPL_perlin_array(of+16);
+      n3 += rxf*(GLSLIMPL_perlin_array(of+17)-n3);
+      n2 += ryf*(n3-n2);
+      n1 += 0.5*(1.0-cos(zf*3.14159265))*(n2-n1);
+      r += n1*ampl;
+      ampl *= 0.5;
+      xi*=2; xf*=2.0; yi*=2; yf*=2.0; zi*=2; zf*=2.0;
+      if (xf>=1.0) { xi++; xf-=1.0; }
+      if (yf>=1.0) { yi++; yf-=1.0; }
+      if (zf>=1.0) { zi++; zf-=1.0; }
+    }
+    return r;
+  }
+  `
 
   function shortid(){
     var id = "";
@@ -79,6 +117,16 @@ function embed_glsl_frag(ast,scopes){
             o += `normalize(${ast.arg.map(docompile).join(',')})`
           }else if (nom == 'dot'){
             o += `dot(${ast.arg.map(docompile).join(',')})`
+          }else if (nom == 'cross'){
+            o += `cross(${ast.arg.map(docompile).join(',')})`
+          }
+        }else if (ast.fun.lhs.val == 'rand'){
+          let nom = ast.fun.rhs.val[0].ipl.nom.val;
+          if (nom == 'noise'){
+            let args = ast.arg.map(docompile);
+            if (args.length < 3) args.push('0');
+            need_noise_impl = 1;
+            o += `GLSLIMPL_noise(${args.join(',')})`;
           }
         }
         
@@ -121,17 +169,22 @@ function embed_glsl_frag(ast,scopes){
       out.push(`}`);
     }else if (ast.key == 'subs'){
       
-      if (ast.con.typ.con != 'arr'){
-        o += `(${docompile(ast.con)}[int(${docompile(ast.idx)})])`;
-      }else{
+      if (ast.con.typ.con == 'vec' && ast.con.typ.elt.length > 2){
+        let idx = shortid();
+        out.push(`const int ${idx} = int(${docompile(ast.idx)});`);
+        o += `(${docompile(ast.con)}[${idx}/${ast.con.typ.elt[1]}][int(mod(float(${idx}),float(${ast.con.typ.elt[1]})))])`;
+      }else if (ast.con.typ.con == 'arr'){
         if (ast.idx.typ.con == 'vec'){
           let idx = shortid();
-          out.push(`ivec2 ${idx} = ${docompile(ast.idx)};`);
+          out.push(`ivec2 ${idx} = ${docompile(ast.idx)}]\]\
+          ;`);
           let con = docompile(ast.con);
           o += `(${con}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${idx}.y*${con}__stride+${idx}.x)/*ARRAY_SUBSCRIPT_END*/])`;
         }else{
           o += `(${docompile(ast.con)}/*ARRAY_SUBSCRIPT_BEGIN*/[int(${docompile(ast.idx)})/*ARRAY_SUBSCRIPT_END*/])`;
         }
+      }else{
+        o += `(${docompile(ast.con)}[int(${docompile(ast.idx)})])`;
       }
     }else if (ast.key == 'a.b'){
       if (ast.lhs.tag == 'ident' && ast.lhs.val == 'math'){
@@ -236,10 +289,21 @@ function embed_glsl_frag(ast,scopes){
   // console.dir(scopes,{depth:10000});
   let vargs = ast.ipl.arg.map(x=>({val:x.lhs.val,typ:x.rhs.typ,hnt:x.lhs.hnt.val}));
   for (let i = 0; i < vargs.length; i++){
+    let need = '';
     if (vargs[i].hnt == 'varying' || vargs[i].hnt == 'v'){
-      out.push(`varying ${printtype(vargs[i].typ)} v_${vargs[i].val};`);
+      need = `varying ${printtype(vargs[i].typ)} v_${vargs[i].val};`;
     }else if (vargs[i].hnt == 'uniform' || vargs[i].hnt == 'u'){
-      out.push(`uniform ${printtype(vargs[i].typ)} ${vargs[i].val};`);
+      need = `uniform ${printtype(vargs[i].typ)} ${vargs[i].val};`;
+    }else if (vargs[i].hnt == 'compute'){
+      need = {
+        'd_position_dx':'varying vec3 v_position;',
+        'd_position_dy':'varying vec3 v_position;',
+        'd_uv_dx':'varying vec2 v_uv;',
+        'd_uv_dy':'varying vec2 v_uv;',
+      }[vargs[i].val];
+    }
+    if (!out.includes(need)){
+      out.push(need);
     }
   }
   function maybe_builtin(x){
@@ -251,10 +315,20 @@ function embed_glsl_frag(ast,scopes){
       }[x.val];
     }else if (x.hnt=='varying' || x.hnt=='v'){
       return 'v_'+x.val;
+    }else if (x.hnt=='compute'){
+      return {
+        'd_position_dx':'dFdx(v_position)',
+        'd_position_dy':'dFdy(v_position)',
+        'd_uv_dx':'dFdx(v_uv)',
+        'd_uv_dy':'dFdy(v_uv)',
+      }[x.val];
     }
     return x.val;
   }
   compilefunc(ast);
+  if (need_noise_impl){
+    out.unshift(noise_impl);
+  }
 
   out.push(`void main(){`);
   out.push(`gl_FragColor = ${ast.ipl.nom.val}(${[vargs.map(x=>maybe_builtin(x))].join(',')});`);

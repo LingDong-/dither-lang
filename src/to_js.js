@@ -3,6 +3,7 @@ var TO_JS = function(cfg){
   let lib = `
   var $numtyps = ['i8','u8','i16','u16','i32','u32','i64','u64','f32','f64'];
   var $args = [];
+  var $caps = [];
   function $include(x){
     if (globalThis.__dh_intern_hooked_include){
       return __dh_intern_hooked_include(x);
@@ -445,6 +446,7 @@ var TO_JS = function(cfg){
     let lbl2int = {};
     let lblidx = 1;
     let allcaps = [];
+    let putback = [];
 
     for (let i = 1; i < instrs.length; i++){
       let [lbl, ins] = instrs[i];
@@ -568,6 +570,7 @@ var TO_JS = function(cfg){
         let typ = read_type(ins[2]);
         lookup[nom] = typ;
         o.push(`var ${nom} = $args.pop();`);
+        putback.push(nom);
       }else if (ins[0] == 'jmp'){
         let l = ins[1];
         o.push(`$goto=${lbl2int[l]};/*${l}*/ continue $$;`);
@@ -656,6 +659,10 @@ var TO_JS = function(cfg){
             o.push(`$args.push(${nom})`);
           }
           o.push(`${v}=$assign(${v},await ${funname}());`);
+          for (let i = funcs[funname].dcap.length-1; i>=0; i--){
+            let {typ,nom} = funcs[funname].dcap[i];
+            o.push(`${nom} = $caps.pop();`);
+          }
         }else if (typds[funname]){
           let oldlookup = Object.assign({},lookup);
           o.push("{")
@@ -678,6 +685,9 @@ var TO_JS = function(cfg){
         o.push(`${v}=$assign(${v},await ${fun}.__funptr());`);
 
       }else if (ins[0] == 'ret'){
+        for (let i = 0; i < putback.length; i++){
+          o.push(`$caps.push(${putback[i]});`);
+        }
         if (ins[1]){
           let a = clean(ins[1]);
           o.push(`return ${a};`);

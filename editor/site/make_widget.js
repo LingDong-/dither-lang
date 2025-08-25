@@ -176,7 +176,7 @@ function main(){
     div.innerHTML = `
       <div style="position:relative">
         <div class="edit" style="width:480px;height:240px;position:absolute;"></div>
-        <div class="out" style="position:absolute;left:480px;top:0px;width:240px;height:240px;overflow:hidden;border-left:1px solid silver"></div>
+        <div class="out" style="position:absolute;left:480px;top:0px;width:240px;height:240px;overflow:hidden;border-left:1px solid silver;background:white;"></div>
         <button class="play" style="position:absolute;left:430px;top:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;">▶</button>
       </div>
     `

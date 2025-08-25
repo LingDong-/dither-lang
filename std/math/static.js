@@ -16,6 +16,10 @@ globalThis.$math = new function(){
     let [x] = $pop_args(1);
     return Math.acos(x);
   }
+  that.abs = function(){
+    let [x] = $pop_args(1);
+    return Math.abs(x);
+  }
   that.max = function(){
     let [x,y] = $pop_args(2);
     return Math.max(x,y);
