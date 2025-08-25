@@ -57,16 +57,16 @@ void main() {
     let [src] = $pop_args(1);
     
     gl.getExtension('OES_standard_derivatives');
-    console.log(src);
+
     src = src.replace(/#version +\d\d\d/g,`#extension GL_OES_standard_derivatives : enable\nprecision mediump float;`);
     src = src.replace(/__/g,`GLES_DOUBLE_UNDERSCORE_REPLACEMENT`);
-    src = src.replace(/\/\*ARRAY_LITERAL_BEGIN\*\/(.*?) (.*?)\[.*?\]\=.*?\[.*?\]\((.*?)\)\;\/\*ARRAY_LITERAL_END\*\//,
+    src = src.replace(/\/\*ARRAY_LITERAL_BEGIN\*\/(.*?) (.*?)\[.*?\]\=.*?\[.*?\]\((.*?)\)\;\/\*ARRAY_LITERAL_END\*\//g,
       function(match,p0,p1,p2){
         return `${p0} ${p1}(int idx){${p2.split(',').map((x,i)=>`if (idx == ${i}) return ${x};`).join('\n')}}`;
       });
-    src = src.replace(/\/\*ARRAY_SUBSCRIPT_BEGIN\*\/./,'(');
-    src = src.replace(/\/\*ARRAY_SUBSCRIPT_END\*\/./,')');
-    // src = src.replace(/\/\*CONST\*\//g,'const ');
+    src = src.replace(/\/\*ARRAY_SUBSCRIPT_BEGIN\*\/./g,'(');
+    src = src.replace(/\/\*ARRAY_SUBSCRIPT_END\*\/./g,')');
+    src = src.replace(/\/\*CONST\*\//g,'const ');
     console.log(src);
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSrc);
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, src);
