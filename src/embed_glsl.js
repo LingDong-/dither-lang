@@ -171,8 +171,13 @@ function embed_glsl_frag(ast,scopes){
       
       if (ast.con.typ.con == 'vec' && ast.con.typ.elt.length > 2){
         let idx = shortid();
-        out.push(`/*CONST*/int ${idx} = int(${docompile(ast.idx)});`);
-        o += `(${docompile(ast.con)}[${idx}/${ast.con.typ.elt[1]}][int(mod(float(${idx}),float(${ast.con.typ.elt[1]})))])`;
+        let i0 = shortid();
+        let i1 = shortid();
+        let stride = ast.con.typ.elt[1];
+        out.push(`const int ${idx} = ${docompile(ast.idx)};`);
+        out.push(`const int ${i0} = ${idx}/${stride};`)
+        out.push(`const int ${i1} = ${idx}-${i0}*${stride};`)
+        o += `(${docompile(ast.con)}[${i0}][${i1}])`;
       }else if (ast.con.typ.con == 'arr'){
         if (ast.idx.typ.con == 'vec'){
           let idx = shortid();
