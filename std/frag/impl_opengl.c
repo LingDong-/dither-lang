@@ -119,6 +119,16 @@ void frag_impl__init_texture(void* data, int w, int h){
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTexture, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
+
+  GLuint depthBuffer;
+  glGenRenderbuffers(1, &depthBuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+  
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
   
   ((int32_t*)(data))[2] = fbo;
@@ -197,7 +207,7 @@ void frag_impl__begin(int prgm, int fbo){
 }
 
 void frag_impl_render(){
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
   GLint shader = 0;
   GLuint vbo, vbo_uvs;
   glGetIntegerv(GL_CURRENT_PROGRAM, &shader);
@@ -265,6 +275,10 @@ void frag_impl_uniformf(const char* s, float* x, int n){
     glUniform3f(uniform, x[0], x[1], x[2]);
   }else if (n == 4){
     glUniform4f(uniform, x[0], x[1], x[2], x[3]);
+  }else if (n == 9){
+    glUniformMatrix3fv(uniform, 1, GL_TRUE, x);
+  }else if (n == 16){
+    glUniformMatrix4fv(uniform, 1, GL_TRUE, x);
   }
 }
 

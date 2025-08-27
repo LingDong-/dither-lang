@@ -95,3 +95,17 @@ void math__exp(){
   float y = expf(x);
   __put_ret(&y);
 }
+
+void math__sqrt(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = sqrtf(x);
+  __put_ret(&y);
+}
+
+void math__tan(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = tanf(x);
+  __put_ret(&y);
+}

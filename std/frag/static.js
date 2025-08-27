@@ -91,12 +91,19 @@ void main() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-   
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    let depthBuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+       
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
       console.error("FBO is not complete");
     }
 
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);
     fbo._tex = tex;
     fbo._w = w;
@@ -177,18 +184,46 @@ void main() {
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);
   }
 
+  let glUniformMatrix = {
+    "4fv":function(loc,transpose,m){
+      if (transpose) {
+        m = new Float32Array([
+          m[0], m[4], m[8],  m[12],
+          m[1], m[5], m[9],  m[13],
+          m[2], m[6], m[10], m[14],
+          m[3], m[7], m[11], m[15],
+        ]);
+      }
+      return gl.uniformMatrix4fv(loc, false, m);
+    },
+    "3fv":function(loc,transpose,m){
+      if (transpose) {
+        m = new Float32Array([
+          m[0], m[3], m[6], 
+          m[1], m[4], m[7], 
+          m[2], m[5], m[8],
+        ]);
+      }
+      return gl.uniformMatrix3fv(loc, false, m);
+    }
+  }
+
   that.uniform = function(){
     let t = $args.at(-1).__type;
     let [s,x] = $pop_args(2);
     let prgm = gl.getParameter(gl.CURRENT_PROGRAM);
     const u = gl.getUniformLocation(prgm, s);
-
+    
     if (t == 'f32'){
       gl.uniform1f(u, x);
     }else if (t == 'i32'){
       gl.uniform1i(u, x);
     }else if (t.con == 'vec'){
-      gl['uniform'+t.elt[1]+t.elt[0][0]](u, ...x);
+      if (t.elt.length == 2){
+        gl['uniform'+t.elt[1]+t.elt[0][0]](u, ...x);
+      }else{
+        glUniformMatrix[t.elt[1]+t.elt[0][0]+'v'](u, true, x);
+      }
     }else{
       let idx = tex_cnt;
 

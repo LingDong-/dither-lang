@@ -31,6 +31,14 @@ typedef ptrdiff_t GLintptr;
 #define GL_TEXTURE_WIDTH                         0x1000
 #define GL_TEXTURE_HEIGHT                        0x1001
 #define GL_MULTISAMPLE                           0x809D
+#define GL_RENDERBUFFER                     0x8D41
+#define GL_DEPTH24_STENCIL8                 0x88F0
+#define GL_FRAMEBUFFER                      0x8D40
+#define GL_DEPTH_STENCIL_ATTACHMENT         0x821A
+#define GL_DEPTH_COMPONENT24           0x81A6
+#define GL_DEPTH_ATTACHMENT            0x8D00
+#define GL_FRAMEBUFFER_COMPLETE        0x8CD5
+
 typedef void (APIENTRYP PFNGLGENBUFFERSPROC)(GLsizei, GLuint*);
 typedef void (APIENTRYP PFNGLBINDBUFFERPROC)(GLenum, GLuint);
 typedef void (APIENTRYP PFNGLBUFFERDATAPROC)(GLenum, GLsizeiptr, const void*, GLenum);
@@ -75,6 +83,11 @@ typedef void (APIENTRYP PFNGLUNIFORMMATRIX3FVPROC)(GLint location, GLsizei count
 typedef void (APIENTRYP PFNGLVERTEXATTRIB2FPROC)(GLuint index, GLfloat x, GLfloat y);
 typedef void (APIENTRYP PFNGLVERTEXATTRIB3FPROC)(GLuint index, GLfloat x, GLfloat y, GLfloat z);
 typedef void (APIENTRYP PFNGLVERTEXATTRIB4FPROC)(GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+typedef void (APIENTRYP PFNGLGENRENDERBUFFERSPROC)(GLsizei n, GLuint *renderbuffers);
+typedef void (APIENTRYP PFNGLBINDRENDERBUFFERPROC)(GLenum target, GLuint renderbuffer);
+typedef void (APIENTRYP PFNGLRENDERBUFFERSTORAGEPROC)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (APIENTRYP PFNGLFRAMEBUFFERRENDERBUFFERPROC)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+
 static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
 static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
 static PFNGLBUFFERDATAPROC glBufferData = NULL;
@@ -119,6 +132,10 @@ static PFNGLUNIFORMMATRIX3FVPROC glUniformMatrix3fv = NULL;
 static PFNGLVERTEXATTRIB2FPROC glVertexAttrib2f = NULL;
 static PFNGLVERTEXATTRIB3FPROC glVertexAttrib3f = NULL;
 static PFNGLVERTEXATTRIB4FPROC glVertexAttrib4f = NULL;
+static PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers = NULL;
+static PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer = NULL;
+static PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage = NULL;
+static PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer = NULL;
 
 static int glewDidInit = 0;
 static void glewInit(void) {
@@ -176,6 +193,11 @@ static void glewInit(void) {
   glVertexAttrib2f = (PFNGLVERTEXATTRIB2FPROC)wglGetProcAddress("glVertexAttrib2f");
   glVertexAttrib3f = (PFNGLVERTEXATTRIB3FPROC)wglGetProcAddress("glVertexAttrib3f");
   glVertexAttrib4f = (PFNGLVERTEXATTRIB4FPROC)wglGetProcAddress("glVertexAttrib4f");
+
+  glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)wglGetProcAddress("glGenRenderbuffers");
+  glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
+  glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
+  glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
 }
 
 #endif

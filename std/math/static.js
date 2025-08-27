@@ -48,5 +48,13 @@ globalThis.$math = new function(){
     let [x] = $pop_args(1);
     return Math.exp(x);
   }
+  that.sqrt = function(){
+    let [x] = $pop_args(1);
+    return Math.sqrt(x);
+  }
+  that.tan = function(){
+    let [x] = $pop_args(1);
+    return Math.tan(x);
+  }
 }
 
