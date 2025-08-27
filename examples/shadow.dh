@@ -94,8 +94,6 @@ shadow := frag.texture(512,512);
 
 frame := 0;
 
-cy := cylinder(32);
-
 func draw_scene(){
   cy.draw(g3d.mat.translate(0,-1,0) @* 
           g3d.mat.scale(5.5,1,5.5));
