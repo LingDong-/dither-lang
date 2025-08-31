@@ -84,6 +84,23 @@ function main(){
     const htmlContent = `
       <body style="color:#222;font-family:monospace;font-size:15px">${"<"}${"/"}body>
       <script>
+      setTimeout(function(){
+        let c0 = document.getElementsByTagName("canvas")[0];
+        if (c0 && c0.getContext("webgl")){
+          let cnv = document.createElement("canvas");
+          cnv.id = "copy";
+          cnv.width = c0.width;
+          cnv.height = c0.height;
+          document.body.appendChild(cnv);
+          let ctx = cnv.getContext("2d");
+          function loop(){
+            requestAnimationFrame(loop);
+            ctx.drawImage(c0,0,0);
+          }
+          loop();
+        }
+      },1000);
+
       let last_call = performance.now();
       globalThis.__io_intern_hooked_print = async function(s){
         let div = document.createElement("span");
@@ -148,27 +165,37 @@ function main(){
       }, "*");
     }
   });
-  let ncol = 4;
-  let nrow = 8;
-  let imgw = 128;
-  let imgh = 64;
-  let idx = 0;
-  let cnv = document.createElement("canvas");
-  cnv.width = ncol*imgw;
-  cnv.height = nrow*imgh;
-  document.body.appendChild(cnv);
-  let ctx = cnv.getContext("2d");
-  for (let k in EXAMPLES){
-    // if (k != "distort.dh") continue;
-    let div = document.createElement("div");
-    let row = ~~(idx / ncol);
-    let col = idx % ncol;
-    document.body.appendChild(div);
-    run_from_str(EXAMPLES[k],div);
-    setTimeout(function(){
-      let bdy = div.getElementsByTagName("iframe")[0].contentWindow.document.body;
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function doit(){
+    let ncol = 4;
+    let nrow = 8;
+    let imgw = 128;
+    let imgh = 64;
+    let idx = 0;
+    let cnv = document.createElement("canvas");
+    cnv.width = ncol*imgw;
+    cnv.height = nrow*imgh;
+    document.body.appendChild(cnv);
+    let ctx = cnv.getContext("2d");
+    for (let k in EXAMPLES){
+      // if (k != "mousepaint.dh") continue;
+      let div = document.createElement("div");
+      let row = ~~(idx / ncol);
+      let col = idx % ncol;
+      document.body.appendChild(div);
+      run_from_str(EXAMPLES[k],div);
+      await sleep(2000);
+      if (k == "whereami.dh" || k == "mousepaint.dh"){
+        await sleep(3000);  
+      }
+      let doc = div.getElementsByTagName("iframe")[0].contentWindow.document;
+      let bdy = doc.body;
       let c0 = bdy.getElementsByTagName("canvas")[0];
       let c1 = document.createElement("canvas");
+      // document.body.appendChild(c1);
       c1.width = imgw;
       c1.height = imgh;
       let c1c = c1.getContext("2d");
@@ -178,11 +205,14 @@ function main(){
         let f = Math.max(fx,fy);
         let px = (imgw - c0.width*f)/2;
         let py = (imgh - c0.height*f)/2;
-        for (let i = 0; i < 10000; i++){
-          setTimeout(function(){
-            c1c.drawImage(c0,px,py,c0.width*f,c0.height*f);
-          },Math.random()*2000)
+
+        if (c0.getContext('2d')){
+          c1c.drawImage(c0,px,py,c0.width*f,c0.height*f);
+        }else{
+          c0 = doc.getElementById("copy");
+          c1c.drawImage(c0,px,py,c0.width*f,c0.height*f);
         }
+
       }else{
         c1c.fillRect(0,0,imgw,imgh);
         c1c.fillStyle = "white";
@@ -192,13 +222,15 @@ function main(){
           c1c.fillText(txt[i],0,10+i*10);
         }
       }
-      setTimeout(function(){
-        ctx.drawImage(c1,col*imgw,row*imgh,imgw,imgh);
-        div.innerHTML = "";
-      },3000);
-    },2000);
-    idx++;
+
+      ctx.drawImage(c1,col*imgw,row*imgh,imgw,imgh);
+      div.innerHTML = "";
+
+      idx++;
+      // break;
+    }
   }
+  doit();
 
 }
 

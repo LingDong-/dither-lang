@@ -298,7 +298,7 @@ function embed_glsl_frag(ast,scopes){
       need = `varying ${printtype(vargs[i].typ)} v_${vargs[i].val};`;
     }else if (vargs[i].hnt == 'uniform' || vargs[i].hnt == 'u'){
       need = `uniform ${printtype(vargs[i].typ)} ${vargs[i].val};`;
-    }else if (vargs[i].hnt == 'compute'){
+    }else if (vargs[i].hnt == 'derived'){
       need = {
         'd_position_dx':'varying vec3 v_position;',
         'd_position_dy':'varying vec3 v_position;',
@@ -319,7 +319,7 @@ function embed_glsl_frag(ast,scopes){
       }[x.val];
     }else if (x.hnt=='varying' || x.hnt=='v'){
       return 'v_'+x.val;
-    }else if (x.hnt=='compute'){
+    }else if (x.hnt=='derived'){
       return {
         'd_position_dx':'dFdx(v_position)',
         'd_position_dy':'dFdy(v_position)',

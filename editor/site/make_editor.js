@@ -11,6 +11,8 @@ function download(url) {
   return `<script src="${url}"></script>`
 }
 
+var simg = fs.readFileSync("doc/snaps.png").toString('base64');
+
 let html = [`
 <meta charset="UTF-8">
 <style>
@@ -53,6 +55,13 @@ let html = [`
   #doc h2{
     font-size:18px;
     margin-top:36px;
+  }
+  .snap{
+    background-image: url("data:image/png;base64,${simg}");
+    filter: brightness(60%) saturate(60%);
+  }
+  .snap:hover{
+    filter: brightness(100%) saturate(100%);
   }
   select {
     background: #444;
@@ -116,54 +125,60 @@ ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comme
 <style>.CodeMirror { height: 100%; }</style>
 
 <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
-  <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:visible;white-space: nowrap;">
+  <div id="snaps" style="overflow:scroll;position:absolute;left:0px;top:30px;width:150px;height:calc(100% - 30px);background:#222"></div>
+  <div id="mains" style="position:absolute;overflow:hidden;left:150px;top:0px;width:calc(100% - 150px);height:100%">
+
+    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:visible;white-space: nowrap;">
+   
+      <div class="bigbtn" id="btn-compile">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <rect x="8" y="3" width="8" height="4"  />
+            <rect x="10" y="3" width="4" height="16"/>
+            <rect x="9" y="14" width="6" height="8" />
+            <rect x="3" y="2" width="5" height="6"  />
+            <polygon points="16,3 22,7, 22,10, 16,7"/>
+          </g>
+        </svg>
+      </div>
     
-    <div class="bigbtn" id="btn-compile">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-        <g fill="#111">
-          <rect x="8" y="3" width="8" height="4"  />
-          <rect x="10" y="3" width="4" height="16"/>
-          <rect x="9" y="14" width="6" height="8" />
-          <rect x="3" y="2" width="5" height="6"  />
-          <polygon points="16,3 22,7, 22,10, 16,7"/>
-        </g>
-      </svg>
-    </div>
-  
 
-    <div class="bigbtn" id="btn-run">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-        <polygon points="5,4 21,12 5,20" fill="#111"/>
-      </svg>
-    </div>
+      <div class="bigbtn" id="btn-run">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <polygon points="5,4 21,12 5,20" fill="#111"/>
+        </svg>
+      </div>
 
-    <div class="bigbtn" id="btn-stop">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-        <rect x="6" y="6" width="12" height="12" fill="#111"/>
-      </svg>
-    </div>
+      <div class="bigbtn" id="btn-stop">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <rect x="6" y="6" width="12" height="12" fill="#111"/>
+        </svg>
+      </div>
 
 
-    <select id="sel-eg" style="-webkit-appearance:none;text-indent:5px;font-size:14px;display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
-      
-    </select>
+      <select id="sel-eg" style="-webkit-appearance:none;text-indent:5px;font-size:14px;display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
+        
+      </select>
 
-    <div class="bigbtn" id="btn-help">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-        <text x="6" y="19" font-family="sans-serif" font-weight="bold" font-style="normal" font-size="18px" fill="#111">?</text>
-      </svg>
+      <div class="bigbtn" id="btn-help">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <text x="6" y="19" font-family="sans-serif" font-weight="bold" font-style="normal" font-size="18px" fill="#111">?</text>
+        </svg>
+      </div>
+
     </div>
 
+    <div id="cl" style="position:absolute;left:0px;top:30px;width:50%;height:calc(100% - 30px);"></div>
+    <div id="cr" style="position:absolute;left:calc(50% + 4px);top:75%;width:25%;height:25%;"></div>
+    <div id="cj" style="position:absolute;left:calc(75% + 8px);top:75%;width:25%;height:25%;"></div>
+    <div id="out" style="overflow:scroll;background:#252627;color:white;font-family:monospace;position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(75% - 34px);"></div>
   </div>
-  <div id="cl" style="position:absolute;left:0px;top:30px;width:50%;height:calc(100% - 30px);"></div>
-  <div id="cr" style="position:absolute;left:calc(50% + 4px);top:75%;width:25%;height:25%;"></div>
-  <div id="cj" style="position:absolute;left:calc(75% + 8px);top:75%;width:25%;height:25%;"></div>
-  <div id="out" style="overflow:scroll;background:#252627;color:white;font-family:monospace;position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(75% - 34px);"></div>
 </body>
 `];
 
 
 function main(){
+
   CodeMirror.defineSimpleMode("dsm", {
     start: [
       {regex: /(?:mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|utag|eoir|dcap)\b/,
@@ -373,7 +388,8 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
       {regex: /[\{\[\(]/, indent: true, token: "bracket"},
       {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
       {regex: /\.(\b[A-Za-z_$][\w$]*)/, token: "property"},
-      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.\@]/, token: "operator"},
+      {regex: /\@[A-Za-z$][\w$]*/, token: "type"},
+      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.]/, token: "operator"},
       {regex: /[A-Za-z$][\w$]*/, token: "variable"},
     ],
   });
@@ -398,11 +414,68 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
 
   CML.setSize(null,null);
 
+  document.getElementById("sel-eg").style.display="none";
   for (let k in EXAMPLES){
     let opt = document.createElement("option");
     opt.value = opt.innerHTML = k;
     document.getElementById("sel-eg").appendChild(opt);
   }
+
+  let idx = 0;
+  let egsnaps = [];
+  for (let k in EXAMPLES){
+    let row = ~~(idx / 4);
+    let col = idx % 4;
+    let div = document.createElement("div");  
+    div.style = `
+      width:128px;height:64px;
+      margin:auto;
+      margin-top:6px;
+      margin-bottom:6px;
+      border-radius:4px;
+      border:1px solid grey;
+      font-family:sans-serif;
+      overflow:hidden;
+      cursor:pointer;
+    `
+    div.innerHTML = `
+      <div style="position:relative;width:100%;height:100%">
+        <div class="snap" style="
+          position:absolute;
+          left:0px;
+          top:0px;
+          width:100%;
+          height:100%;
+          background-position: top -${row*64}px left -${col*128}px;
+        "></div>
+
+        <div style="
+          margin:3px;
+          color:white;
+          font-size:14px;
+          text-align:center;
+          width:100%;
+          height:14px;
+          top:calc(50% - 11px);
+          text-shadow: 0px 0px 2px black, 0px 0px 4px black;
+          position:absolute;
+          left:0px;
+          pointer-events:none;
+        ">${k}</div>
+      </div>
+    `
+    div.onclick = function(){
+      for (let i = 0; i < egsnaps.length; i++){
+        egsnaps[i].style.border = "1px solid grey";
+      }
+      div.style.border = "2px solid white";
+      CML.setValue(EXAMPLES[k]);
+    }
+    document.getElementById("snaps").appendChild(div);
+    egsnaps.push(div);
+    idx ++;
+  }
+  egsnaps[4].onclick();
 
   let b64 = window.location.href.split("?code=")[1];
 
@@ -436,7 +509,7 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
   function make_help(e,prolog){
 
     document.getElementById("out").innerHTML = `
-      <div id="doc" style="line-height:20px;padding:20px;padding-left:20px;padding-right:20px;max-width:600px;margin:auto;margin-top:20px;color:#aaa;font-family:sans-serif;background:#141414;font-size:15px">
+      <div id="doc" style="line-height:20px;padding:20px;padding-left:20px;padding-right:20px;max-width:512px;margin:auto;margin-top:20px;color:#aaa;font-family:sans-serif;background:#141414;font-size:15px">
 
         ${prolog??""}
         ${DOC}
@@ -578,7 +651,7 @@ html.push(`<script>var DOC = \`${txt}\`</script>`);
 
 
 
-ff = fs.readdirSync("examples").filter(x=>x.endsWith('.dh'));
+ff = fs.readdirSync("examples").filter(x=>x.endsWith('.dh')).sort();
 html.push(`<script>var EXAMPLES = {`);
 for (let i = 0; i < ff.length; i++){
   let txt = fs.readFileSync("examples/"+ff[i]).toString()

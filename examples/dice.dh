@@ -124,10 +124,10 @@ shader1 := frag.program(embed(func(
   @uniform shininess:f32,
   @uniform ld : vec[f32,3],
   @builtin frag_coord : vec[f32,4],
-  @compute d_position_dx : vec[f32,3],
-  @compute d_position_dy : vec[f32,3],
-  @compute d_uv_dx : vec[f32,2],
-  @compute d_uv_dy : vec[f32,2],
+  @derived d_position_dx : vec[f32,3],
+  @derived d_position_dy : vec[f32,3],
+  @derived d_uv_dx : vec[f32,2],
+  @derived d_uv_dy : vec[f32,2],
 ):vec[f32,4]{
   texel := uv/frag_coord.xy;
   dhuv := gradient(image,uv,texel);
@@ -180,10 +180,10 @@ shader3 := frag.program(embed(func(
   @uniform ld : vec[f32,3],
   @uniform offset : vec[f32,2],
   @builtin frag_coord : vec[f32,4],
-  @compute d_position_dx : vec[f32,3],
-  @compute d_position_dy : vec[f32,3],
-  @compute d_uv_dx : vec[f32,2],
-  @compute d_uv_dy : vec[f32,2],
+  @derived d_position_dx : vec[f32,3],
+  @derived d_position_dy : vec[f32,3],
+  @derived d_uv_dx : vec[f32,2],
+  @derived d_uv_dy : vec[f32,2],
 ):vec[f32,4]{
   texel := uv/frag_coord.xy;
   uvof := {(uv.x+offset.x)%1.0, (uv.y+offset.y)%1.0};
