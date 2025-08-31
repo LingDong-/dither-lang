@@ -1,0 +1,34 @@
+{
+  "name": "dither-lang-vscode",
+  "displayName": "dither-lang-vscode",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "dither",
+      "aliases": ["Dither", "dither"],
+      "extensions": [".dh"],
+      "configuration": "./language-configuration.json"
+    },{
+      "id": "dither-asm",
+      "aliases": ["Dither ASM", "dither asm"],
+      "extensions": [".dsm"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "dither",
+      "scopeName": "source.dither",
+      "path": "./syntaxes/dither.tmLanguage.json"
+    },{
+      "language": "dither-asm",
+      "scopeName": "source.dither-asm",
+      "path": "./syntaxes/dither-asm.tmLanguage.json"
+    }]
+  }
+}

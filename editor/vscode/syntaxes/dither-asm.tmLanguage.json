@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode-textmate/master/test-cases/test-cases.schema.json",
+  "name": "Dither ASM",
+  "scopeName": "source.dither-asm",
+  "patterns": [
+    {
+      "name": "entity.name.function.dither-asm",
+      "match": "^(\\S+):"
+    },
+    {
+      "name": "constant.numeric.dither",
+      "match": "\\b(?:0[xX][0-9A-Fa-f]+|[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?)\\b"
+    },
+    {
+      "name": "string.quoted.double.dither",
+      "match": "\"(?:[^\\\\\"]|\\\\.)*?\""
+    },
+    {
+      "name": "keyword.control.dither-asm",
+      "match": "\\b(mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|dcap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|eoir|utag)\\b"
+    },
+    {
+      "name": "entity.name.type.dither-asm",
+      "match": "\\b(i8|i08|u8|u08|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|lst|arr|dict|dic|str|func|fun|void)\\b"
+    },
+    {
+      "name": "variable.other.dither",
+      "match": "\\b[A-Za-z_][\\w$]*\\b"
+    }
+  ]
+}

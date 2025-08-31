@@ -1,0 +1,92 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode-textmate/master/test-cases/test-cases.schema.json",
+  "name": "Dither",
+  "scopeName": "source.dither",
+  "patterns": [
+    {
+      "name": "string.quoted.double.dither",
+      "begin": "\"",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.string.begin.xyz" }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.xyz" }
+      },
+      "patterns": [
+        {
+          "name": "constant.character.escape.xyz",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "string.quoted.single.dither",
+      "match": "'(?:[^\\\\']|\\\\.)*?'"
+    },
+    {
+      "name": "keyword.control.dither",
+      "match": "\\b(namespace|continue|typedef|include|return|break|while|embed|else|func|for|if|do|as|is)\\b"
+    },
+    {
+      "name": "entity.name.type.dither",
+      "match": "\\b(i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func|union)\\b"
+    },
+    {
+      "name": "constant.numeric.dither",
+      "match": "\\b(?:0[xX][0-9A-Fa-f]+|[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?)\\b"
+    },
+    {
+      "name": "comment.block.dither",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
+      "name": "comment.line.double-slash.dither",
+      "match": "//.*$"
+    },
+    {
+      "name": "meta.annotation.dither",
+      "match": "@[\\t ]*([a-zA-Z_][a-zA-Z0-9_]*)",
+      "captures":{
+        "0": {
+					"name": "entity.name.annotation.dither"
+				},
+        "1": {
+					"name": "entity.name.annotation.dither"
+				}
+      }
+    },
+    {
+      "name": "keyword.operator.dither",
+      "match": "[-+/*=<>!?&|^%~#:;,\\.\\@]"
+    },
+    {
+      "name": "punctuation.bracket.dither",
+      "match": "[{}\\[\\]()]+"
+    },
+		{
+			"name": "entity.name.function.dither",
+			"match": "\\bfunc\\s+([A-Za-z_$][\\w$]*)",
+			"captures": {
+				"1": {
+					"name": "entity.name.function.dither"
+				}
+			}
+		},
+		{
+			"name": "support.function.call.dither",
+			"match": "\\b([A-Za-z_$][\\w$]*)(?=\\s*\\()",
+			"captures": {
+				"1": {
+					"name": "support.function.call.dither"
+				}
+			}
+		},
+		{
+      "name": "variable.other.dither",
+      "match": "\\b[A-Za-z_][\\w$]*\\b"
+    }
+  ],
+  "repository": {}
+}

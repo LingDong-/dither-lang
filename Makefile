@@ -84,7 +84,7 @@ profile: ir
 	arch -arm64 zsh -c "xcrun xctrace record --template 'Time Profiler' --output /tmp/$$FILENAME --launch -- build/vm build/ir.dsm"
 	open /tmp/$$FILENAME;
 website:
-	node editor/site/make_site.js;
+	node editor/site/make_editor.js;
 	node editor/site/make_widget.js;
 	node editor/site/make_index.js;
 	node editor/blocks/make_site.js;
