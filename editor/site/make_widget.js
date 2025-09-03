@@ -170,8 +170,28 @@ function main(){
     ],
   });
 
-  function make_widget(par,text){
+  let states = {};
+  const callback = (entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        states[entry.target.id] = 1;
+        entry.target.getElementsByClassName("play")[0].onclick();
+        // observer.unobserve(entry.target);
+      }else if (states[entry.target.id]){
+        states[entry.target.id] = 0;
+        entry.target.getElementsByClassName("out").innerHTML="";
+      }
+    });
+  };
+  const observer = new IntersectionObserver(callback, {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.01
+  });
+
+  function make_widget(par,text,lazy){
     let div = document.createElement("div");
+    div.id = "embed-"+Math.random().toString().slice(2);
     div.style="font-size:14px;line-height:18px;width:720px;height:240px;border-radius:5px;border:1px solid silver;box-shadow: 2px 2px 2px rgba(0,0,0,0.3);overflow:hidden;"
     div.innerHTML = `
       <div style="position:relative">
@@ -205,7 +225,11 @@ function main(){
       out.innerHTML = "";
       run_from_str(cml.getValue(),out);
     }
-    btn.onclick();
+    if (lazy){
+      observer.observe(div);
+    }else{
+      btn.onclick();
+    }
     div.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && e.shiftKey) {
         e.preventDefault();
@@ -218,7 +242,7 @@ function main(){
     Array.from(document.getElementsByClassName("dither-embed")).forEach(elem => {
       text = elem.textContent.trim();
       elem.innerHTML = "";
-      make_widget(elem,text);
+      make_widget(elem,text,elem.classList.contains("lazy"));
     });
   });
 

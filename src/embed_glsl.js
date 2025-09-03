@@ -124,7 +124,7 @@ function embed_glsl_frag(ast,scopes){
           let nom = ast.fun.rhs.val[0].ipl.nom.val;
           if (nom == 'noise'){
             let args = ast.arg.map(docompile);
-            if (args.length < 3) args.push('0');
+            if (args.length < 3) args.push('0.0');
             need_noise_impl = 1;
             o += `GLSLIMPL_noise(${args.join(',')})`;
           }
