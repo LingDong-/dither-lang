@@ -509,7 +509,7 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
   function make_help(e,prolog){
 
     document.getElementById("out").innerHTML = `
-      <div id="doc" style="line-height:20px;padding:20px;padding-left:20px;padding-right:20px;max-width:512px;margin:auto;margin-top:20px;color:#aaa;font-family:sans-serif;background:#141414;font-size:15px">
+      <div id="doc" style="line-height:20px;padding:20px;padding-left:20px;padding-right:20px;max-width:580px;margin:auto;margin-top:20px;color:#aaa;font-family:sans-serif;background:#141414;font-size:15px">
 
         ${prolog??""}
         ${DOC}
@@ -538,7 +538,7 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
   <span id="hbtn-help" class="fakebigbtn"></span> button.
   <br>
   <br>
-  Examples can be selected from the drop down menu.
+  Examples can be selected from the left sidebar.
   <br>
   <br>
   Below is a syntax guide to get you started quickly!

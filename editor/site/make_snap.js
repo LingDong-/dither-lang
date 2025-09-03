@@ -84,7 +84,7 @@ function main(){
     const htmlContent = `
       <body style="color:#222;font-family:monospace;font-size:15px">${"<"}${"/"}body>
       <script>
-      setTimeout(function(){
+      setInterval(function(){
         let c0 = document.getElementsByTagName("canvas")[0];
         if (c0 && c0.getContext("webgl")){
           let cnv = document.createElement("canvas");
@@ -188,7 +188,7 @@ function main(){
       document.body.appendChild(div);
       run_from_str(EXAMPLES[k],div);
       await sleep(2000);
-      if (k == "whereami.dh" || k == "mousepaint.dh"){
+      if (k == "whereami.dh" || k == "mousepaint.dh" || k == "mirror.dh"){
         await sleep(3000);  
       }
       let doc = div.getElementsByTagName("iframe")[0].contentWindow.document;
@@ -210,6 +210,10 @@ function main(){
           c1c.drawImage(c0,px,py,c0.width*f,c0.height*f);
         }else{
           c0 = doc.getElementById("copy");
+          while (!c0){
+            await sleep(100);
+            c0 = doc.getElementById("copy");
+          }
           c1c.drawImage(c0,px,py,c0.width*f,c0.height*f);
         }
 
