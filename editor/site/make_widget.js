@@ -189,7 +189,7 @@ function main(){
     threshold: 0.01
   });
 
-  function make_widget(par,text,lazy){
+  function make_widget(par,text,options){
     let div = document.createElement("div");
     div.id = "embed-"+Math.random().toString().slice(2);
     div.style="font-size:14px;line-height:18px;width:720px;height:240px;border-radius:5px;border:1px solid silver;box-shadow: 2px 2px 2px rgba(0,0,0,0.3);overflow:hidden;"
@@ -226,7 +226,7 @@ function main(){
       out.innerHTML = "";
       run_from_str(cml.getValue(),out);
     }
-    if (lazy){
+    if (options.lazy){
       observer.observe(div);
     }else{
       btn.onclick();
@@ -238,13 +238,17 @@ function main(){
       }
     });
     let exp = div.getElementsByClassName("dh-expand")[0];
-    exp.onclick = function(){
-      if (div.style.height){
-        div.style.height = "";
-      }else{
-        div.style.height = "240px"
+    if (options.expandable){
+      exp.onclick = function(){
+        if (div.style.height){
+          div.style.height = "";
+        }else{
+          div.style.height = "240px"
+        }
+        cml.setSize(null,null);
       }
-      cml.setSize(null,null);
+    }else{
+      exp.style.display = "none";
     }
   }
   window.dither_make_embed = make_widget;
@@ -252,7 +256,10 @@ function main(){
     Array.from(document.getElementsByClassName("dither-embed")).forEach(elem => {
       text = elem.textContent.trim();
       elem.innerHTML = "";
-      make_widget(elem,text,elem.classList.contains("lazy"));
+      make_widget(elem,text,{
+        lazy:elem.classList.contains("lazy"),
+        expandable:elem.classList.contains("expandable"),
+      });
     });
   });
 
