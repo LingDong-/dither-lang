@@ -196,6 +196,8 @@ function embed_glsl_frag(ast,scopes){
           o += `3.14159265357`;
         }
       }
+    }else if (ast.key == '...u'){
+      o += docompile(ast.val);
     }else{
       console.log(ast)
     }

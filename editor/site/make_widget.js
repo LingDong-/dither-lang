@@ -175,11 +175,11 @@ function main(){
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         states[entry.target.id] = 1;
-        entry.target.getElementsByClassName("play")[0].onclick();
+        entry.target.getElementsByClassName("dh-play")[0].onclick();
         // observer.unobserve(entry.target);
       }else if (states[entry.target.id]){
         states[entry.target.id] = 0;
-        entry.target.getElementsByClassName("out").innerHTML="";
+        entry.target.getElementsByClassName("dh-out").innerHTML="";
       }
     });
   };
@@ -194,14 +194,15 @@ function main(){
     div.id = "embed-"+Math.random().toString().slice(2);
     div.style="font-size:14px;line-height:18px;width:720px;height:240px;border-radius:5px;border:1px solid silver;box-shadow: 2px 2px 2px rgba(0,0,0,0.3);overflow:hidden;"
     div.innerHTML = `
-      <div style="position:relative">
-        <div class="edit" style="width:480px;height:240px;position:absolute;"></div>
-        <div class="out" style="position:absolute;left:480px;top:0px;width:240px;height:240px;overflow:hidden;border-left:1px solid silver;background:white;"></div>
-        <button class="play" style="position:absolute;left:430px;top:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;">▶</button>
+      <div style="position:relative;height:100%">
+        <div class="dh-edit" style="width:480px;height:100%;position:absolute;"></div>
+        <div class="dh-out" style="position:absolute;left:480px;top:0px;width:240px;height:100%;overflow:hidden;border-left:1px solid silver;background:white;"></div>
+        <button class="dh-play" style="position:absolute;left:430px;top:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;">▶</button>
+        <button class="dh-expand" style="position:absolute;left:430px;bottom:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;">⇕</button>
       </div>
     `
     par.appendChild(div);
-    let cml = CodeMirror(div.getElementsByClassName("edit")[0], {
+    let cml = CodeMirror(div.getElementsByClassName("dh-edit")[0], {
       lineNumbers:true,
       matchBrackets: true,
       theme:"dither-light-theme",
@@ -219,8 +220,8 @@ function main(){
     });
     cml.setValue(text)
     cml.setSize(null,null);
-    let btn = div.getElementsByClassName("play")[0];
-    let out = div.getElementsByClassName("out")[0];
+    let btn = div.getElementsByClassName("dh-play")[0];
+    let out = div.getElementsByClassName("dh-out")[0];
     btn.onclick = function(){
       out.innerHTML = "";
       run_from_str(cml.getValue(),out);
@@ -236,6 +237,15 @@ function main(){
         btn.onclick();
       }
     });
+    let exp = div.getElementsByClassName("dh-expand")[0];
+    exp.onclick = function(){
+      if (div.style.height){
+        div.style.height = "";
+      }else{
+        div.style.height = "240px"
+      }
+      cml.setSize(null,null);
+    }
   }
   window.dither_make_embed = make_widget;
   window.addEventListener("load",function(){

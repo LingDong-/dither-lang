@@ -2250,12 +2250,27 @@ var PARSER = function(sys,extensions={}){
           }
           h = ast.val.length;
           for (let i = 0; i < ast.val.length; i++){
-            w = Math.max(w,ast.val[i].length);
+            let wi = 0;
             for (let j = 0; j < ast.val[i].length; j++){
-              doinfer(ast.val[i][j]);
+              let tj;
+              if (ast.val[i][j].key == '...u'){
+                doinfer(ast.val[i][j].val);
+                if (ast.val[i][j].val.typ.con == 'vec'){
+                  tj = ast.val[i][j].val.typ.elt[0];
+                  wi += ast.val[i][j].val.typ.elt.slice(1).reduce((a,b)=>a*b,1);
+                }else{
+                  mkerr('typecheck',`spread operator in vec literal requires vec operand`,somepos(ast.val[i][j]));
+                }
+              }else{
+                doinfer(ast.val[i][j]);
+                tj = ast.val[i][j].typ;
+                wi ++;
+              }
               curpos = somepos(ast.val[i][j]);
-              t = maxtype(t,ast.val[i][j].typ);
+              t = maxtype(t,tj);
             }
+            //  w = Math.max(w,ast.val[i].length);
+            w = Math.max(w,wi);
           }
           if (h > 1){
             ast.typ = {con:'vec',elt:[t,h,w]};
@@ -3406,12 +3421,26 @@ var PARSER = function(sys,extensions={}){
           }
         }
         let vals = ast.val.flat();
+        let idx = 0;
         for (let i = 0; i < vals.length; i++){
-          let ni = docompile(vals[i]);
-          if (!typeeq(vals[i].typ,ast.typ.elt[0])){
-            ni = docast(ni, vals[i].typ, ast.typ.elt[0]);
+          if (vals[i].key == '...u'){
+            let ni = docompile(vals[i].val);
+            let n = vals[i].val.typ.elt.slice(1).reduce((a,b)=>a*b,1);
+            for (let j = 0; j < n; j++){
+              let t = mktmpvar(ast.typ.elt[0]);
+              if (!typeeq(vals[i].val.typ.elt[0],ast.typ.elt[0])){
+                t = docast(t, vals[i].val.typ, ast.typ.elt[0]);
+              }
+              pushins('mov',t,[ni,j])
+              pushins('mov',[tmp,idx++],t)
+            }
+          }else{
+            let ni = docompile(vals[i]);
+            if (!typeeq(vals[i].typ,ast.typ.elt[0])){
+              ni = docast(ni, vals[i].typ, ast.typ.elt[0]);
+            }
+            pushins('mov',[tmp,idx++],ni);
           }
-          pushins('mov',[tmp,i],ni);
         }
         return tmp;
       }else if (ast.key == 'tlit'){
