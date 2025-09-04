@@ -1464,7 +1464,7 @@ var PARSER = function(sys,extensions={}){
             }
             return ok*score;
           }
-        }else{
+        }else if (!tms.includes(fa)){
           try{
             // console.log(fa,arg.typ)
             if (printtype(fa)==printtype(arg.typ)){
@@ -3615,7 +3615,13 @@ var PARSER = function(sys,extensions={}){
           if (!typeeq(ast.typ,ast.val.typ)){
             n0 = docast(n0,ast.val.typ,ast.typ);
           }
-          pushins('ret',n0);
+          if (ast.val.tag == 'numbr' || ast.val.tag == 'strlt'){
+            let tmp = mktmpvar(ast.val.typ);
+            pushins('mov',tmp,n0)
+            pushins('ret',tmp);
+          }else{
+            pushins('ret',n0);
+          }
         }else{
           pushins('ret');
         }

@@ -85,7 +85,13 @@ function embed_glsl_frag(ast,scopes){
       }
     }else if (ast.key == 'retn'){
       out.push(`return ${docompile(ast.val)};`);
-    }else if (['+','-','*','/','==','||','&&','>','<','>=','<='].includes(ast.key)){
+    }else if (['+','-','*','/'].includes(ast.key)){
+      if (printtype(ast.lhs.typ) == printtype(ast.rhs.typ)){
+        o += `(${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)})`
+      }else{
+        o += `(${printtype(ast.typ)}(${docompile(ast.lhs)})${ast.key}${printtype(ast.typ)}(${docompile(ast.rhs)}))`
+      }
+    }else if (['==','||','&&','>','<','>=','<='].includes(ast.key)){
       o += `(${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)})`
     }else if (['+=','-=','*=','/='].includes(ast.key)){
       out.push(`${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)};`);
@@ -198,6 +204,8 @@ function embed_glsl_frag(ast,scopes){
       }
     }else if (ast.key == '...u'){
       o += docompile(ast.val);
+    }else if (ast.key == 'break'){
+      out.push('break;');
     }else{
       console.log(ast)
     }

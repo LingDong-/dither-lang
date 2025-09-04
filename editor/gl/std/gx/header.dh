@@ -17,7 +17,6 @@ namespace gx {
     func read_pixels():arr[u8,3]     {return _read_pixels(this.fbo)};
     func write_pixels(pix:arr[u8,3]) {_write_pixels(this.fbo,pix)};
   };
-  typedef Font = i32;
   func _size(w:i32,h:i32,ctx:u64);
   func size(w:i32,h:i32){_size(w,h,win.init(w,h,win.CONTEXT_2D));}
   func begin_shape();
