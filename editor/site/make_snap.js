@@ -1,14 +1,25 @@
+let TODOS = [
+  // list here new examples that need to be snapped
+]
+
 const fs = require('fs');
+
+if (!TODOS.length){
+  TODOS.push(...fs.readdirSync("examples").filter(x=>x.endsWith('.dh')));
+}
 
 let html = [`
 <meta charset="UTF-8">
 <body></body>
+<script>var TODOS = ${JSON.stringify(TODOS)};</script>
 `];
+
+let old = fs.readFileSync("doc/snaps.png").toString('base64');
 
 html.push(`<script>${fs.readFileSync("src/parser.js").toString()}</script>`);
 html.push(`<script>${fs.readFileSync("src/to_js.js").toString()}</script>`);
 html.push(`<script>${fs.readFileSync("src/embed_glsl.js").toString()}</script>`);
-
+html.push(`<img id="old" src="data:image/png;base64,${old}" />`);
 html.push(`<script>var STD={`)
 let ff = fs.readdirSync("std");
 for (let i = 0; i < ff.length; i++){
@@ -28,6 +39,14 @@ for (let i = 0; i < ff.length; i++){
 html.push(`};</script>`)
 
 function main(){
+  let oldimg = document.getElementById("old");
+  let oldcnv = document.createElement("canvas");
+  oldcnv.width = oldimg.width;
+  oldcnv.height = oldimg.height;
+  let oldctx = oldcnv.getContext('2d');
+  oldctx.drawImage(oldimg,0,0);
+  oldimg.style.display = "none";
+
   function compile_from_str(str){
     let fs = {
       readFileSync:function(x){
@@ -171,7 +190,7 @@ function main(){
 
   async function doit(){
     let ncol = 4;
-    let nrow = 8;
+    let nrow = Math.ceil(Object.keys(EXAMPLES).length/ncol);
     let imgw = 128;
     let imgh = 64;
     let idx = 0;
@@ -180,11 +199,23 @@ function main(){
     cnv.height = nrow*imgh;
     document.body.appendChild(cnv);
     let ctx = cnv.getContext("2d");
+    let oldidx = 0;
     for (let k in EXAMPLES){
-      // if (k != "mousepaint.dh") continue;
-      let div = document.createElement("div");
       let row = ~~(idx / ncol);
       let col = idx % ncol;
+
+      if (!TODOS.includes(k)){
+        let oldrow = ~~(oldidx / ncol);
+        let oldcol = oldidx % ncol;
+        ctx.drawImage(oldcnv,
+          oldcol*imgw,oldrow*imgh,imgw,imgh,
+          col*imgw,row*imgh,imgw,imgh
+        );
+        oldidx++;
+        idx++;
+        continue;
+      }
+      let div = document.createElement("div");
       document.body.appendChild(div);
       run_from_str(EXAMPLES[k],div);
       await sleep(2000);
