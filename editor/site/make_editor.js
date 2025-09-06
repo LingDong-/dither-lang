@@ -197,7 +197,8 @@ function main(){
   });
 
   console.error = function(x){
-    CMR.replaceRange(x, { line: CMR.lineCount(), ch: 0 });
+    console.log(x);
+    CMR.replaceRange(x+"\n", { line: CMR.lineCount(), ch: 0 });
   }
 
   function compile_from_str(str){

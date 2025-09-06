@@ -48,7 +48,9 @@ js.push(`{
 }`);
 
 function main(){
-  function compile_from_str(str){
+  let olderror = console.error;
+
+  function compile_from_str(str,outdiv){
     let fs = {
       readFileSync:function(x){
         if (x == "CURRENT"){
@@ -71,6 +73,20 @@ function main(){
       cwd: ()=>'',
       exit: ()=>{throw "up"},
     }
+    console.error = function(x){
+      let errdiv;
+      if (!(errdiv = outdiv.getElementsByClassName("dh-err")[0])){
+        errdiv = document.createElement("div");
+        errdiv.style = "width:100%;overflow:scroll";
+        errdiv.classList.add("dh-err");
+        outdiv.appendChild(errdiv);
+      }
+      olderror(x);
+      let div = document.createElement("pre");
+      div.style = "margin:0px;color:#e51;font-size:13px;"
+      div.innerHTML = x
+      errdiv.appendChild(div);
+    }
     let parser = new PARSER({fs,path,process,search_paths:['']},{fragment:embed_glsl_frag});
     let toks = parser.tokenize("CURRENT");
     let cst = parser.parse(toks);
@@ -89,13 +105,19 @@ function main(){
 
     let [pir,playout] = to_js.parse_ir(irlo);
     let jj = to_js.transpile(pir,playout);
-
+    console.error = olderror;
     return [irlo,jj];
   }
 
   function run_from_str(str,outdiv){
-    let [irlo,jj] = compile_from_str(str);
+    let irlo,jj;
 
+    try{
+      ;[irlo,jj] = compile_from_str(str,outdiv);
+    }catch(e){
+      console.error = olderror;
+      throw e;
+    }
     const iframe = document.createElement('iframe');
 
     iframe.style = "width:100%;height:100%;border:none;";
@@ -198,7 +220,12 @@ function main(){
         <div class="dh-edit" style="width:480px;height:100%;position:absolute;"></div>
         <div class="dh-out" style="position:absolute;left:480px;top:0px;width:240px;height:100%;overflow:hidden;border-left:1px solid silver;background:white;"></div>
         <button class="dh-play" style="position:absolute;left:430px;top:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;">▶</button>
-        <button class="dh-expand" style="position:absolute;left:430px;bottom:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;">⇕</button>
+        <button class="dh-menu" style="position:absolute;left:405px;top:2px;width:20px;height:20px;font-size:16px;line-height:16px;color:#222;padding:0px;z-index:1000;text-align:center;"><span style="position:relative;top:-1px;">☰</span></button>
+        <div class="dh-drawer" style="display:none;position:absolute;left:405px;top:25px;width:45px;z-index:1000;">
+          <button class="dh-stop" style="width:72px;height:20px;color:#222;padding:0px;text-align:left;">&nbsp;stop</button>
+          <button class="dh-reset" style="width:72px;height:20px;color:#222;padding:0px;text-align:left;">&nbsp;reset</button>
+          <button class="dh-expand" style="width:72px;height:20px;color:#222;padding:0px;text-align:left;">&nbsp;expand</button>
+        </div>
       </div>
     `
     par.appendChild(div);
@@ -237,18 +264,35 @@ function main(){
         btn.onclick();
       }
     });
-    let exp = div.getElementsByClassName("dh-expand")[0];
-    if (options.expandable){
-      exp.onclick = function(){
-        if (div.style.height){
-          div.style.height = "";
-        }else{
-          div.style.height = "240px"
-        }
-        cml.setSize(null,null);
+    let drawer = div.getElementsByClassName("dh-drawer")[0]
+
+    div.getElementsByClassName("dh-menu")[0].onclick = function(){
+      
+      if (drawer.style.display != "none"){
+        drawer.style.display = "none"
+      }else{
+        drawer.style.display = "block"
       }
-    }else{
-      exp.style.display = "none";
+    }
+    div.getElementsByClassName("dh-reset")[0].onclick = function(){
+      cml.setValue(text);
+      drawer.style.display = "none"
+    }
+    div.getElementsByClassName("dh-stop")[0].onclick = function(){
+      out.innerHTML = "";
+      drawer.style.display = "none"
+    }
+    let exp = div.getElementsByClassName("dh-expand")[0];
+    exp.onclick = function(){
+      if (div.style.height){
+        div.style.height = "";
+        exp.innerHTML = "&nbsp;collapse"
+      }else{
+        div.style.height = "240px"
+        exp.innerHTML = "&nbsp;expand"
+      }
+      cml.setSize(null,null);
+      drawer.style.display = "none"
     }
   }
   window.dither_make_embed = make_widget;
@@ -258,7 +302,6 @@ function main(){
       elem.innerHTML = "";
       make_widget(elem,text,{
         lazy:elem.classList.contains("lazy"),
-        expandable:elem.classList.contains("expandable"),
       });
     });
   });
