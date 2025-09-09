@@ -215,7 +215,7 @@ function main(){
     let div = document.createElement("div");
     div.id = "embed-"+Math.random().toString().slice(2);
     let h0 = 240;
-    if (options.style == 'bleed'){
+    if (options.bleed){
       h0 = 600;
       div.style=`font-size:14px;line-height:18px;width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);height:${h0}px;overflow:hidden;`;
       div.innerHTML = `
