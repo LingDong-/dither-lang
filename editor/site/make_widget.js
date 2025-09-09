@@ -216,7 +216,7 @@ function main(){
     div.id = "embed-"+Math.random().toString().slice(2);
     let h0 = 240;
     if (options.bleed){
-      h0 = 600;
+      h0 = 640;
       div.style=`font-size:14px;line-height:18px;width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);height:${h0}px;overflow:hidden;`;
       div.innerHTML = `
         <div style="position:relative;height:100%;width:100%;">
