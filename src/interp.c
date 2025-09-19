@@ -2522,6 +2522,8 @@ void cast(term_t* a, term_t* b){
       
       if (b->mode == TERM_NUMU){
         v->u.u64 = b->u.u;
+      }else if (b->mode == TERM_NUMF){
+        v->u.u64 = b->u.f;
       }else if (b->mode == TERM_IDEN){
         v->u.u64 = get_val_num(b);
       }else{

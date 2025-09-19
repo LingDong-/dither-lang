@@ -440,9 +440,15 @@ var PARSER = function(sys,extensions={}){
               (!tokis(out0.at(pprv),'sigil::') || tokis(out0.at(pppprv),'sigil:,') || out0.at(pppprv)===undefined  )
               && !tokis(out0.at(pprv),'sigil:]')  ))
           ){
-            if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='vec' || gtok(out0.at(prv)).lhs.val=='arr')){
-              let g = ggroup('{}');
-              out0.push({key:gtok(out0.at(prv)).lhs.val[0]+'lit',ano:out0.pop(),val:g.val});
+            if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='vec' || gtok(out0.at(prv)).lhs.val=='arr' || gtok(out0.at(prv)).lhs.val=='tup')){
+              let g = ggroup('{}').val;
+              if (gtok(out0.at(prv)).lhs.val=='tup'){
+                if (g.length != 1){
+                  mkerr('parse','invalid tuple initializer syntax',ntok(tmp,i).pos);
+                }
+                g = g[0];
+              }
+              out0.push({key:gtok(out0.at(prv)).lhs.val[0]+'lit',ano:out0.pop(),val:g});
             }else if (gtok(out0.at(prv)).key=='subs' && (gtok(out0.at(prv)).lhs.val=='list')){
               let g = ggroup('{}',true);
               out0.push({key:'olit',lhs:out0.pop(),rhs:(g.val.key=='noop'?undefined:g.val)});
@@ -1010,8 +1016,9 @@ var PARSER = function(sys,extensions={}){
       ast.key = 'is';
       ast.lhs = abstract(cst.lhs);
       ast.rhs = abstype(cst.rhs);
-    }else if (cst.key == '[]'){
+    }else if (cst.key == '[]' || cst.key == 'tlit'){
       ast.key = 'tlit';
+      ast.ano = cst.ano?abstype(cst.ano):null;
       ast.val = untree(cst.val).map(abstract);
     }else if (cst.key == '{}' || cst.key == 'vlit' || cst.key == 'alit'){
       let val = [];
@@ -2241,7 +2248,11 @@ var PARSER = function(sys,extensions={}){
             doinfer(ast.val[i]);
             typs.push(ast.val[i].typ);
           }
-          ast.typ = {con:'tup',elt:typs};
+          if (ast.ano){
+            ast.typ = shrinktype(ast.ano);
+          }else{
+            ast.typ = {con:'tup',elt:typs};
+          }
         }else if (ast.key == 'vlit'){
           let w=1,h=1;
           let t = 'auto';
@@ -3919,7 +3930,13 @@ var PARSER = function(sys,extensions={}){
         let tmp = mktmpvar(ast.typ);
         pushins(ins,tmp,n0,n1/*,typ*/);
         return tmp;
-        
+      }else if (ast.key == ','){
+        docompile(ast.lhs);
+        let n1 = docompile(ast.rhs);
+        if (!typeeq(ast.rhs.typ,ast.typ)){
+          n1 = docast(n1,ast.rhs.typ,ast.typ);
+        }
+        return n1;
       }else if (binops.includes(ast.key)){
         let ins = {
           '+':'add',
