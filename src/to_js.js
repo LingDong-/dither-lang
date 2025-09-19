@@ -494,6 +494,7 @@ var TO_JS = function(cfg){
         if (lbl == '__main__'){
 
           if (infun){
+            putback.splice(0,Infinity);
             o.push(`default:$goto=0;break;}}}`);
           }
           // o.push(`(async function main(){`);
@@ -504,6 +505,7 @@ var TO_JS = function(cfg){
         }else if (lbl.startsWith("__func_ovld_")){
 
           if (infun){
+            putback.splice(0,Infinity);
             o.push(`default:$goto=null;break;}}}`);
           }
           let funname = clean(lbl);
