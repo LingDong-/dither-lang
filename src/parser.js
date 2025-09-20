@@ -1177,9 +1177,9 @@ var PARSER = function(sys,extensions={}){
     return ast;
   }
 
-  function eval_scoped(js,context) {
+  eval(`function eval_scoped(js,context) {
     return function() { with(this) { return eval(js); }; }.call(context);
-  }
+  }`);
 
   function findvar(vars,ast,err='variable'){
     let x = ast.val;

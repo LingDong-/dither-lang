@@ -12,7 +12,7 @@ namespace list {
     x := a[a.length()-1]; a.erase(a.length()-1,a.length()); return x;
   }
   func map[T,U](a:list[T],f:func[tup[T],U]):list[U]{
-    b := list[T]{};
+    b := list[U]{};
     for (i:=0;i<a.length();i++){
       b.push(f(a[i]));
     }
