@@ -244,6 +244,18 @@ var TO_JS = function(cfg){
     }else{
       o = cstk[0][0];
     }
+
+    function flat(o){
+      if (o.con){
+        if (o.con.includes('.')){
+          return `${o.con}[${o.elt.map(flat).join(',')}]`;
+        }else{
+          return {con:o.con,elt:o.elt.map(flat)}
+        }
+      }
+      return o;
+    }
+    o = flat(o);
     return o;
   }
 

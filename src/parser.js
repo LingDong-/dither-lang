@@ -1463,7 +1463,13 @@ var PARSER = function(sys,extensions={}){
             let ok = 0;
             for (let k = 0; k < arg.val.length; k++){
               try{
-                maxtypf(fa,arg.val[k].typ,arg,0);
+                // maxtypf(fa,arg.val[k].typ,arg,0);
+                let ar = fa.elt[0].elt.map(x=>({typ:x}));
+                let fd = findfuncbytype(get_scope(),arg.typ);
+                let [r,t,f] = matchftmpl(ar,fd.val,map);
+                if (tms.includes(fa.elt[1])){
+                  map[fa.elt[1]] = r;
+                }
                 ok = 1;
                 break;
               }catch(e){
@@ -1555,16 +1561,15 @@ var PARSER = function(sys,extensions={}){
       let nnn = funs.length
       for (let i = 0; i < nnn; i++){
 
-        let fas;
         let map = {};
         let tms = [];
         Object.assign(map,map0);
         let s = 0;
         if (funs[i].typ.con == 'func'){
-          fas = funs[i].typ.elt[0].elt;
+          fas = funs[i].typ.elt[0].elt.map(tryfixtype);
           s = 100;
         }else{
-          fas = funs[i].tty.elt[0].elt;
+          fas = funs[i].tty.elt[0].elt.map(tryfixtype);
           tms = funs[i].ipl.tem.map(x=>shrinktype(x,0));
           if (pte && pte.length == tms.length){
             for (let j = 0; j < pte.length; j++){
@@ -1596,7 +1601,10 @@ var PARSER = function(sys,extensions={}){
           if (printtype(args[j].typ) != printtype(fas[j])){
             // console.log(map)
             // console.log(printtype(args[j].typ) , printtype(fas[j]), tms, map)
+            let oldfas = fas;
             s = Math.min(s,matchatmpl(fas[j], args[j].typ, args[j], tms, map ));
+            fas = oldfas;
+            // console.log(map)
             s = Math.max(s,0);
             // if (s == 0){
             //   console.log(args[j].typ,fas[j])
@@ -1618,6 +1626,7 @@ var PARSER = function(sys,extensions={}){
         if (funs[i].typ.con == 'func'){
           // console.log(".",funs[i].ipl,s)
           fts[i] =funs[i].ipl.ano.typ;
+          
           scores.push([i,s,funs[i].typ]);
           
           if (funs[i].did == false){
@@ -1643,7 +1652,6 @@ var PARSER = function(sys,extensions={}){
           }
         }else{
           // console.log("???",map)
-          
           scostk.push(...funs[i].ctx);
           let oldnamesp = [...namesp.splice(0,Infinity)];
           namesp.push(...scozoo[funs[i].ctx.at(-1)].__names.split("."))
@@ -1749,7 +1757,6 @@ var PARSER = function(sys,extensions={}){
         // console.log(funs[scores[0][0]]==funs[scores[1][0]])
         mkerr('typecheck',`found tie in function matching: ${printtype(t0)} and ${printtype(t1)}`,somepos(args));
       }
-
       killlosers(0);
       return [fts[scores[0][0]],scores[0][2],funs[scores[0][0]]];
     }
@@ -1781,6 +1788,9 @@ var PARSER = function(sys,extensions={}){
       if (x == 'void') return x;
       if (x.con){
         if (cntyps.includes(x.con) || x.con == 'func' || x.con == 'dict' || x.con == 'union'){
+          return x;
+        }
+        if (x.con.includes('.')){
           return x;
         }
         for (let i = scostk.length-1; i>= 0; i--){
@@ -1826,6 +1836,7 @@ var PARSER = function(sys,extensions={}){
             for (let j = 0; j < mm.val.length; j++){
               // console.log(',',mm.val[j])
               doinfer(mm.val[j]);
+              mm.val[j].mbr = m.typ;
             }
             mm.sco = scostk.slice();
 
@@ -1880,6 +1891,13 @@ var PARSER = function(sys,extensions={}){
       if (x.con){
      
         x = clone(x);
+        for (let i = scostk.length-1; i>= 0; i--){
+          let vars = scozoo[scostk[i]];
+          if (m = vars.__types[scostk[i]+'.'+x.con]){
+            x.con = scostk[i]+'.'+x.con;
+          }
+        }
+
         for (let i = 0; i < x.elt.length; i++){
           if (typeof x.elt[i] != 'number'){
             x.elt[i] = tryfixtype(x.elt[i]);
@@ -1955,7 +1973,11 @@ var PARSER = function(sys,extensions={}){
             for (let j = 0; j < vars[i].__types[key].cpy.length; j++){
               
               if (typeeq(vars[i].__types[key].cpy[j].elt, typ.elt)){
-                return findvar([scozoo[vars[i].__types[key].cpy[j].sig]],nom,'field').typ;
+                let v = findvar([scozoo[vars[i].__types[key].cpy[j].sig]],nom,abort?'field':null)
+                if (v){
+                  return v.typ;
+                }
+                return v;
               }
             }
           }
@@ -1965,7 +1987,11 @@ var PARSER = function(sys,extensions={}){
         let key = typ;
         for (let i = vars.length-1; i>=0; i--){
           if (vars[i].__types[key]){
-            return findvar([scozoo[vars[i].__types[key].sig]],nom,'field').typ;
+            let v =  findvar([scozoo[vars[i].__types[key].sig]],nom,abort?'field':null);
+            if (v){
+              return v.typ;
+            }
+            return v;
           }
         }
       }
@@ -2460,38 +2486,34 @@ var PARSER = function(sys,extensions={}){
           let skipfirst = 0;
           if (ast.fun.key == 'a.b'){
             doinfer(ast.fun.lhs);
-            
-            let typ;
-            
-            if (hctyps.includes(ast.fun.lhs.typ.con) || hctyps.includes(ast.fun.lhs.typ)){
-              
-              typ = fieldtype(ast.fun.lhs.typ,ast.fun.rhs,0);
-              
-              if (typ == null){
-                let v0 = ast.fun.lhs;
+            let ns = ast.fun.lhs.typ && ast.fun.lhs.typ.con == 'nmsp';
+            let typ = fieldtype(ast.fun.lhs.typ,ast.fun.rhs,0);
+            if (!ns && !typ){
+              let v0 = ast.fun.lhs;
+              if (hctyps.includes(ast.fun.lhs.typ.con) || hctyps.includes(ast.fun.lhs.typ)){
                 ast.fun.lhs = {
                   tag:'ident',
                   val:ast.fun.lhs.typ.con??ast.fun.lhs.typ,
                   pos:ast.fun.lhs.pos,
                 }
-                ast.arg.unshift(v0);
-                if (ast.fun.lhs.val == 'vec' && ast.fun.rhs.val == 'map'){
-                  ast.fun.typ = '__vec_map';
-                }else{
-                  doinfer(ast.fun);
-                }
-                skipfirst = 1;
+              }else{
+                ast.fun = ast.fun.rhs;
               }
-              ast.typ = typ;
-              // console.dir(ast);
-              // process.exit();
-            }else{
-              // typ = fieldtype(ast.fun.lhs.typ,ast.fun.rhs);
-              if (!ast.fun.rty)
+              ast.arg.unshift(v0);
+              if (ast.fun.key == 'a.b' && ast.fun.lhs.val == 'vec' && ast.fun.rhs.val == 'map'){
+                ast.fun.typ = '__vec_map';
+              }else if (!ast.fun.rty){
                 doinfer(ast.fun);
-              // console.log(ast.fun.lhs.typ.con)
+              }
+              skipfirst = 1;
+            }else{
+              ast.typ = typ;
+              if (!ast.fun.rty){
+                doinfer(ast.fun);
+              }
             }
             
+
           }else{
             doinfer(ast.fun);
           }

@@ -672,32 +672,52 @@ var TO_C = function(cfg){
     // console.log(o);
     return [o,lo];
   }
+  function proc_type(o){
+    function proc(x){
+      let y = typmap;
+      if (y[x]) return y[x];
+      return clean(x);
+    }
+    function flat(o){
+      if (o.con){
+        if (o.con.includes('.')){
+          return `${o.con}[${o.elt.map(flat).join(',')}]`;
+        }else{
+          return {con:o.con,elt:o.elt.map(flat)}
+        }
+      }
+      return o;
+    }
+    function doit(o){
+      if (o.con){
+        return {con:proc(o.con),elt:o.elt.map(doit)}
+      }
+      return proc(o);
+    }
+    return doit(flat(o));
+  }
   function read_type(s){
     let acc = "";
     let cstk = [];
     let cptr = [];
     cstk.push(cptr);
-    function proc(x){
-      let y = typmap;
-      if (y[x]) return y[x];
-      return clean(x);//+"";
-    }
+
     for (let i = 0; i < s.length; i++){
       if (s[i] == '['){
-        cptr.push({con:proc(acc),elt:[]});
+        cptr.push({con:acc,elt:[]});
         acc = "";
         cptr = cptr.at(-1).elt;
         cstk.push(cptr);
       }else if (s[i] == ']'){
         if (acc.length){
-          cptr.push(proc(acc));
+          cptr.push(acc);
           acc = "";
         }
         cstk.pop();
         cptr = cstk.at(-1);
       }else if (s[i] == ','){
         if (acc.length){
-          cptr.push(proc(acc));
+          cptr.push(acc);
           acc = "";
         }
       }else{
@@ -705,10 +725,11 @@ var TO_C = function(cfg){
       }
     }
     if (acc.length){
-      o = proc(acc);
+      o = acc;
     }else{
       o = cstk[0][0];
     }
+    o = proc_type(o);
     return o;
   }
 
@@ -1472,9 +1493,9 @@ var TO_C = function(cfg){
         for (let i = 0; i < dcap.length; i++){
           let tmp = shortid();
           o.push(`int ${tmp} = ${type_size(dcap[i].typ)};`);
-          o.push(`memcpy(${nom}->captr+(${n}), &(${dcap[i].nom}), ${tmp});`);
+          o.push(`memcpy((char*)(${nom}->captr)+(${n}), &(${dcap[i].nom}), ${tmp});`);
           n += "+"+type_size(dcap[i].typ);
-          o.push(`memcpy(${nom}->captr+(${n}), &${tmp}, 4);`);
+          o.push(`memcpy((char*)(${nom}->captr)+(${n}), &${tmp}, 4);`);
           n += "+4";
           o.push(`((char*)(${nom}->captr))[${n}] = ${vart(dcap[i].typ)};`);
           n += "+1";
@@ -1532,7 +1553,7 @@ var TO_C = function(cfg){
         
         o.push(`void* ${tmp} = malloc(${fun}->siz);`);
         o.push(`memcpy(${tmp},${fun}->captr,${fun}->siz);`);
-        o.push(`char* ${top} = ${tmp} + ${fun}->siz;`);
+        o.push(`char* ${top} = (char*)${tmp} + ${fun}->siz;`);
         o.push(`while (${top} > ${tmp}){`);
         o.push(`char vt = *((char*)(${top}-=1));`);
         o.push(`int sz;`);
