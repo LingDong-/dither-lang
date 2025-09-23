@@ -2096,7 +2096,11 @@ var PARSER = function(sys,extensions={}){
           }else{
             fv = findnmsp(scozoo,namesp,ast.val);
             if (!fv){
-              mkerr('typecheck',`undefined identifier '${ast.val}'`,somepos(ast));
+              if (ast.gen){
+                mkerr('typecheck',`generated undefined identifier '${ast.val}', likely missing include "std/${ast.val}"`,somepos(ast));
+              }else{
+                mkerr('typecheck',`undefined identifier '${ast.val}'`,somepos(ast));
+              }
             }
             ast.typ = fv.typ
           }
@@ -2495,6 +2499,7 @@ var PARSER = function(sys,extensions={}){
                   tag:'ident',
                   val:ast.fun.lhs.typ.con??ast.fun.lhs.typ,
                   pos:ast.fun.lhs.pos,
+                  gen:1,
                 }
               }else{
                 ast.fun = ast.fun.rhs;
