@@ -2,8 +2,8 @@
 namespace dict {
   func keys[T,U](a:dict[T,U]):list[T];
   func values[T,U](a:dict[T,U]):list[U];
-  func has[T,U](a:dict[T,U]):i32;
-  func delete[T,U](a:dict[T,U]);
+  func has[T,U](a:dict[T,U],x:T):i32;
+  func delete[T,U](a:dict[T,U],x:T);
   func length[T,U](a:dict[T,U]):i32;
   func clear[T,U](a:dict[T,U]);
 }
