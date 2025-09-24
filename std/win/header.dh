@@ -25,6 +25,7 @@ namespace win {
   KEY_RCMD  := 0xffec;
   MOUSE_LEFT     := 1;
   MOUSE_RIGHT    := 2;
+  IDLE           := 0;
   MOUSE_PRESSED  := 1;
   MOUSE_RELEASED := 2;
   MOUSE_MOVED    := 3;

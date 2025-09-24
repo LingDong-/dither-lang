@@ -10,7 +10,7 @@ namespace frag {
   }
   func _init_texture(tex:Texture,w:i32,h:i32);
   func init(ctx:u64);
-  func poll():win.Event{return win.poll()};
+  // func poll():win.Event{return win.poll()};
   func program(src:str):i32;
   func texture(w:i32,h:i32):Texture{tex:=Texture{};_init_texture(tex,w,h);return tex};
   func uniform[T](name:str, x:T);

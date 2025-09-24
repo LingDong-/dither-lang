@@ -115,8 +115,8 @@ for (let i = 0; i < std.length; i++){
   let ast = parser.abstract(cst);
   let scopes = parser.infertypes(ast);
 
-  let nmsp = ast.val.filter(x=>x.key == "nmsp")[0];
-
+  let nmsp = ast.val.filter(x=>x.key == "nmsp").at(-1);
+  // if (std[i]=='gx') console.log(nmsp)
   let name = nmsp.nom.val;
   let cont = nmsp.val;
   let o = {
@@ -274,7 +274,7 @@ a:active {
 }
 </style>
 <body style="font-family:monospace">
-<div style="position:fixed;left:0px;top:0px;width:200px;height:100%;overflow:scroll;background:whitesmoke">
+<div style="position:fixed;left:0px;top:0px;width:200px;height:100%;overflow:scroll;background:white">
   <div>
   <h2>&nbsp;dither std/</h2>
   ${L}

@@ -1,0 +1,1195 @@
+{
+  "arr": [
+    "Multidimensional homogeneous fixed-size mutable array"
+  ],
+  "arr-make:T*U:vec(i32,U)*T": [
+    "Generate an array given a shape and a filler item",
+    "desired array shape",
+    "value to fill array with (mutable types are by-reference)",
+    "new array"
+  ],
+  "arr-reshape:T*U:arr(T,U)*vec(i32,U)": [
+    "Change shape of an array. If new size is bigger, empty elements will be appended. If smaller, last elements will be discarded.",
+    "array to modify",
+    "desired new shape"
+  ],
+  "arr-shape:T*U:arr(T,U)": [
+    "Retrieve shape of an array",
+    "array to query",
+    "array shape"
+  ],
+  "dict": [
+    "Mutable homogeneous collection of key-value pairs. Keys and values can be of any type, but keys are usually of immutable types."
+  ],
+  "dict-clear:T*U:dict(T,U)": [
+    "Remove all entries from a dict",
+    "dict to modify"
+  ],
+  "dict-delete:T*U:dict(T,U)*T": [
+    "Remove an entry from a dict by key",
+    "dict to modify",
+    "key to remove"
+  ],
+  "dict-has:T*U:dict(T,U)*T": [
+    "Check if a dict contains a given key",
+    "dict to query",
+    "key to check",
+    "1 if dict contains key, 0 otherwise"
+  ],
+  "dict-keys:T*U:dict(T,U)": [
+    "Retrieve all keys of a dict into a list",
+    "dict to query",
+    "a new list containing all keys"
+  ],
+  "dict-length:T*U:dict(T,U)": [
+    "Count the number of entries in a dict",
+    "dict to query",
+    "number of entries"
+  ],
+  "dict-values:T*U:dict(T,U)": [
+    "Retrieve all values (as in key-value pairs) of a dict into a list",
+    "dict to query",
+    "a new list containing all values (shallow copy)"
+  ],
+  "exch": [
+    "Data exchange formats serialization/deserialization"
+  ],
+  "exch-decode:T=JSON:str": [
+    "Parse JSON from a string",
+    "string to parse",
+    "JSON parsed"
+  ],
+  "exch-encode::JSON": [
+    "Convert JSON to a string",
+    "JSON to serialize",
+    "string representing the JSON"
+  ],
+  "exch-JSON": [
+    "Recursive datatype holding a JSON (javascript object notation)"
+  ],
+  "exch-JSON-data": [
+    "The data held: can be a list, a dict, a string or a number. Booleans are stored as numbers as the language does not have them."
+  ],
+  "frag": [
+    "Fragment shader library. Can be used for shader-toy style pipeline, or in conjunction with std/g3d for shading 3D meshes."
+  ],
+  "frag-begin::i32*Texture": [
+    "Start rendering with given shader program onto given texture",
+    "shader program (from .program(...))",
+    "texture to render to"
+  ],
+  "frag-begin::i32": [
+    "Start rendering with given shader program onto default rendering target",
+    "shader program (from .program(...))"
+  ],
+  "frag-end::": [
+    "Stop rendering with current shader program onto current texture"
+  ],
+  "frag-init::u64": [
+    "Initialize the library. Required before calling any other functions from the library.",
+    "the windowing context (from win.init(...))"
+  ],
+  "frag-program::str": [
+    "Compile a shader program from fragment shader source. The shader language is dependent on 3D backend; Better to generate with the `embed` statement.",
+    "fragment source code",
+    "handler representing the compiled shader program"
+  ],
+  "frag-render::": [
+    "Draw a rectangle filling the entire texture with the current shader program."
+  ],
+  "frag-texture::i32*i32": [
+    "Create a new texture. The texture can be used as both sampler and render target.",
+    "desired width",
+    "desired height",
+    "a new texture"
+  ],
+  "frag-Texture": [
+    "A datatype holding information for a texture on the GPU. A texture can be used as both sampler and render target."
+  ],
+  "frag-Texture-fbo": [
+    "Internal ID/handler of the texture"
+  ],
+  "frag-Texture-read_pixels::": [
+    "Download all pixel values from the GPU into an array",
+    "array holding RGBA colors of each pixel (0-255)"
+  ],
+  "frag-Texture-sample::vec(f32,2)": [
+    "Read color at specific uv-coordinate on the texture. Mostly used in shaders.",
+    "normalized uv-coordinate (0-1)",
+    "RGBA color (0-1)"
+  ],
+  "frag-Texture-write_pixels::arr(u8,3)": [
+    "Upload pixel values from an array to the GPU",
+    "array holding desired RGBA colors of each pixel (0-255)"
+  ],
+  "frag-uniform:T:str*T": [
+    "Set a uniform (global shader variable/parameter) for the current shader program.",
+    "name of the uniform (matches name in shader)",
+    "the desired value"
+  ],
+  "g3d": [
+    "3D graphics library."
+  ],
+  "g3d-AXIS_X": [
+    "Unit vector for positive X axis"
+  ],
+  "g3d-AXIS_Y": [
+    "Unit vector for positive Y axis"
+  ],
+  "g3d-AXIS_Z": [
+    "Unit vector for positive Z axis"
+  ],
+  "g3d-background::f32*f32*f32*f32": [
+    "Clear graphics and fill with background color (RGBA 0-1)",
+    "red",
+    "green",
+    "blue",
+    "alpha"
+  ],
+  "g3d-background::f32*f32*f32": [
+    "Clear graphics and fill with background color (RGB 0-1, A=1)",
+    "red",
+    "green",
+    "blue"
+  ],
+  "g3d-background::f32": [
+    "Clear graphics and fill with background color (R=G=B 0-1, A=1)",
+    "grayscale"
+  ],
+  "g3d-Camera": [
+    "Virtual camera for rendering 3D scenes"
+  ],
+  "g3d-Camera-begin::": [
+    "Start using the camera"
+  ],
+  "g3d-Camera-end::": [
+    "Stop using the camera"
+  ],
+  "g3d-Camera-look_at::vec(f32,3)*vec(f32,3)*vec(f32,3)": [
+    "Place the camera and orient toward given target. Sets the .view matrix of the camera.",
+    "camera position",
+    "target position",
+    "up vector"
+  ],
+  "g3d-Camera-ortho::f32*f32*f32*f32*f32*f32": [
+    "Use orthographic projection for the camera. Sets the .proj matrix of the camera.",
+    "left clipping plane",
+    "right clipping plane",
+    "bottom clipping plane",
+    "top clipping plane",
+    "near clipping plane",
+    "far clipping plane"
+  ],
+  "g3d-Camera-perspective::f32*f32*f32*f32": [
+    "Use perspective projection for the camera. Sets the .proj matrix of the camera.",
+    "field of view angle, in degrees, in the Y direction",
+    "aspect ratio (X/Y)",
+    "near clipping plane",
+    "far clipping plane"
+  ],
+  "g3d-Camera-proj": [
+    "Projection matrix (as in model-view-projection) of the camera"
+  ],
+  "g3d-Camera-view": [
+    "View matrix (as in model-view-projection) of the camera"
+  ],
+  "g3d-DIRTY_COLORS": [
+    "Flag for Mesh.update() to indicate mesh colors are modified"
+  ],
+  "g3d-DIRTY_INDICES": [
+    "Flag for Mesh.update() to indicate mesh indices are modified"
+  ],
+  "g3d-DIRTY_NORMALS": [
+    "Flag for Mesh.update() to indicate mesh normals are modified"
+  ],
+  "g3d-DIRTY_UVS": [
+    "Flag for Mesh.update() to indicate mesh UVs are modified"
+  ],
+  "g3d-DIRTY_VERTICES": [
+    "Flag for Mesh.update() to indicate mesh vertices are modified"
+  ],
+  "g3d-flush::": [
+    "Flush queued commands to GPU (no-op on some backends)"
+  ],
+  "g3d-init::u64": [
+    "Initialize the library. Required before calling any other functions from the library.",
+    "the windowing context (from win.init(...))"
+  ],
+  "g3d-mat": [
+    "Sub-namespace containing utilities for constructing transformation matrices"
+  ],
+  "g3d-mat-id": [
+    "The 4x4 identity matrix"
+  ],
+  "g3d-mat-rotate_deg::vec(f32,3)*f32": [
+    "Generate a matrix that can rotate vectors around given axis by given degrees",
+    "axis of rotation",
+    "angle in degrees",
+    "rotation matrix"
+  ],
+  "g3d-mat-scale::f32*f32*f32": [
+    "Generate a matrix that can scale vectors by given factor on each axis",
+    "scale factor on X axis",
+    "scale factor on Y axis",
+    "scale factor on Z axis",
+    "scale matrix"
+  ],
+  "g3d-mat-scale::f32": [
+    "Generate a matrix that can scale vectors uniformly on all axes by given factor",
+    "scale factor",
+    "scale matrix"
+  ],
+  "g3d-mat-translate::f32*f32*f32": [
+    "Generate a matrix that can translate (move) vectors by given offset on each axis",
+    "offset on X axis",
+    "offset on Y axis",
+    "offset on Z axis",
+    "translation matrix"
+  ],
+  "g3d-Mesh": [
+    "Datatype holding a 3D mesh"
+  ],
+  "g3d-Mesh-colors": [
+    "Per-vertex color buffer, RGBA 0-1 for each vertex. Optionally empty."
+  ],
+  "g3d-Mesh-draw::vec(f32,4,4)": [
+    "Draw the mesh, given a transformation, using current shader and camera config onto current render target.",
+    "transformation (a.k.a. model as in model-view-projection) matrix"
+  ],
+  "g3d-Mesh-indices": [
+    "Vertex index buffer, specifying vertex winding. Zero-indexed. Optionally empty."
+  ],
+  "g3d-Mesh-mode": [
+    "Winding/primitive mode for indices"
+  ],
+  "g3d-Mesh-normals": [
+    "Per-vertex normal buffer. Optionally empty"
+  ],
+  "g3d-Mesh-update::i32": [
+    "Upload buffers indicated by given flags to GPU",
+    "a bitwise OR of .DIRTY_* flags, e.g. .DIRTY_VERTICES|.DIRTY_COLORS"
+  ],
+  "g3d-Mesh-uvs": [
+    "UV (texcoords) buffer. Normalized 0-1. Optionally empty."
+  ],
+  "g3d-Mesh-vao": [
+    "Internal ID/handler of the mesh"
+  ],
+  "g3d-Mesh-vertices": [
+    "Vertex buffer"
+  ],
+  "g3d-MODE_LINE_LIST": [
+    "Primitive mode for disjoint lines"
+  ],
+  "g3d-MODE_LINE_STRIP": [
+    "Primitive mode for a polyline"
+  ],
+  "g3d-MODE_POINT_LIST": [
+    "Primitive mode for point cloud"
+  ],
+  "g3d-MODE_TRIG_LIST": [
+    "Primitive mode for disjoint triangles"
+  ],
+  "g3d-MODE_TRIG_STRIP": [
+    "Primitive mode for connected strip of triangles"
+  ],
+  "g3d-text::str*vec(f32,4,4)": [
+    "Draw text using built-in monospace fixed-size pixel font",
+    "string containing text to draw",
+    "transformation matrix"
+  ],
+  "guts": [
+    "Runtime internals"
+  ],
+  "guts-gc::": [
+    "Trigger garbage collection as soon as possible"
+  ],
+  "guts-gc_off::": [
+    "Disable garbage collection"
+  ],
+  "guts-gc_on::": [
+    "Enable garbage collection"
+  ],
+  "gx": [
+    "2D Processing-like graphics library"
+  ],
+  "gx-apply_matrix::vec(f32,3,3)": [
+    "Set current transformation matrix to product of given matrix and the current matrix",
+    "transformation to apply"
+  ],
+  "gx-background::f32*f32*f32*f32": [
+    "Fill the render target with given color (RGBA 0-1)",
+    "red",
+    "green",
+    "blue",
+    "alpha"
+  ],
+  "gx-background::f32*f32*f32": [
+    "Fill the render target with given color (RGB 0-1, A=1)",
+    "red",
+    "green",
+    "blue"
+  ],
+  "gx-background::f32": [
+    "Fill the render target with given grayscale value (R=G=B 0-1, A=1)",
+    "grayscale"
+  ],
+  "gx-background::f32*f32": [
+    "Fill the render target with given grayscale and alpha value (R=G=B 0-1, A 0-1)",
+    "grayscale",
+    "alpha"
+  ],
+  "gx-begin_shape::": [
+    "Start drawing a polyline/polygon"
+  ],
+  "gx-circle::f32*f32*f32": [
+    "Draw a circle",
+    "center X",
+    "center Y",
+    "diameter"
+  ],
+  "gx-create_graphics::i32*i32": [
+    "Create an offscreen render target",
+    "desired width",
+    "desired height",
+    "a new render target"
+  ],
+  "gx-ellipse::f32*f32*f32*f32": [
+    "Draw an ellipse",
+    "center X",
+    "center Y",
+    "diameter X",
+    "diameter Y"
+  ],
+  "gx-end_shape::i32": [
+    "Stop drawing a polyline/polygon",
+    "1 to close the shape (polygon), 0 otherwise (polyline)"
+  ],
+  "gx-end_shape::": [
+    "Stop drawing a polygon (close the shape)"
+  ],
+  "gx-fill::f32*f32*f32*f32": [
+    "Set fill color (RGBA 0-1)",
+    "red",
+    "green",
+    "blue",
+    "alpha"
+  ],
+  "gx-fill::f32*f32*f32": [
+    "Set fill color (RGB 0-1, A=1)",
+    "red",
+    "green",
+    "blue"
+  ],
+  "gx-fill::f32*f32": [
+    "Set fill color (R=G=B 0-1, A 0-1)",
+    "grayscale",
+    "alpha"
+  ],
+  "gx-fill::f32": [
+    "Set fill color (R=G=B 0-1, A=1)",
+    "grayscale"
+  ],
+  "gx-Graphics": [
+    "Datatype for an offscreen render target"
+  ],
+  "gx-Graphics-begin::": [
+    "Start drawing on this render target"
+  ],
+  "gx-Graphics-draw::f32*f32*f32*f32": [
+    "Draw this render target as an image/texture onto current render target (with scaling)",
+    "left coordinate to draw to",
+    "top coordinate to draw to",
+    "width after scaling",
+    "height after scaling"
+  ],
+  "gx-Graphics-draw::f32*f32": [
+    "Draw this render target as an image/texture onto current render target (without scaling)",
+    "left coordinate to draw to",
+    "top coordinate to draw to"
+  ],
+  "gx-Graphics-end::": [
+    "Stop drawing on this render target (return to default render target)"
+  ],
+  "gx-Graphics-fbo": [
+    "Internal ID/handler of the render target"
+  ],
+  "gx-Graphics-h": [
+    "Height in pixels"
+  ],
+  "gx-Graphics-read_pixels::": [
+    "Download all pixel values into an array",
+    "array holding RGBA colors of each pixel (0-255)"
+  ],
+  "gx-Graphics-w": [
+    "Width in pixels"
+  ],
+  "gx-Graphics-write_pixels::arr(u8,3)": [
+    "Upload pixel values from an array",
+    "array holding desired RGBA colors of each pixel (0-255)"
+  ],
+  "gx-line::f32*f32*f32*f32": [
+    "Draw a line",
+    "X coordinate of one end",
+    "Y coordinate of one end",
+    "X coordinate of the other end",
+    "Y coordinate of the other end"
+  ],
+  "gx-next_contour::i32": [
+    "For shapes with multiple contours (holes, islands, etc.), this marks the start of the next contour.",
+    "1 to close the previous contour, 0 otherwise"
+  ],
+  "gx-no_fill::": [
+    "Disable fill"
+  ],
+  "gx-no_stroke::": [
+    "Disable stroke"
+  ],
+  "gx-point::f32*f32": [
+    "Draw a point. Color is affected by .stroke(...)",
+    "X coordinate",
+    "Y coordinate"
+  ],
+  "gx-poll::": [
+    "Flush graphics and listen for windowing events. Non-blocking. Wraps win.poll()",
+    "a windowing event (might be IDLE)"
+  ],
+  "gx-pop_matrix::": [
+    "Restore transformation to previously saved state"
+  ],
+  "gx-push_matrix::": [
+    "Save current transformation matrix state"
+  ],
+  "gx-rect::f32*f32*f32*f32": [
+    "Draw a rectangle",
+    "left coordinate",
+    "top coordinate",
+    "width",
+    "height"
+  ],
+  "gx-reset_matrix::": [
+    "Reset transformation matrix to identity matrix"
+  ],
+  "gx-rotate_deg::f32": [
+    "Rotate subsequent drawings by modifying the current transformation matrix.",
+    "angle in degrees"
+  ],
+  "gx-scale::f32*f32": [
+    "Scale subsequent drawings by modifying the current transformation matrix.",
+    "factor on X axis",
+    "factor on Y axis"
+  ],
+  "gx-scale::f32": [
+    "Scale subsequent drawings uniformly on both axes by modifying the current transformation matrix.",
+    "factor on both axes"
+  ],
+  "gx-size::i32*i32": [
+    "Set up the window and the default render target. Wraps win.init(...)",
+    "width",
+    "height"
+  ],
+  "gx-stroke::f32*f32*f32*f32": [
+    "Set stroke color (RGBA 0-1)",
+    "red",
+    "green",
+    "blue",
+    "alpha"
+  ],
+  "gx-stroke::f32*f32*f32": [
+    "Set stroke color (RGB 0-1, A=1)",
+    "red",
+    "green",
+    "blue"
+  ],
+  "gx-stroke::f32": [
+    "Set stroke color (R=G=B 0-1, A=1)",
+    "grayscale"
+  ],
+  "gx-stroke::f32*f32": [
+    "Set stroke color (R=G=B 0-1, A 0-1)",
+    "grayscale",
+    "alpha"
+  ],
+  "gx-stroke_weight::f32": [
+    "Set stroke width/weight/thickness",
+    "thickness in pixels"
+  ],
+  "gx-text::str*f32*f32": [
+    "Draw text using built-in monospace fixed-size pixel font",
+    "string containing the text",
+    "left coordinate",
+    "bottom coordinate"
+  ],
+  "gx-translate::f32*f32": [
+    "Translate (offset) subsequent drawings by modifying the current transformation matrix.",
+    "X offset",
+    "Y offset"
+  ],
+  "gx-vertex::f32*f32": [
+    "Add a vertex to the polyline/polygon currently being drawn",
+    "X coordinate",
+    "Y coordinate"
+  ],
+  "img": [
+    "Imaging library"
+  ],
+  "img-decode::list(u8)": [
+    "Decode an image stored in a supported format (PNG, JPG, ...). The format is automatically detected",
+    "list of bytes holding the image in its encoded form",
+    "array of pixels (RGBA 0-255)"
+  ],
+  "img-encode::str*arr(u8,3)": [
+    "Encode an image to a supported format (PNG, JPG, ...)",
+    "image format, specified as file extension",
+    "array of pixels (RGBA 0-255)",
+    "list of bytes holding the encoded form"
+  ],
+  "img-get:T:arr(T,3)*i32*i32": [
+    "Retrieve the color of a single pixel in an image",
+    "array of pixels",
+    "X coordinate",
+    "Y coordinate",
+    "pixel color components at given coordinate"
+  ],
+  "img-set:T:arr(T,3)*i32*i32*vec(T,4)": [
+    "Set the color of a single pixel in an image",
+    "array of pixels",
+    "X coordinate",
+    "Y coordinate",
+    "pixel color components"
+  ],
+  "io": [
+    "Input/output library: File and console I/O"
+  ],
+  "io-print::str": [
+    "Print a string to the console",
+    "string to print"
+  ],
+  "io-println::str": [
+    "Print a string to the console, terminated by a newline (LF 0xA)",
+    "string to print"
+  ],
+  "io-read_file::str": [
+    "Read a file to a list of bytes",
+    "path to file (or URL on some backends)",
+    "list of bytes"
+  ],
+  "io-write_file::str*list(u8)": [
+    "Write a file given a list of bytes to write",
+    "path to file (or URL on some backends)",
+    "list of bytes"
+  ],
+  "list": [
+    "Ordered, variable-size collection of homogeneous items"
+  ],
+  "list-erase:T:list(T)*i32*i32": [
+    "Remove elements in a given index range from a list",
+    "list to modify",
+    "start index (inclusive)",
+    "end index (exclusive)",
+    ""
+  ],
+  "list-insert:T:list(T)*i32*T": [
+    "Insert an element before a given index into a list",
+    "list to modify",
+    "the element will be of this index after insertion",
+    "the element to insert",
+    "new length of list"
+  ],
+  "list-length:T:list(T)": [
+    "Retrieve the length of a list",
+    "list to query",
+    "length of the list"
+  ],
+  "list-make:T:i32*T": [
+    "Generate a new list given desired length and filler item",
+    "desired length",
+    "value to fill list with (mutable types are by-reference)",
+    "new list"
+  ],
+  "list-map:T*U:list(T)*func(tup(T),U)": [
+    "Apply a function to each element of a list and return a new list containing the results. The original list is not modified",
+    "list whose elements will be input to the function, in order",
+    "the function to apply to each element",
+    "new list containing the results"
+  ],
+  "list-pop:T:list(T)": [
+    "Remove the last element from a list and return it",
+    "list to modify",
+    "The (previously) last element"
+  ],
+  "list-push:T:list(T)*T": [
+    "Add an element to the end of a list",
+    "list to modify",
+    "element to be pushed",
+    "new length of list"
+  ],
+  "list-slice:T:list(T)*i32*i32": [
+    "Shallow copy a portion of a list into a new list",
+    "list to be sliced",
+    "start index (inclusive)",
+    "end index (exclusive)",
+    "new list containing the sliced elements"
+  ],
+  "math": [
+    "Math library"
+  ],
+  "math-abs::f32": [
+    "Absolute value",
+    "input",
+    "outut"
+  ],
+  "math-abs:N:vec(f32,N)": [
+    "Element-wise absolute value of vector",
+    "input",
+    "output"
+  ],
+  "math-acos::f32": [
+    "Arccosine",
+    "input",
+    "output in radians"
+  ],
+  "math-acos:N:vec(f32,N)": [
+    "Element-wise arccosine of a vector",
+    "input",
+    "output in radians"
+  ],
+  "math-atan2::f32*f32": [
+    "2-argument arctangent",
+    "dividend",
+    "divisor",
+    "output"
+  ],
+  "math-atan2:N:vec(f32,N)*vec(f32,N)": [
+    "Element-wise 2-argument arctangent of vectors",
+    "dividend",
+    "divisor",
+    "output"
+  ],
+  "math-ceil::f32": [
+    "Ceiling (round up)",
+    "input",
+    "output"
+  ],
+  "math-ceil:N:vec(f32,N)": [
+    "Element-wise ceiling of a vector (round up)",
+    "input",
+    "output"
+  ],
+  "math-clamp:T:T*T*T": [
+    "Clamp a value between two extrema, min(max(x,a),b)",
+    "value",
+    "lower bound",
+    "upper bound",
+    "clamped value"
+  ],
+  "math-cos::f32": [
+    "Cosine",
+    "input in radians",
+    "output"
+  ],
+  "math-cos:N:vec(f32,N)": [
+    "Element-wise cosine of a vector",
+    "input in radians",
+    "output"
+  ],
+  "math-exp::f32": [
+    "Exponential. Computes e^x",
+    "the exponent",
+    "power"
+  ],
+  "math-exp:N:vec(f32,N)": [
+    "Element-wise exponential of a vector. Computes e^x",
+    "the exponent",
+    "power"
+  ],
+  "math-floor::f32": [
+    "Floor (round down)",
+    "input",
+    "output"
+  ],
+  "math-floor:N:vec(f32,N)": [
+    "Element-wise floor of a vector (round down)",
+    "input",
+    "output"
+  ],
+  "math-hypot::f32*f32": [
+    "Hypothenuse. Square root of the sum of the squares of the arguments. ",
+    "first argument",
+    "second argument",
+    "output"
+  ],
+  "math-hypot:N:vec(f32,N)*vec(f32,N)": [
+    "Element-wise hypothenuse of vectors. Square root of the sum of the squares of the arguments. ",
+    "first argument",
+    "second argument",
+    "output"
+  ],
+  "math-lerp:T:T*T*f32": [
+    "Liner interpolation",
+    "lower end",
+    "higher end",
+    "interpolant",
+    "interpolated value"
+  ],
+  "math-linmap:T:T*T*T*T*T": [
+    "Linearly map a value from one range to another",
+    "value",
+    "initial lower end",
+    "initial higher end",
+    "oncoming lower end",
+    "oncoming higher end",
+    "remapped value"
+  ],
+  "math-max::f32*f32": [
+    "Maximum of two numbers",
+    "first argument",
+    "second argument",
+    "output"
+  ],
+  "math-max:N:vec(f32,N)*vec(f32,N)": [
+    "Element-wise maximum of two vectors",
+    "first argument",
+    "second argument",
+    "output"
+  ],
+  "math-min::f32*f32": [
+    "Minimum of two numbers",
+    "first argument",
+    "second argument",
+    "output"
+  ],
+  "math-min:N:vec(f32,N)*vec(f32,N)": [
+    "Element-wise minimum of two vectors",
+    "first argument",
+    "second argument",
+    "output"
+  ],
+  "math-PI": [
+    "The mathematical constant pi, ratio of the circumference of a circle to its diameter"
+  ],
+  "math-random::": [
+    "Generate a random fraction between 0 and 1 with uniform distribution. Use std/rand instead for more parameterized randomness",
+    "output"
+  ],
+  "math-round::f32": [
+    "Round a number to the nearest whole number",
+    "input",
+    "output"
+  ],
+  "math-round:N:vec(f32,N)": [
+    "Element-wise round a vector to nearest whole numbers",
+    "input",
+    "output"
+  ],
+  "math-sin::f32": [
+    "Sine",
+    "input in radians",
+    "output"
+  ],
+  "math-sin:N:vec(f32,N)": [
+    "Element-wise sine of a vector",
+    "input in radians",
+    "output"
+  ],
+  "math-sqrt::f32": [
+    "Square root",
+    "input",
+    "output"
+  ],
+  "math-sqrt:N:vec(f32,N)": [
+    "Element-wise square root of a vector",
+    "input",
+    "output"
+  ],
+  "math-tan::f32": [
+    "Tangent",
+    "input in radians",
+    "output"
+  ],
+  "math-tan:N:vec(f32,N)": [
+    "element-wise tangent of a vector",
+    "input in radians",
+    "output"
+  ],
+  "rand": [
+    "Library for various flavors of randomness and noise"
+  ],
+  "rand-noise::f32*f32*f32": [
+    "3D fractal Perlin noise",
+    "sample X",
+    "sample Y",
+    "sample Z",
+    "noise value (0-1)"
+  ],
+  "rand-noise::f32*f32": [
+    "2D fractal Perlin noise",
+    "sample X",
+    "sample Y",
+    "noise value (0-1)"
+  ],
+  "rand-noise::f32": [
+    "1D fractal Perlin noise",
+    "sample coordinate",
+    "noise value (0-1)"
+  ],
+  "rand-noise_detail::i32*f32": [
+    "Config fractal Perlin noise parameters",
+    "level of detail (fractal octave count)",
+    "diminish factor on each subsequent octave"
+  ],
+  "rand-noise_reseed::": [
+    "Re-seed fractal Perlin noise with .random()"
+  ],
+  "rand-random::": [
+    "Generate uniformly distributed random fraction between 0-1",
+    "the random number"
+  ],
+  "rand-random::f32": [
+    "Generate uniformly distributed random number between 0 and given upper bound",
+    "upper bound",
+    "the random number"
+  ],
+  "rand-random:N:vec(f32,N)": [
+    "Generate uniformly distributed random vector between 0 and given upper bound",
+    "element-wise upper bound",
+    "the random vector"
+  ],
+  "rand-random:T:T*T": [
+    "Generate random value in given range",
+    "lower bound",
+    "upper bound",
+    "the random value"
+  ],
+  "rand-seed::u32": [
+    "Seed the .random() generator",
+    "the seed"
+  ],
+  "req": [
+    ""
+  ],
+  "req-http::Request": [
+    "",
+    "",
+    ""
+  ],
+  "req-Request": [
+    ""
+  ],
+  "req-Request-body": [
+    ""
+  ],
+  "req-Request-headers": [
+    ""
+  ],
+  "req-Request-method": [
+    ""
+  ],
+  "req-Request-url": [
+    ""
+  ],
+  "req-Response": [
+    ""
+  ],
+  "req-Response-body": [
+    ""
+  ],
+  "req-Response-headers": [
+    ""
+  ],
+  "req-Response-status": [
+    ""
+  ],
+  "req-Response-url": [
+    ""
+  ],
+  "snd": [
+    ""
+  ],
+  "snd-buffer_full::": [
+    "",
+    ""
+  ],
+  "snd-exit::": [
+    ""
+  ],
+  "snd-init::i32*i32": [
+    "",
+    "",
+    ""
+  ],
+  "snd-put_sample::f32": [
+    "",
+    ""
+  ],
+  "str": [
+    ""
+  ],
+  "str-chr::u32": [
+    "",
+    "",
+    ""
+  ],
+  "str-decode::list(u8)*str": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "str-encode::str*str": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "str-length::str": [
+    "",
+    "",
+    ""
+  ],
+  "str-ord::str": [
+    "",
+    "",
+    ""
+  ],
+  "time": [
+    ""
+  ],
+  "time-delay::f32": [
+    "",
+    ""
+  ],
+  "time-fps::f32": [
+    "",
+    "",
+    ""
+  ],
+  "time-fps::": [
+    "",
+    ""
+  ],
+  "time-local::f64": [
+    "",
+    "",
+    ""
+  ],
+  "time-local::": [
+    "",
+    ""
+  ],
+  "time-millis::": [
+    "",
+    ""
+  ],
+  "time-stamp::": [
+    "",
+    ""
+  ],
+  "vec": [
+    ""
+  ],
+  "vec-cross::vec(f32,3)*vec(f32,3)": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "vec-dir:N:vec(f32,N)": [
+    "",
+    "",
+    ""
+  ],
+  "vec-dot:N:vec(f32,N)*vec(f32,N)": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "vec-mag:N:vec(f32,N)": [
+    "",
+    "",
+    ""
+  ],
+  "vin": [
+    ""
+  ],
+  "vin-create::i32*str": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "vin-create::i32": [
+    "",
+    "",
+    ""
+  ],
+  "vin-EFFECT_MIRROR": [
+    ""
+  ],
+  "vin-RESO_FHD": [
+    ""
+  ],
+  "vin-RESO_HD": [
+    ""
+  ],
+  "vin-RESO_VGA": [
+    ""
+  ],
+  "vin-SOURCE_FILE": [
+    ""
+  ],
+  "vin-SOURCE_WEBCAM": [
+    ""
+  ],
+  "vin-Video": [
+    ""
+  ],
+  "vin-Video-h": [
+    ""
+  ],
+  "vin-Video-id": [
+    ""
+  ],
+  "vin-Video-read_pixels::": [
+    "",
+    ""
+  ],
+  "vin-Video-w": [
+    ""
+  ],
+  "win": [
+    ""
+  ],
+  "win-CONTEXT_2D": [
+    ""
+  ],
+  "win-CONTEXT_3D": [
+    ""
+  ],
+  "win-Event": [
+    ""
+  ],
+  "win-Event-key": [
+    ""
+  ],
+  "win-Event-type": [
+    ""
+  ],
+  "win-Event-x": [
+    ""
+  ],
+  "win-Event-y": [
+    ""
+  ],
+  "win-exit::": [
+    ""
+  ],
+  "win-IDLE": [
+    ""
+  ],
+  "win-init::i32*i32*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "win-KEY_DARR": [
+    ""
+  ],
+  "win-KEY_F1": [
+    ""
+  ],
+  "win-KEY_F10": [
+    ""
+  ],
+  "win-KEY_F11": [
+    ""
+  ],
+  "win-KEY_F12": [
+    ""
+  ],
+  "win-KEY_F2": [
+    ""
+  ],
+  "win-KEY_F3": [
+    ""
+  ],
+  "win-KEY_F4": [
+    ""
+  ],
+  "win-KEY_F5": [
+    ""
+  ],
+  "win-KEY_F6": [
+    ""
+  ],
+  "win-KEY_F7": [
+    ""
+  ],
+  "win-KEY_F8": [
+    ""
+  ],
+  "win-KEY_F9": [
+    ""
+  ],
+  "win-KEY_LALT": [
+    ""
+  ],
+  "win-KEY_LARR": [
+    ""
+  ],
+  "win-KEY_LCMD": [
+    ""
+  ],
+  "win-KEY_LCTRL": [
+    ""
+  ],
+  "win-KEY_LSHIFT": [
+    ""
+  ],
+  "win-KEY_PRESSED": [
+    ""
+  ],
+  "win-KEY_RALT": [
+    ""
+  ],
+  "win-KEY_RARR": [
+    ""
+  ],
+  "win-KEY_RCMD": [
+    ""
+  ],
+  "win-KEY_RCTRL": [
+    ""
+  ],
+  "win-KEY_RELEASED": [
+    ""
+  ],
+  "win-KEY_RSHIFT": [
+    ""
+  ],
+  "win-KEY_UARR": [
+    ""
+  ],
+  "win-MOUSE_LEFT": [
+    ""
+  ],
+  "win-MOUSE_MOVED": [
+    ""
+  ],
+  "win-MOUSE_PRESSED": [
+    ""
+  ],
+  "win-MOUSE_RELEASED": [
+    ""
+  ],
+  "win-MOUSE_RIGHT": [
+    ""
+  ],
+  "win-poll::": [
+    "",
+    ""
+  ]
+}
