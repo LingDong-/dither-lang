@@ -587,7 +587,7 @@
     "list to modify",
     "start index (inclusive)",
     "end index (exclusive)",
-    ""
+    "new length of list"
   ],
   "list-insert:T:list(T)*i32*T": [
     "Insert an element before a given index into a list",
@@ -866,330 +866,330 @@
     "the seed"
   ],
   "req": [
-    ""
+    "Network client library for HTTP etc."
   ],
   "req-http::Request": [
-    "",
-    "",
-    ""
+    "Make an HTTP(S) request",
+    "the request",
+    "the response"
   ],
   "req-Request": [
-    ""
+    "Datatype holding information needed for a request"
   ],
   "req-Request-body": [
-    ""
+    "Bytes holding the body"
   ],
   "req-Request-headers": [
-    ""
+    "List of headers"
   ],
   "req-Request-method": [
-    ""
+    "The method, GET, POST, DELETE, etc."
   ],
   "req-Request-url": [
-    ""
+    "Requested address"
   ],
   "req-Response": [
-    ""
+    "Datatype holding information retrieved from a response"
   ],
   "req-Response-body": [
-    ""
+    "Bytes holding the body"
   ],
   "req-Response-headers": [
-    ""
+    "List of headers"
   ],
   "req-Response-status": [
-    ""
+    "Status code, 200, 404, etc."
   ],
   "req-Response-url": [
-    ""
+    "Final address after redirects"
   ],
   "snd": [
-    ""
+    "Low-level audio library"
   ],
   "snd-buffer_full::": [
-    "",
-    ""
+    "Check if audio buffer is full",
+    "1 if full, 0 otherwise"
   ],
   "snd-exit::": [
-    ""
+    "Uninitialize library and release resources"
   ],
   "snd-init::i32*i32": [
-    "",
-    "",
-    ""
+    "Initialize the library. Required before calling any other functions from the library.",
+    "sampling rate, e.g. 44100",
+    "number of channels, 1=mono, 2=stereo"
   ],
   "snd-put_sample::f32": [
-    "",
-    ""
+    "Put an audio sample onto the audio buffer to be played",
+    "audio sample (-1.0 to 1.0)"
   ],
   "str": [
-    ""
+    "Immutable sequence of characters"
   ],
   "str-chr::u32": [
-    "",
-    "",
-    ""
+    "Create a string holding 1 character given a code point",
+    "code point",
+    "string holding the character specified by the code point"
   ],
   "str-decode::list(u8)*str": [
-    "",
-    "",
-    "",
-    ""
+    "Decode a list of bytes into a string using given encoding",
+    "list of bytes holding the encoded representation",
+    "encoding, e.g. utf-8, ascii",
+    "decoded string"
   ],
   "str-encode::str*str": [
-    "",
-    "",
-    "",
-    ""
+    "Encode a string into a list of bytes using given encoding",
+    "the string to be encoded",
+    "encoding, e.g. utf-8, ascii",
+    "encoded list of bytes"
   ],
   "str-length::str": [
-    "",
-    "",
-    ""
+    "Retrieve length of a string",
+    "the string to query",
+    "number of characters in the string"
   ],
   "str-ord::str": [
-    "",
-    "",
-    ""
+    "Find code point of a character",
+    "string containing the 1 character",
+    "the code point"
   ],
   "time": [
-    ""
+    "Library for time-related functions"
   ],
   "time-delay::f32": [
-    "",
-    ""
+    "Pause the program for given milliseconds",
+    "time in milliseconds"
   ],
   "time-fps::f32": [
-    "",
-    "",
-    ""
+    "Set target frame rate for a program by calling this function once every iteration of the main loop.",
+    "desired frames-per-second",
+    "current frame rate"
   ],
   "time-fps::": [
-    "",
-    ""
+    "Retrieve the current number of frames-per-second",
+    "current frame rate"
   ],
   "time-local::f64": [
-    "",
-    "",
-    ""
+    "Interpret a Unix timestamp as local time",
+    "timestamp in seconds",
+    "year, month, day, hour, minute, second"
   ],
   "time-local::": [
-    "",
-    ""
+    "Retrieve the current local time",
+    "year, month, day, hour, minute, second"
   ],
   "time-millis::": [
-    "",
-    ""
+    "The number of milliseconds passed since program execution started",
+    "milliseconds"
   ],
   "time-stamp::": [
-    "",
-    ""
+    "Current Unix timestamp",
+    "timestamp in seconds"
   ],
   "vec": [
-    ""
+    "Primitive type for homogeneous, multidimensional, immutable collection of numbers"
   ],
   "vec-cross::vec(f32,3)*vec(f32,3)": [
-    "",
-    "",
-    "",
-    ""
+    "Vector cross product",
+    "first vector",
+    "second vector",
+    "the cross product"
   ],
   "vec-dir:N:vec(f32,N)": [
-    "",
-    "",
-    ""
+    "Find unit vector holding the direction of a given vector",
+    "vector in question",
+    "normalized copy"
   ],
   "vec-dot:N:vec(f32,N)*vec(f32,N)": [
-    "",
-    "",
-    "",
-    ""
+    "Vector dot product",
+    "first vector",
+    "second vector",
+    "the dot product"
   ],
   "vec-mag:N:vec(f32,N)": [
-    "",
-    "",
-    ""
+    "Find the L2 norm of a vector",
+    "vector in question",
+    "the magnitude"
   ],
   "vin": [
-    ""
+    "Library for video input (webcam/file)"
   ],
   "vin-create::i32*str": [
-    "",
-    "",
-    "",
-    ""
+    "Create a video source from webcam or file",
+    "flags (e.g. source, resolution, effects)",
+    "webcam device name/file path&nbsp;",
+    "the video object"
   ],
   "vin-create::i32": [
-    "",
-    "",
-    ""
+    "Create a webcam capture with default device",
+    "flags (e.g. source, resolution, effects)",
+    "the video object"
   ],
   "vin-EFFECT_MIRROR": [
-    ""
+    "Flag for applying horizontal flip"
   ],
   "vin-RESO_FHD": [
-    ""
+    "Flag for full HD resolution (1920x1080)"
   ],
   "vin-RESO_HD": [
-    ""
+    "Flag for HD resolution (1280x720)"
   ],
   "vin-RESO_VGA": [
-    ""
+    "Flag for VGA resolution (640x480)"
   ],
   "vin-SOURCE_FILE": [
-    ""
+    "Flag for reading from a file"
   ],
   "vin-SOURCE_WEBCAM": [
-    ""
+    "Flag for reading from a webcam"
   ],
   "vin-Video": [
-    ""
+    "Datatype holding a video object"
   ],
   "vin-Video-h": [
-    ""
+    "Frame height in pixels"
   ],
   "vin-Video-id": [
-    ""
+    "Internal ID/handler of the video"
   ],
   "vin-Video-read_pixels::": [
-    "",
-    ""
+    "Read pixel colors of the current frame into an array and advance to the next frame",
+    "pixels, RGBA 0-255"
   ],
   "vin-Video-w": [
-    ""
+    "Frame width in pixels"
   ],
   "win": [
-    ""
+    "The windowing library"
   ],
   "win-CONTEXT_2D": [
-    ""
+    "Flag for attaching a 2D context"
   ],
   "win-CONTEXT_3D": [
-    ""
+    "Flag for attaching a 3D context"
   ],
   "win-Event": [
-    ""
+    "Datatype holding a user event"
   ],
   "win-Event-key": [
-    ""
+    "Key code / mouse button"
   ],
   "win-Event-type": [
-    ""
+    "Event type (e.g. keypress, mouse release)"
   ],
   "win-Event-x": [
-    ""
+    "Coordinate X"
   ],
   "win-Event-y": [
-    ""
+    "Coordinate Y"
   ],
   "win-exit::": [
-    ""
+    "Close the window and release the resources"
   ],
   "win-IDLE": [
-    ""
+    "Event type for no event"
   ],
   "win-init::i32*i32*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Create a window. Required before calling any other functions from the library.",
+    "width",
+    "height",
+    "flags (e.g. 2D/3D context)",
+    "a context ID/handler"
   ],
   "win-KEY_DARR": [
-    ""
+    "Key code for down arrow"
   ],
   "win-KEY_F1": [
-    ""
+    "Key code for function key F1"
   ],
   "win-KEY_F10": [
-    ""
+    "Key code for function key F10"
   ],
   "win-KEY_F11": [
-    ""
+    "Key code for function key F11"
   ],
   "win-KEY_F12": [
-    ""
+    "Key code for function key F12"
   ],
   "win-KEY_F2": [
-    ""
+    "Key code for function key F2"
   ],
   "win-KEY_F3": [
-    ""
+    "Key code for function key F3"
   ],
   "win-KEY_F4": [
-    ""
+    "Key code for function key F4"
   ],
   "win-KEY_F5": [
-    ""
+    "Key code for function key F5"
   ],
   "win-KEY_F6": [
-    ""
+    "Key code for function key F6"
   ],
   "win-KEY_F7": [
-    ""
+    "Key code for function key F7"
   ],
   "win-KEY_F8": [
-    ""
+    "Key code for function key F8"
   ],
   "win-KEY_F9": [
-    ""
+    "Key code for function key F9"
   ],
   "win-KEY_LALT": [
-    ""
+    "Key code for left alt (option)"
   ],
   "win-KEY_LARR": [
-    ""
+    "Key code for left arrow"
   ],
   "win-KEY_LCMD": [
-    ""
+    "Key code for left command (meta)"
   ],
   "win-KEY_LCTRL": [
-    ""
+    "Key code for left control"
   ],
   "win-KEY_LSHIFT": [
-    ""
+    "Key code for left shift"
   ],
   "win-KEY_PRESSED": [
-    ""
+    "Event type for key down"
   ],
   "win-KEY_RALT": [
-    ""
+    "Key code for right alt (option"
   ],
   "win-KEY_RARR": [
-    ""
+    "Key code for right arrow"
   ],
   "win-KEY_RCMD": [
-    ""
+    "Key code for right command (meta)"
   ],
   "win-KEY_RCTRL": [
-    ""
+    "Key code for right control"
   ],
   "win-KEY_RELEASED": [
-    ""
+    "Event type for key up"
   ],
   "win-KEY_RSHIFT": [
-    ""
+    "Key code for right shift"
   ],
   "win-KEY_UARR": [
-    ""
+    "Key code for up arrow"
   ],
   "win-MOUSE_LEFT": [
-    ""
+    "Button code for left mouse button"
   ],
   "win-MOUSE_MOVED": [
-    ""
+    "Event type for mouse move"
   ],
   "win-MOUSE_PRESSED": [
-    ""
+    "Event type for mouse down"
   ],
   "win-MOUSE_RELEASED": [
-    ""
+    "Event type for mouse up"
   ],
   "win-MOUSE_RIGHT": [
-    ""
+    "Button code for right mouse button"
   ],
   "win-poll::": [
-    "",
-    ""
+    "Listen for user event (non-blocking)",
+    "an event"
   ]
 }

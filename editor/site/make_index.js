@@ -45,17 +45,19 @@ a:active {
 <table style="width:720px">
 <tr>
 <td>
-<img src="data:image/png;base64,${bimg}" style="width:360px;transform:translate(-20px,0)"/>
+<img src="data:image/png;base64,${bimg}" style="width:400px;transform:translate(-35px,-5px)"/>
 </td>
 <td style="width:10px">
 <a href="https://github.com/LingDong-/dither-lang/releases" style="text-decoration:none"><div class="biglink">Download</div></a>
 <a href="editor.html" style="text-decoration:none"><div class="biglink">Online Editor</div></a>
 <a href="blocks.html" style="text-decoration:none"><div class="biglink">Blocks Editor</div></a>
+<a href="https://github.com/LingDong-/dither-lang" style="text-decoration:none"><div class="biglink">Source Code</div></a>
 </td>
 <td style="width:10px">
 <a href="https://github.com/LingDong-/dither-lang/tree/main/examples" style="text-decoration:none"><div class="biglink">Examples</div></a>
-<a href="https://github.com/LingDong-/dither-lang/blob/main/SYNTAX.md" style="text-decoration:none"><div class="biglink">Documentation</div></a>
-<a href="https://github.com/LingDong-/dither-lang" style="text-decoration:none"><div class="biglink">Source Code</div></a>
+<a href="https://github.com/LingDong-/dither-lang/blob/main/SYNTAX.md" style="text-decoration:none"><div class="biglink">Quick Start</div></a>
+<a href="https://dither-doc.netlify.app/" style="text-decoration:none"><div class="biglink">Tutorials</div></a>
+<a href="api.html" style="text-decoration:none"><div class="biglink">API Docs</div></a>
 </td>
 </tr>
 </table>

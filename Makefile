@@ -88,3 +88,4 @@ website:
 	node editor/site/make_widget.js;
 	node editor/site/make_index.js;
 	node editor/blocks/make_site.js;
+	node editor/blocks/make_apidoc.js;
