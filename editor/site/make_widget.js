@@ -318,6 +318,7 @@ function main(){
     }
   }
   window.dither_make_embed = make_widget;
+  window.dither_run = run_from_str;
   window.addEventListener("load",function(){
     Array.from(document.getElementsByClassName("dither-embed")).forEach(elem => {
       text = elem.textContent.trim();
@@ -330,7 +331,7 @@ function main(){
     document.querySelectorAll('script[type="text/dither"]').forEach(script => {
       const source = script.textContent;
       let div = document.createElement("div");
-      console.log(script.style);
+      // console.log(script.style);
       div.style = script.getAttribute("style")
       script.parentElement.insertBefore(div,script);
       run_from_str(source, div);

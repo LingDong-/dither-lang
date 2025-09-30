@@ -81,7 +81,7 @@ for (let i = 0; i < std.length; i++){
   }
   let toks = parser.tokenize(f);
   let cst = parser.parse(toks);
-  let nmsp = cst.val.filter(x=>x.key == "nmsp")[0];
+  let nmsp = cst.val.filter(x=>x.key == "nmsp").at(-1);
   let name = nmsp.nom.val;
   let cont = nmsp.val;
   for (let j = 0; j < cont.length; j++){

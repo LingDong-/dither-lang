@@ -45,7 +45,7 @@ a:active {
 <table style="width:720px">
 <tr>
 <td>
-<img src="data:image/png;base64,${bimg}" style="width:400px;transform:translate(-35px,-5px)"/>
+<img src="data:image/png;base64,${bimg}" style="width:400px;transform:translate(-30px,-5px)"/>
 </td>
 <td style="width:10px">
 <a href="https://github.com/LingDong-/dither-lang/releases" style="text-decoration:none"><div class="biglink">Download</div></a>
