@@ -1,271 +1,338 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sketchpad</title>
-  <style>
-    html{
-      height:100%;
-      overflow:hidden;
-    }
-    .bigbtn{
-      display: inline-block; 
-      width: 24px; 
-      height: 24px; 
-      text-align: center; 
-      background: #444;
-      margin: 3px;
-      margin-right: 0px;
-      cursor: pointer;
-      border-radius: 2px;
-    }
-    .bigbtn:hover{
-      background: #555;
-    }
-  </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
-  <style>
-    .cm-s-theme.CodeMirror, .cm-s-theme .CodeMirror-gutters {
-      background-color: #252627!important;
-      color: #f8f8f8 !important;
-      border: none;
-      filter: saturate(80%) hue-rotate(10deg);
-    }
-    .cm-s-theme .CodeMirror-gutters { color: #222; }
-    .cm-s-theme .CodeMirror-cursor { border-left: solid thin #f8f8f0; }
-    .cm-s-theme .CodeMirror-linenumber { color: #6D8A88; }
-    .cm-s-theme .CodeMirror-selected { background: rgba(255, 255, 255, 0.10); }
-    .cm-s-theme .CodeMirror-line::selection, .cm-s-theme .CodeMirror-line > span::selection, .cm-s-theme .CodeMirror-line > span > span::selection { background: rgba(255, 255, 255, 0.10); }
-    .cm-s-theme .CodeMirror-line::-moz-selection, .cm-s-theme .CodeMirror-line > span::-moz-selection, .cm-s-theme .CodeMirror-line > span > span::-moz-selection { background: rgba(255, 255, 255, 0.10); }
-    .cm-s-theme span.cm-comment { color:  #777; }
-    .cm-s-theme span.cm-string { color:  #ffb; }
-    .cm-s-theme span.cm-number { color:  #b9f; }
-    .cm-s-theme span.cm-variable { color:  #6fdfcf; }
-    .cm-s-theme span.cm-operator { color: #fa6; }
-    .cm-s-theme span.cm-keyword { color: #f6a; }
-    .cm-s-theme span.cm-type { color:  #1bf; }
-    .cm-s-theme span.cm-bracket { color: #ccc; }
-    .cm-s-theme .CodeMirror-activeline-background { background: rgba(255,255,255,0.1); }
-    .cm-s-theme .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/simple.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"></script>
-  <style>.CodeMirror { height: 100%; }</style>
+    <title>Sketchpad</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
+    
+    <style>
+        /* General Layout - CSS Grid & Flexbox */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #141414;
+        }
+
+        #app-body {
+            display: grid;
+            grid-template-rows: 30px 1fr; 
+            height: 100%;
+        }
+
+        #main-bar {
+            grid-row: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            background: #141414;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #main-content {
+            grid-row: 2;
+            display: grid;
+            grid-template-rows: 3fr 1fr; /* 75% for editor, 25% for console */
+            width: 100%;
+            height: 100%;
+        }
+
+        #editor-container {
+            grid-row: 1;
+            height: 100%;
+        }
+
+        #console-container {
+            grid-row: 2;
+            height: 100%;
+        }
+
+        /* Button Styles */
+        .bigbtn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 24px; 
+            height: 24px; 
+            background: #444;
+            margin: 3px;
+            margin-right: 0;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .bigbtn:hover {
+            background: #555;
+        }
+
+        /* Box Style */
+        #sel-eg {
+            width: 120px;
+            height: 24px;
+            padding: 0 5px;
+            margin: 3px 0 3px 4px;
+            color: #000;
+            text-align: left;
+            border: none;
+            background: #444;
+            cursor: pointer;
+            line-height: 24px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        
+        /* CodeMirror Height Fix */
+        .CodeMirror { 
+            height: 100%; 
+        }
+
+        /* CodeMirror Theming now centralized) */
+        .cm-s-theme.CodeMirror, .cm-s-theme .CodeMirror-gutters {
+            background-color: #252627!important;
+            color: #f8f8f8 !important;
+            border: none;
+            filter: saturate(80%) hue-rotate(10deg);
+        }
+        .cm-s-theme .CodeMirror-gutters { color: #222; }
+        .cm-s-theme .CodeMirror-cursor { border-left: solid thin #f8f8f0; }
+        .cm-s-theme .CodeMirror-linenumber { color: #6D8A88; }
+        .cm-s-theme .CodeMirror-selected { background: rgba(255, 255, 255, 0.10); }
+        .cm-s-theme .CodeMirror-line::selection, .cm-s-theme .CodeMirror-line > span::selection, .cm-s-theme .CodeMirror-line > span > span::selection { background: rgba(255, 255, 255, 0.10); }
+        .cm-s-theme span.cm-comment { color: #777; }
+        .cm-s-theme span.cm-string { color: #ffb; }
+        .cm-s-theme span.cm-number { color: #b9f; }
+        .cm-s-theme span.cm-variable { color: #6fdfcf; }
+        .cm-s-theme span.cm-operator { color: #fa6; }
+        .cm-s-theme span.cm-keyword { color: #f6a; }
+        .cm-s-theme span.cm-type { color: #1bf; }
+        .cm-s-theme span.cm-bracket { color: #ccc; }
+        .cm-s-theme .CodeMirror-activeline-background { background: rgba(255,255,255,0.1); }
+        .cm-s-theme .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }
+    </style>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/simple.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"></script>
 </head>
 
-  <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
-    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:hidden">
-      
-      <div class="bigbtn" id="btn-compile">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-          <g fill="#111">
-            <rect x="8" y="3" width="8" height="4"  />
-            <rect x="10" y="3" width="4" height="16"/>
-            <rect x="9" y="14" width="6" height="8" />
-            <rect x="3" y="2" width="5" height="6"  />
-            <polygon points="16,3 22,7, 22,10, 16,7"/>
-          </g>
-        </svg>
-      </div>
-    
-      <div class="bigbtn" id="btn-rundbg">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-          <polygon points="5,4 21,12 5,20" fill="none" stroke="#111" stroke-dasharray="4 2" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-      </div>
-
-      <div class="bigbtn" id="btn-run">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-          <polygon points="5,4 21,12 5,20" fill="#111"/>
-        </svg>
-      </div>
-
-      <div class="bigbtn" id="btn-stop">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-          <rect x="6" y="6" width="12" height="12" fill="#111"/>
-        </svg>
-      </div>
-
-      <select id="sel-eg" class="bigbtn" style="display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
+<body id="app-body">
+    <div id="main-bar">
         
-      </select>
+        <div class="bigbtn" id="btn-compile">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+                <g fill="#111">
+                    <rect x="8" y="3" width="8" height="4"  />
+                    <rect x="10" y="3" width="4" height="16"/>
+                    <rect x="9" y="14" width="6" height="8" />
+                    <rect x="3" y="2" width="5" height="6"  />
+                    <polygon points="16,3 22,7, 22,10, 16,7"/>
+                </g>
+            </svg>
+        </div>
+        
+        <div class="bigbtn" id="btn-rundbg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+                <polygon points="5,4 21,12 5,20" fill="none" stroke="#111" stroke-dasharray="4 2" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+        </div>
 
+        <div class="bigbtn" id="btn-run">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+                <polygon points="5,4 21,12 5,20" fill="#111"/>
+            </svg>
+        </div>
+
+        <div class="bigbtn" id="btn-stop">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+                <rect x="6" y="6" width="12" height="12" fill="#111"/>
+            </svg>
+        </div>
+
+        <select id="sel-eg" class="bigbtn">
+            </select>
     </div>
-    <div id="cl" style="position:absolute;left:0px;top:30px;width:100%;height:calc(75% - 34px);"></div>
-    <div id="cr" style="position:absolute;left:0px;top:75%;width:100%;height:25%;"></div>
-  </body>
+    
+    <div id="main-content">
+        <div id="editor-container"></div>
+        <div id="console-container"></div>
+    </div>
+    
+    <script>
 
-  <script>
+        const fs = require('fs');
+        const path = require('path');
+        const child_process = require('child_process');
 
-const fs = require('fs');
-const path = require('path');
-const child_process = require('child_process');
 
-eval(fs.readFileSync("../../src/parser.js").toString());
-eval(fs.readFileSync("../../src/embed_glsl.js").toString());
+        eval(fs.readFileSync("../../src/parser.js").toString());
+        eval(fs.readFileSync("../../src/embed_glsl.js").toString());
 
-CodeMirror.defineSimpleMode("ldcc", {
-  meta:{
-    lineComment: "//",
-    comment: "//",
-  },
-  start: [
-    {regex: /"(?:[^\\]|\\.)*?(?:"|$)/mi, token: "string"},
-    {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as|is|embed)\b/,
-      token: "keyword"},
-    {regex: /(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func)\b/,
-      token: "type"},
-    {regex: /0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i,
-      token: "number"},
-    {regex: /\/\*.*?\*\//, token: "comment"},
-    {regex: /\/\/.*/, token: "comment"},
-    {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\@]+/, token: "operator"},
-    {regex: /[\{\[\(]/, indent: true, token: "bracket"},
-    {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
-    {regex: /[A-Za-z$][\w$]*/, token: "variable"},
-  ],
-});
 
-CodeMirror.defineSimpleMode("ansiesc", {
-  start: [
-    {regex: /(?:mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|argf)\b/,
-      token: "keyword"},
-    {regex: /(?:i8|i08|u8|u08|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|lst|arr|dict|dic|str|func|fun|void)\b/i,
-      token: "type"},
-  ],
-});
+        CodeMirror.defineSimpleMode("ldcc", {
+            meta:{
+                lineComment: "//",
+                comment: "//",
+            },
+            start: [
+                {regex: /"(?:[^\\]|\\.)*?(?:"|$)/mi, token: "string"},
+                {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as|is|embed)\b/, token: "keyword"},
+                {regex: /(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func)\b/, token: "type"},
+                {regex: /0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i, token: "number"},
+                {regex: /\/\*.*?\*\//, token: "comment"},
+                {regex: /\/\/.*/, token: "comment"},
+                {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\@]+/, token: "operator"},
+                {regex: /[\{\[\(]/, indent: true, token: "bracket"},
+                {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
+                {regex: /[A-Za-z$][\w$]*/, token: "variable"},
+            ],
+        });
 
-var CML = CodeMirror(document.getElementById("cl"), {
-  lineNumbers:true,
-  matchBrackets: true,
-  theme:"theme",
-  mode:  "ldcc",
-  indentWithTabs: false,
-  indentUnit: 2,
-  tabSize: 2,
-  extraKeys:{
-    'Ctrl-/': 'toggleComment',
-    'Cmd-/': 'toggleComment',
-    "Tab": function(cm) {
-      cm.replaceSelection("  ", "end");
-    }
-  }
-});
-CML.setSize(null,null);
+        CodeMirror.defineSimpleMode("ansiesc", {
+            start: [
+                {regex: /(?:mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|argf)\b/, token: "keyword"},
+                {regex: /(?:i8|i08|u8|u08|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|lst|arr|dict|dic|str|func|fun|void)\b/i, token: "type"},
+            ],
+        });
 
-let egs = fs.readdirSync("../../examples").filter(x=>x.endsWith(".dh"))
-for (let i = 0; i < egs.length; i++){
-  let opt = document.createElement("option");
-  opt.value = opt.innerHTML = egs[i];
-  document.getElementById("sel-eg").appendChild(opt);
-}
-CML.setValue(fs.readFileSync("../../examples/"+egs[0]).toString())
-document.getElementById("sel-eg").onchange = function(){
-  CML.setValue(fs.readFileSync("../../examples/"+document.getElementById("sel-eg").value).toString())
-}
-
-var CMR = CodeMirror(document.getElementById("cr"), {
-  theme:"theme",
-  mode:  "ansiesc",
-});
-
-document.getElementById("btn-compile").onclick = function(){
-  CMR.setValue("");
-
-  let pro = Object.assign({},process);
-  pro = Object.assign(pro,{
-    exit: function(){
-      throw 'up';
-    }
-  });
-  let parser = new PARSER({fs,path,process:pro,search_paths:['../../']},{fragment:embed_glsl_frag});
-
-  fs.writeFileSync("/tmp/source.dh",CML.getValue());
   
-  let olderror = console.error;
-  console.error=(x)=>CMR.replaceRange(x+'\n', CodeMirror.Pos(CMR.lastLine()))
-  
-  let bad = 0;
-  try{
-    let toks = parser.tokenize("/tmp/source.dh");
+        var CML = CodeMirror(document.getElementById("editor-container"), {
+            lineNumbers:true,
+            matchBrackets: true,
+            theme:"theme",
+            mode: "ldcc",
+            indentWithTabs: false,
+            indentUnit: 2,
+            tabSize: 2,
+            extraKeys:{
+                'Ctrl-/': 'toggleComment',
+                'Cmd-/': 'toggleComment',
+                "Tab": function(cm) {
+                    cm.replaceSelection("  ", "end");
+                }
+            }
+        });
+        CML.setSize(null,null);
 
-    let cst = parser.parse(toks);
+        var CMR = CodeMirror(document.getElementById("console-container"), {
+            theme:"theme",
+            mode: "ansiesc",
+        });
+        CMR.setSize(null,null);
 
-    let ast = parser.abstract(cst);
+        let egs = fs.readdirSync("../../examples").filter(x=>x.endsWith(".dh"));
+        let selEg = document.getElementById("sel-eg");
 
-    let scopes = parser.infertypes(ast);
-    let [instrs,layout] = parser.compile(ast,scopes);
+        let fragment = document.createDocumentFragment();
+        for (let i = 0; i < egs.length; i++){
+            let opt = document.createElement("option");
+            opt.value = opt.innerHTML = egs[i];
+            fragment.appendChild(opt);
+        }
+        selEg.appendChild(fragment);
 
-    let irtxt = parser.writeir(instrs);
-    let lotxt = parser.writelayout(layout);
+        CML.setValue(fs.readFileSync("../../examples/"+egs[0]).toString());
 
-    let irlo = irtxt+lotxt;
+        selEg.onchange = function(){
+            CML.setValue(fs.readFileSync("../../examples/"+selEg.value).toString());
+        };
 
-    fs.writeFileSync("../../build/ir.dsm",irlo);
 
-    CMR.setValue(irlo);
-  }catch(e){
-    bad = 1;
-  }
-  console.error = olderror;
-  return bad;
-}
+        document.getElementById("btn-compile").onclick = function(){
+            CMR.setValue("");
 
-let childProcess = null;
+            let pro = Object.assign({},process);
+            pro = Object.assign(pro,{
+                exit: function(){
+                    throw 'up';
+                }
+            });
+            let parser = new PARSER({fs,path,process:pro,search_paths:['../../']},{fragment:embed_glsl_frag});
 
-function runbin(pth, args=[]){
-  if (childProcess){
-    childProcess.kill('SIGKILL');
-    childProcess = null;
-  }
-  let firsttime = 1;
-  
-  childProcess = child_process.spawn(pth, args, {env: { ...process.env, DITHER_ROOT:"../../"}});
-  childProcess.stdout.on('data', (data) => {
-    if (firsttime){
-      CMR.setValue("");
-      firsttime = 0;
-    }
-    let txt = data.toString();
-    // txt = txt.replace(/\x1B/g, '$@$');
-    txt = txt.replace(/\x1B\[[0-9;]*[mK]/g, '');
-    txt = txt.replace(/\0/g, '');
-    CMR.replaceRange(txt, CodeMirror.Pos(CMR.lastLine()));
-    CMR.scrollTo(null, CMR.getScrollInfo().height);
-  });
-  childProcess.stderr.on('data', (data) => {
-    console.error(`stderr: ${data.toString()}`);
-  });
-  childProcess.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
-  });
-}
+            fs.writeFileSync("/tmp/source.dh",CML.getValue());
 
-document.getElementById("btn-rundbg").onclick = function(){
-  document.getElementById("btn-stop").onclick()
+            let logError = (x) => CMR.replaceRange(x+'\n', CodeMirror.Pos(CMR.lastLine()));
+            
+            let bad = 0;
+            try{
+                let toks = parser.tokenize("/tmp/source.dh");
+                let cst = parser.parse(toks);
+                let ast = parser.abstract(cst);
+                let scopes = parser.infertypes(ast);
+                let [instrs,layout] = parser.compile(ast,scopes);
 
-  if (!document.getElementById("btn-compile").onclick()){
-    runbin('../../build/vm_dbg',['../../build/ir.dsm'])
-  }
-}
+                let irtxt = parser.writeir(instrs);
+                let lotxt = parser.writelayout(layout);
 
-document.getElementById("btn-run").onclick = function(){
-  document.getElementById("btn-stop").onclick()
+                let irlo = irtxt+lotxt;
 
-  if (!document.getElementById("btn-compile").onclick()){
-    runbin('../../build/vm',['../../build/ir.dsm'])
-  }
-}
+                fs.writeFileSync("../../build/ir.dsm",irlo);
 
-document.getElementById("btn-stop").onclick = function(){
-  if (childProcess){
-    childProcess.kill('SIGKILL');
-    childProcess = null;
-  }
-}
+                CMR.setValue(irlo);
+            }catch(e){
+                logError(e.toString());
+                bad = 1;
+            }
+            return bad;
+        };
 
-  </script>
-  
+        let childProcess = null;
 
+        function runbin(pth, args=[]){
+            if (childProcess){
+                childProcess.kill('SIGKILL');
+                childProcess = null;
+            }
+            let firsttime = 1;
+            
+            childProcess = child_process.spawn(pth, args, {env: { ...process.env, DITHER_ROOT:"../../"}});
+            
+            const appendOutput = (data) => {
+                if (firsttime){
+                    CMR.setValue("");
+                    firsttime = 0;
+                }
+                let txt = data.toString();
+           
+                txt = txt.replace(/\x1B\[[0-9;]*[mK]/g, '');
+                txt = txt.replace(/\0/g, '');
+                
+                CMR.replaceRange(txt, CodeMirror.Pos(CMR.lastLine()));
+                CMR.scrollTo(null, CMR.getScrollInfo().height);
+            };
+
+            childProcess.stdout.on('data', appendOutput);
+            childProcess.stderr.on('data', appendOutput);
+            
+            childProcess.on('close', (code) => {
+                console.log(`child process exited with code ${code}`); 
+            });
+        }
+
+        document.getElementById("btn-rundbg").onclick = function(){
+            document.getElementById("btn-stop").onclick();
+
+            if (!document.getElementById("btn-compile").onclick()){
+                runbin('../../build/vm_dbg',['../../build/ir.dsm']);
+            }
+        };
+
+        document.getElementById("btn-run").onclick = function(){
+            document.getElementById("btn-stop").onclick();
+
+            if (!document.getElementById("btn-compile").onclick()){
+                runbin('../../build/vm',['../../build/ir.dsm']);
+            }
+        };
+
+        document.getElementById("btn-stop").onclick = function(){
+            if (childProcess){
+                childProcess.kill('SIGKILL');
+                childProcess = null;
+            }
+        };
+    </script>
+</body>
 </html>
