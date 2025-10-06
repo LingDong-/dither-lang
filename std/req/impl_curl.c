@@ -69,7 +69,7 @@ void req_impl__http(
   *out_url = strdup(final_url);
 
   int n_lines = 0;
-  for (int i = 0; i < chunk_headers.size; i++){
+  for (int i = 1; i < chunk_headers.size; i++){
     if (chunk_headers.data[i] == '\n'){
       chunk_headers.data[i-1]=0;
       n_lines++;

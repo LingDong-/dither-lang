@@ -212,7 +212,10 @@ void gx_impl_vertex(float x, float y){
 }
 
 void gx_impl_next_contour(int bclose){
-
+  if (bclose){
+    CGContextClosePath(*ctx);
+  }
+  is_first = 1;
 }
 
 void gx_impl_end_shape(int bclose){

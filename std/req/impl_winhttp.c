@@ -88,7 +88,7 @@ void req_impl__http(
   free(headersBuffer);
 
   int n_lines = 0;
-  for (int i = 0; i < chunk_headers_size; i++){
+  for (int i = 1; i < chunk_headers_size; i++){
     if (chunk_headers[i] == '\n'){
       chunk_headers[i-1]=0;
       n_lines++;

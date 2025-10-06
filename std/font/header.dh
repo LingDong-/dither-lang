@@ -1,0 +1,33 @@
+namespace font {
+  FEAT_NONE : u32 = 0
+  FEAT_SMCP : u32 = 1
+  FEAT_ONUM : u32 = 2
+  FEAT_HIST : u32 = 4
+  FEAT_LIGA : u32 = 256
+  FEAT_KERN : u32 = 65536
+  func _lookup[T](id:i32,x:T,flag:u32):i32;
+  func _glyph(id:i32,gidx:i32,reso:i32):list[list[vec[f32,2]]];
+  func _advance(id:i32,gidx:i32,hidx:i32,flag:u32):f32;
+  typedef Font = {
+    id : i32;
+    func lookup(ch:i32,flag:u32):i32{
+      return _lookup(.id,ch,flag);
+    }
+    func lookup(lig:list[i32],flag:u32):i32{
+      return _lookup(.id,lig,flag);
+    }
+    func glyph(gidx:i32,reso:i32):list[list[vec[f32,2]]]{
+      return _glyph(.id,gidx,reso);
+    }
+    func glyph(gidx:i32):list[list[vec[f32,2]]]{
+      return .glyph(gidx,8);
+    }
+    func advance(gidx:i32,hidx:i32,flag:u32):f32{
+      return _advance(.id,gidx,hidx,flag);
+    }
+    func advance(gidx:i32,hidx:i32):f32{
+      return .advance(gidx,hidx,FEAT_KERN);
+    }
+  }
+  func decode(bytes:list[u8]):Font;
+}

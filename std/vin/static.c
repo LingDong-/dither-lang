@@ -4,6 +4,7 @@
 #include "impl.c"
 
 void vin__create(){
+  __push_stack();
   char* __ARG(pth);
   int32_t __ARG(flag);
 
@@ -17,6 +18,7 @@ void vin__create(){
   ((int32_t*)(oo))[3] = w;
   ((int32_t*)(oo))[4] = h;
   __put_ret(&(o));
+  __pop_stack();
 }
 
 void vin___read_pixels(){

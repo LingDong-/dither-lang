@@ -164,6 +164,13 @@ globalThis.$gx = new function(){
     }
     first_vertex = 0;
   }
+  that.next_contour = function(){
+    let [bclose] = $pop_args(1);
+    if (bclose){
+      ctx.closePath();
+    }
+    first_vertex = 1;
+  }
   that.end_shape = function(){
     let [bclose] = $pop_args(1);
     if (bclose){
