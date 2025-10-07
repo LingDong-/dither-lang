@@ -27,12 +27,12 @@ var TO_JS = function(cfg){
     return x;
   }
   function $typed_value(x,__type){
-    if ($is_ref(x)){
-      return Object.assign(x.slice(),{__type:x.__type});
-    }else if (typeof x == 'number'){
+    if (typeof x == 'number'){
       return Object.assign(new $typed_cons[__type]([x]),{__type});
     }else if (typeof x == 'string'){
       return Object.assign([x],{__type});
+    }else if ($is_ref(x)){
+      return Object.assign(x.slice(),{__type:x.__type});
     }
     return x;
   }
@@ -398,6 +398,8 @@ var TO_JS = function(cfg){
           return `$hash_slot(${v},${idx})[1]`;
         }else if (t.con == 'tup'){
           return `${v}[${idx}]`;
+        }else if (t == 'str'){
+          return `${v}.charCodeAt(${idx})`;
         }else if (typeof t == 'string'){
           return `${v}["${idx}"]`;
         }else{

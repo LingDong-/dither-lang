@@ -79,18 +79,26 @@ EXPORTED void font__glyph(var_t* ret,  gstate_t* _g){
 }
 
 EXPORTED void font_decode(var_t* ret,  gstate_t* _g){
-  lst_t* l = ARG_POP(_g,lst);
+  var_t* u = ARG_POP_VAR_NO_FREE(_g);
 
-  int id = font_impl_decode(l->n,(char*)(l->data));
+  int id;
+  if (u->type->vart == VART_I32){
+    int cset = u->u.i32;
+    id = font_impl_hershey(cset);
+  }else{
+    lst_t* l = u->u.lst;
+    id = font_impl_decode(l->n,(char*)(l->data));
+  }
+  free(u);
 
   obj_t* o = gc_alloc_(_g, sizeof(obj_t));
   o->type = ret->type;
   o->data = calloc(12,1);
   ((obj_t**)(o->data))[0] = o;
   ((int32_t*)(o->data))[2] = id;
-
   ret->u.obj = o;
 }
+
 
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "font." QUOTE(name), font_ ## name);

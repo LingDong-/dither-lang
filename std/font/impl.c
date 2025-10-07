@@ -1,4 +1,5 @@
 #include "ttf2pl.h"
+#include "hershey.h"
 
 #define FEAT_SMCP 1
 #define FEAT_ONUM 2
@@ -35,12 +36,17 @@
 
 typedef struct font_st {
   FILE* fp;
+  int fmt;
 } font_t;
 
 ARR_DEF(font_t);
 font_t_arr_t fonts;
 
 int font_impl__lookup(int id, int code, uint32_t flag){
+  if (fonts.data[id].fmt){
+    return hf_cmap_lookup(fonts.data[id].fp, fonts.data[id].fmt-1, code);
+  }
+
   int gid = t2p_cmap_lookup(fonts.data[id].fp, code);
   if (flag & FEAT_SMCP){
     gid = t2p_gsub_lookup(fonts.data[id].fp,"smcp",gid,0,NULL);
@@ -55,7 +61,13 @@ int font_impl__lookup(int id, int code, uint32_t flag){
 }
 
 int font_impl__ligature(int id, int* n_code, int* codes, uint32_t flag){
-
+  if (!(*n_code)){
+    return 0;
+  }
+  if (fonts.data[id].fmt){
+    *n_code = 1;
+    return hf_cmap_lookup(fonts.data[id].fp, fonts.data[id].fmt-1, codes[0]);
+  }
   #if _WIN32
   int* gids = (int*)_alloca(n);
   #else
@@ -125,14 +137,20 @@ void font_impl__lineto(float x, float y){
 float* font_impl__glyph(int id, int gid, int reso, int* n, int** m){
   n_polys = 0;
   n_pts = 0;
-  t2p_glyph(fonts.data[id].fp, gid, reso, font_impl__moveto, font_impl__lineto);
-
+  if (fonts.data[id].fmt == 0){
+    t2p_glyph(fonts.data[id].fp, gid, reso, font_impl__moveto, font_impl__lineto);
+  }else{
+    hf_glyph(fonts.data[id].fp, gid, font_impl__moveto, font_impl__lineto);
+  }
   *n = n_polys;
   *m = m_polys;
   return polys;
 }
 
 float font_impl__advance(int id, int gid, int hid, int flag){
+  if (fonts.data[id].fmt){
+    return hf_advance(fonts.data[id].fp, gid);
+  }
   return t2p_advance(fonts.data[id].fp, gid, hid, !!(flag & FEAT_KERN));
 }
 
@@ -142,11 +160,28 @@ int font_impl_decode(int n_bytes, char* bytes){
     fwrite(bytes,1,n_bytes,fp);
     rewind(fp);
   #else
-    FILE* fp = fmemopen(bytes,n_bytes,"r");
+    FILE* fp = fmemopen(bytes,n_bytes,"rb");
   #endif
 
   font_t f;
   f.fp = fp;
+  f.fmt = 0;
+  ARR_PUSH(font_t, fonts, f);
+  return fonts.len-1;
+}
+
+int font_impl_hershey(int cset){
+  #ifdef _WIN32
+    FILE *fp = tmpfile();
+    fwrite(hf_data,1,sizeof(hf_data),fp);
+    rewind(fp);
+  #else
+    FILE* fp = fmemopen((char*)hf_data,sizeof(hf_data),"rb");
+  #endif
+
+  font_t f;
+  f.fp = fp;
+  f.fmt = cset;
   ARR_PUSH(font_t, fonts, f);
   return fonts.len-1;
 }

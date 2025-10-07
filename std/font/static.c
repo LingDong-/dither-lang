@@ -67,12 +67,18 @@ void font___glyph(){
 
 void font__decode(){
   __push_stack();
-
-  __list_t* l = NULL;
-  __pop_arg(&l, 8);
- 
-  int id = font_impl_decode(l->n,(char*)(l->data));
-
+  int t = __peek_arg_type();
+  int n = __peek_arg_size();
+  int id;
+  if (t == VART_I32){
+    int32_t __ARG(cset);
+    id = font_impl_hershey(cset);
+  }else{
+    __list_t* l = NULL;
+    __pop_arg(&l, 8);
+  
+    id = font_impl_decode(l->n,(char*)(l->data));
+  }
   void* o = __gc_alloc(VART_STT,16);
   __put_var(0,o);
   void* oo = (char*)o+4;

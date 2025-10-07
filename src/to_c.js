@@ -1080,6 +1080,8 @@ var TO_C = function(cfg){
 
           return [`(char**) ((((char*)${v}) + (${nc})))`, t.elt[idx], type_size(t.elt[idx])]
           
+        }else if (t == 'char*'){
+          return [`((char*)${v}+${idx})`, 'char', 1];
         }else if (typeof t == 'string'){
           let lo = layout[t];
           let ofs,typ;

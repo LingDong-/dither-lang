@@ -1,6 +1,6 @@
 let TODOS = [
   // list here new examples that need to be snapped
-  "specimen.dh"
+  "sphinxof.dh"
 ]
 
 const fs = require('fs');

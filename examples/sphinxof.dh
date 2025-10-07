@@ -1,0 +1,70 @@
+include "std/font"
+include "std/io"
+include "std/gx"
+include "std/list"
+include "std/str"
+
+tfs := list[font.Font]{
+  font.decode(font.H1_SANS   ),
+  font.decode(font.H1_SCPT   ),
+  font.decode(font.H3_GOTH_EN),
+  font.decode(font.H3_GOTH_DE),
+  font.decode(font.H3_GOTH_IT),
+  font.decode(font.H2_ITAL   ),
+  font.decode(font.H2_ITAL_SM),
+  font.decode(font.H3_ITAL   ),
+  font.decode(font.H2_SCPT   ),
+  font.decode(font.H2_SRIF   ),
+  font.decode(font.H2_SRIF_SM),
+  font.decode(font.H2_SANS   ),
+  font.decode(font.H1_SANS_SM),
+  font.decode(font.H3_SRIF   ),
+};
+
+text := "Sphinx of black quartz, judge my vow!"
+
+fsz := 50
+
+func draw_polys(polys:list[list[vec[f32,2]]],n:i32){
+  k := 0;
+  gx.begin_shape();
+  for (i:=0; i < polys.length(); i++){
+    for (j:=0; j < polys[i].length(); j++){
+      gx.vertex(polys[i][j].x*fsz, polys[i][j].y*fsz+fsz);
+      k++;
+      if (k > n){
+        gx.end_shape(0);
+        return;
+      }
+    }
+    gx.next_contour(0);
+  }
+  gx.end_shape(0);
+}
+
+gx.size(700,700);
+
+frame := 0;
+
+while (1){
+  gx.background(1.0,0.95,0.9);
+  gx.no_fill();
+  for (i:=0; i<tfs.length(); i++){
+    gx.push_matrix();
+    gx.translate(0,i*fsz);
+    a := 0;
+    b := 0;
+    for (j:=0; j<text.length(); j++){
+      if (j){
+        gx.translate(tfs[i].advance(a,b)*fsz,0);
+      }
+      b = tfs[i].lookup(text[j],font.FEAT_NONE);
+      draw_polys(tfs[i].glyph(b), frame);
+      a = b;
+    }
+    gx.pop_matrix();
+  }
+  
+  frame++;
+  gx.poll();
+}

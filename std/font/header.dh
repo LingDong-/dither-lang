@@ -5,6 +5,22 @@ namespace font {
   FEAT_HIST : u32 = 4
   FEAT_LIGA : u32 = 256
   FEAT_KERN : u32 = 65536
+
+  H1_SANS     :=1
+  H1_SCPT     :=2
+  H3_GOTH_EN  :=3
+  H3_GOTH_DE  :=4
+  H3_GOTH_IT  :=5
+  H2_ITAL     :=6
+  H2_ITAL_SM  :=7
+  H3_ITAL     :=8
+  H2_SCPT     :=9
+  H2_SRIF     :=10
+  H2_SRIF_SM  :=11
+  H2_SANS     :=12
+  H1_SANS_SM  :=13
+  H3_SRIF     :=14
+
   func _lookup[T](id:i32,x:T,flag:u32):i32;
   func _glyph(id:i32,gidx:i32,reso:i32):list[list[vec[f32,2]]];
   func _advance(id:i32,gidx:i32,hidx:i32,flag:u32):f32;
@@ -30,4 +46,5 @@ namespace font {
     }
   }
   func decode(bytes:list[u8]):Font;
+  func decode(hfset:i32):Font;
 }
