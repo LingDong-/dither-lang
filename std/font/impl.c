@@ -18,13 +18,18 @@
   name.data = (dtype*) malloc((name.cap)*sizeof(dtype));
 
 #undef ARR_PUSH
+#ifdef _WIN32
+#define ARR_ITEM_FORCE_CAST(dtype,item) item
+#else
+#define ARR_ITEM_FORCE_CAST(dtype,item) (dtype)item
+#endif
 #define ARR_PUSH(dtype,name,item) \
   if (name.cap < name.len+1){ \
     int hs = name.cap/2; \
     name.cap = name.len+MAX(1,hs); \
     name.data = (dtype*)realloc(name.data, (name.cap)*sizeof(dtype) ); \
   }\
-  name.data[name.len] = (dtype)item;\
+  name.data[name.len] = ARR_ITEM_FORCE_CAST(dtype,item);\
   name.len += 1;
 
 #undef ARR_POP
@@ -69,7 +74,7 @@ int font_impl__ligature(int id, int* n_code, int* codes, uint32_t flag){
     return hf_cmap_lookup(fonts.data[id].fp, fonts.data[id].fmt-1, codes[0]);
   }
   #if _WIN32
-  int* gids = (int*)_alloca(n);
+  int* gids = (int*)_alloca(*n_code*sizeof(int));
   #else
   int gids[*n_code];
   #endif

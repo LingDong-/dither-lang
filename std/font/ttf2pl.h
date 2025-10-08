@@ -10,10 +10,12 @@ void t2p_dbg_lineto(float x,float y) {
 }
 
 uint16_t t2p_u16be(FILE* fp){
-  return (fgetc(fp)<<8) | fgetc(fp);
+  int a = (fgetc(fp)<<8);
+  return a | fgetc(fp);
 }
 uint32_t t2p_u32be(FILE* fp){
-  return (fgetc(fp)<<24) | (fgetc(fp)<<16) | (fgetc(fp)<<8) | fgetc(fp);
+  int a = (fgetc(fp)<<24);
+  return a|=(fgetc(fp)<<16), a|=(fgetc(fp)<<8), a|=fgetc(fp);
 }
 int16_t t2p_i16be(FILE* fp){
   uint16_t u = t2p_u16be(fp);
@@ -51,7 +53,6 @@ int t2p_cmap_lookup(FILE* fp, int code){
   fseek(fp,offs,SEEK_SET);
   int vers = t2p_u16be(fp);
   int ntbl = t2p_u16be(fp);
-
   int fmt=-1;
   int sofs;
   int rank=-1;
@@ -73,6 +74,7 @@ int t2p_cmap_lookup(FILE* fp, int code){
       }
     }
   }
+  
   if (fmt == 0){
     if (code > 255) return 0;
     fseek(fp,offs+sofs+6+code,SEEK_SET);
