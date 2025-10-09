@@ -509,11 +509,13 @@ void gx_impl_stroke_weight(float x){
 }
 
 int is_first = 0;
+int did_first = 0;
 
 void gx_impl_begin_shape(){
   ID2D1Factory_CreatePathGeometry(d2dFactory, &geometry);
   ID2D1PathGeometry_Open(geometry, &sink);
   is_first = 1;
+  did_first = 0;
 }
 
 void gx_impl_vertex(float x, float y){
@@ -524,6 +526,7 @@ void gx_impl_vertex(float x, float y){
     ID2D1GeometrySink_AddLine(sink,p);
   }
   is_first = 0;
+  did_first = 1;
 }
 
 void gx_impl_next_contour(int bclose){
@@ -533,13 +536,16 @@ void gx_impl_next_contour(int bclose){
     ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_OPEN);
   }
   is_first = 1;
+  did_first = 0;
 }
 
 void gx_impl_end_shape(int bclose){
-  if (bclose){
-    ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_CLOSED);
-  }else{
-    ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_OPEN);
+  if (did_first){
+    if (bclose){
+      ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_CLOSED);
+    }else{
+      ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_OPEN);
+    }
   }
   ID2D1GeometrySink_Close(sink);
   ID2D1GeometrySink_Release(sink);

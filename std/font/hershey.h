@@ -661,7 +661,8 @@ const unsigned char hf_data[] = "HFF\16a\0\302\0#\1\204\1\345\1F\2\247\2\10\3i\3
 "XFZE]G]KXM RZF\134G\134K RXF[H[KZL RXM]O]U\134W[XYYWYUXSYUZWY R\134O\134V[W RVYTY RZN[O[VZXYY";
 
 int hf_u16le(FILE* fp){
-  return fgetc(fp) | (fgetc(fp)<<8);
+  int a = fgetc(fp);
+  return a | (fgetc(fp)<<8);
 }
 
 int hf_cmap_lookup(FILE* fp, int cset, int code){
