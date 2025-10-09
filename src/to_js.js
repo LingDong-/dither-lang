@@ -1,7 +1,7 @@
 
 var TO_JS = function(cfg){
   let lib = `
-  var $numtyps = ['i8','u8','i16','u16','i32','u32','i64','u64','f32','f64'];
+  var $numtyps = new Set(['i8','u8','i16','u16','i32','u32','i64','u64','f32','f64']);
   var $args = [];
   var $caps = [];
   function $include(x){
@@ -18,7 +18,7 @@ var TO_JS = function(cfg){
   }
   function $is_ref(x){
     if (!x || !x.__type) return false;
-    return $numtyps.includes(x.__type) || x.__type == 'str' || x.__type.con == 'vec' || x.__type.con == 'tup';
+    return $numtyps.has(x.__type) || x.__type == 'str' || x.__type.con == 'vec' || x.__type.con == 'tup';
   }
   function $value(x){
     if ($is_ref(x)){
@@ -37,7 +37,7 @@ var TO_JS = function(cfg){
     return x;
   }
   function $unwrap(x){
-    if ( $numtyps.includes(x?.__type) || x?.__type == 'str'){
+    if ( $numtyps.has(x?.__type) || x?.__type == 'str'){
       return x[0];
     }
     return x;
@@ -74,7 +74,7 @@ var TO_JS = function(cfg){
       return 'null';
     }else if (typeof x != 'object'){
       return x.toString();
-    }else if ($numtyps.includes(x.__type)){
+    }else if ($numtyps.has(x.__type)){
       return x[0].toString();
     }else if (x.__type.con == 'vec'){
       return '{'+x.toString()+'}'
@@ -307,11 +307,11 @@ var TO_JS = function(cfg){
         o.push(`${get_ptr(a)} = null`);
       }else if (ta == 'str'){
         o.push(`${get_ptr(a)} = $to_str(${get_ptr(b)})`);
-      }else if ($numtyps.includes(ta) && $numtyps.includes(tb)){
+      }else if ($numtyps.has(ta) && $numtyps.has(tb)){
         o.push(`${get_ptr(a)} = new $typed_cons.${ta}([${get_ptr(b)}])[0]`);
-      }else if ($numtyps.includes(ta) && typeof b == 'number'){
+      }else if ($numtyps.has(ta) && typeof b == 'number'){
         o.push(`${get_ptr(a)} = new $typed_cons.${ta}([${get_ptr(b)}])[0]`);
-      }else if (ta.con == 'vec' && ($numtyps.includes(tb) || typeof b == 'number')){
+      }else if (ta.con == 'vec' && ($numtyps.has(tb) || typeof b == 'number')){
         for (let i = 0; i < vec_type_flat_n(ta); i++){
           o.push(`${a}[${i}] = ${get_ptr(b)}`);
         }
@@ -362,7 +362,7 @@ var TO_JS = function(cfg){
       }[op];
       let tb = lookup[b];
       let tc = lookup[c];
-      if ($numtyps.includes(tb) || $numtyps.includes(tb) || typeof b == 'number' || typeof c == 'number'){
+      if ($numtyps.has(tb) || $numtyps.has(tb) || typeof b == 'number' || typeof c == 'number'){
         o.push(`${get_ptr(a)}=Number(${get_ptr(b)}${os}${get_ptr(c)});`);
       }else if (op == 'eq' && tb == 'str'){
         o.push(`${get_ptr(a)}=Number(${get_ptr(b)}==$to_str(${get_ptr(c)}));`);
@@ -407,7 +407,7 @@ var TO_JS = function(cfg){
         }
       }else{
         let t = lookup[x];
-        if ($numtyps.includes(t) || t == 'str'){
+        if ($numtyps.has(t) || t == 'str'){
           if (allcaps[x]){
             return `${x}[0]`
           }else{
@@ -432,7 +432,7 @@ var TO_JS = function(cfg){
         }
       }else if (typ == 'i64' || typ == 'u64'){
         return `Object.assign(new $typed_cons.${typ}(1),{__type:${JSON.stringify(typ)}})${nowrap?'[0]':''}`
-      }else if ($numtyps.includes(typ)){
+      }else if ($numtyps.has(typ)){
         if (nowrap){
           return `0`;
         }else{
@@ -647,8 +647,15 @@ var TO_JS = function(cfg){
         let a = clean(ins[1]);
         o.push(`${a}=$assign(${a},${tmp});`);
       }else if (ins[0] == 'argw'){
-        // console.log(ins)
-        o.push(`$args.push($typed_value(${clean(ins[1])},${JSON.stringify(read_type(ins[2]))}));`);
+        // o.push(`$args.push($typed_value(${clean(ins[1])},${JSON.stringify(read_type(ins[2]))}));`);
+        let v = clean(ins[1]);
+        let typ = read_type(ins[2]);
+        if (typeof v == 'number'){
+          v = `Object.assign(new $typed_cons.${typ}([${v}]),{__type:'${typ}'})`;
+        }else if ($numtyps.has(typ) || typ == 'str' || typ.con == 'vec' || typ.con == 'tup'){
+          v = `$typed_value(${v},${JSON.stringify(typ)})`
+        }
+        o.push(`$args.push(${v});`);
       }else if (ins[0] == 'argr'){
         let nom = clean(ins[1]);
         let typ = read_type(ins[2]);

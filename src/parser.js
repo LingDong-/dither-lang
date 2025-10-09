@@ -279,6 +279,7 @@ var PARSER = function(sys,extensions={}){
 
     let i = 0;
     let cst = {key:'bloc',val:[]};
+    // let cst = {key:'nmsp',nom:{val:'__0'},val:[]};
     function gtok(x){
       return x??{};
     }
@@ -1218,6 +1219,7 @@ var PARSER = function(sys,extensions={}){
   }
 
   function findnmsp(scozoo,cur,nom){
+    if (nom == 'global') nom = '__0';
     for (let i = cur.length; i >= 0; i--){
       let ser = cur.slice(0,i).concat([nom]).join('.');
       for (let j = 0; j < scozoo.length; j++){
@@ -3071,8 +3073,8 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'embed'){
           doinfer(ast.lhs);
           realizefunc(ast.lhs);
-          ast.typ = "str";
           ast.rhs = ast.rhs.val.slice(1,-1);
+          ast.typ = extensions[ast.rhs].type;
         }else{
           if (!ast.typ){
             ast.typ = 'void';
@@ -4062,11 +4064,8 @@ var PARSER = function(sys,extensions={}){
           return tmp;
         }
       }else if (ast.key == 'embed'){
-        let tmp = mktmpvar(ast.typ);
-        let str = extensions[ast.rhs](ast.lhs.val[0],scopes);
-        let q = '"'+str+'"';
-        pushins('mov',tmp,q);
-        return tmp;
+        let ret = extensions[ast.rhs].exec(ast.lhs.val[0],scopes);
+        return docompile(ret);
       }else{
 
       }
