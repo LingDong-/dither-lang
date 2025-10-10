@@ -1,0 +1,16 @@
+
+namespace gui {
+  func init();
+  func slider(name:str,x:f32,l:f32,r:f32);
+  func slider(name:str,x:i32,l:i32,r:i32);
+  func slider[T,N](name:str,x:vec[T,N],l:vec[T,N],r:vec[T,N]);
+
+  func checkbox(name:str,x:i32);
+  func textbox(name:str,x:str);
+
+  func set[T](name:str,x:T);
+  
+  func get[T](name:str):T;
+
+  func poll();
+}

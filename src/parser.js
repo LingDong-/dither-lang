@@ -1574,12 +1574,19 @@ var PARSER = function(sys,extensions={}){
           fas = funs[i].tty.elt[0].elt.map(tryfixtype);
           tms = funs[i].ipl.tem.map(x=>shrinktype(x,0));
           if (pte && pte.length == tms.length){
+            let bad = 0;
             for (let j = 0; j < pte.length; j++){
               let q = pte[j];
+              if (funs[i].ipl.pte && funs[i].ipl.pte[j]){
+                if (printtype(q) != printtype(shrinktype(funs[i].ipl.pte[j]))){
+                  bad = 1;
+                }
+              }
               map[printtype(tms[j])] = q;
               tms[j] = q;
             }
             s = 100;
+            if (bad) s = 0;
           }else{
             s = 50;
           }
