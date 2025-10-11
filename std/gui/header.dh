@@ -5,8 +5,8 @@ namespace gui {
   func slider(name:str,x:i32,l:i32,r:i32);
   func slider[T,N](name:str,x:vec[T,N],l:vec[T,N],r:vec[T,N]);
 
-  func checkbox(name:str,x:i32);
-  func textbox(name:str,x:str);
+  func toggle(name:str,x:i32);
+  func field(name:str,x:str);
 
   func set[T](name:str,x:T);
   

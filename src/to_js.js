@@ -642,9 +642,9 @@ var TO_JS = function(cfg){
         cast(clean(ins[1]),clean(ins[2]),ins);
       }else if (ins[0] == 'ccall'){
         let tmp = shortid();
-        o.push(`${tmp} = $${ins[2]}();`);
-        o.push(`if (${tmp} instanceof Promise) {${tmp} = await ${tmp};}`);
         let a = clean(ins[1]);
+        o.push(`${tmp} = $${ins[2]}(${JSON.stringify(lookup[a])});`);
+        o.push(`if (${tmp} instanceof Promise) {${tmp} = await ${tmp};}`);
         o.push(`${a}=$assign(${a},${tmp});`);
       }else if (ins[0] == 'argw'){
         // o.push(`$args.push($typed_value(${clean(ins[1])},${JSON.stringify(read_type(ins[2]))}));`);

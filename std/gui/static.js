@@ -100,14 +100,18 @@ globalThis.$gui = new function(){
     div.appendChild(inp);
     panel.appendChild(div);
   }
-  that.get = function(){
+  that.get = function(retype){
     let [name] = $pop_args(1);
     for (let i = 0; i < rows.length; i++){
       if (rows[i].name == name){
-        return rows[i].val;
+        if (retype == 'f32'){
+          return rows[i].val;
+        }
       }
     }
-    return 0;
+    if (retype == 'f32'){
+      return 0;
+    }
   }
   that.poll = function(){
 

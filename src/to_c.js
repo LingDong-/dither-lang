@@ -61,7 +61,8 @@ var TO_C = function(cfg){
   #endif
   typedef struct ret_st {
     void* var;
-    int n;
+    int16_t n;
+    int16_t vart;
   } ret_t;
   ret_t* __retpts;
   int __retpts_cap = 256;
@@ -69,7 +70,7 @@ var TO_C = function(cfg){
   char* __args;
   int __args_siz = 256;
   int __args_top = 0;
-  void __push_retpt(void* var, int n){
+  void __push_retpt(void* var, int vart, int n){
     if (__retpts_idx>=__retpts_cap){
       __retpts_cap = __retpts_cap*2+1;
       __retpts = realloc(__retpts, __retpts_cap*sizeof(ret_t));
@@ -77,10 +78,14 @@ var TO_C = function(cfg){
     ret_t r;
     r.var = var;
     r.n = n;
+    r.vart = vart;
     __retpts[__retpts_idx++] = r;
   }
   void __put_ret(void* addr){
     memcpy(__retpts[__retpts_idx-1].var, addr, __retpts[__retpts_idx-1].n);
+  }
+  int __peek_ret_type(){
+    return __retpts[__retpts_idx-1].vart;
   }
   #define __POP_RETPT --__retpts_idx;
   void __push_arg(void* ptr, char typ, int siz){
@@ -1447,12 +1452,13 @@ var TO_C = function(cfg){
         cast(clean(ins[1]),clean(ins[2]),ins);
       }else if (ins[0] == 'ccall'){
         let v = clean(ins[1])
-        let n = type_size(lookup[v]);
-        o.push(`__push_retpt(&${v}, ${n});`);
+        let luv = lookup[v];
+        let n = type_size(luv);
+        o.push(`__push_retpt(&${v}, ${vart(luv)}, ${n});`);
         o.push(ins[2].replace(/\./g,'__')+`();`);
         o.push(`__POP_RETPT;`);
         o.push(`memcpy(&${v}, __retpts[__retpts_idx].var, ${n});`);
-        if (collectible.includes(vart(lookup[v]))){
+        if (collectible.includes(vart(luv))){
           o.push(`__put_var(${varcnt++},${v});`);
         }
       }else if (ins[0] == 'argw'){
@@ -1507,7 +1513,8 @@ var TO_C = function(cfg){
       }else if (ins[0] == 'call'){
         // let mk= `__retpt_${shortid()}`
         let v = clean(ins[1])
-        let n = type_size(lookup[v]);
+        let luv = lookup[v];
+        let n = type_size(luv);
 
         let funname = clean(ins[2]);
 
@@ -1518,7 +1525,7 @@ var TO_C = function(cfg){
             o.push(`void* ${nam} = &(${nom});`);
             o.push(`__push_arg(&(${nam}),${vart(typ)},8);`);
           }
-          o.push(`__push_retpt(&${v}, ${n});`);
+          o.push(`__push_retpt(&${v}, ${vart(luv)}, ${n});`);
           o.push(`${funname}();`);
           // o.push(`${mk}:;`);
           // console.log(v,lookup[v],n)
@@ -1547,7 +1554,8 @@ var TO_C = function(cfg){
         
       }else if (ins[0] == 'rcall'){
         let v = clean(ins[1])
-        let n = type_size(lookup[v]);
+        let luv = lookup[v];
+        let n = type_size(luv);
         let fun = clean(ins[2]);
         // o.push(`printf("%p\\n",${funname});`);
         let tmp = shortid();
@@ -1563,7 +1571,7 @@ var TO_C = function(cfg){
         o.push(`void* ptr = (${top}-=sz);`);
         o.push(`__push_arg(&ptr,vt,8);`);
         o.push("}");
-        o.push(`__push_retpt(&${v}, ${n});`);
+        o.push(`__push_retpt(&${v}, ${vart(luv)}, ${n});`);
         o.push(`${fun}->funptr();`);
         o.push(`__POP_RETPT;`);
         o.push(`memcpy(&${v}, __retpts[__retpts_idx].var, ${n});`);
