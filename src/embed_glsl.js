@@ -1,6 +1,7 @@
 var embed_glsl_frag = {
   type:"str",
   exec:function (ast,scopes){
+    ast = ast.val[0];
     let out = [];
 
     let didfun = {};
@@ -356,8 +357,6 @@ var embed_glsl_frag = {
       tag: 'strlt',
       val: `"${ret}"`,
       pos: [ 0, 0 ],
-      key: 'term',
-      typ: 'str'
     }
     return wrap;
   }

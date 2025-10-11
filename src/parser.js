@@ -2236,9 +2236,9 @@ var PARSER = function(sys,extensions={}){
             ast.nom.key = 'term';
             if (ast.ano){
               doinfer(ast.ano);
-              cur_scope()[ast.nom.val] = {typ:ast.ano.typ,val:ast.val};
+              cur_scope()[ast.nom.val] = {typ:ast.ano.typ,val:ast.val,nom:ast.nom};
             }else{
-              cur_scope()[ast.nom.val] = {typ:ast.val.typ,val:ast.val};
+              cur_scope()[ast.nom.val] = {typ:ast.val.typ,val:ast.val,nom:ast.nom};
             }
             if (ast.ano && ast.val){
               curpos = somepos(ast.val);
@@ -3081,7 +3081,12 @@ var PARSER = function(sys,extensions={}){
           doinfer(ast.lhs);
           realizefunc(ast.lhs);
           ast.rhs = ast.rhs.val.slice(1,-1);
-          ast.typ = extensions[ast.rhs].type;
+          // ast.typ = extensions[ast.rhs].type;
+          // ast.sco = scostk.slice();
+          // ast.nsp = namesp.slice();
+          let ret = extensions[ast.rhs].exec(ast.lhs,scozoo);
+          doinfer(ret);
+          Object.assign(ast,ret);
         }else{
           if (!ast.typ){
             ast.typ = 'void';
@@ -4070,9 +4075,11 @@ var PARSER = function(sys,extensions={}){
           }
           return tmp;
         }
-      }else if (ast.key == 'embed'){
-        let ret = extensions[ast.rhs].exec(ast.lhs.val[0],scopes);
-        return docompile(ret);
+      // }else if (ast.key == 'embed'){
+      //   let ret = extensions[ast.rhs].exec(ast.lhs,scopes);
+      //   infertypes(ret,scopes,ast.sco,ast.nsp);
+      //   console.log(ret);
+      //   return docompile(ret);
       }else{
 
       }
@@ -4209,9 +4216,10 @@ if (typeof module !== 'undefined'){
     }
 
     const embed_glsl = require('./embed_glsl.js');
+    const embed_gui = require('./embed_gui.js');
     let parser = new PARSER(
       {fs,path,process,search_paths:[...inc_pth,process.env.DITHER_ROOT??""].filter(x=>x.length)},
-      Object.assign({},embed_glsl),
+      Object.assign({},embed_glsl,embed_gui),
     );
 
     let toks = parser.tokenize(path.resolve(inp_pth));
