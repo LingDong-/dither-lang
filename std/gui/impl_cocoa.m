@@ -133,6 +133,7 @@
                           backing:NSBackingStoreBuffered
                             defer:NO];
     [_panel makeKeyAndOrderFront:nil];
+    [_panel setTitle:@"Parameters"];
     [_panel setFloatingPanel:YES];
     [_panel setLevel:NSScreenSaverWindowLevel];
     [_panel setHidesOnDeactivate:NO];

@@ -52,7 +52,7 @@ void gui_impl_init(){
   screen=DefaultScreen(dis);
   win=XCreateSimpleWindow(dis,DefaultRootWindow(dis),0,0,250,25, 5,0,0xffffff);
   XSelectInput(dis, win, ExposureMask|KeyPressMask|ButtonPressMask|Button1MotionMask);
-
+  XStoreName(dis, win, "Parameters");
   gui_impl__resize();
 
   XMapRaised(dis, win);
