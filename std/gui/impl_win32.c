@@ -12,6 +12,7 @@
 
 
 #define ROW_SLIDER1F 1
+#define ROW_TOGGLE1I 10
 
 typedef struct row_st {
   struct row_st* next;
@@ -30,71 +31,90 @@ typedef struct slider1f_st {
   HWND hEdit;
 } slider1f_t;
 
+typedef struct toggle1i_st {
+  struct row_st* next;
+  char type;
+  char* name;
+  int val;
+  HWND hCheckbox;
+} toggle1i_t;
+
 int n_row = 0;
 row_t* head = NULL;
 
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-      case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
-      case WM_CTLCOLOREDIT:
-      case WM_CTLCOLORSTATIC: {
-        HDC hdc = (HDC)wParam;
-        SetTextColor(hdc, RGB(0,0,0));
-        static HBRUSH hBrush = NULL;
-        if (!hBrush) hBrush = CreateSolidBrush(RGB(255, 255, 255));
-        SetBkColor(hdc, RGB(255,255,255));
-        return (INT_PTR)hBrush;
-      }
-      case WM_HSCROLL: {
-        HWND src = (HWND)lParam;
-        row_t* node = head;
-        while (node){
-          if (node->type == ROW_SLIDER1F){
-            slider1f_t* u = (slider1f_t*)node;
-            if (src == u->hSlider) {
-              int tick = (int)SendMessage(src, TBM_GETPOS, 0, 0);
-              float val = u->min + tick*(u->max-u->min)/100.0;
-              u->val = val;
-              char buf[32];
-              sprintf(buf, "%f", val);
-              SetWindowText(u->hEdit, buf);
-              return 0;
-            }
-          }
-          node = node->next;
-        }
-        return 0;
-      }
-      case WM_COMMAND: {
-        HWND src = (HWND)lParam;
-        WORD code = HIWORD(wParam);
-        row_t* node = head;
-        while (node){
-          if (node->type == ROW_SLIDER1F){
-            slider1f_t* u = (slider1f_t*)node;
-            if (src == u->hEdit && code == EN_CHANGE) {
-              char buf[32];
-              GetWindowText(u->hEdit, buf, sizeof(buf));
-              float val = atof(buf);
-              if (isnan(val)){
-                val = u->min;
-              }
-              if (val < u->min) val = u->min;
-              if (val > u->max) val = u->max;
-              u->val = val;
-              int tick = ((val-u->min)/(u->max-u->min))*100;
-              SendMessage(u->hSlider, TBM_SETPOS, TRUE, tick);
-              return;
-            }
-          }
-        }
-        return 0;
-      }
+  switch (msg) {
+    case WM_DESTROY:
+      PostQuitMessage(0);
+      return 0;
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORSTATIC: {
+      HDC hdc = (HDC)wParam;
+      SetTextColor(hdc, RGB(0,0,0));
+      static HBRUSH hBrush = NULL;
+      if (!hBrush) hBrush = CreateSolidBrush(RGB(255, 255, 255));
+      SetBkColor(hdc, RGB(255,255,255));
+      return (INT_PTR)hBrush;
     }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+    case WM_HSCROLL: {
+      HWND src = (HWND)lParam;
+      row_t* node = head;
+      while (node){
+        if (node->type == ROW_SLIDER1F){
+          slider1f_t* u = (slider1f_t*)node;
+          if (src == u->hSlider) {
+            int tick = (int)SendMessage(src, TBM_GETPOS, 0, 0);
+            float val = u->min + tick*(u->max-u->min)/100.0;
+            u->val = val;
+            char buf[32];
+            sprintf(buf, "%f", val);
+            SetWindowText(u->hEdit, buf);
+            return 0;
+          }
+        }
+        node = node->next;
+      }
+      return 0;
+    }
+    case WM_COMMAND: {
+      HWND src = (HWND)lParam;
+      WORD code = HIWORD(wParam);
+      row_t* node = head;
+      while (node){
+        if (node->type == ROW_SLIDER1F){
+          slider1f_t* u = (slider1f_t*)node;
+          if (src == u->hEdit && code == EN_CHANGE) {
+            char buf[32];
+            GetWindowText(u->hEdit, buf, sizeof(buf));
+            float val = atof(buf);
+            if (isnan(val)){
+              val = u->min;
+            }
+            if (val < u->min) val = u->min;
+            if (val > u->max) val = u->max;
+            u->val = val;
+            int tick = ((val-u->min)/(u->max-u->min))*100;
+            SendMessage(u->hSlider, TBM_SETPOS, TRUE, tick);
+            return 0;
+          }
+        }else if (node->type == ROW_TOGGLE1I){
+          toggle1i_t* u = (toggle1i_t*)node;
+          if (src == u->hCheckbox && code == BN_CLICKED) {
+            LRESULT state = SendMessage(u->hCheckbox, BM_GETCHECK, 0, 0);
+            BOOL checked = (state == BST_CHECKED);
+            u->val = checked;
+            return 0;
+          }
+        }
+        node = node->next;
+      }
+      return 0;
+    }
+  }
+  return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+
 
 HWND hwnd;
 HFONT hFont;
@@ -190,12 +210,69 @@ void gui_impl__slider1f(char* name,float x,float l,float r){
   int windowHeight = rect.bottom - rect.top;
   SetWindowPos(hwnd, NULL, 0, 0, rect.right-rect.left, rect.bottom-rect.top, SWP_NOMOVE | SWP_NOZORDER);
 }
+
+void gui_impl__toggle1i(char* name, int x){
+  
+  HWND hLabel = CreateWindowEx(
+    0, "STATIC", name,
+    WS_CHILD | WS_VISIBLE | SS_RIGHT,
+    0, n_row*25 + 0, 80, 20,
+    hwnd, NULL, GetModuleHandle(NULL), NULL);
+
+  HWND hCheckbox = CreateWindowEx(
+    0, "BUTTON", "",
+    WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+    232, n_row*25 + 0, 20, 20,
+    hwnd, (HMENU)100 + n_row, GetModuleHandle(NULL), NULL);
+
+  SendMessage(hCheckbox, BM_SETCHECK, x?BST_CHECKED:BST_UNCHECKED, 0);
+  SendMessage(hCheckbox, WM_SETFONT, (WPARAM)hFont, TRUE);
+  SendMessage(hLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+  toggle1i_t* row = malloc(sizeof(toggle1i_t));
+  row->type = ROW_TOGGLE1I;
+  row->name = strdup(name);
+  row->next = NULL;
+  row->val = x;
+  row->hCheckbox = hCheckbox;
+  if (head == NULL){
+    head = (row_t*)row;
+  }else{
+    row_t* prev = head;
+    while (prev->next) prev = prev->next;
+    prev->next = (row_t*)row;
+  }
+  n_row++;
+
+  RECT rect = { 0, 0, 250, n_row*25};
+  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+  int windowWidth = rect.right - rect.left;
+  int windowHeight = rect.bottom - rect.top;
+  SetWindowPos(hwnd, NULL, 0, 0, rect.right-rect.left, rect.bottom-rect.top, SWP_NOMOVE | SWP_NOZORDER);
+
+}
+
+
 float gui_impl__get1f(char* name){
   row_t* node = head;
   while (node){
     if (!strcmp(node->name,name)){
       if (node->type == ROW_SLIDER1F){
         slider1f_t* u = (slider1f_t*)node;
+        return u->val;
+      }
+    }
+    node = node->next;
+  }
+  return 0;
+}
+
+int gui_impl__get1i(char* name){
+  row_t* node = head;
+  while (node){
+    if (!strcmp(node->name,name)){
+      if (node->type == ROW_TOGGLE1I){
+        toggle1i_t* u = (toggle1i_t*)node;
         return u->val;
       }
     }

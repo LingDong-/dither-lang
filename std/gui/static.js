@@ -6,7 +6,7 @@ globalThis.$gui = new function(){
   that.init = function(){
     panel = document.createElement("div");
     panel.classList.add("dh-std-gui");
-    panel.style = `position:absolute;right:0px;bottom:0px;width:250px;height:20px;background:#555;border-radius:2px;color:#eee;font-family:sans-serif;font-size:12px;overflow:hidden;`
+    panel.style = `position:absolute;right:0px;bottom:0px;width:250px;height:20px;overflow:hidden;`
     document.body.appendChild(panel);
 
     const styleElement = document.createElement('style');
@@ -16,6 +16,22 @@ globalThis.$gui = new function(){
       background:#eee;
     `
     styleElement.textContent = `
+    .dh-std-gui{
+      background:#555;border-radius:2px;color:#eee;font-family:sans-serif;font-size:12px;
+    }
+    .dh-std-gui-slider{
+      -webkit-appearance: none;appearance: none;
+      background:#333;
+    }
+    .dh-std-gui-field{
+      -webkit-appearance: none;appearance: none;
+      border:none;
+      border-radius:2px;
+      outline:none;
+      background: #333;
+      color:#eee;
+      font-size:12px;
+    }
     .dh-std-gui-slider::-webkit-slider-thumb {
       -webkit-appearance: none; appearance: none;
       ${knob}
@@ -23,6 +39,22 @@ globalThis.$gui = new function(){
 
     .dh-std-gui-slider::-moz-range-thumb {
       ${knob}
+    }
+
+    .dh-std-gui-toggle{
+      -webkit-appearance: none;appearance: none;
+      margin:0px;
+      background: #333;
+      width:16px;
+      height:16px;
+    }
+    .dh-std-gui-toggle:checked::after{
+      display:inline-block;
+      content:"";
+      width:8px;
+      height:8px;
+      margin:4px;
+      background: #eee;
     }
     `;
     document.head.appendChild(styleElement);
@@ -42,21 +74,13 @@ globalThis.$gui = new function(){
     sld.classList.add("dh-std-gui-slider");
     sld.setAttribute("type","range");
     sld.style=`position:absolute;left:83px;top:2px;width:100px;height:16px;
-    -webkit-appearance: none;appearance: none;
-    background:#333;
     `;
 
 
     let inp = document.createElement("input");
+    inp.classList.add("dh-std-gui-field");
     inp.setAttribute("type","number");
     inp.style=`position:absolute;left:190px;top:3px;width:52px;height:18px;
-    -webkit-appearance: none;appearance: none;
-    border:none;
-    border-radius:2px;
-    outline:none;
-    background: #333;
-    color:#eee;
-    font-size:12px;
     `;
 
     sld.value = (x-l)/(r-l)*100;
@@ -100,16 +124,48 @@ globalThis.$gui = new function(){
     div.appendChild(inp);
     panel.appendChild(div);
   }
+  that.toggle = function(){
+    let [name,x] = $pop_args(2);
+    let div = document.createElement("div");
+    div.style=`position:absolute;left:5px;top:${rows.length*25};width:250px;height:25px;overflow:hidden;`;
+
+    let lbl = document.createElement("div");
+    lbl.style=`position:absolute;left:0px;top:5px;width:80px;height:20px;text-align:right;overflow:hidden;`;
+    lbl.innerHTML = name;
+    
+    let chk = document.createElement("input");
+    chk.classList.add("dh-std-gui-toggle");
+    chk.setAttribute("type","checkbox");
+    chk.style=`position:absolute;left:225px;top:2px;`;
+
+    let row = {
+      name,
+      val:x,
+      div,
+    }
+
+    chk.checked = row.val;
+    chk.onchange = function(){
+      row.val = Number(chk.checked);
+    }
+
+    rows.push(row);
+    panel.style.height = (rows.length)*25;
+    div.appendChild(lbl);
+    div.appendChild(chk);
+    panel.appendChild(div);
+  }
+
   that.get = function(retype){
     let [name] = $pop_args(1);
     for (let i = 0; i < rows.length; i++){
       if (rows[i].name == name){
-        if (retype == 'f32'){
+        if (retype == 'f32' || retype == 'i32'){
           return rows[i].val;
         }
       }
     }
-    if (retype == 'f32'){
+    if (retype == 'f32' || retype == 'i32'){
       return 0;
     }
   }
