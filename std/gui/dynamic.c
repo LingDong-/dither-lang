@@ -31,10 +31,20 @@ EXPORTED void gui_slider(var_t* ret, gstate_t* _g){
   }
 }
 
+EXPORTED void gui_toggle(var_t* ret, gstate_t* _g){
+  var_t* x = ARG_POP_VAR_NO_FREE(_g);
+  stn_t* s = ARG_POP(_g,str);
+
+  gui_impl__toggle1i(s->data,x->u.i32);
+  
+}
+
 EXPORTED void gui_get(var_t* ret, gstate_t* _g){
   stn_t* s = ARG_POP(_g,str);
   if (ret->type->vart == VART_F32){
     ret->u.f32 = gui_impl__get1f(s->data);
+  }else if (ret->type->vart == VART_I32){
+    ret->u.i32 = gui_impl__get1i(s->data);
   }
 }
 
@@ -48,6 +58,7 @@ EXPORTED void gui_poll(var_t* ret, gstate_t* _g){
 EXPORTED void lib_init_gui(gstate_t* _g){
   QK_REG(init)
   QK_REG(slider)
+  QK_REG(toggle)
   QK_REG(get)
   QK_REG(poll)
 }

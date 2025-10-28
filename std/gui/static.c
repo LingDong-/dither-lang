@@ -21,11 +21,25 @@ void gui__slider(){
   }
 }
 
+void gui__toggle(){
+  int t = __peek_arg_type();
+  int n = __peek_arg_size();
+
+  int32_t __ARG(x);
+  char* __ARG(name);
+  gui_impl__toggle1i(name,x);
+  
+}
+
 void gui__get(){
   char* __ARG(name);
   int typ = __peek_ret_type();
   if (typ == VART_F32){
     float f = gui_impl__get1f(name);
     __put_ret(&f);
+  }else if (typ == VART_I32){
+    int32_t f = gui_impl__get1i(name);
+    __put_ret(&f);
   }
 }
+

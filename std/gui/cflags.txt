@@ -1,5 +1,5 @@
 if [ "$(uname)" = "Darwin" ]; then
   CFLAGS="$CFLAGS $(clang -c $DITHER_ROOT/std/gui/impl_cocoa.m) $DITHER_ROOT/std/gui/impl_cocoa.o -framework Cocoa"
+else
+  CFLAGS="$CFLAGS -I/opt/X11/include -L/opt/X11/lib -lX11"
 fi
-
-# CFLAGS="$CFLAGS -I/opt/X11/include -L/opt/X11/lib -lX11"

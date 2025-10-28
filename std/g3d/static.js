@@ -507,7 +507,7 @@ void main() {
     let tex_data = new Uint8Array(FONT_TEX_H*FONT_TEX_W);
     for (let ch = 0; ch < FONT_N; ++ch) {
       let gx = (ch % FONT_COLS) * FONT_W;
-      let gy = (ch / FONT_COLS) * FONT_H;
+      let gy =~~(ch / FONT_COLS) * FONT_H;
       for (let row = 0; row < FONT_H; ++row) {
         let bits = font_bitmap[ch*FONT_H+row];
         for (let col = 0; col < FONT_W; ++col) {
@@ -565,7 +565,7 @@ void main() {
     for (let i = 0; i < len; i++){
       let ch = str.charCodeAt(i)-32;
       let cx = ch % FONT_COLS;
-      let cy = ch / FONT_COLS;
+      let cy =~~(ch / FONT_COLS);
       let u0 = cx * (FONT_W / FONT_TEX_W);
       let v0 = cy * (FONT_H / FONT_TEX_H);
       let u1 = u0 + (FONT_W / FONT_TEX_W);

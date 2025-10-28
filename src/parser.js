@@ -1558,7 +1558,7 @@ var PARSER = function(sys,extensions={}){
       // console.log(funs.map(x=>x.ipl.arg));
 
       funs.sort((a,b)=>(Number(b.typ.con=='func')-Number(a.typ.con=='func')));
-
+      
       // console.log(funs.length)
       let nnn = funs.length
       for (let i = 0; i < nnn; i++){
@@ -1567,16 +1567,31 @@ var PARSER = function(sys,extensions={}){
         let tms = [];
         Object.assign(map,map0);
         let s = 0;
+
         if (funs[i].typ.con == 'func'){
           fas = funs[i].typ.elt[0].elt.map(tryfixtype);
           s = 100;
+          if (pte && funs[i].ipl.pte){
+            if (pte.length != funs[i].ipl.pte.length){
+              s = 0;
+            }else{
+              for (let j = 0; j < pte.length; j++){
+                let q = shrinktype(pte[j]);
+                if (printtype(q) != printtype(shrinktype(funs[i].ipl.pte[j]))){
+                  s = 0;              
+                }
+              }
+            }
+          }
         }else{
           fas = funs[i].tty.elt[0].elt.map(tryfixtype);
+        
           tms = funs[i].ipl.tem.map(x=>shrinktype(x,0));
+          
           if (pte && pte.length == tms.length){
             let bad = 0;
             for (let j = 0; j < pte.length; j++){
-              let q = pte[j];
+              let q = shrinktype(pte[j]);
               if (funs[i].ipl.pte && funs[i].ipl.pte[j]){
                 if (printtype(q) != printtype(shrinktype(funs[i].ipl.pte[j]))){
                   bad = 1;
@@ -1597,7 +1612,7 @@ var PARSER = function(sys,extensions={}){
               tms[j] = q;
             }
           }
-          // tms = funs[i].ipl.tem.map(x=>x.val.val);
+          
         }
         if (fas.length != args.length || funs[i].mac > args.length){
           s = 0;
@@ -1624,7 +1639,6 @@ var PARSER = function(sys,extensions={}){
           }
         }
         // console.log(s,'>')
-        
         if (!s){
           continue;
         }
@@ -1635,7 +1649,6 @@ var PARSER = function(sys,extensions={}){
         if (funs[i].typ.con == 'func'){
           // console.log(".",funs[i].ipl,s)
           fts[i] =funs[i].ipl.ano.typ;
-          
           scores.push([i,s,funs[i].typ]);
           
           if (funs[i].did == false){
@@ -1685,6 +1698,8 @@ var PARSER = function(sys,extensions={}){
             did: true,
             tmp: true,
           }
+          if (pte) nf.ipl.pte = pte;
+          
           let same = funs.map(x=>printtype(x.typ)).indexOf(printtype(nf.typ));
           if (same != -1 && JSON.stringify(funs[same].ipl.arg) == JSON.stringify(funs[i].ipl.arg)){
             scores.push([i,0]);
@@ -1713,7 +1728,6 @@ var PARSER = function(sys,extensions={}){
             scostk.pop();
           }
           namesp.splice(0,Infinity,...oldnamesp);
-          
           scores.push([i,s-0.01,nf.typ,()=>funs.splice(funs.indexOf(nf),1)]);
         }
 
@@ -1732,7 +1746,7 @@ var PARSER = function(sys,extensions={}){
       }
       // console.log(funs.length)
       scores.sort((a,b)=>(b[1]-a[1]));
-      // console.log(scores)
+      // console.dir(scores,{depth:10000})
       // console.log("________",funs)
       // console.dir(scores,{depth:1000000})
 
@@ -2689,7 +2703,8 @@ var PARSER = function(sys,extensions={}){
         }else if (ast.key == 'subs'){
           doinfer(ast.con);
           if (typeof ast.con.typ == 'string' && ast.con.typ.startsWith('__func_ovld_')){
-            Object.assign(ast,ast.con,{pte:ast.idx.map(abstype).map(x=>shrinktype(x))})
+            // Object.assign(ast,ast.con,{pte:ast.idx.map(abstype).map(x=>shrinktype(x))})
+            Object.assign(ast,ast.con,{pte:ast.idx.map(abstype)})
           }else{
             if (ast.idx.map){
               ast.idx.map(doinfer);

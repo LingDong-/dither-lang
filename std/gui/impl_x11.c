@@ -4,6 +4,7 @@
 #include <X11/Xatom.h>
 
 #define ROW_SLIDER1F 1
+#define ROW_TOGGLE1I 10
 
 typedef struct row_st {
   struct row_st* next;
@@ -19,6 +20,13 @@ typedef struct slider1f_st {
   float min;
   float max;
 } slider1f_t;
+
+typedef struct toggle1i_st {
+  struct row_st* next;
+  char type;
+  char* name;
+  int val;
+} toggle1i_t;
 
 Display *dis;
 int screen;
@@ -97,6 +105,13 @@ void gui_impl__draw(){
       XDrawRectangle(dis, win, gc, 235, y+10, 10, 10);
       XDrawString(dis, win, gc, 238, y+10, "+", 1);
       XDrawString(dis, win, gc, 238, y+20, "-", 1);
+    }else if (node->type == ROW_TOGGLE1I){
+      toggle1i_t* u = (toggle1i_t*)node;
+      XDrawString(dis, win, gc, 5, y+17, lbl, 12);
+      XDrawRectangle(dis, win, gc, 225, y, 20, 20);
+      if (u->val){
+        XFillRectangle(dis, win, gc, 229, y+4, 13, 13);
+      }
     }
     node = node->next;
     y += 25;
@@ -129,8 +144,28 @@ void gui_impl__slider1f(char* name,float x,float l,float r){
 
   XResizeWindow(dis,win,250,n_row*25);
   gui_impl__resize();
-
 }
+
+void gui_impl__toggle1i(char* name,int x){
+  toggle1i_t* row = malloc(sizeof(toggle1i_t));
+  row->type = ROW_TOGGLE1I;
+  row->name = strdup(name);
+  row->next = NULL;
+  row->val = x;
+  if (head == NULL){
+    head = (row_t*)row;
+  }else{
+    row_t* prev = head;
+    while (prev->next) prev = prev->next;
+    prev->next = (row_t*)row;
+  }
+  n_row++;
+  XResizeWindow(dis,win,250,n_row*25);
+  gui_impl__resize();
+}
+
+
+
 float gui_impl__get1f(char* name){
   row_t* node = head;
   while (node){
@@ -144,6 +179,23 @@ float gui_impl__get1f(char* name){
   }
   return 0;
 }
+
+float gui_impl__get1i(char* name){
+
+  row_t* node = head;
+  while (node){
+    if (!strcmp(node->name,name)){
+      if (node->type == ROW_TOGGLE1I){
+        toggle1i_t* u = (toggle1i_t*)node;
+        
+        return u->val;
+      }
+    }
+    node = node->next;
+  }
+  return 0;
+}
+
 void gui_impl_poll(){
   int n;
   if ((n = XPending(dis)) > 0) {
@@ -180,6 +232,11 @@ void gui_impl_poll(){
                 v -= stp;
               }
               u->val = v;
+            }
+          }else if (node->type == ROW_TOGGLE1I){
+            if (event.type == ButtonPress){
+              toggle1i_t* u = (toggle1i_t*)node;
+              u->val = !u->val;
             }
           }
         }

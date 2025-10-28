@@ -61,17 +61,25 @@ var embed_gui_layout = {
     let vars = embed_gui_extract(ast,scopes);
     let out = [];
     for (let i = 0; i < vars.length; i++){
+      let f = 'slider';
+      let parg = vars[i].arg;
+      if (vars[i].typ == 'i32' && vars[i].arg.length == 2
+        && vars[i].arg[0].val == '0' && vars[i].arg[1].val == '1'
+      ){
+        f = 'toggle';
+        parg = [];
+      }
       out.push({
         key: 'call',
         fun: {
           key: 'a.b',
           lhs: { tag: 'ident', val: 'gui', pos:vars[i].pos},
-          rhs : {tag : 'ident', val: 'slider', pos:vars[i].pos},
+          rhs : {tag : 'ident', val: f, pos:vars[i].pos},
         },
         arg:[
           { tag: 'strlt', val: `"${vars[i].nom}"`, pos:vars[i].pos},
           vars[i].val,
-          ...vars[i].arg,
+          ...parg,
         ]
       })
     }
@@ -118,6 +126,7 @@ var embed_gui_sync = {
         }
       });
     }
+
     out.unshift({
       key: 'call',
       fun: {

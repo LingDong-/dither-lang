@@ -17,6 +17,7 @@
 
 @interface CheckboxRow : NSObject <ControlRow>
 @property (copy) NSString *name;
+@property (strong) NSTextField *label;
 @property (strong) NSButton *checkbox;
 @end
 
@@ -70,16 +71,23 @@
 
 
 
-
-
-
 @implementation CheckboxRow
 - (instancetype)initWithName:(NSString *)name checked:(BOOL)checked target:(id)target action:(SEL)action {
   if ((self = [super init])) {
     _name = [name copy];
-    _checkbox = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 250, 20)];
+
+    _label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 80, 20)];
+    [_label setStringValue:name];
+    [_label setBezeled:NO];
+    [_label setDrawsBackground:NO];
+    [_label setEditable:NO];
+    [_label setSelectable:NO];
+    _label.lineBreakMode = NSLineBreakByTruncatingMiddle;
+    _label.alignment = NSTextAlignmentRight;
+
+    _checkbox = [[NSButton alloc] initWithFrame:NSMakeRect(230, 0, 20, 20)];
     [_checkbox setButtonType:NSButtonTypeSwitch];
-    [_checkbox setTitle:name];
+    [_checkbox setTitle:@""];
     [_checkbox setState:checked ? NSControlStateValueOn : NSControlStateValueOff];
     [_checkbox setTarget:target];
     [_checkbox setAction:action];
@@ -87,7 +95,7 @@
   return self;
 }
 - (NSArray<NSView*>*)views {
-  return @[self.checkbox];
+  return @[self.label,self.checkbox];
 }
 - (id)value {
   return @([self.checkbox state] == NSControlStateValueOn);
@@ -226,6 +234,17 @@ void gui_impl__slider1f(char* name, float x, float l, float r){
 
 float gui_impl__get1f(char* name){
   return [[panel valueForLabel:[NSString stringWithUTF8String:name]] doubleValue];
+}
+
+void gui_impl__toggle1i(char* name, int b){
+  CheckboxRow *gain = [[CheckboxRow alloc] initWithName:[NSString stringWithUTF8String:name]
+                                       checked:b
+                                       target:panel action:@selector(controlChanged:)];
+  [panel addRow:gain];
+}
+
+int gui_impl__get1i(char* name){
+  return [[panel valueForLabel:[NSString stringWithUTF8String:name]] intValue];
 }
 
 void gui_impl_poll(){
