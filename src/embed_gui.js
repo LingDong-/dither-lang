@@ -68,6 +68,8 @@ var embed_gui_layout = {
       ){
         f = 'toggle';
         parg = [];
+      }else if (vars[i].typ == 'str'){
+        f = 'field';
       }
       out.push({
         key: 'call',

@@ -12,7 +12,9 @@
 
 
 #define ROW_SLIDER1F 1
+#define ROW_SLIDER1I 2
 #define ROW_TOGGLE1I 10
+#define ROW_FIELD1S 20
 
 typedef struct row_st {
   struct row_st* next;
@@ -29,7 +31,19 @@ typedef struct slider1f_st {
   float max;
   HWND hSlider;
   HWND hEdit;
+  HWND hSpin;
 } slider1f_t;
+
+typedef struct slider1i_st {
+  struct row_st* next;
+  char type;
+  char* name;
+  int val;
+  int min;
+  int max;
+  HWND hSlider;
+  HWND hEdit;
+} slider1i_t;
 
 typedef struct toggle1i_st {
   struct row_st* next;
@@ -38,6 +52,14 @@ typedef struct toggle1i_st {
   int val;
   HWND hCheckbox;
 } toggle1i_t;
+
+typedef struct field1s_st {
+  struct row_st* next;
+  char type;
+  char* name;
+  char* val;
+  HWND hEdit;
+} field1s_t;
 
 int n_row = 0;
 row_t* head = NULL;
@@ -70,6 +92,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             char buf[32];
             sprintf(buf, "%f", val);
             SetWindowText(u->hEdit, buf);
+            SendMessage(u->hSpin, UDM_SETPOS32, 0, (LPARAM)tick);
+            return 0;
+          }
+        }else if (node->type == ROW_SLIDER1I){
+          slider1i_t* u = (slider1i_t*)node;
+          if (src == u->hSlider) {
+            int tick = (int)SendMessage(src, TBM_GETPOS, 0, 0);
+            u->val = tick;
+            char buf[32];
+            sprintf(buf, "%d", tick);
+            SetWindowText(u->hEdit, buf);
             return 0;
           }
         }
@@ -91,12 +124,44 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             if (isnan(val)){
               val = u->min;
             }
-            if (val < u->min) val = u->min;
-            if (val > u->max) val = u->max;
+            int capped = 0;
+            if (val < u->min){val = u->min;capped=1;}
+            if (val > u->max){val = u->max;capped=1;}
             u->val = val;
             int tick = ((val-u->min)/(u->max-u->min))*100;
             SendMessage(u->hSlider, TBM_SETPOS, TRUE, tick);
+            SendMessage(u->hSpin, UDM_SETPOS32, 0, (LPARAM)tick);
+            
+            if (capped){
+              sprintf(buf,"%f", val);
+              SetWindowText(u->hEdit, buf);
+            }
             return 0;
+          }
+        }else if (node->type == ROW_SLIDER1I){
+          slider1i_t* u = (slider1i_t*)node;
+          if (src == u->hEdit && code == EN_CHANGE) {
+            char buf[32];
+            GetWindowText(u->hEdit, buf, sizeof(buf));
+            int val = atoi(buf);
+            int capped = 0;
+            if (val < u->min){val = u->min;capped=1;}
+            if (val > u->max){val = u->max;capped=1;}
+            u->val = val;
+            SendMessage(u->hSlider, TBM_SETPOS, TRUE, val);
+            if (capped){
+              sprintf(buf,"%d", val);
+              SetWindowText(u->hEdit, buf);
+            }
+            return 0;
+          }
+        }else if (node->type == ROW_FIELD1S){
+          
+          field1s_t* u = (field1s_t*)node;
+          if (src == u->hEdit && code == EN_CHANGE){
+            int length = GetWindowTextLength(u->hEdit);
+            u->val = realloc(u->val, length+1);
+            GetWindowText(u->hEdit, u->val, length+1);
           }
         }else if (node->type == ROW_TOGGLE1I){
           toggle1i_t* u = (toggle1i_t*)node;
@@ -105,6 +170,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             BOOL checked = (state == BST_CHECKED);
             u->val = checked;
             return 0;
+          }
+        }
+        node = node->next;
+      }
+      return 0;
+    }
+    case WM_NOTIFY: {
+      NMHDR *hdr = (NMHDR *)lParam;
+      row_t* node = head;
+      while (node){
+        if (node->type == ROW_SLIDER1F){
+          slider1f_t* u = (slider1f_t*)node;
+          if (hdr->hwndFrom == u->hSpin && hdr->code == UDN_DELTAPOS) {
+            NMUPDOWN *nmud = (NMUPDOWN *)lParam;
+            int newVal = nmud->iPos + nmud->iDelta;
+            float x = u->min + newVal*(u->max-u->min)/100.0;
+            u->val = x;
+            SendMessage(u->hSlider, TBM_SETPOS, TRUE, newVal);
+            char buf[32];
+            sprintf(buf, "%f", x);
+            SetWindowText(u->hEdit, buf);
           }
         }
         node = node->next;
@@ -152,6 +238,24 @@ void gui_impl_init(){
     "MS Sans Serif"
   );                  
 }
+
+void add_row(row_t* row){
+  if (head == NULL){
+    head = (row_t*)row;
+  }else{
+    row_t* prev = head;
+    while (prev->next) prev = prev->next;
+    prev->next = (row_t*)row;
+  }
+  n_row++;
+
+  RECT rect = { 0, 0, 250, n_row*25};
+  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+  int windowWidth = rect.right - rect.left;
+  int windowHeight = rect.bottom - rect.top;
+  SetWindowPos(hwnd, NULL, 0, 0, rect.right-rect.left, rect.bottom-rect.top, SWP_NOMOVE | SWP_NOZORDER);
+}
+
 void gui_impl__slider1f(char* name,float x,float l,float r){
   char buf[32];
   sprintf(buf, "%f", x);
@@ -170,7 +274,7 @@ void gui_impl__slider1f(char* name,float x,float l,float r){
   SendMessage(hSlider, TBM_SETPOS, TRUE, tick);
 
   HWND hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", buf,
-                                WS_CHILD | WS_VISIBLE,
+                                WS_CHILD | WS_VISIBLE | ES_NUMBER,
                                 190, n_row*25+0, 40, 20,
                                 hwnd, NULL, GetModuleHandle(NULL), NULL);
   HWND hSpin = CreateWindowEx(0, UPDOWN_CLASS, "",
@@ -195,20 +299,59 @@ void gui_impl__slider1f(char* name,float x,float l,float r){
   row->val = x;
   row->hSlider = hSlider;
   row->hEdit = hEdit;
-  if (head == NULL){
-    head = (row_t*)row;
-  }else{
-    row_t* prev = head;
-    while (prev->next) prev = prev->next;
-    prev->next = (row_t*)row;
-  }
-  n_row++;
+  row->hSpin = hSpin;
 
-  RECT rect = { 0, 0, 250, n_row*25};
-  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
-  int windowWidth = rect.right - rect.left;
-  int windowHeight = rect.bottom - rect.top;
-  SetWindowPos(hwnd, NULL, 0, 0, rect.right-rect.left, rect.bottom-rect.top, SWP_NOMOVE | SWP_NOZORDER);
+  add_row((row_t*)row);
+
+}
+
+
+void gui_impl__slider1i(char* name,int x,int l,int r){
+  char buf[32];
+  sprintf(buf, "%f", x);
+
+  HWND hLabel = CreateWindowEx(0, "STATIC", name,
+                                WS_CHILD | WS_VISIBLE | SS_RIGHT,
+                                0, n_row*25+0, 80, 20,
+                                hwnd, NULL, GetModuleHandle(NULL), NULL);
+
+  HWND hSlider = CreateWindowEx(0, TRACKBAR_CLASS, name,
+    WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS,
+    80, n_row*25+0, 110, 20,
+    hwnd, (HMENU)1, GetModuleHandle(NULL), NULL);
+  SendMessage(hSlider, TBM_SETRANGE, TRUE, MAKELONG(l, r));
+  SendMessage(hSlider, TBM_SETPOS, TRUE, x);
+  SendMessage(hSlider, TBM_SETTICFREQ, 1, 0);
+
+  HWND hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", buf,
+                                WS_CHILD | WS_VISIBLE | ES_NUMBER,
+                                190, n_row*25+0, 58, 20,
+                                hwnd, NULL, GetModuleHandle(NULL), NULL);
+  HWND hSpin = CreateWindowEx(0, UPDOWN_CLASS, "",
+                                  WS_CHILD | WS_VISIBLE | UDS_ALIGNRIGHT | UDS_SETBUDDYINT,
+                                  230, n_row*25+0, 25, 20,
+                                  hwnd, NULL, GetModuleHandle(NULL), NULL);
+  SendMessage(hSpin, UDM_SETBUDDY, (WPARAM)hEdit, 0);
+  SendMessage(hSpin, UDM_SETRANGE32, l, r);
+  SendMessage(hSpin, UDM_SETPOS32, 0, x);
+
+  SendMessage(hSlider, WM_SETFONT, (WPARAM)hFont, TRUE);
+  SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
+  SendMessage(hSpin, WM_SETFONT, (WPARAM)hFont, TRUE);
+  SendMessage(hLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+  slider1i_t* row = malloc(sizeof(slider1i_t));
+  row->type = ROW_SLIDER1I;
+  row->name = strdup(name);
+  row->next = NULL;
+  row->min = l;
+  row->max = r;
+  row->val = x;
+  row->hSlider = hSlider;
+  row->hEdit = hEdit;
+
+  add_row((row_t*)row);
+
 }
 
 void gui_impl__toggle1i(char* name, int x){
@@ -235,20 +378,35 @@ void gui_impl__toggle1i(char* name, int x){
   row->next = NULL;
   row->val = x;
   row->hCheckbox = hCheckbox;
-  if (head == NULL){
-    head = (row_t*)row;
-  }else{
-    row_t* prev = head;
-    while (prev->next) prev = prev->next;
-    prev->next = (row_t*)row;
-  }
-  n_row++;
 
-  RECT rect = { 0, 0, 250, n_row*25};
-  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
-  int windowWidth = rect.right - rect.left;
-  int windowHeight = rect.bottom - rect.top;
-  SetWindowPos(hwnd, NULL, 0, 0, rect.right-rect.left, rect.bottom-rect.top, SWP_NOMOVE | SWP_NOZORDER);
+  add_row((row_t*)row);
+}
+
+
+void gui_impl__field1s(char* name, char* x){
+
+  HWND hLabel = CreateWindowEx(0, "STATIC", name,
+                                WS_CHILD | WS_VISIBLE | SS_RIGHT,
+                                0, n_row*25+0, 80, 20,
+                                hwnd, NULL, GetModuleHandle(NULL), NULL);
+
+  HWND hEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", x,
+                                WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
+                                83, n_row*25+0, 163, 20,
+                                hwnd, NULL, GetModuleHandle(NULL), NULL);
+
+  SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
+  SendMessage(hLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+
+  field1s_t* row = malloc(sizeof(field1s_t));
+  row->type = ROW_FIELD1S;
+  row->name = strdup(name);
+  row->next = NULL;
+  row->val = strdup(x);
+  row->hEdit = hEdit;
+
+  add_row((row_t*)row);
 
 }
 
@@ -273,6 +431,23 @@ int gui_impl__get1i(char* name){
     if (!strcmp(node->name,name)){
       if (node->type == ROW_TOGGLE1I){
         toggle1i_t* u = (toggle1i_t*)node;
+        return u->val;
+      }else if (node->type == ROW_SLIDER1I){
+        slider1i_t* u = (slider1i_t*)node;
+        return u->val;
+      }
+    }
+    node = node->next;
+  }
+  return 0;
+}
+
+char* gui_impl__get1s(char* name){
+  row_t* node = head;
+  while (node){
+    if (!strcmp(node->name,name)){
+      if (node->type == ROW_FIELD1S){
+        field1s_t* u = (field1s_t*)node;
         return u->val;
       }
     }

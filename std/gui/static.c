@@ -18,16 +18,26 @@ void gui__slider(){
     float __ARG(x);
     char* __ARG(name);
     gui_impl__slider1f(name,x,l,r);
+  }else if (t == VART_I32){
+    int32_t __ARG(r);
+    int32_t __ARG(l);
+    int32_t __ARG(x);
+    char* __ARG(name);
+    gui_impl__slider1i(name,x,l,r);
   }
 }
 
 void gui__toggle(){
-  int t = __peek_arg_type();
-  int n = __peek_arg_size();
-
   int32_t __ARG(x);
   char* __ARG(name);
   gui_impl__toggle1i(name,x);
+  
+}
+
+void gui__field(){
+  char* __ARG(x);
+  char* __ARG(name);
+  gui_impl__field1s(name,x);
   
 }
 
@@ -40,6 +50,12 @@ void gui__get(){
   }else if (typ == VART_I32){
     int32_t f = gui_impl__get1i(name);
     __put_ret(&f);
+  }else if (typ == VART_STR){
+    char* f = gui_impl__get1s(name);
+    int n = strlen(f);
+    char* o = __gc_alloc(VART_STR,n+1);
+    strcpy(o,f);
+    __put_ret(&o);
   }
 }
 
