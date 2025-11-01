@@ -8,15 +8,6 @@ function embed_gui_extract(ast,scopes){
       break;
     }
   }
-  function untree(cst){
-    if (!cst){
-      return [];
-    }
-    if (cst.key != ','){
-      return [cst];
-    }
-    return untree(cst.lhs).concat(untree(cst.rhs));
-  }
   function somepos(cst){
     for (let k in cst){
       if (k == 'pos'){
@@ -44,8 +35,8 @@ function embed_gui_extract(ast,scopes){
       v = { tag: 'ident', val:k,pos}
     }
     if (sco[k].nom && sco[k].nom.hnt){
-      if (sco[k].nom.hnt.key == 'subs' && sco[k].nom.hnt.lhs.val == 'param'){
-        vars.push({nom:k, var:v, typ:sco[k].typ, val:sco[k].val, arg:untree(sco[k].nom.hnt.rhs), pos});
+      if (sco[k].nom.hnt.key == 'subs' && sco[k].nom.hnt.con.val == 'param'){
+        vars.push({nom:k, var:v, typ:sco[k].typ, val:sco[k].val, arg:sco[k].nom.hnt.idx, pos});
       }else if (sco[k].nom.hnt.tag == 'ident' && sco[k].nom.hnt.val == 'param'){
         vars.push({nom:k, var:v, typ:sco[k].typ, val:sco[k].val, arg:[], pos});
       }
@@ -84,6 +75,7 @@ var embed_gui_layout = {
           ...parg,
         ]
       })
+      // console.dir(out,{depth:Infinity});
     }
     out.unshift({
       key: 'call',

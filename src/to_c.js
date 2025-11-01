@@ -87,6 +87,9 @@ var TO_C = function(cfg){
   int __peek_ret_type(){
     return __retpts[__retpts_idx-1].vart;
   }
+  int __peek_ret_size(){
+    return __retpts[__retpts_idx-1].n;
+  }
   #define __POP_RETPT --__retpts_idx;
   void __push_arg(void* ptr, char typ, int siz){
     if (__args_top + siz+sizeof(int)+sizeof(char) > __args_siz){

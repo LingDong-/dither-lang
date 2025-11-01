@@ -30,6 +30,21 @@ EXPORTED void gui_slider(var_t* ret, gstate_t* _g){
     gui_impl__slider1f(s->data,x->u.f32,l->u.f32,r->u.f32);
   }else if (x->type->vart == VART_I32){
     gui_impl__slider1i(s->data,x->u.i32,l->u.i32,r->u.i32);
+  }else if (x->type->vart == VART_VEC){
+    int n = strlen(s->data);
+    #if _WIN32
+    char* name = (char*)_alloca(n+8);
+    #else
+    char name[n+8];
+    #endif
+    for (int i = 0; i < x->u.vec->n; i++){
+      sprintf(name,"%s[%d]",s->data,i);
+      gui_impl__slider1f(name,
+        ((float*)(x->u.vec->data))[i],
+        ((float*)(l->u.vec->data))[i],
+        ((float*)(r->u.vec->data))[i]
+      );
+    }
   }
 
   free(r);
@@ -70,7 +85,29 @@ EXPORTED void gui_get(var_t* ret, gstate_t* _g){
     str->type = ret->type;
     strcpy(str->data, x);
     ret->u.str = str;
+  }else if (ret->type->vart == VART_VEC){
+    int l = atoi(((type_t*)(ret->type->u.elem.tail->data))->u.str.data);
+    
+    int n = strlen(s->data);
+    #if _WIN32
+    char* name = (char*)_alloca(n+8);
+    #else
+    char name[n+8];
+    #endif
+
+    vec_t* vec = (vec_t*)gc_alloc_(_g,sizeof(vec_t)+l*4);
+    vec->type = ret->type;
+    vec->n = l;
+    vec->w = 4;
+
+    for (int i = 0; i < l; i++){
+      sprintf(name,"%s[%d]",s->data,i);
+      float f = gui_impl__get1f(name);
+      ((float*)(vec->data))[i] = f;
+    }
+    ret->u.vec = vec; 
   }
+  
 }
 
 EXPORTED void gui_poll(var_t* ret, gstate_t* _g){

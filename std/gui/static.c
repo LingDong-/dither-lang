@@ -13,11 +13,27 @@ void gui__slider(){
   int t = __peek_arg_type();
   int n = __peek_arg_size();
   if (t == VART_F32){
-    float __ARG(r);
-    float __ARG(l);
-    float __ARG(x);
-    char* __ARG(name);
-    gui_impl__slider1f(name,x,l,r);
+    if (n == sizeof(float)){
+      float __ARG(r);
+      float __ARG(l);
+      float __ARG(x);
+      char* __ARG(name);
+      gui_impl__slider1f(name,x,l,r);
+    }else{
+      int l = n/sizeof(float);
+      __vla(float,r,l);
+      __vla(float,m,l);
+      __vla(float,x,l);
+      __pop_arg(r, n);
+      __pop_arg(m, n);
+      __pop_arg(x, n);
+      char* __ARG(s);
+      __vla(char,name,strlen(s)+8);
+      for (int i = 0; i < l; i++){
+        sprintf(name,"%s[%d]",s,i);
+        gui_impl__slider1f(name,x[i],m[i],r[i]);
+      }
+    }
   }else if (t == VART_I32){
     int32_t __ARG(r);
     int32_t __ARG(l);
@@ -44,9 +60,22 @@ void gui__field(){
 void gui__get(){
   char* __ARG(name);
   int typ = __peek_ret_type();
+  int siz = __peek_ret_size();
   if (typ == VART_F32){
-    float f = gui_impl__get1f(name);
-    __put_ret(&f);
+    if (siz == sizeof(float)){
+      float f = gui_impl__get1f(name);
+      __put_ret(&f);
+    }else{
+      int l = siz/sizeof(float);
+      __vla(char,s,strlen(name)+8);
+      __vla(float,v,l);
+      for (int i = 0; i < l; i++){
+        sprintf(s,"%s[%d]",name,i);
+        float f = gui_impl__get1f(s);
+        v[i] = f;
+      }
+      __put_ret(v);
+    }
   }else if (typ == VART_I32){
     int32_t f = gui_impl__get1i(name);
     __put_ret(&f);

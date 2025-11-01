@@ -970,11 +970,14 @@ var PARSER = function(sys,extensions={}){
   }
 
   function abstract(cst){
-
-
-    if (cst == null) return null;
-    if (!cst.key) return cst;
     let ast = {};
+    if (cst == null) return null;
+    if (!cst.key){
+      Object.assign(ast,cst);
+      if (ast.hnt) ast.hnt = abstract(ast.hnt)
+      return ast;
+    }
+    
     if (cst.key == 'bloc'){
       ast.key = cst.key;
       ast.val = [];
@@ -1174,7 +1177,7 @@ var PARSER = function(sys,extensions={}){
         }
       }
     }
-    if (cst.hnt) ast.hnt = cst.hnt;
+    if (cst.hnt) ast.hnt = abstract(cst.hnt);
     return ast;
   }
 
@@ -1546,7 +1549,6 @@ var PARSER = function(sys,extensions={}){
 
 
     function matchftmpl(args,funs,map0={},pte=null){
-      // console.log(args);
       // console.log("-----")
       let scores = [];
       let fts = [];
