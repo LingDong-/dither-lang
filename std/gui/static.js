@@ -97,15 +97,13 @@ globalThis.$gui = new function(){
     inp.style=`position:absolute;left:190px;top:3px;width:52px;height:18px;
     `;
 
-    sld.setAttribute("min",l);
-    sld.setAttribute("max",r);
-    sld.value = x;
     if (is_int){
-      sld.setAttribute("step",1);
+      sld.setAttribute("min",l);
+      sld.setAttribute("max",r);
+      sld.value = x;
     }else{
-      sld.setAttribute("step","any");
+      sld.value = ((x-l)/(r-l)*100);
     }
-
     inp.value = x;
     let row = {
       name,
@@ -116,6 +114,9 @@ globalThis.$gui = new function(){
     }
     sld.oninput = function(){
       let v = Number(sld.value);
+      if (!is_int){
+        v = v/100*(r-l)+l;
+      }
       inp.value = v;
       row.val = v;
     }
@@ -124,7 +125,7 @@ globalThis.$gui = new function(){
       if (v < l) v = l;
       if (v > r) v = r;
       inp.value = v;
-      sld.value = v;
+      sld.value = is_int ? v : ((v-l)/(r-l)*100);
       row.val = v;
     }
     rows.push(row);
