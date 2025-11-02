@@ -15,10 +15,24 @@
 @property (strong) NSStepper *stepper;
 @end
 
+@interface IntSliderRow : NSObject <ControlRow>
+@property (copy) NSString *name;
+@property (strong) NSTextField *label;
+@property (strong) NSSlider *slider;
+@property (strong) NSTextField *valueField;
+@property (strong) NSStepper *stepper;
+@end
+
 @interface CheckboxRow : NSObject <ControlRow>
 @property (copy) NSString *name;
 @property (strong) NSTextField *label;
 @property (strong) NSButton *checkbox;
+@end
+
+@interface FieldRow : NSObject <ControlRow>
+@property (copy) NSString *name;
+@property (strong) NSTextField *label;
+@property (strong) NSTextField *valueField;
 @end
 
 
@@ -71,6 +85,68 @@
 
 
 
+@implementation IntSliderRow
+- (instancetype)initWithName:(NSString *)name
+                         min:(NSInteger)min
+                         max:(NSInteger)max
+                       value:(NSInteger)value
+                      target:(id)target
+                      action:(SEL)action
+{
+  if ((self = [super init])) {
+    _name = [name copy];
+    CGFloat y = 0;
+    _label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, y, 80, 20)];
+    [_label setStringValue:name];
+    [_label setBezeled:NO];
+    [_label setDrawsBackground:NO];
+    [_label setEditable:NO];
+    [_label setSelectable:NO];
+    _label.lineBreakMode = NSLineBreakByTruncatingMiddle;
+    _label.alignment = NSTextAlignmentRight;
+    _slider = [NSSlider sliderWithValue:value
+                                minValue:min
+                                maxValue:max
+                                  target:target
+                                  action:action];
+    [_slider setFrame:NSMakeRect(80, y, 110, 20)];
+    [_slider setContinuous:YES];
+    [_slider setNumberOfTickMarks:(max - min + 1)];
+    [_slider setAllowsTickMarkValuesOnly:YES];
+    _valueField = [[NSTextField alloc] initWithFrame:NSMakeRect(190, y, 40, 24)];
+    [_valueField setIntegerValue:value];
+    [_valueField setTarget:target];
+    [_valueField setAction:action];
+    [_valueField setAlignment:NSTextAlignmentRight];
+    _valueField.usesSingleLineMode = YES;
+    _stepper = [[NSStepper alloc] initWithFrame:NSMakeRect(230, y, 20, 24)];
+    [_stepper setMinValue:min];
+    [_stepper setMaxValue:max];
+    [_stepper setIntegerValue:value];
+    [_stepper setIncrement:1];
+    [_stepper setTarget:target];
+    [_stepper setAction:action];
+  }
+  return self;
+}
+
+- (NSArray<NSView *> *)views {
+  return @[self.label, self.slider, self.valueField, self.stepper];
+}
+- (id)value {
+  return @((NSInteger)self.slider.integerValue);
+}
+- (void)setValue:(id)value {
+  NSInteger v = [value integerValue];
+  [self.slider setIntegerValue:v];
+  [self.valueField setIntegerValue:v];
+  [self.stepper setIntegerValue:v];
+}
+@end
+
+
+
+
 @implementation CheckboxRow
 - (instancetype)initWithName:(NSString *)name checked:(BOOL)checked target:(id)target action:(SEL)action {
   if ((self = [super init])) {
@@ -107,6 +183,49 @@
 @end
 
 
+
+@implementation FieldRow
+- (instancetype)initWithName:(NSString *)name
+                       value:(NSString *)value
+                      target:(id)target
+                      action:(SEL)action
+{
+  if ((self = [super init])) {
+    _name = [name copy];
+    CGFloat y = 0;
+    _label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, y, 80, 20)];
+    [_label setStringValue:name];
+    [_label setBezeled:NO];
+    [_label setDrawsBackground:NO];
+    [_label setEditable:NO];
+    [_label setSelectable:NO];
+    _label.alignment = NSTextAlignmentRight;
+    _valueField = [[NSTextField alloc] initWithFrame:NSMakeRect(80, y, 165, 24)];
+    [_valueField setStringValue:(value ? value : @"")];
+    [_valueField setTarget:target];
+    [_valueField setAction:action];
+    [_valueField setAlignment:NSTextAlignmentLeft];
+    _valueField.usesSingleLineMode = YES;
+  }
+  return self;
+}
+
+- (NSArray<NSView *> *)views {
+  return @[self.label, self.valueField];
+}
+
+- (id)value {
+  return self.valueField.stringValue;
+}
+
+- (void)setValue:(id)value {
+  if ([value isKindOfClass:[NSString class]]) {
+    [self.valueField setStringValue:value];
+  } else {
+    [self.valueField setStringValue:[value description]]; // fallback
+  }
+}
+@end
 
 
 
@@ -193,6 +312,12 @@
         if (sender == sr.valueField) v = sr.valueField.doubleValue;
         else if (sender == sr.stepper) v = sr.stepper.doubleValue;
         [sr setValue:@(v)];
+      }else if ([row isKindOfClass:[IntSliderRow class]]) {
+        IntSliderRow *sr = (IntSliderRow *)row;
+        int v = sr.slider.intValue;
+        if (sender == sr.valueField) v = sr.valueField.intValue;
+        else if (sender == sr.stepper) v = sr.stepper.intValue;
+        [sr setValue:@(v)];
       }
     }
   }
@@ -232,8 +357,11 @@ void gui_impl__slider1f(char* name, float x, float l, float r){
   [panel addRow:gain];
 }
 
-float gui_impl__get1f(char* name){
-  return [[panel valueForLabel:[NSString stringWithUTF8String:name]] doubleValue];
+void gui_impl__slider1i(char* name, int x, int l, int r){
+  IntSliderRow *gain = [[IntSliderRow alloc] initWithName:[NSString stringWithUTF8String:name]
+                                       min:l max:r value:x
+                                       target:panel action:@selector(controlChanged:)];
+  [panel addRow:gain];
 }
 
 void gui_impl__toggle1i(char* name, int b){
@@ -243,8 +371,25 @@ void gui_impl__toggle1i(char* name, int b){
   [panel addRow:gain];
 }
 
+void gui_impl__field1s(char* name, char* x){
+  FieldRow *gain = [[FieldRow alloc] initWithName:[NSString stringWithUTF8String:name]
+                                       value:[NSString stringWithUTF8String:x]
+                                       target:panel action:@selector(controlChanged:)];
+  [panel addRow:gain];
+}
+
+
+float gui_impl__get1f(char* name){
+  return [[panel valueForLabel:[NSString stringWithUTF8String:name]] doubleValue];
+}
+
 int gui_impl__get1i(char* name){
   return [[panel valueForLabel:[NSString stringWithUTF8String:name]] intValue];
+}
+
+char* gui_impl__get1s(char* name){
+  NSString* nss = [panel valueForLabel:[NSString stringWithUTF8String:name]];
+  return (char*)([nss UTF8String]);
 }
 
 void gui_impl_poll(){

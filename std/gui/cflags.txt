@@ -1,5 +1,6 @@
-if [ "$(uname)" = "Darwin" ]; then
+if [ "$DITHER_GUI_USE_COCOA" -eq 1 ]; then
   CFLAGS="$CFLAGS $(clang -c $DITHER_ROOT/std/gui/impl_cocoa.m) $DITHER_ROOT/std/gui/impl_cocoa.o -framework Cocoa"
-else
+fi
+if [ "$DITHER_GUI_USE_X11" -eq 1 ]; then
   CFLAGS="$CFLAGS -I/opt/X11/include -L/opt/X11/lib -lX11"
 fi

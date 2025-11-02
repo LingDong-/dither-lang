@@ -1,8 +1,7 @@
-#ifdef __APPLE__
+#if DITHER_GUI_USE_COCOA
 #include "impl_cocoa.h"
-// #include "impl_x11.c"
-#elif defined(_WIN32)
+#elif DITHER_GUI_USE_WINAPI
 #include "impl_win32.c"
-#else
+#elif DITHER_GUI_USE_X11
 #include "impl_x11.c"
 #endif
