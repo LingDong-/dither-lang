@@ -1,6 +1,6 @@
 let TODOS = [
   // list here new examples that need to be snapped
-  "sphinxof.dh"
+  "lissajous.dh"
 ]
 
 const fs = require('fs');
@@ -20,6 +20,7 @@ let old = fs.readFileSync("doc/snaps.png").toString('base64');
 html.push(`<script>${fs.readFileSync("src/parser.js").toString()}</script>`);
 html.push(`<script>${fs.readFileSync("src/to_js.js").toString()}</script>`);
 html.push(`<script>${fs.readFileSync("src/embed_glsl.js").toString()}</script>`);
+html.push(`<script>${fs.readFileSync("src/embed_gui.js").toString()}</script>`);
 html.push(`<img id="old" src="data:image/png;base64,${old}" />`);
 html.push(`<script>var STD={`)
 let ff = fs.readdirSync("std");
@@ -71,7 +72,7 @@ function main(){
       cwd: ()=>'',
       exit: ()=>{throw "up"},
     }
-    let parser = new PARSER({fs,path,process,search_paths:['']},{fragment:embed_glsl_frag});
+    let parser = new PARSER({fs,path,process,search_paths:['']},{fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync});
     let toks = parser.tokenize("CURRENT");
     let cst = parser.parse(toks);
     let ast = parser.abstract(cst);
