@@ -332,7 +332,13 @@ var TO_JS = function(cfg){
         o.push(`${a} = $value(${b}.__val);`);
       }else if (ta.con == 'vec' && tb.con == 'vec'){
         for (let i = 0; i < vec_type_flat_n(ta); i++){
-          o.push(`${a}[${i}] = ${b}[${i}]`);
+          o.push(`${a}[${i}] = ${b}[${i}];`);
+        }
+      }else if ($numtyps.has(ta) && tb == 'str'){
+        if (ta == 'f32' || ta == 'f64'){
+          o.push(`${a} = parseFloat(${b});`);
+        }else{
+          o.push(`${a} = parseInt(${b});`);
         }
       }else{
         console.log(a,b,ta,tb)

@@ -41,12 +41,109 @@ EXPORTED void str_decode(var_t* ret,  gstate_t* _g){
   ret->u.str = s;
 }
 
+EXPORTED void str_slice(var_t* ret,  gstate_t* _g){
+  int j = ARG_POP(_g,i32);
+  int i = ARG_POP(_g,i32);
+  stn_t* a = ARG_POP(_g,str);
+
+  int n = j-i;
+
+  stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+1);
+  s->n = n;
+  s->w = 1;
+  s->type = ret->type;
+  memcpy(s->data, ((char*)(a->data))+i, n);
+  ret->u.str = s;
+}
+
+EXPORTED void str_split(var_t* ret,  gstate_t* _g){
+  stn_t* b = ARG_POP(_g,str);
+  stn_t* a = ARG_POP(_g,str);
+  stn_t** ss = NULL;
+  int sn = 0;
+  int start = 0;
+  for (int i = 0; i < a->n+1-b->n+1; i++){
+    if (i < a->n+1-b->n){
+      for (int j = 0; j < b->n; j++){
+        if (a->data[i+j] != b->data[j]){
+          goto nextchar;
+        }
+      }
+    }
+    int n = i-start;
+    stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+1);
+    s->n = n;
+    s->w = 1;
+    s->type = a->type;
+    memcpy(s->data, ((char*)(a->data))+start, n);
+    ss = (stn_t**)realloc(ss,(sn+1)*sizeof(stn_t*));
+    ss[sn++] = s;
+    start = i+b->n;
+    nextchar: continue;
+  }
+
+  ret->u.lst = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
+  ret->u.lst->data = (char*)ss;
+  ret->u.lst->n = sn;
+  ret->u.lst->w = 8;
+  ret->u.lst->type = ret->type;
+  ret->u.lst->cap = sn; 
+}
+
+
+EXPORTED void str_trim(var_t* ret,  gstate_t* _g){
+  int mode = ARG_POP(_g,i32);
+  stn_t* b = ARG_POP(_g,str);
+  stn_t* a = ARG_POP(_g,str);
+
+  int start = 0;
+  int end = a->n;
+  int i;
+  if (mode & 1){
+    for (i = 0; i < end; i++){
+      for (int j = 0; j < b->n; j++){
+        if (a->data[i] == b->data[j]){
+          goto nextchar;
+        }
+      }
+      break;
+      nextchar: continue;
+    }
+    start = i;
+  }
+  if (mode & 2){
+    for (i = end-1; i >= start; i--){
+      for (int j = 0; j < b->n; j++){
+        if (a->data[i] == b->data[j]){
+          goto prevchar;
+        }
+      }
+      break;
+      prevchar: continue;
+    }
+    end = i+1;
+  }
+
+  int n = end-start;
+  stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+1);
+  s->n = n;
+  s->w = 1;
+  s->type = ret->type;
+  memcpy(s->data, ((char*)(a->data))+start, n);
+  ret->u.str = s;
+}
+
+
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "str." QUOTE(name), str_ ## name);
 
 EXPORTED void lib_init_str(gstate_t* _g){
   QK_REG(length);
   QK_REG(chr);
   QK_REG(decode);
+  QK_REG(slice);
+  QK_REG(split);
+  QK_REG(trim);
 }
 
 

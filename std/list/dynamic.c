@@ -17,6 +17,7 @@ EXPORTED void c_slice(var_t* ret,  gstate_t* _g){
   lst_t* lst = ARG_POP(_g,lst);
 
   int n = j-i;
+  ret->u.lst = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
   ret->u.lst->data = malloc(n*lst->w);
   ret->u.lst->n = n;
   ret->u.lst->w = lst->w;

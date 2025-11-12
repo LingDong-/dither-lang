@@ -980,6 +980,10 @@ var TO_C = function(cfg){
         o.push(`${a}=__gc_alloc(VART_STR,5);`);
         o.push(`__put_var(${varcnt++},${a});`);
         o.push(`sprintf(${a},"null");`);
+      }else if (intpam[ta] && tb == 'char*'){
+        o.push(`${a} = atoll(${b});`);
+      }else if (numpam[ta] && tb == 'char*'){
+        o.push(`${a} = atof(${b});`);
       }else{
         console.log(a,b,ta,tb);
         UNIMPL();

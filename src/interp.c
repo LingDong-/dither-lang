@@ -1741,6 +1741,8 @@ double get_val_num(term_t* a){
       return v->u.f32;
     }else if (v->type->vart == VART_F64){
       return v->u.f64;
+    }else if (v->type->vart == VART_STR){
+      return atof(v->u.str->data);
     }else if (v->type->vart == VART_UON){
       v = v->u.uon->var;
       goto tryagain;
@@ -1765,6 +1767,8 @@ double get_val_num(term_t* a){
     return a->u.i;
   }else if (a->mode == TERM_NUMU){
     return a->u.u;
+  }else if (a->mode == TERM_STRL){
+    return atof(a->u.str.data);
   }else{
     UNIMPL;
   }
@@ -2526,6 +2530,8 @@ void cast(term_t* a, term_t* b){
         v->u.u64 = b->u.f;
       }else if (b->mode == TERM_IDEN){
         v->u.u64 = get_val_num(b);
+      }else if (b->mode == TERM_STRL){
+        v->u.u64 = atoll(b->u.str.data);
       }else{
         UNIMPL
       }
@@ -2547,6 +2553,8 @@ void cast(term_t* a, term_t* b){
         //   UNIMPL
         // }
         v->u.f32 = get_val_num(b);
+      }else if (b->mode == TERM_STRL){
+        v->u.f32 = atof(b->u.str.data);
       }else{
         UNIMPL
       }
@@ -2557,6 +2565,8 @@ void cast(term_t* a, term_t* b){
         v->u.f64 = (double)(b->u.i);
       }else if (b->mode == TERM_NUMF){
         v->u.f64 = (double)(b->u.f);
+      }else if (b->mode == TERM_STRL){
+        v->u.f64 = atof(b->u.str.data);
       }else{
         UNIMPL
       }
