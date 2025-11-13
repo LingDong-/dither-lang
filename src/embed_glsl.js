@@ -349,6 +349,7 @@ var embed_glsl_frag = {
 
     out.push(`void main(){`);
     out.push(`gl_FragColor = ${ast.ipl.nom.val}(${[vargs.map(x=>maybe_builtin(x))].join(',')});`);
+    out.push(`if (gl_FragColor.a < 0.0) discard;`);
     out.push(`}`);
     let ret = "#version 120\n"+out.join('\n');
     console.log(ret);
