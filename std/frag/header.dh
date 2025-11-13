@@ -1,4 +1,9 @@
 namespace frag {
+  FILTER_NEAREST := 0;
+  FILTER_LINEAR  := 1;
+  FILTER_MIPMAP  := 2;
+  WRAP_REPEAT    := 0;
+  WRAP_CLAMP     := 4;
   func _sample(fbo:i32,uv:vec[f32,2]):vec[f32,4];
   func _read_pixels(fbo:i32):arr[u8,3];
   func _write_pixels(fbo:i32,pix:arr[u8,3]);
@@ -8,11 +13,12 @@ namespace frag {
     func read_pixels():arr[u8,3]     {return _read_pixels(this.fbo)};
     func write_pixels(pix:arr[u8,3]) {_write_pixels(this.fbo,pix)};
   }
-  func _init_texture(tex:Texture,w:i32,h:i32);
+  func _init_texture(tex:Texture,w:i32,h:i32,flags:i32);
   func init(ctx:u64);
   // func poll():win.Event{return win.poll()};
   func program(src:str):i32;
-  func texture(w:i32,h:i32):Texture{tex:=Texture{};_init_texture(tex,w,h);return tex};
+  func texture(w:i32,h:i32,flags:i32):Texture{tex:=Texture{};_init_texture(tex,w,h,flags);return tex};
+  func texture(w:i32,h:i32):Texture{return texture(w,h,FILTER_LINEAR|WRAP_REPEAT);}
   func uniform[T](name:str, x:T);
   func _begin(prgm:i32,fbo:i32);
   func begin(prgm:i32,tex:Texture){_begin(prgm,tex.fbo)}

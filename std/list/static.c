@@ -49,3 +49,24 @@ void list__erase(){
 
   __put_ret(&(a->n));
 }
+
+void list__slice(){
+  int32_t __ARG(j);
+  int32_t __ARG(i);
+  __list_t* a = NULL;
+  __pop_arg(&a, 8);
+
+  if (j<0) j+=a->n;
+  if (i<0) i+=a->n;
+
+  int n = j-i;
+
+  __list_t* lst = __gc_alloc(VART_LST, sizeof(__list_t));
+  lst->w = a->w;
+  lst->t = a->t;
+  lst->data = malloc(a->w*n);
+  memcpy(lst->data, (char*)(a->data) + (a->w*i), n*(a->w));
+  lst->cap = n;
+  lst->n = n;
+  __put_ret(&lst);
+}

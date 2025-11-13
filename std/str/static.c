@@ -112,3 +112,32 @@ void str__trim(){
   memcpy(s, a+start, n);
   __put_ret(&s);
 }
+
+
+void str__join(){
+  __list_t* a = NULL;
+  __pop_arg(&a, 8);
+
+  char* __ARG(s);
+
+  int n = 0;
+  int sl = strlen(s);
+  for (int i = 0; i < a->n; i++){
+    n += strlen(((char**)(a->data))[i])+sl;
+  }
+  
+  char* o = __gc_alloc(VART_STR,n+1);
+  n = 0;
+  for (int i = 0; i < a->n; i++){
+    int l = strlen((((char**)(a->data))[i]));
+    memcpy(o+n, (((char**)(a->data))[i]), l);
+    n += l;
+    if (i < a->n-1){
+      memcpy(o+n, s, sl);
+      n += sl;
+    }
+  }
+  o[n] = 0;
+  __put_ret(&o);
+
+}

@@ -1571,7 +1571,7 @@ var TO_C = function(cfg){
         o.push(`void* ${tmp} = malloc(${fun}->siz);`);
         o.push(`memcpy(${tmp},${fun}->captr,${fun}->siz);`);
         o.push(`char* ${top} = (char*)${tmp} + ${fun}->siz;`);
-        o.push(`while (${top} > ${tmp}){`);
+        o.push(`while (${top} > (char*)${tmp}){`);
         o.push(`char vt = *((char*)(${top}-=1));`);
         o.push(`int sz;`);
         o.push(`memcpy(&sz, (${top}-=4), 4);`);

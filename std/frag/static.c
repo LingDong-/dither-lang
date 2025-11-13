@@ -11,11 +11,12 @@ void frag__init(){
 }
 
 void frag___init_texture(){
+  int32_t __ARG(flags);
   int32_t __ARG(h);
   int32_t __ARG(w);
   void* o;
   __pop_arg(&o, sizeof(o));
-  frag_impl__init_texture((char*)o+4,w,h);
+  frag_impl__init_texture((char*)o+4,w,h,flags);
 }
 
 void frag__program(){

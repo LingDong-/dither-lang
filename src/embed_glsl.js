@@ -94,7 +94,7 @@ var embed_glsl_frag = {
         }else{
           o += `(${printtype(ast.typ)}(${docompile(ast.lhs)})${ast.key}${printtype(ast.typ)}(${docompile(ast.rhs)}))`
         }
-      }else if (['==','||','&&','>','<','>=','<='].includes(ast.key)){
+      }else if (['==','||','&&','>','<','>=','<=','!='].includes(ast.key)){
         o += `(${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)})`
       }else if (['+=','-=','*=','/='].includes(ast.key)){
         out.push(`${docompile(ast.lhs)}${ast.key}${docompile(ast.rhs)};`);

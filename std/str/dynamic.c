@@ -134,6 +134,34 @@ EXPORTED void str_trim(var_t* ret,  gstate_t* _g){
 }
 
 
+EXPORTED void str_join(var_t* ret,  gstate_t* _g){
+  lst_t* a = ARG_POP(_g,lst);
+  stn_t* s = ARG_POP(_g,str);
+ 
+  int n = 0;
+  int sl = s->n;
+  for (int i = 0; i < a->n; i++){
+    n += ((stn_t**)(a->data))[i]->n;
+  }
+  
+  stn_t* o = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+1);
+  n = 0;
+  for (int i = 0; i < a->n; i++){
+    int l = ((stn_t**)(a->data))[i]->n;
+    memcpy(((char*)(o->data))+n, ((stn_t**)(a->data))[i]->data, l);
+    n += l;
+    if (i < a->n-1){
+      memcpy(((char*)(o->data))+n, s->data, sl);
+      n += sl;
+    }
+  }
+  o->data[n] = 0;
+  
+  o->n = n;
+  o->w = 1;
+  o->type = ret->type;
+  ret->u.str=o;
+}
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "str." QUOTE(name), str_ ## name);
 
@@ -144,6 +172,7 @@ EXPORTED void lib_init_str(gstate_t* _g){
   QK_REG(slice);
   QK_REG(split);
   QK_REG(trim);
+  QK_REG(join);
 }
 
 

@@ -37,5 +37,9 @@ globalThis.$str = new function(){
     }
     return a.slice(start,end);
   }
+  that.join = function(){
+    let [s,a] = $pop_args(2);
+    return a.join(s);
+  }
 }
 

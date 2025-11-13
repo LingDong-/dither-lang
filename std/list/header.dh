@@ -18,4 +18,13 @@ namespace list {
     }
     return b;
   }
+  func filter[T](a:list[T],f:func[tup[T],i32]):list[T]{
+    b := list[T]{};
+    for (i:=0;i<a.length();i++){
+      if (f(a[i])){
+        b.push(a[i]);
+      }
+    }
+    return b;
+  }
 }

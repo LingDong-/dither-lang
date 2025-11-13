@@ -22,10 +22,11 @@ EXPORTED void frag_init(var_t* ret, gstate_t* _g){
 }
 
 EXPORTED void frag__init_texture(var_t* ret, gstate_t* _g){
+  int flags = ARG_POP(_g,i32);
   int h = ARG_POP(_g,i32);
   int w = ARG_POP(_g,i32);
   obj_t* o = ARG_POP(_g,obj);
-  frag_impl__init_texture(o->data,w,h);
+  frag_impl__init_texture(o->data,w,h,flags);
 }
 
 EXPORTED void frag_program(var_t* ret, gstate_t* _g){
