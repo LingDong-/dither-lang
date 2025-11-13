@@ -15,6 +15,9 @@ globalThis.$str = new function(){
   }
   that.decode = function(){
     let [a,e] = $pop_args(2);
+    if (Array.isArray(a)){
+      a = new Uint8Array(a).buffer;
+    }
     return new TextDecoder(e).decode(a);
   }
   that.slice = function(){
