@@ -87,6 +87,7 @@ typedef void (APIENTRYP PFNGLGENRENDERBUFFERSPROC)(GLsizei n, GLuint *renderbuff
 typedef void (APIENTRYP PFNGLBINDRENDERBUFFERPROC)(GLenum target, GLuint renderbuffer);
 typedef void (APIENTRYP PFNGLRENDERBUFFERSTORAGEPROC)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 typedef void (APIENTRYP PFNGLFRAMEBUFFERRENDERBUFFERPROC)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+typedef void (APIENTRYP PFNGLGENERATEMIPMAPPROC)(GLenum);
 
 static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
 static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
@@ -136,6 +137,7 @@ static PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers = NULL;
 static PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer = NULL;
 static PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage = NULL;
 static PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer = NULL;
+static PFNGLGENERATEMIPMAPPROC glGenerateMipmap = NULL;
 
 static int glewDidInit = 0;
 static void glewInit(void) {
@@ -198,6 +200,8 @@ static void glewInit(void) {
   glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)wglGetProcAddress("glBindRenderbuffer");
   glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)wglGetProcAddress("glRenderbufferStorage");
   glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
+
+  glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmap");
 }
 
 #endif
