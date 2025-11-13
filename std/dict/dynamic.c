@@ -42,7 +42,7 @@ EXPORTED void dict_keys(var_t* ret,  gstate_t* _g){
           stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+l+1);
           s->n = l;
           s->w = 1;
-          s->type = tb;
+          s->type = ta;
           memcpy(s->data, p.key, ds);
           ((stn_t**)(lst->data))[idx++] = s;
         }else{
