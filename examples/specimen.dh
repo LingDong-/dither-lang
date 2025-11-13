@@ -1,6 +1,6 @@
 include "std/font"
 include "std/io"
-include "std/gx"
+include "std/drw"
 include "std/list"
 
 bytes := io.read_file("examples/assets/caslon.ttf");
@@ -9,123 +9,123 @@ tf := font.decode(bytes);
 fsz := 150
 
 func draw_polys(polys:list[list[vec[f32,2]]]){
-  gx.begin_shape();
+  drw.begin_shape();
   for (i:=0; i < polys.length(); i++){
     for (j:=0; j < polys[i].length(); j++){
-      gx.vertex(polys[i][j].x*fsz, polys[i][j].y*fsz+fsz);
+      drw.vertex(polys[i][j].x*fsz, polys[i][j].y*fsz+fsz);
     }
-    gx.next_contour(1);
+    drw.next_contour(1);
   }
-  gx.end_shape(1);
+  drw.end_shape(1);
 }
 
-gx.size(600,600);
-gx.background(1.0,0.95,0.9);
-gx.stroke(0.0);
+drw.size(600,600);
+drw.background(1.0,0.95,0.9);
+drw.stroke(0.0);
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Minimal Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Minimal Example",0,16);
+  drw.fill(0,0.5);
   draw_polys(tf.glyph(tf.lookup('a',font.FEAT_NONE)));
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
-gx.translate(200,0);
+drw.translate(200,0);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Low-Res Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Low-Res Example",0,16);
+  drw.fill(0,0.5);
   draw_polys(tf.glyph(tf.lookup('a',font.FEAT_NONE),1));
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
-gx.translate(200,0);
+drw.translate(200,0);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Kerning Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Kerning Example",0,16);
+  drw.fill(0,0.5);
   a := tf.lookup('T',font.FEAT_NONE);
   b := tf.lookup('o',font.FEAT_NONE);
   draw_polys(tf.glyph(a));
-  gx.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
+  drw.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
   draw_polys(tf.glyph(b));
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
-gx.translate(-400,200);
+drw.translate(-400,200);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Ligature Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Ligature Example",0,16);
+  drw.fill(0,0.5);
   lig := list[i32]{'f','f','i'};
   draw_polys(tf.glyph(tf.lookup(lig,font.FEAT_LIGA)));
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
-gx.translate(200,0);
+drw.translate(200,0);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Old Figures Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Old Figures Example",0,16);
+  drw.fill(0,0.5);
   a := tf.lookup('3',font.FEAT_NONE);
   b := tf.lookup('3',font.FEAT_ONUM);
   draw_polys(tf.glyph(a));
-  gx.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
+  drw.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
   draw_polys(tf.glyph(b));
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
 
-gx.translate(200,0);
+drw.translate(200,0);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Non-ASCII Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Non-ASCII Example",0,16);
+  drw.fill(0,0.5);
   a := tf.lookup(0xdf,font.FEAT_NONE);
   b := tf.lookup(0xf1,font.FEAT_NONE);
   draw_polys(tf.glyph(a));
-  gx.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
+  drw.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
   draw_polys(tf.glyph(b));
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
-gx.translate(-400,200);
+drw.translate(-400,200);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Multiple Ligatures Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Multiple Ligatures Example",0,16);
+  drw.fill(0,0.5);
   codes := list[i32]{'f','i','r','s','t'};
   a := -1;
   while (codes.length()){
     b := tf.lookup(codes, font.FEAT_LIGA);
-    gx.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
+    drw.translate(tf.advance(a,b,font.FEAT_KERN)*fsz,0);
     draw_polys(tf.glyph(b));
     a = b;
   }
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
 
-gx.translate(400,0);
+drw.translate(400,0);
 
 {
-  gx.push_matrix();
-  gx.fill(0);
-  gx.text("Distorted Example",0,16);
-  gx.fill(0,0.5);
+  drw.push_matrix();
+  drw.fill(0);
+  drw.text("Distorted Example",0,16);
+  drw.fill(0,0.5);
   
   a := tf.lookup('a',font.FEAT_NONE);
   polys := tf.glyph(a);
@@ -137,7 +137,7 @@ gx.translate(400,0);
     }
   }
   draw_polys(polys);
-  gx.pop_matrix();
+  drw.pop_matrix();
 }
 
-while (1) gx.poll();
+while (1) drw.poll();

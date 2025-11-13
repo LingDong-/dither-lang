@@ -1,4 +1,4 @@
-namespace g3d{
+namespace rdr{
   MODE_TRIG_LIST :=0x0004;
   MODE_TRIG_STRIP:=0x0005;
   MODE_LINE_LIST :=0x0001;

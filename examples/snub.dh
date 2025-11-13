@@ -1,4 +1,4 @@
-include "std/g3d"
+include "std/rdr"
 include "std/win"
 include "std/time"
 include "std/list"
@@ -10,7 +10,7 @@ W := 256;
 H := 256;
 
 context := win.init(W,H,win.CONTEXT_3D);
-g3d.init(context);
+rdr.init(context);
 
 t := 1.83929
 verts:=list[vec[f32,3]]{
@@ -35,7 +35,7 @@ palette := list[vec[f32,4]]{
   {0.47,0.35,0.67,1},{0.49,0.76,0.90,1},{0.85,0.34,0.54,1},{0.95,0.72,0.29,1}
 };
 
-mesh := g3d.Mesh{};
+mesh := rdr.Mesh{};
 
 for (i := 0; i < faces.shape()[0]; i++){
   n := mesh.vertices.length();
@@ -60,21 +60,21 @@ for (i := 0; i < faces.shape()[0]; i++){
   }
 }
 
-cam := g3d.Camera{}
-cam.look_at({0,0,5},{0,0,0},g3d.AXIS_Y);
+cam := rdr.Camera{}
+cam.look_at({0,0,5},{0,0,0},rdr.AXIS_Y);
 cam.perspective(60,W/(H as f32),0.1,100.0);
 
-hud := g3d.Camera{};
+hud := rdr.Camera{};
 hud.ortho(0,W,H,0,-1,1);
 
 frame := 0;
 
-model := g3d.mat.id;
+model := rdr.mat.id;
 
 while (1){
   fps := time.fps(120);
 
-  g3d.background(0.22,0.20,0.20);
+  rdr.background(0.22,0.20,0.20);
 
   cam.begin();
   mesh.draw(model);
@@ -83,7 +83,7 @@ while (1){
   hud.begin();
   for (i := 0; i < verts.length(); i++){
     v := verts[i];
-    pop := g3d.mat.translate(0,0,0.1);
+    pop := rdr.mat.translate(0,0,0.1);
     p := cam.proj @* cam.view @* pop @* model @* {v.x;v.y;v.z;1.0}
     q := {
       (0.5+p.x/p.w*0.5)*W -8,
@@ -91,27 +91,27 @@ while (1){
       -p.z/p.w,
       1.0,
     }
-    g3d.text("#%{i}", g3d.mat.translate(...q.xyz));
+    rdr.text("#%{i}", rdr.mat.translate(...q.xyz));
   }
-  g3d.text("fps: %{fps}", g3d.mat.translate(0,0,0));
+  rdr.text("fps: %{fps}", rdr.mat.translate(0,0,0));
   if (frame < 180){
-    model = g3d.mat.rotate_deg(g3d.AXIS_Y,2) @* model;
+    model = rdr.mat.rotate_deg(rdr.AXIS_Y,2) @* model;
   }else{
-    g3d.text("arrow keys to rotate", g3d.mat.translate(96,240,0));
+    rdr.text("arrow keys to rotate", rdr.mat.translate(96,240,0));
   }
   hud.end();
 
-  g3d.flush();
+  rdr.flush();
   e := win.poll();
   if (e.type == win.KEY_PRESSED){
     if (e.key == win.KEY_LARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_Y,-4) @* model;
+      model = rdr.mat.rotate_deg(rdr.AXIS_Y,-4) @* model;
     }else if (e.key == win.KEY_RARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_Y,4)  @* model;
+      model = rdr.mat.rotate_deg(rdr.AXIS_Y,4)  @* model;
     }else if (e.key == win.KEY_UARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_X,-4) @* model;
+      model = rdr.mat.rotate_deg(rdr.AXIS_X,-4) @* model;
     }else if (e.key == win.KEY_DARR){
-      model = g3d.mat.rotate_deg(g3d.AXIS_X,4) @* model;
+      model = rdr.mat.rotate_deg(rdr.AXIS_X,4) @* model;
     }else if (e.key == ' '){
       frame = 0;
     }

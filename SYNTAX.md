@@ -514,26 +514,26 @@ math.PI
 // ... and all the other stuff you can expect
 ```
 
-## gx
+## dr
 
-A simple Processing/p5 style graphics library.
+A simple Processing/p5 style 2D graphics library.
 
 Instead of having magical `setup` and `draw` functions, you just write a normal program.
 
 ```
-include "std/gx"
+include "std/drw"
 
-gx.size(640,480) // make canvas
+drw.size(640,480) // make canvas
 
 while (1){ // draw loop
 
   // red bg, color components are floats 0-1 :
-  gx.background(1.0, 0.5, 0.5); 
+  drw.background(1.0, 0.5, 0.5); 
 
   // draw stuff
 
   // refresh display and grab mouse/keyboard events
-  event := gx.poll(); 
+  event := drw.poll(); 
 }
 
 ```

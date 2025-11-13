@@ -156,7 +156,7 @@ int compileShader(const char* vertex_src, const char* fragment_src){
   return shaderProgram;
 }
 
-void g3d_impl_init(uint64_t ctx){
+void rdr_impl_init(uint64_t ctx){
   #ifndef __APPLE__
   glewInit();
   #endif
@@ -169,17 +169,17 @@ void g3d_impl_init(uint64_t ctx){
 
 }
 
-void g3d_impl_flush(){
+void rdr_impl_flush(){
 
   
 }
 
-void g3d_impl_background(float r, float g, float b, float a){
+void rdr_impl_background(float r, float g, float b, float a){
   glClearColor(r,g,b,a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-int g3d_impl__update_mesh(int vao, int flags,
+int rdr_impl__update_mesh(int vao, int flags,
   float* vertices, int n_vertices,
   int32_t* indices, int n_indices,
   float* colors, int n_colors,
@@ -240,7 +240,7 @@ int g3d_impl__update_mesh(int vao, int flags,
   return vao;
 }
 
-void g3d_impl__ortho(float* out, float left, float right, float bottom, float top, float nearZ, float farZ) {
+void rdr_impl__ortho(float* out, float left, float right, float bottom, float top, float nearZ, float farZ) {
   memset(out, 0, sizeof(float) * 16);
   float rl = 1.0f / (right - left);
   float tb = 1.0f / (top - bottom);
@@ -254,7 +254,7 @@ void g3d_impl__ortho(float* out, float left, float right, float bottom, float to
   out[15] = 1.0f;
 }
 
-void g3d_impl__perspective(float* out, float fov, float aspect, float nearZ, float farZ) {
+void rdr_impl__perspective(float* out, float fov, float aspect, float nearZ, float farZ) {
   float tanHalfFov = tanf(fov / 2.0f);
   memset(out, 0, sizeof(float) * 16);
   out[0]  = 1.0f / (tanHalfFov * aspect);
@@ -264,7 +264,7 @@ void g3d_impl__perspective(float* out, float fov, float aspect, float nearZ, flo
   out[11] = -(2.0f * farZ * nearZ) / (farZ-nearZ);
 }
 
-void g3d_impl__look_at(float* out, float* eye, float* center, float* up) {
+void rdr_impl__look_at(float* out, float* eye, float* center, float* up) {
   float f[3] = { center[0]-eye[0], center[1]-eye[1], center[2]-eye[2] };
   float fn = sqrtf(f[0]*f[0] + f[1]*f[1] + f[2]*f[2]);
   for (int i = 0; i < 3; ++i) f[i] /= fn;
@@ -298,7 +298,7 @@ void g3d_impl__look_at(float* out, float* eye, float* center, float* up) {
 
 }
 
-void g3d_mat_impl_rotate(float* out, float* axis, float ang){
+void rdr_mat_impl_rotate(float* out, float* axis, float ang){
   float x = axis[0], y = axis[1], z = axis[2];
   float len = sqrtf(x * x + y * y + z * z);
   if (len == 0.0f) {
@@ -362,7 +362,7 @@ void compute_normal_mat(float* out, const float* modelMatrix) {
 GLint currentProgram = 0;
 float cached_view[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
 float cached_proj[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-void g3d_impl__camera_begin(float* view, float* proj){
+void rdr_impl__camera_begin(float* view, float* proj){
 
   glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
   if (!currentProgram){
@@ -378,7 +378,7 @@ void g3d_impl__camera_begin(float* view, float* proj){
   memcpy(cached_proj,proj,sizeof(cached_proj));
 }
 
-void g3d_impl__camera_end(){
+void rdr_impl__camera_end(){
   if (!currentProgram){
     glUseProgram(0);
   }
@@ -386,7 +386,7 @@ void g3d_impl__camera_end(){
 }
 
 
-void g3d_impl__draw_mesh(int vao, int mode, float* model_matrix) {
+void rdr_impl__draw_mesh(int vao, int mode, float* model_matrix) {
 
   vao_t mesh = vaos.data[vao];
   GLint program = 0;
@@ -610,7 +610,7 @@ void build_font_texture() {
 }
 
 
-void g3d_impl_text(char* str, float* model_matrix){
+void rdr_impl_text(char* str, float* model_matrix){
   if (font_texture == -1){
     build_font_texture();
   }

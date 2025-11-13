@@ -1,4 +1,4 @@
-include "std/gx"
+include "std/drw"
 
 W := 512
 H := 512
@@ -21,25 +21,25 @@ func mbrot(x0:f32, y0:f32) : i32{
 
 
 
-gx.size(W,H);
-gx.no_stroke();
+drw.size(W,H);
+drw.no_stroke();
 res := 128
 
-pg := gx.create_graphics(W,H);
+pg := drw.create_graphics(W,H);
 
 while(1){
   for (i := 0; i < H; i+=res){
-    gx.background(0);
+    drw.background(0);
     pg.begin();
     for (j := 0; j < W; j+=res){
       q := mbrot((j as f32)/W*3.0-2.0,(i as f32)/W*3.0-1.5);
       f := ((q as f32)/maxiter)**0.5;
-      gx.fill(f,f*0.8,1-f);
-      gx.rect(j,i,res+2,res+2);
+      drw.fill(f,f*0.8,1-f);
+      drw.rect(j,i,res+2,res+2);
     }
     pg.end();
     pg.draw(0,0);
-    gx.poll();
+    drw.poll();
   }
   if (res > 1){
     res/=2;

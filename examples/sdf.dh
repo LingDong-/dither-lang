@@ -1,7 +1,7 @@
 include "std/math"
 include "std/vec"
 include "std/io"
-include "std/gx"
+include "std/drw"
 include "std/frag"
 include "std/win"
 
@@ -148,8 +148,8 @@ cu := cw.cross({0.,1.,0.}).dir();
 cv := cu.cross(cw);
 
 if (USE_CPU){
-  gx.size(W,H);
-  pg := gx.create_graphics(W,H);
+  drw.size(W,H);
+  pg := drw.create_graphics(W,H);
   idx := 0;
   chunk := 64;
   while (1){
@@ -167,15 +167,15 @@ if (USE_CPU){
           px * cu.z + py * cv.z + cw.z * 2,
         }).dir();
         c := render(ro,rd);
-        gx.stroke(c);
-        gx.point(j,i);
+        drw.stroke(c);
+        drw.point(j,i);
       }
       idx += chunk;
       pg.end();
     }
-    gx.background(0.5);
+    drw.background(0.5);
     pg.draw(0,0);
-    gx.poll();
+    drw.poll();
   }
 }
 

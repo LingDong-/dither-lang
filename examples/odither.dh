@@ -1,4 +1,4 @@
-include "std/gx"
+include "std/drw"
 include "std/math"
 
 ord_dith_map := arr[u8,2]{
@@ -17,17 +17,17 @@ H := 128
 scl := 2
 t := 0.0
 
-gx.size(W*scl,H*scl);
+drw.size(W*scl,H*scl);
 
 func dither(pattern:func[tup[i32,i32],i32]) {
   for (y := 0; y < H; y++){
     for (x := 0; x < W; x++){
       o := pattern(x,y);
       d := ord_dith_map[(y%8),x%8]<<2;
-      gx.fill(o>d);
-      //gx.fill(o/255.0);
-      gx.no_stroke();
-      gx.rect(x*scl,y*scl,scl,scl);
+      drw.fill(o>d);
+      //drw.fill(o/255.0);
+      drw.no_stroke();
+      drw.rect(x*scl,y*scl,scl,scl);
     }
   }
 }
@@ -41,7 +41,7 @@ while (1){
 
   dither(ripple);
 
-  gx.poll();
+  drw.poll();
 
   t+=1.0;
 }

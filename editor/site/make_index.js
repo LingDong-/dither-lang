@@ -170,32 +170,32 @@ Welcome back, <code>pushMatrix()</code>!
 </p>
 
 <div class="dither-embed">
-include "std/gx"
+include "std/drw"
 
-gx.size(200,200);
+drw.size(200,200);
 
 func tree(l:f32){
   if (l < 8) return;
-  gx.line(0,0,l,0);
-  gx.translate(l,0);
-  gx.rotate_deg(-15);
+  drw.line(0,0,l,0);
+  drw.translate(l,0);
+  drw.rotate_deg(-15);
   for (i := 0; i < 2; i++){
-    gx.push_matrix();
+    drw.push_matrix();
     tree(l*0.8);
-    gx.pop_matrix();
-    gx.rotate_deg(30);
+    drw.pop_matrix();
+    drw.rotate_deg(30);
   }
 }
 
 while (1){
-  gx.background(0.9);
-  gx.stroke(0.);
-  gx.push_matrix();
-  gx.translate(100,200);
-  gx.rotate_deg(-90);
+  drw.background(0.9);
+  drw.stroke(0.);
+  drw.push_matrix();
+  drw.translate(100,200);
+  drw.rotate_deg(-90);
   tree(42);
-  gx.pop_matrix();
-  gx.poll();
+  drw.pop_matrix();
+  drw.poll();
 }
 
 </div>
@@ -239,7 +239,7 @@ more interesting shading effects -- check out <a href="https://github.com/LingDo
 
 <div class="dither-embed">
 
-include "std/g3d"
+include "std/rdr"
 include "std/win"
 include "std/list"
 include "std/rand"
@@ -249,9 +249,9 @@ H := 200;
 nx := 20;
 nz := 20;
 
-g3d.init(win.init(W,H,win.CONTEXT_3D));
+rdr.init(win.init(W,H,win.CONTEXT_3D));
 
-mesh := g3d.Mesh{};
+mesh := rdr.Mesh{};
 
 for (i:=0; i&lt;nz; i++){
   for (j:=0; j&lt;nx; j++){
@@ -270,16 +270,16 @@ for (i:=0; i&lt;nz; i++){
     }
   }
 }
-cam := g3d.Camera{}
-cam.look_at({0,15,15},{0,0,0},g3d.AXIS_Y);
+cam := rdr.Camera{}
+cam.look_at({0,15,15},{0,0,0},rdr.AXIS_Y);
 cam.perspective(45,W/(H as f32),0.1,100.0);
 
 frame := 0;
 while (1){
-  g3d.background(0.2,0.0,0.1);
+  rdr.background(0.2,0.0,0.1);
 
   cam.begin();
-  mesh.draw(g3d.mat.rotate_deg(g3d.AXIS_Y,frame++));
+  mesh.draw(rdr.mat.rotate_deg(rdr.AXIS_Y,frame++));
   cam.end();
   
   win.poll();

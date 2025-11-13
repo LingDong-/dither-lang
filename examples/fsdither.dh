@@ -3,7 +3,7 @@ include "std/img"
 include "std/io"
 include "std/arr"
 include "std/time"
-include "std/gx"
+include "std/drw"
 include "std/guts"
 
 // floyd-steinberg dither demo
@@ -48,15 +48,15 @@ for (y:=0; y<H; y++){
 fstein.reshape({0,0});
 guts.gc_on();
 
-gx.size(W*scl,H*scl)
+drw.size(W*scl,H*scl)
 
-pg := gx.create_graphics(W,H);
+pg := drw.create_graphics(W,H);
 pg.write_pixels(pixels);
 
 
 while (1){
-  gx.background(0);
+  drw.background(0);
   pg.draw(0,0,W*scl,H*scl);
-  gx.poll();
+  drw.poll();
 }
 

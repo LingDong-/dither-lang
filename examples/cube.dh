@@ -1,4 +1,4 @@
-include "std/g3d"
+include "std/rdr"
 include "std/win"
 include "std/time"
 include "std/list"
@@ -7,9 +7,9 @@ W := 320;
 H := 240;
 
 context := win.init(W,H,win.CONTEXT_3D);
-g3d.init(context);
+rdr.init(context);
 
-mesh := g3d.Mesh{
+mesh := rdr.Mesh{
   vertices:list[vec[f32,3]]{
     {-1.,-1.,-1.}, { 1.,-1.,-1.},
     { 1., 1.,-1.}, {-1., 1.,-1.},
@@ -26,24 +26,24 @@ for (i := 0; i < 8; i++){
   mesh.colors.push({i&1, (i>>1)&1, (i>>2)&1, 1.0});
 }
 
-cam := g3d.Camera{}
-cam.look_at({0,0,4},{0,0,0},g3d.AXIS_Y);
+cam := rdr.Camera{}
+cam.look_at({0,0,4},{0,0,0},rdr.AXIS_Y);
 cam.perspective(60,W/(H as f32),0.1,100.0);
 
 frame := 0;
 while (1){
   time.fps(120);
 
-  g3d.background(0.5);
+  rdr.background(0.5);
 
   cam.begin();
   mesh.draw(
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1) @*
-    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) 
+    rdr.mat.rotate_deg(rdr.AXIS_X,frame*1) @*
+    rdr.mat.rotate_deg(rdr.AXIS_Y,frame*2) 
   );
   cam.end();
 
-  g3d.flush();
+  rdr.flush();
   win.poll();
   frame++;
 }

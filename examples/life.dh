@@ -1,6 +1,6 @@
 include "std/arr"
 include "std/math"
-include "std/gx"
+include "std/drw"
 include "std/win"
 include "std/time"
 
@@ -47,27 +47,27 @@ func step(){
   }
 }
 
-gx.size(W*scl,H*scl);
-gx.stroke_weight(scl);
-gx.stroke(0.9,0.8,0.7);
+drw.size(W*scl,H*scl);
+drw.stroke_weight(scl);
+drw.stroke(0.9,0.8,0.7);
 
 md := 0
 
 while (1){
   time.fps(120)
   
-  gx.background(0.1,0.2,0.3);
+  drw.background(0.1,0.2,0.3);
   for (i := 0; i < H; i++){
     for (j := 0; j < W; j++){
       if (brd[i,j] & msk){
-        gx.point(j*scl,i*scl);
+        drw.point(j*scl,i*scl);
       }
     }
   }
   step();
   msk = 3-msk;
 
-  e := gx.poll();
+  e := drw.poll();
   if (e.type==win.MOUSE_PRESSED || (e.type==win.MOUSE_MOVED && md)){
     md = 1;
     j : i32 = e.x / scl;

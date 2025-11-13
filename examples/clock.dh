@@ -1,6 +1,6 @@
 include "std/time"
 include "std/math"
-include "std/gx"
+include "std/drw"
 include "std/str"
 
 W := 256
@@ -15,19 +15,19 @@ month_names := list[str]{
   "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"
 };
 
-gx.size(W,W);
+drw.size(W,W);
 
 while (1){
-  gx.background(0.5);
-  gx.fill(1.0);
+  drw.background(0.5);
+  drw.fill(1.0);
 
   [year,month,day,hour,min,sec] := time.local();
 
-  gx.push_matrix();
-  gx.translate(W*0.5,W*0.5);
+  drw.push_matrix();
+  drw.translate(W*0.5,W*0.5);
 
-  gx.stroke_weight(2);
-  gx.ellipse(0,0,r_face*2,r_face*2);
+  drw.stroke_weight(2);
+  drw.ellipse(0,0,r_face*2,r_face*2);
 
   s := (sec          )/60.0*math.PI*2-math.PI/2;
   m := (min +sec/60.0)/60.0*math.PI*2-math.PI/2;
@@ -37,31 +37,31 @@ while (1){
     
     ang := i/60.0 * math.PI*2;
     if (!(i%5)){
-      gx.stroke_weight(1);
-      gx.line(
+      drw.stroke_weight(1);
+      drw.line(
         r_tick*math.cos(ang),r_tick*math.sin(ang),
         r_sec *math.cos(ang),r_sec *math.sin(ang)
       );
     }else{
-      gx.stroke_weight(2);
-      gx.point(r_tick*math.cos(ang),r_tick*math.sin(ang));
+      drw.stroke_weight(2);
+      drw.point(r_tick*math.cos(ang),r_tick*math.sin(ang));
     }
   }
 
-  gx.stroke_weight(1);
-  gx.line(0,0,r_sec *math.cos(s),r_sec *math.sin(s));
+  drw.stroke_weight(1);
+  drw.line(0,0,r_sec *math.cos(s),r_sec *math.sin(s));
 
-  gx.stroke_weight(2);
-  gx.line(0,0,r_min *math.cos(m),r_min *math.sin(m));
+  drw.stroke_weight(2);
+  drw.line(0,0,r_min *math.cos(m),r_min *math.sin(m));
 
-  gx.stroke_weight(4);
-  gx.line(0,0,r_hour*math.cos(h),r_hour*math.sin(h));
+  drw.stroke_weight(4);
+  drw.line(0,0,r_hour*math.cos(h),r_hour*math.sin(h));
 
-  gx.fill(0.0);
+  drw.fill(0.0);
   calen := "%{month_names[month-1]} %{day}, %{year}";
 
-  gx.text(calen,-calen.length()*4.0,W*0.25);
+  drw.text(calen,-calen.length()*4.0,W*0.25);
 
-  gx.pop_matrix();
-  gx.poll();
+  drw.pop_matrix();
+  drw.poll();
 }

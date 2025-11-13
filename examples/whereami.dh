@@ -3,7 +3,7 @@ include "std/io"
 include "std/str"
 include "std/exch"
 include "std/img"
-include "std/gx"
+include "std/drw"
 include "std/arr"
 include "std/dict"
 
@@ -21,6 +21,7 @@ lon := ((iploc.data as dict[str,exch.JSON])["longitude"].data as f32);
 imres := str.decode(req.http(req.Request{
   url:"https://commons.wikimedia.org/w/api.php?action=query"+
       "&generator=geosearch&ggscoord=%{lat}%7C%{lon}"+
+      "&ggsradius=10000"+
       "&ggslimit=1&ggsnamespace=6&iilimit=1&iiprop=url"+
       "&iiurlwidth=300&prop=imageinfo&format=json&origin=*"
 }).body,"utf-8");
@@ -39,14 +40,14 @@ pixels := img.decode(req.http(req.Request{url:imurl}).body);
 
 ({H,W,_}) := pixels.shape();
 
-gx.size(W,H+32);
-pg := gx.create_graphics(W,H);
+drw.size(W,H+32);
+pg := drw.create_graphics(W,H);
 pg.write_pixels(pixels);
 
 while (1){
-  gx.background(0.);
+  drw.background(0.);
   pg.draw(0,32);
-  gx.text("%{cit}, %{cou}",0,16);
-  gx.text("lat: %{lat}, lon: %{lon}",0,32);
-  gx.poll();
+  drw.text("%{cit}, %{cou}",0,16);
+  drw.text("lat: %{lat}, lon: %{lon}",0,32);
+  drw.poll();
 }

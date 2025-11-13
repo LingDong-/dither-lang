@@ -1,4 +1,4 @@
-include "std/g3d"
+include "std/rdr"
 include "std/frag"
 include "std/win"
 include "std/list"
@@ -13,7 +13,7 @@ W := 512;
 H := 512;
 
 context := win.init(W,H,win.CONTEXT_3D);
-g3d.init(context);
+rdr.init(context);
 frag.init(context);
 
 func normal_material(@varying normal:vec[f32,3]):vec[f32,4]{
@@ -52,8 +52,8 @@ cube_vertices:=list[vec[f32,3]]{
   {-1.,-1.,-1.}, {-1., 1.,-1.}, { 1., 1.,-1.}, { 1.,-1.,-1.}
 };
 
-mesh := g3d.Mesh{
-  mode:g3d.MODE_TRIG_LIST,
+mesh := rdr.Mesh{
+  mode:rdr.MODE_TRIG_LIST,
   vertices:cube_vertices,
   indices:list[i32]{
      0,  1,  2,  0,  2,  3,
@@ -79,8 +79,8 @@ mesh := g3d.Mesh{
   }
 }
 
-wire := g3d.Mesh{
-  mode:g3d.MODE_LINE_LIST,
+wire := rdr.Mesh{
+  mode:rdr.MODE_LINE_LIST,
   vertices:cube_vertices,
   indices:list[i32]{
     0, 1, 1, 2, 2, 3, 3, 0,
@@ -89,7 +89,7 @@ wire := g3d.Mesh{
   },
 };
 
-cam := g3d.Camera{}
+cam := rdr.Camera{}
 
 pixels := img.decode(io.read_file("examples/assets/pepper.png"));
 image := frag.texture(...pixels.shape().yx);
@@ -101,17 +101,17 @@ lookx : f32 = 0;
 while (1){
   time.fps(120);
 
-  g3d.background(0.1);
+  rdr.background(0.1);
 
-  cam.look_at({0,0,8},{lookx,0,0},g3d.AXIS_Y);
+  cam.look_at({0,0,8},{lookx,0,0},rdr.AXIS_Y);
   cam.perspective(60,W/(H as f32),0.1,100.0);
 
   frag.begin(shader0);
   cam.begin();
   mesh.draw(
-    g3d.mat.translate(-2,-2,0) @*
-    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*1)
+    rdr.mat.translate(-2,-2,0) @*
+    rdr.mat.rotate_deg(rdr.AXIS_Y,frame*2) @* 
+    rdr.mat.rotate_deg(rdr.AXIS_X,frame*1)
   );
   cam.end();
   frag.end();
@@ -120,9 +120,9 @@ while (1){
   frag.uniform("light",{0.1,0.2,0.3});
   cam.begin();
   mesh.draw(
-    g3d.mat.translate(2,-2,0) @*
-    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*1) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*2)
+    rdr.mat.translate(2,-2,0) @*
+    rdr.mat.rotate_deg(rdr.AXIS_Y,frame*1) @* 
+    rdr.mat.rotate_deg(rdr.AXIS_X,frame*2)
   );
   cam.end();
   frag.end();
@@ -131,22 +131,22 @@ while (1){
   frag.uniform("image",image);
   cam.begin();
   mesh.draw(
-    g3d.mat.translate(2,2,0) @*
-    g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_Z,frame*1)
+    rdr.mat.translate(2,2,0) @*
+    rdr.mat.rotate_deg(rdr.AXIS_Y,frame*2) @* 
+    rdr.mat.rotate_deg(rdr.AXIS_Z,frame*1)
   );
   cam.end();
   frag.end();
 
   cam.begin();
   wire.draw(
-    g3d.mat.translate(-2,2,0) @*
-    g3d.mat.rotate_deg(g3d.AXIS_X,frame*2) @* 
-    g3d.mat.rotate_deg(g3d.AXIS_Z,frame*1)
+    rdr.mat.translate(-2,2,0) @*
+    rdr.mat.rotate_deg(rdr.AXIS_X,frame*2) @* 
+    rdr.mat.rotate_deg(rdr.AXIS_Z,frame*1)
   );
   cam.end();
 
-  g3d.flush();
+  rdr.flush();
 
   e := win.poll();
   if (e.type == win.MOUSE_MOVED){

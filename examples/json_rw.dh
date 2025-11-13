@@ -1,5 +1,5 @@
 include "std/exch"
-include "std/gx"
+include "std/drw"
 include "std/io"
 include "std/str"
 include "std/win"
@@ -17,7 +17,7 @@ circ := exch.JSON{data:dict[str,exch.JSON]{
   "label" :exch.JSON{data:"circle"}
 }}
 
-gx.size(450,250);
+drw.size(450,250);
 
 shapes := exch.JSON{data:dict[str,exch.JSON]{
   "circ": circ,
@@ -41,19 +41,19 @@ while (1){
     (circ.data as dict[str,exch.JSON])["label"].data as str,
   ]
 
-  gx.background(0.5);
-  gx.fill(1.0);
-  gx.rect(x,y,w,h);
-  gx.ellipse(cx,cy,r*2,r*2);
+  drw.background(0.5);
+  drw.fill(1.0);
+  drw.rect(x,y,w,h);
+  drw.ellipse(cx,cy,r*2,r*2);
 
-  gx.fill(0.0)
-  gx.text(lbl0,x+w/2-lbl0.length()*4,y+h/2+8);
-  gx.text(lbl1,cx-lbl1.length()*4,cy+8);
+  drw.fill(0.0)
+  drw.text(lbl0,x+w/2-lbl0.length()*4,y+h/2+8);
+  drw.text(lbl1,cx-lbl1.length()*4,cy+8);
 
-  gx.text(exch.encode(rect),0,16);
-  gx.text(exch.encode(circ),0,32);
+  drw.text(exch.encode(rect),0,16);
+  drw.text(exch.encode(circ),0,32);
 
-  e := gx.poll();
+  e := drw.poll();
   if (e.type == win.MOUSE_PRESSED){
     (rect.data as dict[str,exch.JSON])["x"].data = e.x as f32
   }

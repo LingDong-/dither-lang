@@ -116,7 +116,7 @@ for (let i = 0; i < std.length; i++){
   let scopes = parser.infertypes(ast);
 
   let nmsp = ast.val.filter(x=>x.key == "nmsp").at(-1);
-  // if (std[i]=='gx') console.log(nmsp)
+  // if (std[i]=='dr') console.log(nmsp)
   let name = nmsp.nom.val;
   let cont = nmsp.val;
   let o = {

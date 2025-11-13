@@ -1,4 +1,4 @@
-globalThis.$g3d = new function(){
+globalThis.$rdr = new function(){
   const DIRTY_VERTICES = 1 ;
   const DIRTY_INDICES  = 2 ;
   const DIRTY_COLORS   = 4 ;

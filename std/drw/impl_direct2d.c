@@ -109,7 +109,7 @@ ID2D1GeometrySink* sink = NULL;
 
 ID2D1RenderTarget* ctx;
 
-void gx_impl__size(int w, int h, uint64_t _hwnd){
+void drw_impl__size(int w, int h, uint64_t _hwnd){
   hwnd = (HWND)(void*)(uintptr_t)_hwnd;
   width = w;
   height = h;
@@ -183,7 +183,7 @@ void gx_impl__size(int w, int h, uint64_t _hwnd){
   ctx->lpVtbl->BeginDraw(ctx);
 }
 
-void gx_impl__flush(){
+void drw_impl__flush(){
   ctx->lpVtbl->EndDraw(ctx,NULL,NULL);
   swapChain->lpVtbl->Present(swapChain, 0, 0); 
   ctx->lpVtbl->BeginDraw(ctx); 
@@ -240,7 +240,7 @@ fbo_t createBuffer(
   return outBuffer;
 }
 
-void gx_impl__init_graphics(void* data, int w, int h){
+void drw_impl__init_graphics(void* data, int w, int h){
   fbo_t offscreen = createBuffer(d3dDevice,d2dContext,w,h);
   ARR_PUSH(fbo_t,fbos,offscreen);
   ((int32_t*)(data))[2] = fbos.len-1;
@@ -249,7 +249,7 @@ void gx_impl__init_graphics(void* data, int w, int h){
 }
 
 int cur_fbo = -1;
-void gx_impl__begin_fbo(int fbo){
+void drw_impl__begin_fbo(int fbo){
   cur_fbo = fbo;
   fbo_t offscreen = fbos.data[fbo];
   ctx->lpVtbl->EndDraw(ctx,NULL,NULL);
@@ -257,7 +257,7 @@ void gx_impl__begin_fbo(int fbo){
   ctx->lpVtbl->BeginDraw(ctx);
 }
 
-void gx_impl__end_fbo(){
+void drw_impl__end_fbo(){
   ctx->lpVtbl->EndDraw(ctx,NULL,NULL);
   d2dContext->lpVtbl->SetTarget(d2dContext, (ID2D1Image*)d2dTargetBitmap);
   ctx->lpVtbl->BeginDraw(ctx);
@@ -383,7 +383,7 @@ void writePixels(ID3D11DeviceContext* context, fbo_t* buffer, const uint8_t* pix
 
 
 
-void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+void* drw_impl__read_pixels(int fbo, int* _w, int* _h){
   uint8_t* pixels = readPixels(d3dContext, &(fbos.data[fbo]));
   int w = fbos.data[fbo].w;
   int h = fbos.data[fbo].h;
@@ -393,11 +393,11 @@ void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
 }
 
 
-void gx_impl__write_pixels(int fbo, void* pixels){
+void drw_impl__write_pixels(int fbo, void* pixels){
   writePixels(d3dContext,&(fbos.data[fbo]),pixels);
 }
 
-void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
+void drw_impl__draw_texture(int fbo, float x, float y, float w, float h){
   D2D1_RECT_F rect = {x,y,x+w,y+h};
   ctx->lpVtbl->DrawBitmap(
     ctx,
@@ -410,12 +410,12 @@ void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
 }
 
 
-void gx_impl_push_matrix(){
+void drw_impl_push_matrix(){
   D2D1_MATRIX_3X2_F m;
   ctx->lpVtbl->GetTransform(ctx,&m);
   ARR_PUSH(D2D1_MATRIX_3X2_F,matrices,m);
 }
-void gx_impl_pop_matrix(){
+void drw_impl_pop_matrix(){
   D2D1_MATRIX_3X2_F m = ARR_POP(D2D1_MATRIX_3X2_F,matrices);
   ctx->lpVtbl->SetTransform(ctx,&m);
 }
@@ -433,7 +433,7 @@ void matrixMultiply(
     out->dy  = a->dx  * b->m12 + a->dy  * b->m22 + b->dy;
 }
 
-void gx_impl_rotate_deg(float ang){
+void drw_impl_rotate_deg(float ang){
   D2D1_MATRIX_3X2_F m0,m1;
   ctx->lpVtbl->GetTransform(ctx,&m0);
   D2D1_POINT_2F center = {0,0};
@@ -442,7 +442,7 @@ void gx_impl_rotate_deg(float ang){
   matrixMultiply(&m,&m1,&m0);
   ctx->lpVtbl->SetTransform(ctx,&m);
 }
-void gx_impl_translate(float x, float y){
+void drw_impl_translate(float x, float y){
   D2D1_MATRIX_3X2_F m0;
   ctx->lpVtbl->GetTransform(ctx,&m0);
   D2D1_MATRIX_3X2_F m1 = {1,0,0,1,x,y};
@@ -450,7 +450,7 @@ void gx_impl_translate(float x, float y){
   matrixMultiply(&m,&m1,&m0);
   ctx->lpVtbl->SetTransform(ctx,&m);
 }
-void gx_impl_scale(float x, float y){
+void drw_impl_scale(float x, float y){
   D2D1_MATRIX_3X2_F m0;
   ctx->lpVtbl->GetTransform(ctx,&m0);
   D2D1_MATRIX_3X2_F m1 = {x,0,0,y,0,0};
@@ -458,7 +458,7 @@ void gx_impl_scale(float x, float y){
   matrixMultiply(&m,&m1,&m0);
   ctx->lpVtbl->SetTransform(ctx,&m);
 }
-void gx_impl_apply_matrix(float* data){
+void drw_impl_apply_matrix(float* data){
   D2D1_MATRIX_3X2_F m0;
   ctx->lpVtbl->GetTransform(ctx,&m0);
   D2D1_MATRIX_3X2_F m1 = {
@@ -468,13 +468,13 @@ void gx_impl_apply_matrix(float* data){
   matrixMultiply(&m,&m1,&m0);
   ctx->lpVtbl->SetTransform(ctx,&m);
 }
-void gx_impl_reset_matrix(){
+void drw_impl_reset_matrix(){
   D2D1_MATRIX_3X2_F m = {1,0,0,1,0,0};
   ctx->lpVtbl->SetTransform(ctx,&m);
 }
 
 
-void gx_impl_background(float r, float g, float b, float a){
+void drw_impl_background(float r, float g, float b, float a){
   D2D1_COLOR_F c = {r,g,b,a};
   ID2D1SolidColorBrush_SetColor(brush,&c);
   D2D1_RECT_F rect = {0,0,width,height};
@@ -482,7 +482,7 @@ void gx_impl_background(float r, float g, float b, float a){
 }
 
 
-void gx_impl_fill(float r, float g, float b, float a){
+void drw_impl_fill(float r, float g, float b, float a){
   color_fill.r = r;
   color_fill.g = g;
   color_fill.b = b;
@@ -490,7 +490,7 @@ void gx_impl_fill(float r, float g, float b, float a){
   is_fill = 1;
 }
 
-void gx_impl_stroke(float r, float g, float b, float a){
+void drw_impl_stroke(float r, float g, float b, float a){
   color_stroke.r = r;
   color_stroke.g = g;
   color_stroke.b = b;
@@ -498,27 +498,27 @@ void gx_impl_stroke(float r, float g, float b, float a){
   is_stroke = 1;
 }
 
-void gx_impl_no_fill(){
+void drw_impl_no_fill(){
   is_fill = 0;
 }
-void gx_impl_no_stroke(){
+void drw_impl_no_stroke(){
   is_stroke = 0;
 }
-void gx_impl_stroke_weight(float x){
+void drw_impl_stroke_weight(float x){
   line_width = x;
 }
 
 int is_first = 0;
 int did_first = 0;
 
-void gx_impl_begin_shape(){
+void drw_impl_begin_shape(){
   ID2D1Factory_CreatePathGeometry(d2dFactory, &geometry);
   ID2D1PathGeometry_Open(geometry, &sink);
   is_first = 1;
   did_first = 0;
 }
 
-void gx_impl_vertex(float x, float y){
+void drw_impl_vertex(float x, float y){
   D2D1_POINT_2F p = {x,y};
   if (is_first){
     ID2D1GeometrySink_BeginFigure(sink,p,D2D1_FIGURE_BEGIN_FILLED);
@@ -529,7 +529,7 @@ void gx_impl_vertex(float x, float y){
   did_first = 1;
 }
 
-void gx_impl_next_contour(int bclose){
+void drw_impl_next_contour(int bclose){
   if (bclose){
     ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_CLOSED);
   }else{
@@ -539,7 +539,7 @@ void gx_impl_next_contour(int bclose){
   did_first = 0;
 }
 
-void gx_impl_end_shape(int bclose){
+void drw_impl_end_shape(int bclose){
   if (did_first){
     if (bclose){
       ID2D1GeometrySink_EndFigure(sink, D2D1_FIGURE_END_CLOSED);
@@ -561,7 +561,7 @@ void gx_impl_end_shape(int bclose){
   ID2D1PathGeometry_Release(geometry);
 }
 
-void gx_impl_line(float x0, float y0, float x1, float y1){
+void drw_impl_line(float x0, float y0, float x1, float y1){
   if (is_stroke){
     ID2D1SolidColorBrush_SetColor(brush,&color_stroke);
     D2D1_POINT_2F start = {x0,y0};
@@ -572,7 +572,7 @@ void gx_impl_line(float x0, float y0, float x1, float y1){
 
 
 
-void gx_impl_ellipse(float x, float y, float w, float h){
+void drw_impl_ellipse(float x, float y, float w, float h){
   D2D1_ELLIPSE ellipse = {{x,y},w*0.5,h*0.5};
   if (is_fill){
     ID2D1SolidColorBrush_SetColor(brush,&color_fill);
@@ -584,7 +584,7 @@ void gx_impl_ellipse(float x, float y, float w, float h){
   }
 }
 
-void gx_impl_rect(float x, float y, float w, float h){
+void drw_impl_rect(float x, float y, float w, float h){
   D2D1_RECT_F rect = {x,y,x+w,y+h};
   if (is_fill){
     ID2D1SolidColorBrush_SetColor(brush,&color_fill);
@@ -596,7 +596,7 @@ void gx_impl_rect(float x, float y, float w, float h){
   }
 }
 
-void gx_impl_point(float x, float y){
+void drw_impl_point(float x, float y){
   if (is_stroke){
     ID2D1SolidColorBrush_SetColor(brush,&color_stroke);
     D2D1_POINT_2F start = {x-line_width/2,y};
@@ -605,7 +605,7 @@ void gx_impl_point(float x, float y){
   }
 }
 
-void gx_impl_text(char* str, float x, float y){
+void drw_impl_text(char* str, float x, float y){
   int n = strlen(str);
   ID2D1SolidColorBrush_SetColor(brush,&color_fill);
   for (int i = 0; i < n; i++){

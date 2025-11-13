@@ -57,7 +57,7 @@ ARR_DEF(CGContextRef)
 
 CGContextRef_arr_t fbos;
 
-void gx_impl__size(int w, int h, uint64_t _ctx){
+void drw_impl__size(int w, int h, uint64_t _ctx){
 
   ctx0 = (void**)(uintptr_t)_ctx;
   ctx = ctx0;
@@ -72,11 +72,11 @@ void gx_impl__size(int w, int h, uint64_t _ctx){
   
 }
 
-void gx_impl__flush(){
+void drw_impl__flush(){
   
 }
 
-void gx_impl__init_graphics(void* data, int w, int h){
+void drw_impl__init_graphics(void* data, int w, int h){
   size_t bytesPerRow = w * 4;
   CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
   CGContextRef fbo = CGBitmapContextCreate(NULL, w, h, 8, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
@@ -89,17 +89,17 @@ void gx_impl__init_graphics(void* data, int w, int h){
   ((int32_t*)(data))[4] = h;
 }
 
-void gx_impl__begin_fbo(int fbo){
+void drw_impl__begin_fbo(int fbo){
   ctx = (void**)(&(fbos.data[fbo]));
 
 }
 
-void gx_impl__end_fbo(){
+void drw_impl__end_fbo(){
   ctx = ctx0;
   
 }
 
-void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+void* drw_impl__read_pixels(int fbo, int* _w, int* _h){
   CGContextRef c = fbos.data[fbo];
   void *data = CGBitmapContextGetData(c);
   int w = CGBitmapContextGetWidth(c);
@@ -116,7 +116,7 @@ void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
 }
 
 
-void gx_impl__write_pixels(int fbo, void* pixels){
+void drw_impl__write_pixels(int fbo, void* pixels){
   CGContextRef c = fbos.data[fbo];
   void *data = CGBitmapContextGetData(c);
   int w = CGBitmapContextGetWidth(c);
@@ -128,29 +128,29 @@ void gx_impl__write_pixels(int fbo, void* pixels){
   }
 }
 
-void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
+void drw_impl__draw_texture(int fbo, float x, float y, float w, float h){
   CGImageRef img = CGBitmapContextCreateImage(fbos.data[fbo]);
   CGContextDrawImage(*ctx, CGRectMake(x, y, w, h), img);
   CGImageRelease(img);
 }
 
 
-void gx_impl_push_matrix(){
+void drw_impl_push_matrix(){
   CGContextSaveGState(*ctx);
 }
-void gx_impl_pop_matrix(){
+void drw_impl_pop_matrix(){
   CGContextRestoreGState(*ctx);
 }
-void gx_impl_rotate_deg(float ang){
+void drw_impl_rotate_deg(float ang){
   CGContextRotateCTM(*ctx,ang*M_PI/180.0);
 }
-void gx_impl_translate(float x, float y){
+void drw_impl_translate(float x, float y){
   CGContextTranslateCTM(*ctx,x,y);
 }
-void gx_impl_scale(float x, float y){
+void drw_impl_scale(float x, float y){
   CGContextScaleCTM(*ctx,x,y);
 }
-void gx_impl_apply_matrix(float* data){
+void drw_impl_apply_matrix(float* data){
   CGAffineTransform transform = CGAffineTransformMake(
     ((float*)data)[0],
     ((float*)data)[3],
@@ -161,13 +161,13 @@ void gx_impl_apply_matrix(float* data){
   );
   CGContextConcatCTM(*ctx, transform);
 }
-void gx_impl_reset_matrix(){
+void drw_impl_reset_matrix(){
   CGContextConcatCTM(*ctx, CGAffineTransformInvert(CGContextGetCTM(*ctx)));
 
 }
 
 
-void gx_impl_background(float r, float g, float b, float a){
+void drw_impl_background(float r, float g, float b, float a){
   CGContextSaveGState(*ctx);
   CGContextSetRGBFillColor(*ctx, r, g, b, a);
   CGContextFillRect(*ctx, CGRectMake(0, 0, width, height));
@@ -175,34 +175,34 @@ void gx_impl_background(float r, float g, float b, float a){
 }
 
 
-void gx_impl_fill(float r, float g, float b, float a){
+void drw_impl_fill(float r, float g, float b, float a){
   CGContextSetRGBFillColor(*ctx, r,g,b,a);
   is_fill = 1;
 }
 
-void gx_impl_stroke(float r, float g, float b, float a){
+void drw_impl_stroke(float r, float g, float b, float a){
   CGContextSetRGBStrokeColor(*ctx, r,g,b,a);
   is_stroke = 1;
 }
 
-void gx_impl_no_fill(){
+void drw_impl_no_fill(){
   is_fill = 0;
 }
-void gx_impl_no_stroke(){
+void drw_impl_no_stroke(){
   is_stroke = 0;
 }
-void gx_impl_stroke_weight(float x){
+void drw_impl_stroke_weight(float x){
   line_width = x;
   CGContextSetLineWidth(*ctx,x);
 }
 int is_first;
 
-void gx_impl_begin_shape(){
+void drw_impl_begin_shape(){
   CGContextBeginPath(*ctx);
   is_first = 1;
 }
 
-void gx_impl_vertex(float x, float y){
+void drw_impl_vertex(float x, float y){
   if (is_first){
     CGContextMoveToPoint(*ctx, x, y);
   }else{
@@ -211,14 +211,14 @@ void gx_impl_vertex(float x, float y){
   is_first = 0;
 }
 
-void gx_impl_next_contour(int bclose){
+void drw_impl_next_contour(int bclose){
   if (bclose){
     CGContextClosePath(*ctx);
   }
   is_first = 1;
 }
 
-void gx_impl_end_shape(int bclose){
+void drw_impl_end_shape(int bclose){
 
   if (bclose){
     CGContextClosePath(*ctx);
@@ -232,7 +232,7 @@ void gx_impl_end_shape(int bclose){
   }
 }
 
-void gx_impl_line(float x0, float y0, float x1, float y1){
+void drw_impl_line(float x0, float y0, float x1, float y1){
 
   if (is_stroke){
     CGContextBeginPath(*ctx);
@@ -243,7 +243,7 @@ void gx_impl_line(float x0, float y0, float x1, float y1){
 }
 
 
-void gx_impl_ellipse(float x, float y, float w, float h){
+void drw_impl_ellipse(float x, float y, float w, float h){
   CGRect r = CGRectMake(x-w/2, y-h/2, w, h);
   if (is_fill){
     CGContextFillEllipseInRect(*ctx, r);
@@ -253,7 +253,7 @@ void gx_impl_ellipse(float x, float y, float w, float h){
   }
 }
 
-void gx_impl_rect(float x, float y, float w, float h){
+void drw_impl_rect(float x, float y, float w, float h){
   CGRect r = CGRectMake(x, y, w, h);
   if (is_fill){
     CGContextFillRect(*ctx, r);
@@ -263,7 +263,7 @@ void gx_impl_rect(float x, float y, float w, float h){
   }
 }
 
-void gx_impl_point(float x, float y){
+void drw_impl_point(float x, float y){
   if (is_stroke){
     CGContextBeginPath(*ctx);
     CGContextMoveToPoint(*ctx,x-line_width/2,y);
@@ -272,7 +272,7 @@ void gx_impl_point(float x, float y){
   }
 }
 
-void gx_impl_text(char* str, float x, float y){
+void drw_impl_text(char* str, float x, float y){
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
   CGContextSaveGState(*ctx);

@@ -1,6 +1,6 @@
 include "std/font"
 include "std/io"
-include "std/gx"
+include "std/drw"
 include "std/list"
 include "std/str"
 
@@ -27,44 +27,44 @@ fsz := 50
 
 func draw_polys(polys:list[list[vec[f32,2]]],n:i32){
   k := 0;
-  gx.begin_shape();
+  drw.begin_shape();
   for (i:=0; i < polys.length(); i++){
     for (j:=0; j < polys[i].length(); j++){
-      gx.vertex(polys[i][j].x*fsz, polys[i][j].y*fsz+fsz);
+      drw.vertex(polys[i][j].x*fsz, polys[i][j].y*fsz+fsz);
       k++;
       if (k > n){
-        gx.end_shape(0);
+        drw.end_shape(0);
         return;
       }
     }
-    gx.next_contour(0);
+    drw.next_contour(0);
   }
-  gx.end_shape(0);
+  drw.end_shape(0);
 }
 
-gx.size(700,700);
+drw.size(700,700);
 
 frame := 0;
 
 while (1){
-  gx.background(1.0,0.95,0.9);
-  gx.no_fill();
+  drw.background(1.0,0.95,0.9);
+  drw.no_fill();
   for (i:=0; i<tfs.length(); i++){
-    gx.push_matrix();
-    gx.translate(0,i*fsz);
+    drw.push_matrix();
+    drw.translate(0,i*fsz);
     a := 0;
     b := 0;
     for (j:=0; j<text.length(); j++){
       if (j){
-        gx.translate(tfs[i].advance(a,b)*fsz,0);
+        drw.translate(tfs[i].advance(a,b)*fsz,0);
       }
       b = tfs[i].lookup(text[j],font.FEAT_NONE);
       draw_polys(tfs[i].glyph(b), frame);
       a = b;
     }
-    gx.pop_matrix();
+    drw.pop_matrix();
   }
   
   frame++;
-  gx.poll();
+  drw.poll();
 }

@@ -1,4 +1,4 @@
-include "std/g3d"
+include "std/rdr"
 include "std/win"
 include "std/list"
 include "std/vec"
@@ -12,8 +12,8 @@ namespace prim{
     vertices := list[vec[f32,3]]{};
     faces := list[list[i32]]{};
     normals := list[vec[f32,3]]{};
-    func smooth():g3d.Mesh{
-      mesh := g3d.Mesh{};
+    func smooth():rdr.Mesh{
+      mesh := rdr.Mesh{};
       for (i := 0; i < .vertices.length(); i++){
         mesh.vertices.push(.vertices[i]);
         mesh.normals.push(.normals[i]);
@@ -28,8 +28,8 @@ namespace prim{
       }
       return mesh;
     }
-    func faceted():g3d.Mesh{
-      mesh := g3d.Mesh{};
+    func faceted():rdr.Mesh{
+      mesh := rdr.Mesh{};
       for (i := 0; i < .faces.length(); i++) {
         n := .faces[i].length();
         m := mesh.vertices.length();
@@ -49,8 +49,8 @@ namespace prim{
       }
       return mesh;
     }
-    func wireframe(offset:f32):g3d.Mesh{
-      mesh := g3d.Mesh{mode:g3d.MODE_LINE_LIST};
+    func wireframe(offset:f32):rdr.Mesh{
+      mesh := rdr.Mesh{mode:rdr.MODE_LINE_LIST};
       edges := dict[vec[i32,2],i32]{}
       for (i := 0; i < .faces.length(); i++) {
         n := .faces[i].length();
@@ -70,7 +70,7 @@ namespace prim{
       }
       return mesh;
     }
-    func wireframe():g3d.Mesh{return .wireframe(0);};
+    func wireframe():rdr.Mesh{return .wireframe(0);};
   }
 
   func icosphere(order:i32):AbstractMesh{
@@ -267,7 +267,7 @@ namespace prim{
 W := 720
 H := 720
 context := win.init(W,H,win.CONTEXT_3D);
-g3d.init(context);
+rdr.init(context);
 frag.init(context);
 
 shader0 := frag.program(embed(func(@varying normal:vec[f32,3]):vec[f32,4]{
@@ -275,7 +275,7 @@ shader0 := frag.program(embed(func(@varying normal:vec[f32,3]):vec[f32,4]{
   return {c.x,c.y,c.z,1.0};
 }) as "fragment");
 
-meshes := list[g3d.Mesh]{
+meshes := list[rdr.Mesh]{
   prim.cube().faceted(),
   prim.cube().wireframe(),
   prim.uvsphere(5,10).faceted(),
@@ -303,27 +303,27 @@ meshes := list[g3d.Mesh]{
   prim.plane().wireframe()
 };
 
-cam := g3d.Camera{}
+cam := rdr.Camera{}
 cam.perspective(45,W/(H as f32),0.1,100.0);
-cam.look_at({0,0,16},{0,0,0},g3d.AXIS_Y);
+cam.look_at({0,0,16},{0,0,0},rdr.AXIS_Y);
 
 frame := 0;
 while (1){
   time.fps(60);
-  g3d.background(0.1)
+  rdr.background(0.1)
 
   frag.begin(shader0);
   cam.begin();
   for (i := 0; i < meshes.length(); i++){
-    model :=g3d.mat.translate((i%5)*2.4-4.8,4.8-(i/5)*2.4,0)@*
-            g3d.mat.rotate_deg(g3d.AXIS_Y,frame*2)@*
-            g3d.mat.rotate_deg(g3d.AXIS_X,frame*1);
+    model :=rdr.mat.translate((i%5)*2.4-4.8,4.8-(i/5)*2.4,0)@*
+            rdr.mat.rotate_deg(rdr.AXIS_Y,frame*2)@*
+            rdr.mat.rotate_deg(rdr.AXIS_X,frame*1);
     meshes[i].draw(model)
   }
   cam.end();
   frag.end();
 
-  g3d.flush();
+  rdr.flush();
   win.poll();
   frame++;
 }

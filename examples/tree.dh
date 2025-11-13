@@ -1,7 +1,7 @@
 include "std/math"
-include "std/gx"
+include "std/drw"
 
-gx.size(320,240);
+drw.size(320,240);
 
 spr := 0.5;
 frame := 0;
@@ -12,20 +12,20 @@ func tree(x:f32,y:f32,a:f32,l:f32){
   x1 := x + math.cos(a) * l;
   y1 := y + math.sin(a) * l;
   
-  gx.line(x,y,x1,y1);
+  drw.line(x,y,x1,y1);
 
   tree(x1,y1,a-spr,l*0.8);
   tree(x1,y1,a+spr,l*0.8);
 }
 
 while (1){
-  gx.background(1,0.9,0.8);
-  gx.stroke(0.1,0.2,0.3);
+  drw.background(1,0.9,0.8);
+  drw.stroke(0.1,0.2,0.3);
   
   spr = math.sin(frame*0.01);
   
   tree(160,240,-math.PI/2,50);
-  gx.poll();
+  drw.poll();
   
   frame++;
 }

@@ -1,4 +1,4 @@
-include "std/g3d"
+include "std/rdr"
 include "std/win"
 include "std/frag"
 include "std/list"
@@ -13,7 +13,7 @@ H := 256
 PHI := 1.618034 
 
 context := win.init(W,H,win.CONTEXT_3D)
-g3d.init(context);
+rdr.init(context);
 frag.init(context);
 
 vertices := list[vec[f32,3]]{
@@ -22,7 +22,7 @@ vertices := list[vec[f32,3]]{
   {PHI,0,-1},{PHI,0,1},{-PHI,0,-1},{-PHI,0,1}
 };
 
-func generate_icosahedron():g3d.Mesh{
+func generate_icosahedron():rdr.Mesh{
   
   faces := list[i32]{
     11, 10, 2, 1, 5, 9, 7, 1, 8, 0, 5, 1, 0, 1, 7,
@@ -30,7 +30,7 @@ func generate_icosahedron():g3d.Mesh{
     4, 9, 5, 8, 6, 7, 3, 8, 9, 3, 9, 4, 3, 6, 8,
     3, 4, 2, 3, 2, 6, 2, 4, 11, 6, 2, 10, 9, 8, 1
   }
-  mesh := g3d.Mesh{};
+  mesh := rdr.Mesh{};
   for (i := 0; i < faces.length(); i+=3){
     a := vertices[faces[i]];
     b := vertices[faces[i+1]];
@@ -53,7 +53,7 @@ func generate_icosahedron():g3d.Mesh{
 
 mesh := generate_icosahedron();
 
-plane := g3d.Mesh{
+plane := rdr.Mesh{
   vertices:list[vec[f32,3]]{
     {-4.,-4,0},{4.,-4,0},{4.,4,0},{-4.,4,0}
   },
@@ -232,31 +232,31 @@ image0 := frag.texture(150,150);
 image1 := frag.texture(W,H);
 shadow := frag.texture(W,H);
 
-cam := g3d.Camera{};
+cam := rdr.Camera{};
 cam.perspective(30,W/(H as f32),0.1,100.0);
 eye := {0.,0.,11.}
-cam.look_at(eye,{0,0,0},g3d.AXIS_Y);
+cam.look_at(eye,{0,0,0},rdr.AXIS_Y);
 
 ld := ({-1.,1,2}).dir();
 
-light := g3d.Camera{}
-light.proj = g3d.mat.scale(0.25) @* {
+light := rdr.Camera{}
+light.proj = rdr.mat.scale(0.25) @* {
     1.0, 0.0, -ld.x/ld.z, 0.0;
     0.0, 1.0, -ld.y/ld.z, 0.0;
     0.0, 0.0,  0.0,       0.0;
     0.0, 0.0,  0.0,       1.0
 }
 
-base_model := g3d.mat.id;
-model := g3d.mat.id;
+base_model := rdr.mat.id;
+model := rdr.mat.id;
 
-txtcam := g3d.Camera{};
+txtcam := rdr.Camera{};
 txtcam.ortho(0,150,150,0,-1,1);
 
-hud := g3d.Camera{};
+hud := rdr.Camera{};
 hud.ortho(0,W,H,0,-1,1);
 
-axis := g3d.AXIS_Z;
+axis := rdr.AXIS_Z;
 targ_ang := 0.;
 curr_ang := 0.;
 
@@ -269,12 +269,12 @@ func roll(){
 
   targ_nml := mesh.normals[rand.random(20) as i32 * 3];
   targ_nml = (base_model @* {targ_nml.x; targ_nml.y; targ_nml.z; 1.0}).xyz;
-  axis = targ_nml.cross(g3d.AXIS_Z);
-  ndz := targ_nml.dot(g3d.AXIS_Z);
+  axis = targ_nml.cross(rdr.AXIS_Z);
+  ndz := targ_nml.dot(rdr.AXIS_Z);
   targ_ang = math.acos(math.min(math.max(ndz,-0.999),0.999));
   targ_ang += math.PI*4;
   curr_ang = 0.;
-  model = g3d.mat.id;
+  model = rdr.mat.id;
 
 }
 
@@ -288,7 +288,7 @@ while (1){
     minz <?= z;
   }
 
-  model = g3d.mat.rotate_deg(axis,curr_ang*180/math.PI);
+  model = rdr.mat.rotate_deg(axis,curr_ang*180/math.PI);
   da := math.abs(curr_ang-targ_ang);
   old_ang := curr_ang;
   if (da<0.0001){
@@ -309,36 +309,36 @@ while (1){
   bg_offset = {(bg_offset.x+1.0)%1.0,(bg_offset.y+1.0)%1.0}
 
   frag.begin(shader0,image0);
-  g3d.background(0);
+  rdr.background(0);
   txtcam.begin();
   for (i:=0; i < 5; i++){
     for (j := 0; j < 5; j++){
       idx := i*5+j+1;
       if (idx < 10){
-        g3d.text("%{idx}%{(idx==6||idx==9)?".":""}",g3d.mat.translate(j*30+11,i*30+13,0));
+        rdr.text("%{idx}%{(idx==6||idx==9)?".":""}",rdr.mat.translate(j*30+11,i*30+13,0));
       }else{
-        g3d.text("%{idx}",g3d.mat.translate(j*30+7,i*30+13,0));
+        rdr.text("%{idx}",rdr.mat.translate(j*30+7,i*30+13,0));
       }
     }
   }
   txtcam.end();
   frag.end();
 
-  mmodel := g3d.mat.translate(0,0,-minz) @* model @* base_model;
+  mmodel := rdr.mat.translate(0,0,-minz) @* model @* base_model;
 
   frag.begin(shader2,image1);
   frag.render();
   frag.end();
 
   frag.begin(shader4,shadow);
-  g3d.background(1);
+  rdr.background(1);
   light.begin();
   mesh.draw(mmodel);
   light.end();
   frag.end();
 
   frag.begin(shader1);
-  g3d.background(0.5);
+  rdr.background(0.5);
   frag.uniform("ld",ld);
   frag.uniform("eye",eye);
   frag.uniform("spec",{1.0,0.9,0.8});
@@ -358,12 +358,12 @@ while (1){
   frag.uniform("shadow",shadow);
   frag.uniform("offset",bg_offset);
   cam.begin();
-  plane.draw(g3d.mat.id);
+  plane.draw(rdr.mat.id);
   cam.end();
   frag.end();
 
   hud.begin();
-  g3d.text(" Press SPACE to roll ", g3d.mat.translate(W-21*8,H-16,0));
+  rdr.text(" Press SPACE to roll ", rdr.mat.translate(W-21*8,H-16,0));
   hud.end();
 
 

@@ -71,7 +71,7 @@
     "The data held: can be a list, a dict, a string or a number. Booleans are stored as numbers as the language does not have them."
   ],
   "frag": [
-    "Fragment shader library. Can be used for shader-toy style pipeline, or in conjunction with std/g3d for shading 3D meshes."
+    "Fragment shader library. Can be used for shader-toy style pipeline, or in conjunction with std/rdr for shading 3D meshes."
   ],
   "frag-begin::i32*Texture": [
     "Start rendering with given shader program onto given texture",
@@ -127,51 +127,51 @@
     "name of the uniform (matches name in shader)",
     "the desired value"
   ],
-  "g3d": [
+  "rdr": [
     "3D graphics library."
   ],
-  "g3d-AXIS_X": [
+  "rdr-AXIS_X": [
     "Unit vector for positive X axis"
   ],
-  "g3d-AXIS_Y": [
+  "rdr-AXIS_Y": [
     "Unit vector for positive Y axis"
   ],
-  "g3d-AXIS_Z": [
+  "rdr-AXIS_Z": [
     "Unit vector for positive Z axis"
   ],
-  "g3d-background::f32*f32*f32*f32": [
+  "rdr-background::f32*f32*f32*f32": [
     "Clear graphics and fill with background color (RGBA 0-1)",
     "red",
     "green",
     "blue",
     "alpha"
   ],
-  "g3d-background::f32*f32*f32": [
+  "rdr-background::f32*f32*f32": [
     "Clear graphics and fill with background color (RGB 0-1, A=1)",
     "red",
     "green",
     "blue"
   ],
-  "g3d-background::f32": [
+  "rdr-background::f32": [
     "Clear graphics and fill with background color (R=G=B 0-1, A=1)",
     "grayscale"
   ],
-  "g3d-Camera": [
+  "rdr-Camera": [
     "Virtual camera for rendering 3D scenes"
   ],
-  "g3d-Camera-begin::": [
+  "rdr-Camera-begin::": [
     "Start using the camera"
   ],
-  "g3d-Camera-end::": [
+  "rdr-Camera-end::": [
     "Stop using the camera"
   ],
-  "g3d-Camera-look_at::vec(f32,3)*vec(f32,3)*vec(f32,3)": [
+  "rdr-Camera-look_at::vec(f32,3)*vec(f32,3)*vec(f32,3)": [
     "Place the camera and orient toward given target. Sets the .view matrix of the camera.",
     "camera position",
     "target position",
     "up vector"
   ],
-  "g3d-Camera-ortho::f32*f32*f32*f32*f32*f32": [
+  "rdr-Camera-ortho::f32*f32*f32*f32*f32*f32": [
     "Use orthographic projection for the camera. Sets the .proj matrix of the camera.",
     "left clipping plane",
     "right clipping plane",
@@ -180,120 +180,120 @@
     "near clipping plane",
     "far clipping plane"
   ],
-  "g3d-Camera-perspective::f32*f32*f32*f32": [
+  "rdr-Camera-perspective::f32*f32*f32*f32": [
     "Use perspective projection for the camera. Sets the .proj matrix of the camera.",
     "field of view angle, in degrees, in the Y direction",
     "aspect ratio (X/Y)",
     "near clipping plane",
     "far clipping plane"
   ],
-  "g3d-Camera-proj": [
+  "rdr-Camera-proj": [
     "Projection matrix (as in model-view-projection) of the camera"
   ],
-  "g3d-Camera-view": [
+  "rdr-Camera-view": [
     "View matrix (as in model-view-projection) of the camera"
   ],
-  "g3d-DIRTY_COLORS": [
+  "rdr-DIRTY_COLORS": [
     "Flag for Mesh.update() to indicate mesh colors are modified"
   ],
-  "g3d-DIRTY_INDICES": [
+  "rdr-DIRTY_INDICES": [
     "Flag for Mesh.update() to indicate mesh indices are modified"
   ],
-  "g3d-DIRTY_NORMALS": [
+  "rdr-DIRTY_NORMALS": [
     "Flag for Mesh.update() to indicate mesh normals are modified"
   ],
-  "g3d-DIRTY_UVS": [
+  "rdr-DIRTY_UVS": [
     "Flag for Mesh.update() to indicate mesh UVs are modified"
   ],
-  "g3d-DIRTY_VERTICES": [
+  "rdr-DIRTY_VERTICES": [
     "Flag for Mesh.update() to indicate mesh vertices are modified"
   ],
-  "g3d-flush::": [
+  "rdr-flush::": [
     "Flush queued commands to GPU (no-op on some backends)"
   ],
-  "g3d-init::u64": [
+  "rdr-init::u64": [
     "Initialize the library. Required before calling any other functions from the library.",
     "the windowing context (from win.init(...))"
   ],
-  "g3d-mat": [
+  "rdr-mat": [
     "Sub-namespace containing utilities for constructing transformation matrices"
   ],
-  "g3d-mat-id": [
+  "rdr-mat-id": [
     "The 4x4 identity matrix"
   ],
-  "g3d-mat-rotate_deg::vec(f32,3)*f32": [
+  "rdr-mat-rotate_deg::vec(f32,3)*f32": [
     "Generate a matrix that can rotate vectors around given axis by given degrees",
     "axis of rotation",
     "angle in degrees",
     "rotation matrix"
   ],
-  "g3d-mat-scale::f32*f32*f32": [
+  "rdr-mat-scale::f32*f32*f32": [
     "Generate a matrix that can scale vectors by given factor on each axis",
     "scale factor on X axis",
     "scale factor on Y axis",
     "scale factor on Z axis",
     "scale matrix"
   ],
-  "g3d-mat-scale::f32": [
+  "rdr-mat-scale::f32": [
     "Generate a matrix that can scale vectors uniformly on all axes by given factor",
     "scale factor",
     "scale matrix"
   ],
-  "g3d-mat-translate::f32*f32*f32": [
+  "rdr-mat-translate::f32*f32*f32": [
     "Generate a matrix that can translate (move) vectors by given offset on each axis",
     "offset on X axis",
     "offset on Y axis",
     "offset on Z axis",
     "translation matrix"
   ],
-  "g3d-Mesh": [
+  "rdr-Mesh": [
     "Datatype holding a 3D mesh"
   ],
-  "g3d-Mesh-colors": [
+  "rdr-Mesh-colors": [
     "Per-vertex color buffer, RGBA 0-1 for each vertex. Optionally empty."
   ],
-  "g3d-Mesh-draw::vec(f32,4,4)": [
+  "rdr-Mesh-draw::vec(f32,4,4)": [
     "Draw the mesh, given a transformation, using current shader and camera config onto current render target.",
     "transformation (a.k.a. model as in model-view-projection) matrix"
   ],
-  "g3d-Mesh-indices": [
+  "rdr-Mesh-indices": [
     "Vertex index buffer, specifying vertex winding. Zero-indexed. Optionally empty."
   ],
-  "g3d-Mesh-mode": [
+  "rdr-Mesh-mode": [
     "Winding/primitive mode for indices"
   ],
-  "g3d-Mesh-normals": [
+  "rdr-Mesh-normals": [
     "Per-vertex normal buffer. Optionally empty"
   ],
-  "g3d-Mesh-update::i32": [
+  "rdr-Mesh-update::i32": [
     "Upload buffers indicated by given flags to GPU",
     "a bitwise OR of .DIRTY_* flags, e.g. .DIRTY_VERTICES|.DIRTY_COLORS"
   ],
-  "g3d-Mesh-uvs": [
+  "rdr-Mesh-uvs": [
     "UV (texcoords) buffer. Normalized 0-1. Optionally empty."
   ],
-  "g3d-Mesh-vao": [
+  "rdr-Mesh-vao": [
     "Internal ID/handler of the mesh"
   ],
-  "g3d-Mesh-vertices": [
+  "rdr-Mesh-vertices": [
     "Vertex buffer"
   ],
-  "g3d-MODE_LINE_LIST": [
+  "rdr-MODE_LINE_LIST": [
     "Primitive mode for disjoint lines"
   ],
-  "g3d-MODE_LINE_STRIP": [
+  "rdr-MODE_LINE_STRIP": [
     "Primitive mode for a polyline"
   ],
-  "g3d-MODE_POINT_LIST": [
+  "rdr-MODE_POINT_LIST": [
     "Primitive mode for point cloud"
   ],
-  "g3d-MODE_TRIG_LIST": [
+  "rdr-MODE_TRIG_LIST": [
     "Primitive mode for disjoint triangles"
   ],
-  "g3d-MODE_TRIG_STRIP": [
+  "rdr-MODE_TRIG_STRIP": [
     "Primitive mode for connected strip of triangles"
   ],
-  "g3d-text::str*vec(f32,4,4)": [
+  "rdr-text::str*vec(f32,4,4)": [
     "Draw text using built-in monospace fixed-size pixel font",
     "string containing text to draw",
     "transformation matrix"
@@ -310,222 +310,222 @@
   "guts-gc_on::": [
     "Enable garbage collection"
   ],
-  "gx": [
+  "drw": [
     "2D Processing-like graphics library"
   ],
-  "gx-apply_matrix::vec(f32,3,3)": [
+  "drw-apply_matrix::vec(f32,3,3)": [
     "Set current transformation matrix to product of given matrix and the current matrix",
     "transformation to apply"
   ],
-  "gx-background::f32*f32*f32*f32": [
+  "drw-background::f32*f32*f32*f32": [
     "Fill the render target with given color (RGBA 0-1)",
     "red",
     "green",
     "blue",
     "alpha"
   ],
-  "gx-background::f32*f32*f32": [
+  "drw-background::f32*f32*f32": [
     "Fill the render target with given color (RGB 0-1, A=1)",
     "red",
     "green",
     "blue"
   ],
-  "gx-background::f32": [
+  "drw-background::f32": [
     "Fill the render target with given grayscale value (R=G=B 0-1, A=1)",
     "grayscale"
   ],
-  "gx-background::f32*f32": [
+  "drw-background::f32*f32": [
     "Fill the render target with given grayscale and alpha value (R=G=B 0-1, A 0-1)",
     "grayscale",
     "alpha"
   ],
-  "gx-begin_shape::": [
+  "drw-begin_shape::": [
     "Start drawing a polyline/polygon"
   ],
-  "gx-circle::f32*f32*f32": [
+  "drw-circle::f32*f32*f32": [
     "Draw a circle",
     "center X",
     "center Y",
     "diameter"
   ],
-  "gx-create_graphics::i32*i32": [
+  "drw-create_graphics::i32*i32": [
     "Create an offscreen render target",
     "desired width",
     "desired height",
     "a new render target"
   ],
-  "gx-ellipse::f32*f32*f32*f32": [
+  "drw-ellipse::f32*f32*f32*f32": [
     "Draw an ellipse",
     "center X",
     "center Y",
     "diameter X",
     "diameter Y"
   ],
-  "gx-end_shape::i32": [
+  "drw-end_shape::i32": [
     "Stop drawing a polyline/polygon",
     "1 to close the shape (polygon), 0 otherwise (polyline)"
   ],
-  "gx-end_shape::": [
+  "drw-end_shape::": [
     "Stop drawing a polygon (close the shape)"
   ],
-  "gx-fill::f32*f32*f32*f32": [
+  "drw-fill::f32*f32*f32*f32": [
     "Set fill color (RGBA 0-1)",
     "red",
     "green",
     "blue",
     "alpha"
   ],
-  "gx-fill::f32*f32*f32": [
+  "drw-fill::f32*f32*f32": [
     "Set fill color (RGB 0-1, A=1)",
     "red",
     "green",
     "blue"
   ],
-  "gx-fill::f32*f32": [
+  "drw-fill::f32*f32": [
     "Set fill color (R=G=B 0-1, A 0-1)",
     "grayscale",
     "alpha"
   ],
-  "gx-fill::f32": [
+  "drw-fill::f32": [
     "Set fill color (R=G=B 0-1, A=1)",
     "grayscale"
   ],
-  "gx-Graphics": [
+  "drw-Graphics": [
     "Datatype for an offscreen render target"
   ],
-  "gx-Graphics-begin::": [
+  "drw-Graphics-begin::": [
     "Start drawing on this render target"
   ],
-  "gx-Graphics-draw::f32*f32*f32*f32": [
+  "drw-Graphics-draw::f32*f32*f32*f32": [
     "Draw this render target as an image/texture onto current render target (with scaling)",
     "left coordinate to draw to",
     "top coordinate to draw to",
     "width after scaling",
     "height after scaling"
   ],
-  "gx-Graphics-draw::f32*f32": [
+  "drw-Graphics-draw::f32*f32": [
     "Draw this render target as an image/texture onto current render target (without scaling)",
     "left coordinate to draw to",
     "top coordinate to draw to"
   ],
-  "gx-Graphics-end::": [
+  "drw-Graphics-end::": [
     "Stop drawing on this render target (return to default render target)"
   ],
-  "gx-Graphics-fbo": [
+  "drw-Graphics-fbo": [
     "Internal ID/handler of the render target"
   ],
-  "gx-Graphics-h": [
+  "drw-Graphics-h": [
     "Height in pixels"
   ],
-  "gx-Graphics-read_pixels::": [
+  "drw-Graphics-read_pixels::": [
     "Download all pixel values into an array",
     "array holding RGBA colors of each pixel (0-255)"
   ],
-  "gx-Graphics-w": [
+  "drw-Graphics-w": [
     "Width in pixels"
   ],
-  "gx-Graphics-write_pixels::arr(u8,3)": [
+  "drw-Graphics-write_pixels::arr(u8,3)": [
     "Upload pixel values from an array",
     "array holding desired RGBA colors of each pixel (0-255)"
   ],
-  "gx-line::f32*f32*f32*f32": [
+  "drw-line::f32*f32*f32*f32": [
     "Draw a line",
     "X coordinate of one end",
     "Y coordinate of one end",
     "X coordinate of the other end",
     "Y coordinate of the other end"
   ],
-  "gx-next_contour::i32": [
+  "drw-next_contour::i32": [
     "For shapes with multiple contours (holes, islands, etc.), this marks the start of the next contour.",
     "1 to close the previous contour, 0 otherwise"
   ],
-  "gx-no_fill::": [
+  "drw-no_fill::": [
     "Disable fill"
   ],
-  "gx-no_stroke::": [
+  "drw-no_stroke::": [
     "Disable stroke"
   ],
-  "gx-point::f32*f32": [
+  "drw-point::f32*f32": [
     "Draw a point. Color is affected by .stroke(...)",
     "X coordinate",
     "Y coordinate"
   ],
-  "gx-poll::": [
+  "drw-poll::": [
     "Flush graphics and listen for windowing events. Non-blocking. Wraps win.poll()",
     "a windowing event (might be IDLE)"
   ],
-  "gx-pop_matrix::": [
+  "drw-pop_matrix::": [
     "Restore transformation to previously saved state"
   ],
-  "gx-push_matrix::": [
+  "drw-push_matrix::": [
     "Save current transformation matrix state"
   ],
-  "gx-rect::f32*f32*f32*f32": [
+  "drw-rect::f32*f32*f32*f32": [
     "Draw a rectangle",
     "left coordinate",
     "top coordinate",
     "width",
     "height"
   ],
-  "gx-reset_matrix::": [
+  "drw-reset_matrix::": [
     "Reset transformation matrix to identity matrix"
   ],
-  "gx-rotate_deg::f32": [
+  "drw-rotate_deg::f32": [
     "Rotate subsequent drawings by modifying the current transformation matrix.",
     "angle in degrees"
   ],
-  "gx-scale::f32*f32": [
+  "drw-scale::f32*f32": [
     "Scale subsequent drawings by modifying the current transformation matrix.",
     "factor on X axis",
     "factor on Y axis"
   ],
-  "gx-scale::f32": [
+  "drw-scale::f32": [
     "Scale subsequent drawings uniformly on both axes by modifying the current transformation matrix.",
     "factor on both axes"
   ],
-  "gx-size::i32*i32": [
+  "drw-size::i32*i32": [
     "Set up the window and the default render target. Wraps win.init(...)",
     "width",
     "height"
   ],
-  "gx-stroke::f32*f32*f32*f32": [
+  "drw-stroke::f32*f32*f32*f32": [
     "Set stroke color (RGBA 0-1)",
     "red",
     "green",
     "blue",
     "alpha"
   ],
-  "gx-stroke::f32*f32*f32": [
+  "drw-stroke::f32*f32*f32": [
     "Set stroke color (RGB 0-1, A=1)",
     "red",
     "green",
     "blue"
   ],
-  "gx-stroke::f32": [
+  "drw-stroke::f32": [
     "Set stroke color (R=G=B 0-1, A=1)",
     "grayscale"
   ],
-  "gx-stroke::f32*f32": [
+  "drw-stroke::f32*f32": [
     "Set stroke color (R=G=B 0-1, A 0-1)",
     "grayscale",
     "alpha"
   ],
-  "gx-stroke_weight::f32": [
+  "drw-stroke_weight::f32": [
     "Set stroke width/weight/thickness",
     "thickness in pixels"
   ],
-  "gx-text::str*f32*f32": [
+  "drw-text::str*f32*f32": [
     "Draw text using built-in monospace fixed-size pixel font",
     "string containing the text",
     "left coordinate",
     "bottom coordinate"
   ],
-  "gx-translate::f32*f32": [
+  "drw-translate::f32*f32": [
     "Translate (offset) subsequent drawings by modifying the current transformation matrix.",
     "X offset",
     "Y offset"
   ],
-  "gx-vertex::f32*f32": [
+  "drw-vertex::f32*f32": [
     "Add a vertex to the polyline/polygon currently being drawn",
     "X coordinate",
     "Y coordinate"

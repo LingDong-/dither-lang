@@ -1,4 +1,4 @@
-include "std/g3d"
+include "std/rdr"
 include "std/frag"
 include "std/win"
 include "std/list"
@@ -13,10 +13,10 @@ W := 512;
 H := 512;
 
 context := win.init(W,H,win.CONTEXT_3D);
-g3d.init(context);
+rdr.init(context);
 frag.init(context);
 
-func cylinder(sides:i32):g3d.Mesh{
+func cylinder(sides:i32):rdr.Mesh{
   vertices:=list[vec[f32,3]]{};
   faces:=list[list[i32]]{ list[i32]{}, list[i32]{} };
   normals:=list[vec[f32,3]]{};
@@ -36,7 +36,7 @@ func cylinder(sides:i32):g3d.Mesh{
     faces[1].insert(0,i*4+2);
     faces.push(list[i32]{i*4+1,i*4+3,((i+1)%sides)*4+3,((i+1)%sides)*4+1});
   }
-  mesh := g3d.Mesh{vertices:vertices,normals:normals}
+  mesh := rdr.Mesh{vertices:vertices,normals:normals}
   for (i := 0; i < faces.length(); i++) {
     n := faces[i].length();
     for (j := 0; j < n; j++){
@@ -86,8 +86,8 @@ shader1 := frag.program(embed(func(
 }) as "fragment");
 
 
-cam := g3d.Camera{};
-cam.look_at({-7,7,-7},{0,0,0},g3d.AXIS_Y);
+cam := rdr.Camera{};
+cam.look_at({-7,7,-7},{0,0,0},rdr.AXIS_Y);
 cam.perspective(60,W/(H as f32),0.1,100.0);
 
 shadow := frag.texture(512,512);
@@ -95,13 +95,13 @@ shadow := frag.texture(512,512);
 frame := 0;
 
 func draw_scene(){
-  cy.draw(g3d.mat.translate(0,-1,0) @* 
-          g3d.mat.scale(5.5,1,5.5));
+  cy.draw(rdr.mat.translate(0,-1,0) @* 
+          rdr.mat.scale(5.5,1,5.5));
   for (i := 0; i < 4; i++){
     for (j : = 0; j < 4; j++){
       h := (i*0.7+j*0.5)*0.7+0.2;
-      cy.draw(g3d.mat.translate(i*2.0-3,h,j*2.0-3) @*
-              g3d.mat.scale(0.6,h,0.6));
+      cy.draw(rdr.mat.translate(i*2.0-3,h,j*2.0-3) @*
+              rdr.mat.scale(0.6,h,0.6));
     }
   }
 }
@@ -111,19 +111,19 @@ while (1){
 
   ang := frame*0.05;
   ld := ({math.cos(ang),0.5,math.sin(ang)}).dir();
-  light := g3d.Camera{};
-  light.look_at(ld,{0.,0,0},g3d.AXIS_Y);
+  light := rdr.Camera{};
+  light.look_at(ld,{0.,0,0},rdr.AXIS_Y);
   light.ortho(-8,8,-8,8,-10,20);
 
   frag.begin(shader1,shadow);
-  g3d.background(0.0);
+  rdr.background(0.0);
   light.begin();
   draw_scene();
   light.end();
   frag.end();
 
   frag.begin(shader0);
-  g3d.background(0.);
+  rdr.background(0.);
   frag.uniform("shadow_map",shadow);
 
   shadow_matrix := light.proj@*light.view;

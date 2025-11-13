@@ -1,4 +1,4 @@
-globalThis.$gx = new function(){
+globalThis.$drw = new function(){
   let that = this;
   let ctx;
   let cnv;

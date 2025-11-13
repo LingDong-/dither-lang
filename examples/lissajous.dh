@@ -1,5 +1,5 @@
 include "std/gui"
-include "std/gx"
+include "std/drw"
 include "std/math"
 include "std/str"
 
@@ -15,27 +15,27 @@ embed global as "gui/layout"
 
 phase := 0.0
 
-gx.size(256,256);
+drw.size(256,256);
 while (1){
   embed global as "gui/sync"
-  gx.background(0);
-  gx.no_fill();
-  gx.stroke(1.0);
-  gx.stroke_weight(thick);
+  drw.background(0);
+  drw.no_fill();
+  drw.stroke(1.0);
+  drw.stroke_weight(thick);
   n := 500;
-  gx.begin_shape();
+  drw.begin_shape();
   for (i:=0; i<=n; i++){
     ang := (i/(n as f32))*math.PI*2;
     x := 100 * scale.x * math.sin(frq_a * ang + phase);
     y := 100 * scale.y * math.sin(frq_b * ang);
-    gx.vertex(128+x,128+y);
+    drw.vertex(128+x,128+y);
   }
-  gx.end_shape();
+  drw.end_shape();
   if (!pause){
     phase += speed;
   }
-  gx.fill(1.0);
-  gx.text(title,128-title.length()*4,250);
+  drw.fill(1.0);
+  drw.text(title,128-title.length()*4,250);
 
-  gx.poll();
+  drw.poll();
 }

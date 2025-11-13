@@ -1,6 +1,6 @@
 include "std/win"
 
-namespace gx {
+namespace drw {
   func _begin_fbo(fbo:i32);
   func _end_fbo();
   func _draw_texture(tex:i32,x:f32,y:f32,w:f32,h:f32);

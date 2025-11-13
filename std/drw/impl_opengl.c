@@ -1,20 +1,25 @@
 //CFLAGS+=$([ "$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lGLEW -lGL")
 
+#define _USE_MATH_DEFINES
 #include <math.h>
-#include <dlfcn.h>
 #include <string.h>
 #include <stdio.h>
-#include <libgen.h>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#include <gl/GL.h>
+#include <gl/GLU.h>
+#pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "glu32.lib")
+#include "../win/platform/wgl_patcher.h"
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-//#include <GL/glext.h>
 #endif
 
 #if !defined(_WIN32)
@@ -41,13 +46,19 @@
   name.data = (dtype*) malloc((name.cap)*sizeof(dtype));
 
 #undef ARR_PUSH
+#undef ARR_ITEM_FORCE_CAST
+#ifdef _WIN32
+#define ARR_ITEM_FORCE_CAST(dtype,item) item
+#else
+#define ARR_ITEM_FORCE_CAST(dtype,item) (dtype)item
+#endif
 #define ARR_PUSH(dtype,name,item) \
   if (name.cap < name.len+1){ \
     int hs = name.cap/2; \
     name.cap = name.len+MAX(1,hs); \
     name.data = (dtype*)realloc(name.data, (name.cap)*sizeof(dtype) ); \
   }\
-  name.data[name.len] = (dtype)item;\
+  name.data[name.len] = ARR_ITEM_FORCE_CAST(dtype,item);\
   name.len += 1;
 
 #undef ARR_POP
@@ -74,10 +85,11 @@ int is_fill=1;
 
 GLint fbo_zero;
 
-void gx_impl__size(int w, int h, uint64_t ctx){
-#ifndef __APPLE__
+void drw_impl__size(int w, int h, uint64_t ctx){
+  #if !defined(__APPLE__)
   glewInit();
-#endif
+  #endif
+  
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
 
   glViewport(0, 0, w, h);
@@ -102,8 +114,11 @@ void gx_impl__size(int w, int h, uint64_t ctx){
   height = h;
 }
 
+void drw_impl__flush(){
+  
+}
 
-void gx_impl__init_graphics(void* data, int w, int h){
+void drw_impl__init_graphics(void* data, int w, int h){
 
   glEnable(GL_TEXTURE_2D);
 
@@ -129,7 +144,7 @@ void gx_impl__init_graphics(void* data, int w, int h){
 
 }
 
-void gx_impl__begin_fbo(int fbo){
+void drw_impl__begin_fbo(int fbo){
 
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   int w,h;
@@ -147,7 +162,7 @@ void gx_impl__begin_fbo(int fbo){
   glMatrixMode(GL_MODELVIEW);
 }
 
-void gx_impl__end_fbo(){
+void drw_impl__end_fbo(){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
   glViewport(0, 0, width, height);
 
@@ -157,7 +172,7 @@ void gx_impl__end_fbo(){
   glMatrixMode(GL_MODELVIEW);
 }
 
-void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
+void* drw_impl__read_pixels(int fbo, int* _w, int* _h){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   int w,h;
   GLint tex = 0;
@@ -188,7 +203,7 @@ void* gx_impl__read_pixels(int fbo, int* _w, int* _h){
 }
 
 
-void gx_impl__write_pixels(int fbo, void* pixels){
+void drw_impl__write_pixels(int fbo, void* pixels){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   GLint tex = 0;
   glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
@@ -200,8 +215,8 @@ void gx_impl__write_pixels(int fbo, void* pixels){
 
   void* row = malloc(w*4);
   for (int y = 0; y < h / 2; y++) {
-    void* top = pixels + y * w*4;
-    void* bot = pixels + (h - 1 - y) * w*4;
+    void* top = (char*)pixels + y * w*4;
+    void* bot = (char*)pixels + (h - 1 - y) * w*4;
     memcpy(row, top, w*4);
     memcpy(top, bot, w*4);
     memcpy(bot, row, w*4);
@@ -212,8 +227,8 @@ void gx_impl__write_pixels(int fbo, void* pixels){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
 
   for (int y = 0; y < h / 2; y++) {
-    void* top = pixels + y * w*4;
-    void* bot = pixels + (h - 1 - y) * w*4;
+    void* top = (char*)pixels + y * w*4;
+    void* bot = (char*)pixels + (h - 1 - y) * w*4;
     memcpy(row, top, w*4);
     memcpy(top, bot, w*4);
     memcpy(bot, row, w*4);
@@ -222,7 +237,7 @@ void gx_impl__write_pixels(int fbo, void* pixels){
   free(row);
 }
 
-void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
+void drw_impl__draw_texture(int fbo, float x, float y, float w, float h){
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   GLint tex = 0;
   glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
@@ -246,22 +261,22 @@ void gx_impl__draw_texture(int fbo, float x, float y, float w, float h){
 }
 
 
-void gx_impl_push_matrix(){
+void drw_impl_push_matrix(){
   glPushMatrix();
 }
-void gx_impl_pop_matrix(){
+void drw_impl_pop_matrix(){
   glPopMatrix();
 }
-void gx_impl_rotate_deg(float ang){
+void drw_impl_rotate_deg(float ang){
   glRotatef(ang, 0.0f, 0.0f, 1.0f);
 }
-void gx_impl_translate(float x, float y){
+void drw_impl_translate(float x, float y){
   glTranslatef(x,y,0);
 }
-void gx_impl_scale(float x, float y){
+void drw_impl_scale(float x, float y){
   glScalef(x,y,1.0);
 }
-void gx_impl_apply_matrix(float* data){
+void drw_impl_apply_matrix(float* data){
 
   float m00 = ((float*)(data))[0];
   float m01 = ((float*)(data))[1];
@@ -281,18 +296,18 @@ void gx_impl_apply_matrix(float* data){
   };
   glMultMatrixf(mat);
 }
-void gx_impl_reset_matrix(){
+void drw_impl_reset_matrix(){
   glLoadIdentity();
 }
 
 
-void gx_impl_background(float r, float g, float b, float a){
+void drw_impl_background(float r, float g, float b, float a){
   glClearColor(r,g,b,a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 
-void gx_impl_fill(float r, float g, float b, float a){
+void drw_impl_fill(float r, float g, float b, float a){
   color_fill.r = r;
   color_fill.g = g;
   color_fill.b = b;
@@ -300,7 +315,7 @@ void gx_impl_fill(float r, float g, float b, float a){
   is_fill = 1;
 }
 
-void gx_impl_stroke(float r, float g, float b, float a){
+void drw_impl_stroke(float r, float g, float b, float a){
   color_stroke.r = r;
   color_stroke.g = g;
   color_stroke.b = b;
@@ -308,13 +323,13 @@ void gx_impl_stroke(float r, float g, float b, float a){
   is_stroke = 1;
 }
 
-void gx_impl_no_fill(){
+void drw_impl_no_fill(){
   is_fill = 0;
 }
-void gx_impl_no_stroke(){
+void drw_impl_no_stroke(){
   is_stroke = 0;
 }
-void gx_impl_stroke_weight(float x){
+void drw_impl_stroke_weight(float x){
   glLineWidth(x);
   glPointSize(x);
 }
@@ -330,7 +345,7 @@ ARR_DEF(pt_t);
 pt_t_arr_t poly = {0};
 
 
-void gx_impl_begin_shape(){
+void drw_impl_begin_shape(){
   if (poly.cap){
     poly.len = 0;
   }else{
@@ -338,7 +353,7 @@ void gx_impl_begin_shape(){
   }
 }
 
-void gx_impl_vertex(float x, float y){
+void drw_impl_vertex(float x, float y){
   pt_t p;
   p.x = x;
   p.y = y;
@@ -346,7 +361,7 @@ void gx_impl_vertex(float x, float y){
   ARR_PUSH(pt_t,poly,p);
 }
 
-void gx_impl_next_contour(int bclose){
+void drw_impl_next_contour(int bclose){
   if (poly.len){
     poly.data[poly.len-1].last = (bclose<<1)|1;
   }
@@ -410,7 +425,7 @@ void CALLBACK tessErrorCB(GLenum errorCode){
   printf("%s\n",errorStr);
 }
 
-void gx_impl_end_shape(int bclose){
+void drw_impl_end_shape(int bclose){
 
   if (poly.len){
     poly.data[poly.len-1].last = (bclose<<1);
@@ -489,7 +504,7 @@ float lvs2[2][2];
 float lvs3[4][2];
 float lvs4[1][2];
 
-void gx_impl_line(float x0, float y0, float x1, float y1){
+void drw_impl_line(float x0, float y0, float x1, float y1){
   lvs2[1][1] = y1;
   lvs2[1][0] = x1;
   lvs2[0][1] = y0;
@@ -508,7 +523,7 @@ void gx_impl_line(float x0, float y0, float x1, float y1){
 float unit_circle[ELLIPSE_DETAIL][2];
 int did_unit_circle = 0;
 
-void gx_impl_ellipse(float x, float y, float w, float h){
+void drw_impl_ellipse(float x, float y, float w, float h){
 
   if (!did_unit_circle){
     did_unit_circle = 1;
@@ -541,7 +556,7 @@ void gx_impl_ellipse(float x, float y, float w, float h){
   glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void gx_impl_rect(float x, float y, float w, float h){
+void drw_impl_rect(float x, float y, float w, float h){
 
   lvs3[0][0] = x;
   lvs3[0][1] = y;
@@ -566,7 +581,7 @@ void gx_impl_rect(float x, float y, float w, float h){
   glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void gx_impl_point(float x, float y){
+void drw_impl_point(float x, float y){
   lvs4[0][1] = y;
   lvs4[0][0] = x;
 
@@ -590,7 +605,7 @@ void gx_impl_point(float x, float y){
 GLuint font_texture = -1;
 GLuint text_vbo = 0;
 
-uint8_t font_bitmap[FONT_H*FONT_N] = {
+uint8_t font_bitmap[FONT_N*FONT_H] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
   0x00,0x00,0x00,0x00,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x00,0x08,0x08,0x00,0x00,
   0x00,0x00,0x22,0x22,0x22,0x22,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -695,7 +710,7 @@ void build_font_texture() {
     int gx = (ch % FONT_COLS) * FONT_W;
     int gy = (ch / FONT_COLS) * FONT_H;
     for (int row = 0; row < FONT_H; ++row) {
-      unsigned char bits = font_bitmap[ch*FONT_H+row];
+      uint8_t bits = font_bitmap[ch*FONT_H+row];
       for (int col = 0; col < FONT_W; ++col) {
         if (bits & (1 << (7 - col))) {
           tex_data[gy + row][gx + col] = 255;
@@ -710,7 +725,7 @@ void build_font_texture() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
-void gx_impl_text(char* str, float x, float y){
+void drw_impl_text(char* str, float x, float y){
   y -= 16;
   if (is_fill && color_fill.a){
     glColor4f(color_fill.r, color_fill.g, color_fill.b, color_fill.a);
