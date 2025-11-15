@@ -76,3 +76,16 @@ void frag___write_pixels(){
   frag_impl__write_pixels(fbo,a->data);
 }
 
+void frag___read_pixels(){
+  int __ARG(fbo);
+
+  __arr_t* a = __gc_alloc(VART_ARR, sizeof(__arr_t)+12);
+  a->ndim = 3;
+  a->data = frag_impl__read_pixels(fbo,&(a->dims[1]),&(a->dims[0]));
+  a->dims[2] = 4;
+  a->n = a->dims[0]*a->dims[1]*a->dims[2];
+  a->w = 1;
+  a->t = VART_U08;
+
+  __put_ret(&a); 
+}

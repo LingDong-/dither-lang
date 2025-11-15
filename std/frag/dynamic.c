@@ -85,6 +85,20 @@ EXPORTED void frag__write_pixels(var_t* ret, gstate_t* _g){
   frag_impl__write_pixels(fbo,arr->data);
 }
 
+EXPORTED void frag__read_pixels(var_t* ret, gstate_t* _g){
+  int fbo = ARG_POP(_g,i32);
+
+  arr_t* arr = (arr_t*)gc_alloc_(_g,sizeof(arr_t)+12);
+  arr->data = (char*)frag_impl__read_pixels(fbo, &(arr->dims[1]), &(arr->dims[0]));
+  arr->dims[2] = 4;
+  arr->ndim = 3;
+  arr->w = 1;
+  arr->type = ret->type;
+  arr->n = arr->dims[0]*arr->dims[1]*arr->dims[2];
+
+  ret->u.arr = arr;
+}
+
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "frag." QUOTE(name), frag_ ## name);
 
@@ -97,6 +111,7 @@ EXPORTED void lib_init_frag(gstate_t* _g){
   QK_REG(uniform)
   QK_REG(_sample)
   QK_REG(_write_pixels)
+  QK_REG(_read_pixels)
   QK_REG(render)
 }
 
