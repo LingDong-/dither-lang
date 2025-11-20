@@ -836,7 +836,7 @@ var TO_C = function(cfg){
           o.push(`sprintf(${a},"%" PRId64,(int64_t)${b});`);
         }
       }else if (ta == 'char*' && (tb == 'float' || tb == 'double')){
-        o.push(`${a}=__gc_alloc(VART_STR,32);`);
+        o.push(`${a}=__gc_alloc(VART_STR,64);`);
         o.push(`__put_var(${varcnt++},${a});`);
         o.push(`sprintf(${a},"%f",(double)${b});`);
       }else if (ta == 'VOID_T'){

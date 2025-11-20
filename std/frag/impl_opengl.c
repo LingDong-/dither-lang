@@ -274,6 +274,20 @@ void frag_impl_render(){
 void frag_impl_end(){
 
   glUseProgram(0);
+
+  GLint currentFbo;
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFbo);
+  if (currentFbo != fbo_zero){
+    GLint tex = 0;
+    glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    GLint minFilter;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &minFilter);
+    if (minFilter == GL_LINEAR_MIPMAP_LINEAR){
+      glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_zero);
   
   if (oldw) glViewport(0,0,oldw,oldh);
