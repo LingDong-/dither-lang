@@ -1472,10 +1472,14 @@ var PARSER = function(sys,extensions={}){
                 let ar = fa.elt[0].elt.map(x=>({typ:x}));
                 let fd = findfuncbytype(get_scope(),arg.typ);
                 let [r,t,f] = matchftmpl(ar,fd.val,map);
+                ok = 1;
                 if (tms.includes(fa.elt[1])){
                   map[fa.elt[1]] = r;
+                }else{
+                  if (!typeeq(r,fa.elt[1])){
+                    ok = 0;
+                  }
                 }
-                ok = 1;
                 break;
               }catch(e){
               }
@@ -1770,7 +1774,7 @@ var PARSER = function(sys,extensions={}){
       // console.log(funs);
       // process.exit();
       // console.dir(scores,{depth:5000000});
-      
+      // console.log("<<<<<<")
       if (scores.length < 2){
         killlosers(0);
         return [fts[scores[0][0]],scores[0][2],funs[scores[0][0]]];
