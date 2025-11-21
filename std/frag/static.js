@@ -208,6 +208,16 @@ void main() {
   }
 
   that.end = function(){
+    let fbo = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+    if (fbo){
+      if (fbo._tex){
+        gl.bindTexture(gl.TEXTURE_2D, fbo._tex);
+        if (powerOf2(fbo._w)&&powerOf2(fbo._h)&&(fbo._flags&3)==2){
+          gl.generateMipmap(gl.TEXTURE_2D);
+        }
+        gl.bindTexture(gl.TEXTURE_2D, null);
+      }
+    }
     gl.useProgram(null);
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);
   }
