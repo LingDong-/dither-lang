@@ -11,7 +11,7 @@
 #endif
 #endif
 
-EXPORTED void c_slice(var_t* ret,  gstate_t* _g){
+EXPORTED void list_slice(var_t* ret,  gstate_t* _g){
   int j = ARG_POP(_g,i32);
   int i = ARG_POP(_g,i32);
   lst_t* lst = ARG_POP(_g,lst);
@@ -32,7 +32,7 @@ EXPORTED void c_slice(var_t* ret,  gstate_t* _g){
 }
 
 
-EXPORTED void c_make(var_t* ret,  gstate_t* _g){
+EXPORTED void list_make(var_t* ret,  gstate_t* _g){
   var_t* u = ARG_POP_VAR_NO_FREE(_g);
 
   int n = ARG_POP(_g,i32);
@@ -67,7 +67,7 @@ EXPORTED void c_make(var_t* ret,  gstate_t* _g){
 }
 
 
-EXPORTED void c_insert(var_t* ret,  gstate_t* _g){
+EXPORTED void list_insert(var_t* ret,  gstate_t* _g){
 
   var_t* u = ARG_POP_VAR_NO_FREE(_g);
 
@@ -91,7 +91,7 @@ EXPORTED void c_insert(var_t* ret,  gstate_t* _g){
 }
 
 
-EXPORTED void c_erase(var_t* ret,  gstate_t* _g){
+EXPORTED void list_erase(var_t* ret,  gstate_t* _g){
   int j = ARG_POP(_g,i32);
   int i = ARG_POP(_g,i32);
   lst_t* a = ARG_POP(_g,lst);
@@ -105,21 +105,40 @@ EXPORTED void c_erase(var_t* ret,  gstate_t* _g){
 }
 
 
-EXPORTED void c_length(var_t* ret,  gstate_t* _g){
+EXPORTED void list_length(var_t* ret,  gstate_t* _g){
 
   lst_t* a = ARG_POP(_g,lst);
 
   ret->u.i32 = a->n;
+}
 
+int _list_cmp(const void *a, const void *b){
+  return (*(float *)a - *(float *)b);
+}
+
+EXPORTED void list__sort(var_t* ret,  gstate_t* _g){
+  lst_t* b = ARG_POP(_g,lst);
+  lst_t* a = ARG_POP(_g,lst);
+  char* tmp = malloc(a->n*(a->w+4));
+  for (int i = 0; i < a->n; i++){
+    ((float*)(tmp + (i*(a->w+4)))) [0] = ((float*)b->data)[i];
+    memcpy(tmp + (i*(a->w+4)+4), a->data + (i*a->w), a->w);
+  }
+  qsort(tmp, a->n, a->w+4, _list_cmp);
+  for (int i = 0; i < a->n; i++){
+    memcpy(a->data + (i*a->w), tmp + (i*(a->w+4)+4), a->w);
+  }
+  free(tmp);
 }
 
 
 EXPORTED void lib_init_list(gstate_t* _g){
-  register_cfunc(&(_g->cfuncs), "list.slice", c_slice);
-  register_cfunc(&(_g->cfuncs), "list.insert", c_insert);
-  register_cfunc(&(_g->cfuncs), "list.erase", c_erase);
-  register_cfunc(&(_g->cfuncs), "list.length", c_length);
-  register_cfunc(&(_g->cfuncs), "list.make", c_make);
+  register_cfunc(&(_g->cfuncs), "list.slice", list_slice);
+  register_cfunc(&(_g->cfuncs), "list.insert", list_insert);
+  register_cfunc(&(_g->cfuncs), "list.erase", list_erase);
+  register_cfunc(&(_g->cfuncs), "list.length", list_length);
+  register_cfunc(&(_g->cfuncs), "list.make", list_make);
+  register_cfunc(&(_g->cfuncs), "list._sort", list__sort);
 
   
 }

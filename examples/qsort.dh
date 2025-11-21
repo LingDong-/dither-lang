@@ -39,3 +39,8 @@ io.println("sorting %{c}...");
 d := qsort(c)
 
 io.println("got %{d}.");
+
+e := c.slice()
+e.sort();
+
+io.println("built-in sort got: %{e}.");

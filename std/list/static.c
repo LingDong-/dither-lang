@@ -70,3 +70,25 @@ void list__slice(){
   lst->n = n;
   __put_ret(&lst);
 }
+
+int _list_cmp(const void *a, const void *b){
+  return (*(float *)a - *(float *)b);
+}
+
+void list___sort(){
+  __list_t* b = NULL;
+  __pop_arg(&b, 8);
+
+  __list_t* a = NULL;
+  __pop_arg(&a, 8);
+  char* tmp = malloc(a->n*(a->w+4));
+  for (int i = 0; i < a->n; i++){
+    ((float*)(tmp + (i*(a->w+4)))) [0] = ((float*)b->data)[i];
+    memcpy(tmp + (i*(a->w+4)+4), a->data + (i*a->w), a->w);
+  }
+  qsort(tmp, a->n, a->w+4, _list_cmp);
+  for (int i = 0; i < a->n; i++){
+    memcpy(a->data + (i*a->w), tmp + (i*(a->w+4)+4), a->w);
+  }
+  free(tmp);
+}

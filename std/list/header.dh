@@ -8,6 +8,9 @@ namespace list {
   func push[T](a:list[T],x:T) : i32 {
     return a.insert(a.length(),x);
   }
+  func slice[T](a:list[T]) : list[T]{
+    return a.slice(0,a.length());
+  }
   func pop[T](a:list[T]) : T {
     x := a[a.length()-1]; a.erase(a.length()-1,a.length()); return x;
   }
@@ -26,5 +29,13 @@ namespace list {
       }
     }
     return b;
+  }
+  func _sort[T](a:list[T],keys:list[f32]);
+  func sort[T](a:list[T],f:func[tup[T],f32]){
+    b := a.map(f);
+    _sort(a,b);
+  }
+  func sort[T](a:list[T]){
+    sort(a,func(x:T):f32{return x as f32});
   }
 }

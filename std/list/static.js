@@ -21,5 +21,13 @@ globalThis.$list = new function(){
     let [x] = $pop_args(1);
     return x.length;
   }
+  that._sort = function(){
+    let [a,b] = $pop_args(2);
+    let ab = a.map((x,i)=>[b[i],x]);
+    ab.sort((x,y)=>x[0]-y[0]);
+    for (let i = 0; i < a.length; i++){
+      a[i] = ab[i][1];
+    }
+  }
 }
 

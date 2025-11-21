@@ -1587,15 +1587,21 @@ var PARSER = function(sys,extensions={}){
           }
         }else{
           fas = funs[i].tty.elt[0].elt.map(tryfixtype);
-        
+          let oldctx = scostk.slice();
+          scostk = funs[i].ctx;
           tms = funs[i].ipl.tem.map(x=>shrinktype(x,0));
-          
+          scostk = oldctx;
+
           if (pte && pte.length == tms.length){
             let bad = 0;
             for (let j = 0; j < pte.length; j++){
               let q = shrinktype(pte[j]);
               if (funs[i].ipl.pte && funs[i].ipl.pte[j]){
-                if (printtype(q) != printtype(shrinktype(funs[i].ipl.pte[j]))){
+                oldctx = scostk.slice();
+                scostk = funs[i].ctx;
+                let psfip = printtype(shrinktype(funs[i].ipl.pte[j]));
+                scostk = oldctx;
+                if (printtype(q) != psfip){
                   bad = 1;
                 }
               }
