@@ -1198,7 +1198,9 @@ var PARSER = function(sys,extensions={}){
         let ori = vars[i].__names;//.replace(/\?\.?/g,'');
         for (let j = 0; j < recvs.length; j++){
           if (!recvs[j].map(x=>x.nom).includes(x)){
-            recvs[j].push({nom:x,typ:vars[i][x].typ,ori});
+            if (vars[i][x].typ.con != 'nmsp'){
+              recvs[j].push({nom:x,typ:vars[i][x].typ,ori});
+            }
             // console.log(recvs[j])
           }
         }
@@ -2159,12 +2161,17 @@ var PARSER = function(sys,extensions={}){
           pop_scope();
         }else if (ast.key == 'nmsp'){
           let ns = findnmsp(scozoo,namesp,ast.nom.val);
+          let parscope = cur_scope();
+
           if (ns){
             namesp.push(ast.nom.val);
             scostk.push(ns.typ.elt[0]);
           }else{
             add_scope(new_scope(),ast.nom.val);
           }
+          
+          parscope[ast.nom.val] = {typ:{con:'nmsp',elt:[scostk.at(-1)]},val:scostk.at(-1),nom:ast.nom};
+
           for (let i = 0; i < ast.val.length; i++){
             doinfer(ast.val[i]);
           }
