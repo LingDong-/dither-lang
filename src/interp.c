@@ -3167,7 +3167,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     term_t* b = ((term_t*)(ins->b));
     if (a->mode == TERM_IDEN){
       var_t* v = find_var(&(a->u.str));
-      v->u.u64 = !get_val_int(b);
+      v->u.u64 = !get_val_num(b);
     }else{
       UNIMPL
     }

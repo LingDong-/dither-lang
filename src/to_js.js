@@ -81,7 +81,7 @@ var TO_JS = function(cfg){
     }else if (x.__type.con == 'list'){
       return '{'+x.map($to_str).join(',')+'}';
     }else if (x.__type.con == 'arr'){
-      return '['+x.__dim.join(',')+']{'+x.map($to_str).join(',')+'}';
+      return '['+x.__dims.join('x')+']{'+x.map($to_str).join(',')+'}';
     }else if (x.__type.con == 'dict'){
       return '{'+Object.entries(x).filter(a=>!a[0].startsWith('__')).map(a=>a[1]).flat().map(a=>$to_str(a[0])+':'+$to_str(a[1])).join(',')+'}'
     }else if (x.__type.con == 'union'){

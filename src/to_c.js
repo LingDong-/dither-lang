@@ -1014,8 +1014,12 @@ var TO_C = function(cfg){
         if (op == "mod" && (typ == 'float' || typ == 'double')){
           os+="F";
         }
-        // o.push(`printf("%f ${os} %f\\n",(float)${b},(float)${c});`);
-        o.push(`${a} = ${os}(${b},${c});`);
+        if (op == "div" && (typ == 'float' || typ == 'double')){
+          o.push(`${a} = ${os}((${typ})${b},(${typ})${c});`);
+        }else{
+          // o.push(`printf("%f ${os} %f\\n",(float)${b},(float)${c});`);
+          o.push(`${a} = ${os}(${b},${c});`);
+        }
       }
     }
 
