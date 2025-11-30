@@ -9,6 +9,12 @@
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
+#define glVertexAttribDivisor glVertexAttribDivisorARB
+#define glDrawArraysInstanced glDrawArraysInstancedARB
+#define glDrawElementsInstanced glDrawElementsInstancedARB
+#define glBindVertexArray glBindVertexArrayAPPLE
+#define glGenVertexArrays glGenVertexArraysAPPLE
+#define glDeleteVertexArrays glDeleteVertexArraysAPPLE
 #elif defined(_WIN32)
 #include <windows.h>
 #include <gl/GL.h>
@@ -56,6 +62,13 @@
 #undef ARR_CLEAR
 #define ARR_CLEAR(dtype,name) {name.len = 0;}
 
+#define LOC_POSITION 0
+#define LOC_COLOR    1
+#define LOC_UV       2
+#define LOC_NORMAL   3
+#define LOC_MODEL    4
+#define LOC_NM       8
+
 GLint fbo_zero;
 
 int tex_cnt = 0;
@@ -65,19 +78,19 @@ const char* vertexShaderSource = "#version 120\n"
 "attribute vec4 a_color;\n"
 "attribute vec2 a_uv;\n"
 "attribute vec3 a_normal;\n"
+"attribute mat4 a_model;\n"
+"attribute mat3 a_normal_matrix;\n"
 "varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
 "varying vec3 v_normal;\n"
 "varying vec3 v_position;\n"
-"uniform mat4 model;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
-"uniform mat3 normal_matrix;\n"
 "void main() {\n"
 "  v_color = a_color;\n"
 "  v_uv = a_uv;\n"
-"  v_normal = normalize(normal_matrix * a_normal);\n"
-"  vec4 world_pos = model * vec4(a_position, 1.0);\n"
+"  v_normal = normalize(a_normal_matrix * a_normal);\n"
+"  vec4 world_pos = transpose(a_model) * vec4(a_position, 1.0);\n"
 "  vec4 view_pos = view * world_pos;\n"
 "  v_position = world_pos.xyz/world_pos.w;\n"
 "  gl_Position = projection * view_pos;\n"
@@ -184,6 +197,14 @@ int frag_impl_program(const char* src){
   shaderProgram = glCreateProgram();
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
+
+  glBindAttribLocation(shaderProgram, LOC_POSITION,"a_position");
+  glBindAttribLocation(shaderProgram, LOC_COLOR,   "a_color");
+  glBindAttribLocation(shaderProgram, LOC_UV,      "a_uv");
+  glBindAttribLocation(shaderProgram, LOC_NORMAL,  "a_normal");
+  glBindAttribLocation(shaderProgram, LOC_MODEL,   "a_model");
+  glBindAttribLocation(shaderProgram, LOC_NM,      "a_normal_matrix");
+
   glLinkProgram(shaderProgram);
   checkCompileErrors(shaderProgram, "PROGRAM");
 
@@ -222,53 +243,68 @@ void frag_impl__begin(int prgm, int fbo){
   tex_cnt = 0;
 }
 
+GLuint vao0 = 0;
+
 void frag_impl_render(){
+  float iden[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+  float nm[9] = {1,0,0, 0,1,0, 0,0,1};
+
+  if (vao0 == 0){
+    glGenVertexArrays(1, &vao0);
+    glBindVertexArray(vao0);
+    GLuint vbo, vbo_uvs;
+
+    float uvs[8];
+    for (int i = 0; i < 4; i++){
+      uvs[i*2] = (vertices[i*3]+1.0)*0.5;
+      uvs[i*2+1] = (vertices[i*3+1]+1.0)*0.5;
+    }
+    glGenBuffers(1, &vbo_uvs);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
+    glEnableVertexAttribArray(LOC_UV);
+    glVertexAttribPointer(LOC_UV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glDisableVertexAttribArray(LOC_COLOR);
+    glVertexAttrib4f(LOC_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    glDisableVertexAttribArray(LOC_NORMAL);
+    glVertexAttrib3f(LOC_NORMAL, 0.0f, 0.0f, 1.0f);
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(LOC_POSITION);
+    glVertexAttribPointer(LOC_POSITION, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+  }else{
+    glBindVertexArray(vao0);
+  }
+
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
   GLint shader = 0;
-  GLuint vbo, vbo_uvs;
   glGetIntegerv(GL_CURRENT_PROGRAM, &shader);
   
-  float iden[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-  glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, iden);
+  for (int i = 0; i < 4; i++) {
+    glDisableVertexAttribArray(LOC_MODEL + i);
+    glVertexAttrib4fv(LOC_MODEL + i, &iden[i*4]);
+  }
+  for (int i = 0; i < 3; i++) {
+    glDisableVertexAttribArray(LOC_NM + i);
+    glVertexAttrib3fv(LOC_NM + i, &nm[i*4]);
+  }
+
   glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, iden);
   glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, iden);
-  float nm[9] = {1,0,0, 0,1,0, 0,0,1};
-  glUniformMatrix4fv(glGetUniformLocation(shader, "normal_matrix"), 1, GL_FALSE, nm);
 
-
-  float uvs[8];
-  for (int i = 0; i < 4; i++){
-    uvs[i*2] = (vertices[i*3]+1.0)*0.5;
-    uvs[i*2+1] = (vertices[i*3+1]+1.0)*0.5;
-  }
-  glGenBuffers(1, &vbo_uvs);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
-
-  GLint loc_uv = glGetAttribLocation(shader, "a_uv");
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_uvs);
-  glEnableVertexAttribArray(loc_uv);
-  glVertexAttribPointer(loc_uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-  GLint loc_color = glGetAttribLocation(shader, "a_color");
-  glDisableVertexAttribArray(loc_color);
-  glVertexAttrib4f(loc_color, 1.0f, 1.0f, 1.0f, 1.0f);
-
-  GLint loc_normal = glGetAttribLocation(shader, "a_normal");
-  glDisableVertexAttribArray(loc_normal);
-  glVertexAttrib3f(loc_normal, 0.0f, 0.0f, 1.0f);
-
-  glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  GLuint posAttrib = glGetAttribLocation(shader, "a_position");
-  glEnableVertexAttribArray(posAttrib);
-  glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-  glDisableVertexAttribArray(posAttrib);
+
+  glBindVertexArray(0);
+
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glDeleteBuffers(1, &vbo);
-  glDeleteBuffers(1, &vbo_uvs);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void frag_impl_end(){

@@ -41,6 +41,14 @@ void rdr___draw_mesh(){
   rdr_impl__draw_mesh(vao,mode,transform);
 }
 
+void rdr___draw_instances(){
+  __list_t* __ARG(transforms);
+  int32_t __ARG(mode);
+  int32_t __ARG(vao);
+  rdr_impl__draw_instances(vao,mode,transforms->n,(float*)(transforms->data));
+}
+
+
 void rdr__flush(){
   rdr_impl_flush();
 }
@@ -118,3 +126,4 @@ void rdr__text(){
   char* __ARG(s);
   rdr_impl_text(s,transform);
 }
+

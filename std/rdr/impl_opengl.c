@@ -9,6 +9,12 @@
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
+#define glVertexAttribDivisor glVertexAttribDivisorARB
+#define glDrawArraysInstanced glDrawArraysInstancedARB
+#define glDrawElementsInstanced glDrawElementsInstancedARB
+#define glBindVertexArray glBindVertexArrayAPPLE
+#define glGenVertexArrays glGenVertexArraysAPPLE
+#define glDeleteVertexArrays glDeleteVertexArraysAPPLE
 #elif defined(_WIN32)
 #include <windows.h>
 #include <gl/GL.h>
@@ -66,24 +72,34 @@
 #define DIRTY_UVS      8
 #define DIRTY_NORMALS  16
 
+#define LOC_POSITION 0
+#define LOC_COLOR    1
+#define LOC_UV       2
+#define LOC_NORMAL   3
+#define LOC_MODEL    4
+#define LOC_NM       8
+
 GLint fbo_zero;
 
-typedef struct vao_st {
+typedef struct mesh_st {
+  GLuint VAO;
   GLuint vbo_vertices;
   GLuint vbo_colors;
   GLuint vbo_uvs;
   GLuint vbo_normals;
   GLuint ebo_indices;
+  GLuint vbo_models;
+  GLuint vbo_normal_matrices;
   int n_vertices;
   int n_colors;
   int n_uvs;
   int n_normals;
   int n_indices;
-} vao_t;
+} mesh_t;
 
 
-ARR_DEF(vao_t);
-vao_t_arr_t vaos;
+ARR_DEF(mesh_t);
+mesh_t_arr_t meshes;
 
 GLuint shader = 0;
 
@@ -92,19 +108,19 @@ const char* vertex_src = "#version 120\n"
 "attribute vec4 a_color;\n"
 "attribute vec2 a_uv;\n"
 "attribute vec3 a_normal;\n"
+"attribute mat4 a_model;\n"
+"attribute mat3 a_normal_matrix;\n"
 "varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
 "varying vec3 v_normal;\n"
 "varying vec3 v_position;\n"
-"uniform mat4 model;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
-"uniform mat3 normal_matrix;\n"
 "void main() {\n"
 "  v_color = a_color;\n"
 "  v_uv = a_uv;\n"
-"  v_normal = normalize(normal_matrix * a_normal);\n"
-"  vec4 world_pos = model * vec4(a_position, 1.0);\n"
+"  v_normal = normalize(a_normal_matrix * a_normal);\n"
+"  vec4 world_pos = transpose(a_model) * vec4(a_position, 1.0);\n"
 "  vec4 view_pos = view * world_pos;\n"
 "  v_position = world_pos.xyz/world_pos.w;\n"
 "  gl_Position = projection * view_pos;\n"
@@ -149,6 +165,14 @@ int compileShader(const char* vertex_src, const char* fragment_src){
   shaderProgram = glCreateProgram();
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
+
+  glBindAttribLocation(shaderProgram, LOC_POSITION,"a_position");
+  glBindAttribLocation(shaderProgram, LOC_COLOR,   "a_color");
+  glBindAttribLocation(shaderProgram, LOC_UV,      "a_uv");
+  glBindAttribLocation(shaderProgram, LOC_NORMAL,  "a_normal");
+  glBindAttribLocation(shaderProgram, LOC_MODEL,   "a_model");
+  glBindAttribLocation(shaderProgram, LOC_NM,      "a_normal_matrix");
+
   glLinkProgram(shaderProgram);
   checkCompileError(shaderProgram, "PROGRAM");
   glDeleteShader(vertexShader);
@@ -161,7 +185,7 @@ void rdr_impl_init(uint64_t ctx){
   glewInit();
   #endif
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
-  ARR_INIT(vao_t,vaos);
+  ARR_INIT(mesh_t,meshes);
   shader = compileShader(vertex_src,fragment_src);
   glEnable(GL_DEPTH_TEST);
   glEnable( GL_BLEND );
@@ -179,65 +203,126 @@ void rdr_impl_background(float r, float g, float b, float a){
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-int rdr_impl__update_mesh(int vao, int flags,
+int rdr_impl__update_mesh(int mesh_id, int flags,
   float* vertices, int n_vertices,
   int32_t* indices, int n_indices,
   float* colors, int n_colors,
   float* uvs, int n_uvs,
   float* normals, int n_normals
 ){
-  vao_t mesh;
+  mesh_t mesh;
   int need_push = 0;
-  if (vao == -1) {
+  if (mesh_id == -1) {
     glGenBuffers(1, &mesh.vbo_vertices);
     glGenBuffers(1, &mesh.vbo_colors);
     glGenBuffers(1, &mesh.vbo_uvs);
-
-    float dummy[8] = {0};
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_uvs);
-    glBufferData(GL_ARRAY_BUFFER,sizeof(float)*8,dummy,GL_STATIC_DRAW);
-
     glGenBuffers(1, &mesh.vbo_normals);
     glGenBuffers(1, &mesh.ebo_indices);
+
+    glGenBuffers(1, &mesh.vbo_models);
+    glGenBuffers(1, &mesh.vbo_normal_matrices);
+
+    glGenVertexArrays(1, &mesh.VAO);  
+    glBindVertexArray(mesh.VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_models);
+    for (int i = 0; i < 4; i++) {
+      glEnableVertexAttribArray(LOC_MODEL + i);
+      glVertexAttribPointer(
+        LOC_MODEL + i, 
+        4,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(float)*16,
+        (void*)(i * sizeof(float)*4)
+      );
+      glVertexAttribDivisor(LOC_MODEL + i, 1);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normal_matrices);
+    for (int i = 0; i < 3; i++) {
+      glEnableVertexAttribArray(LOC_NM + i);
+      glVertexAttribPointer(
+        LOC_NM + i, 
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(float)*9,
+        (void*)(i * sizeof(float)*3)
+      );
+      glVertexAttribDivisor(LOC_NM + i, 1);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
+    glEnableVertexAttribArray(LOC_POSITION);
+    glVertexAttribPointer(LOC_POSITION, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+
     need_push = 1;
   } else {
-    mesh = vaos.data[vao];
+    mesh = meshes.data[mesh_id];
+    glBindVertexArray(mesh.VAO);
   }
 
 
   if ((flags & DIRTY_VERTICES) && vertices && n_vertices > 0) {
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_vertices * 3, vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(LOC_UV);
+    glVertexAttribPointer(LOC_UV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
   }
+  
   if ((flags & DIRTY_INDICES) && indices && n_indices > 0) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int32_t) * n_indices, indices, GL_STATIC_DRAW);
   }
-  if ((flags & DIRTY_COLORS) && colors && n_colors > 0) {
+
+  if (flags & DIRTY_COLORS){
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_colors);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_colors * 4, colors, GL_STATIC_DRAW);
+    if (colors && n_colors > 0) {
+      glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_colors * 4, colors, GL_STATIC_DRAW);
+      glEnableVertexAttribArray(LOC_COLOR);
+      glVertexAttribPointer(LOC_COLOR, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    }else{
+      glDisableVertexAttribArray(LOC_COLOR);
+      glVertexAttrib4f(LOC_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    }
   }
-  if ((flags & DIRTY_UVS) && uvs && n_uvs > 0) {
+  if (flags & DIRTY_UVS){
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_uvs);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_uvs * 2, uvs, GL_STATIC_DRAW);
+    if (uvs && n_uvs > 0) {
+      glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_uvs * 2, uvs, GL_STATIC_DRAW);
+      glEnableVertexAttribArray(LOC_UV);
+      glVertexAttribPointer(LOC_UV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    }else{
+      glDisableVertexAttribArray(LOC_UV);
+      glVertexAttrib2f(LOC_UV, 0.0f, 0.0f);
+    }
   }
-  if ((flags & DIRTY_NORMALS) && normals && n_normals > 0) {
+  if (flags & DIRTY_NORMALS){
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normals);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_normals * 3, normals, GL_STATIC_DRAW);
+    if (normals && n_normals > 0) {
+      glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_normals * 3, normals, GL_STATIC_DRAW);
+      glEnableVertexAttribArray(LOC_NORMAL);
+      glVertexAttribPointer(LOC_NORMAL, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    }else{
+      glDisableVertexAttribArray(LOC_NORMAL);
+      glVertexAttrib3f(LOC_NORMAL, 0.0f, 0.0f, 1.0f);
+    }
   }
 
   if (need_push){
-    vao = vaos.len;
-    ARR_PUSH(vao_t,vaos,mesh);
+    mesh_id = meshes.len;
+    ARR_PUSH(mesh_t,meshes,mesh);
   }
-  vaos.data[vao].n_vertices = n_vertices;
-  vaos.data[vao].n_indices = n_indices;
-  vaos.data[vao].n_normals = n_normals;
-  vaos.data[vao].n_uvs = n_uvs;
-  vaos.data[vao].n_colors = n_colors;
+  meshes.data[mesh_id].n_vertices = n_vertices;
+  meshes.data[mesh_id].n_indices = n_indices;
+  meshes.data[mesh_id].n_normals = n_normals;
+  meshes.data[mesh_id].n_uvs = n_uvs;
+  meshes.data[mesh_id].n_colors = n_colors;
 
-
-  return vao;
+  glBindVertexArray(0);
+  return mesh_id;
 }
 
 void rdr_impl__ortho(float* out, float left, float right, float bottom, float top, float nearZ, float farZ) {
@@ -386,71 +471,50 @@ void rdr_impl__camera_end(){
 }
 
 
-void rdr_impl__draw_mesh(int vao, int mode, float* model_matrix) {
 
-  vao_t mesh = vaos.data[vao];
+
+float* normal_matrices = NULL;
+int n_normal_matrices = 0;
+
+void rdr_impl__draw_instances(int mesh_id, int mode, int n_models, float* model_matrices) {
+  
+  mesh_t mesh = meshes.data[mesh_id];
+  glBindVertexArray(mesh.VAO);
   GLint program = 0;
 
   glGetIntegerv(GL_CURRENT_PROGRAM, &program);
 
-
-  GLint loc_model = glGetUniformLocation(program, "model");
-  if (loc_model >= 0) glUniformMatrix4fv(loc_model, 1, GL_TRUE, model_matrix);
-
-  float nm[9] = {1,0,0, 0,1,0, 0,0,1};
-  compute_normal_mat(nm,model_matrix);
-  GLint loc_nm = glGetUniformLocation(program, "normal_matrix");
-  if (loc_nm >= 0) glUniformMatrix3fv(loc_nm, 1, GL_FALSE, nm);
-
-  
-  GLint loc_uv = glGetAttribLocation(program, "a_uv");
-  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_uvs);
-  glEnableVertexAttribArray(loc_uv);
-  glVertexAttribPointer(loc_uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-  GLint loc_color = glGetAttribLocation(program, "a_color");
-  if (loc_color >= 0) {
-    if (mesh.n_colors){
-      glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_colors);
-      glEnableVertexAttribArray(loc_color);
-      glVertexAttribPointer(loc_color, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    }else{
-      glDisableVertexAttribArray(loc_color);
-      glVertexAttrib4f(loc_color, 1.0f, 1.0f, 1.0f, 1.0f);
-    }
+  if (n_models > n_normal_matrices){
+    normal_matrices = realloc(normal_matrices, 9*sizeof(float)*n_models);
+    n_normal_matrices = n_models;
   }
-  GLint loc_norm = glGetAttribLocation(program, "a_normal");
-  if (loc_norm >= 0) {
-    if (mesh.n_normals){
-      glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normals);
-      glEnableVertexAttribArray(loc_norm);
-      glVertexAttribPointer(loc_norm, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    }else{
-      glDisableVertexAttribArray(loc_norm);
-      glVertexAttrib3f(loc_norm, 0.0f, 0.0f, 1.0f);
-    }
+  for (int i = 0; i < n_models; i++){
+    compute_normal_mat(normal_matrices+i*9, model_matrices+i*16);
   }
 
-  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
-  GLuint loc_pos = glGetAttribLocation(program, "a_position");
-  glEnableVertexAttribArray(loc_pos);
-  glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_models);
+  glBufferData(GL_ARRAY_BUFFER, n_models*16*sizeof(float), model_matrices, GL_STATIC_DRAW);
 
+  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normal_matrices);
+  glBufferData(GL_ARRAY_BUFFER, n_models*9*sizeof(float), normal_matrices, GL_STATIC_DRAW);
 
   if (mesh.n_indices){
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-    glDrawElements(mode,mesh.n_indices,GL_UNSIGNED_INT,(void*)0);
+    glDrawElementsInstanced(mode,mesh.n_indices,GL_UNSIGNED_INT,(void*)0,n_models);
   }else{
-    glDrawArrays(mode, 0, mesh.n_vertices);
+    glDrawArraysInstanced(mode, 0, mesh.n_vertices,n_models);
   }
-  if (loc_pos >= 0)   glDisableVertexAttribArray(loc_pos);
-  if (loc_norm >= 0)  glDisableVertexAttribArray(loc_norm);
-  if (loc_uv >= 0)    glDisableVertexAttribArray(loc_uv);
-  if (loc_color >= 0) glDisableVertexAttribArray(loc_color);
+  glBindVertexArray(0);
 
-
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+
+void rdr_impl__draw_mesh(int mesh_id, int mode, float* model_matrix) {
+
+  rdr_impl__draw_instances(mesh_id,mode,1,model_matrix);
+}
 
 #define FONT_W 8
 #define FONT_H 16
@@ -564,14 +628,20 @@ uint8_t font_bitmap[FONT_N*FONT_H] = {
 
 const char* text_vertex_src = "#version 120\n"
 "attribute vec3 a_position;\n"
+"attribute vec4 a_color;\n"
 "attribute vec2 a_uv;\n"
+"attribute vec3 a_normal;\n"
+"attribute mat4 a_model;\n"
+"attribute mat3 a_normal_matrix;\n"
+"varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
-"uniform mat4 model;\n"
+"varying vec3 v_normal;\n"
+"varying vec3 v_position;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
 "void main() {\n"
 "  v_uv = a_uv;\n"
-"  vec4 p = projection * view * model * vec4(a_position, 1.0);\n"
+"  vec4 p = projection * view * transpose(a_model) * vec4(a_position, 1.0);\n"
 "  gl_Position = p;\n"
 "}\n";
 
@@ -581,6 +651,9 @@ const char* text_fragment_src = "#version 120\n"
 "void main() {\n"
 "  gl_FragColor = texture2D(font_atlas,v_uv);\n"
 "}\n";
+
+
+GLuint vao_text = 0;
 
 void build_font_texture() {
   unsigned char tex_data[FONT_TEX_H][FONT_TEX_W];
@@ -603,12 +676,30 @@ void build_font_texture() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+  glGenVertexArrays(1, &vao_text);
+  glBindVertexArray(vao_text);
+
   glGenBuffers(1, &text_vbo);
   glGenBuffers(1, &text_uv_vbo);
 
+  glBindBuffer(GL_ARRAY_BUFFER, text_uv_vbo);
+  glEnableVertexAttribArray(LOC_UV);
+  glVertexAttribPointer(LOC_UV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+  glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
+  glEnableVertexAttribArray(LOC_POSITION);
+  glVertexAttribPointer(LOC_POSITION, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+  glDisableVertexAttribArray(LOC_COLOR);
+  glVertexAttrib4f(LOC_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+
+  glDisableVertexAttribArray(LOC_NORMAL);
+  glVertexAttrib3f(LOC_NORMAL, 0.0f, 0.0f, 1.0f);
+
+  glBindVertexArray(0);
+
   text_shader = compileShader(text_vertex_src,text_fragment_src);
 }
-
 
 void rdr_impl_text(char* str, float* model_matrix){
   if (font_texture == -1){
@@ -632,8 +723,7 @@ void rdr_impl_text(char* str, float* model_matrix){
     program = prev_prog;
   }
 
-  GLint loc_model = glGetUniformLocation(program, "model");
-  glUniformMatrix4fv(loc_model, 1, GL_TRUE, model_matrix);
+  glBindVertexArray(vao_text);
 
   int len = strlen(str);
 
@@ -666,25 +756,21 @@ void rdr_impl_text(char* str, float* model_matrix){
     uvs[i*12+10]=u0;uvs[i*12+11]=v1;
   }
 
+  for (int i = 0; i < 4; i++) {
+    glDisableVertexAttribArray(LOC_MODEL + i);
+    glVertexAttrib4fv(LOC_MODEL + i, &model_matrix[i*4]);
+  }
+  float nm[9] = {1,0,0, 0,1,0, 0,0,1};
+  for (int i = 0; i < 3; i++) {
+    glDisableVertexAttribArray(LOC_NM + i);
+    glVertexAttrib3fv(LOC_NM + i, &nm[i*4]);
+  }
+  
   glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
   glBufferData(GL_ARRAY_BUFFER, len*18*sizeof(float), vertices, GL_DYNAMIC_DRAW);
-  // glBufferData(GL_ARRAY_BUFFER, len*18*sizeof(float), NULL, GL_DYNAMIC_DRAW);
-  // glBufferSubData(GL_ARRAY_BUFFER, 0, len*18*sizeof(float), vertices);
 
   glBindBuffer(GL_ARRAY_BUFFER, text_uv_vbo);
   glBufferData(GL_ARRAY_BUFFER, len*12*sizeof(float), uvs, GL_DYNAMIC_DRAW);
-  // glBufferData(GL_ARRAY_BUFFER, len*12*sizeof(float), NULL, GL_DYNAMIC_DRAW);
-  // glBufferSubData(GL_ARRAY_BUFFER, 0, len*12*sizeof(float), uvs);
-
-  GLint loc_uv = glGetAttribLocation(program, "a_uv");
-  glBindBuffer(GL_ARRAY_BUFFER, text_uv_vbo);
-  glEnableVertexAttribArray(loc_uv);
-  glVertexAttribPointer(loc_uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-  GLuint loc_pos = glGetAttribLocation(program, "a_position");
-  glBindBuffer(GL_ARRAY_BUFFER, text_vbo);
-  glEnableVertexAttribArray(loc_pos);
-  glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, font_texture);
@@ -692,11 +778,12 @@ void rdr_impl_text(char* str, float* model_matrix){
   glUniform1i(tex_loc, 0);
   glDrawArrays(GL_TRIANGLES, 0, len*6);
 
-  glDisableVertexAttribArray(loc_uv);
-  glDisableVertexAttribArray(loc_pos);
 
   free(vertices);
   free(uvs);
 
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glUseProgram(prev_prog);
 }

@@ -65,6 +65,16 @@ EXPORTED void rdr__draw_mesh(var_t* ret, gstate_t* _g){
   rdr_impl__draw_mesh(vao,mode,(float*)(transform->data));
 }
 
+EXPORTED void rdr__draw_instances(var_t* ret, gstate_t* _g){
+  lst_t* transforms = ARG_POP(_g,lst);
+  int32_t mode= ARG_POP(_g,i32);
+  int32_t vao = ARG_POP(_g,i32);
+  
+  float* ts = (float*)copy_list_vec_pack(transforms,64);
+  rdr_impl__draw_instances(vao,mode,transforms->n,ts);
+  free(ts);
+}
+
 EXPORTED void rdr_flush(var_t* ret, gstate_t* _g){
   rdr_impl_flush();
 }
@@ -154,6 +164,7 @@ EXPORTED void rdr_text(var_t* ret, gstate_t* _g){
 EXPORTED void lib_init_rdr(gstate_t* _g){
   QK_REG(init);
   QK_REG(_draw_mesh);
+  QK_REG(_draw_instances);
   QK_REG(_update_mesh);
   QK_REG(flush);
   QK_REG(background);

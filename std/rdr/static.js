@@ -243,8 +243,13 @@ void main() {
     if (loc_color>=0) gl.disableVertexAttribArray(loc_color);
 
   }
-
-
+  that._draw_instances = function(){
+    let [vao,mode,model_matrices] = $pop_args(3);
+    for (let i = 0; i < model_matrices.length; i++){
+      that._draw_mesh(vao,mode,model_matrices[i]);
+    }
+  }
+  
   that._look_at = function(){
     let [eye,center,up] = $pop_args(3);
     let f = [ center[0]-eye[0], center[1]-eye[1], center[2]-eye[2] ];
