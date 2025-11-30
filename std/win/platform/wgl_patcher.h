@@ -88,6 +88,12 @@ typedef void (APIENTRYP PFNGLBINDRENDERBUFFERPROC)(GLenum target, GLuint renderb
 typedef void (APIENTRYP PFNGLRENDERBUFFERSTORAGEPROC)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 typedef void (APIENTRYP PFNGLFRAMEBUFFERRENDERBUFFERPROC)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 typedef void (APIENTRYP PFNGLGENERATEMIPMAPPROC)(GLenum);
+typedef void (APIENTRYP PFNGLVERTEXATTRIBDIVISORPROC)(GLuint index, GLuint divisor);
+typedef void (APIENTRYP PFNGLDRAWELEMENTSINSTANCEDPROC)(GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount);
+typedef void (APIENTRYP PFNGLDRAWARRAYSINSTANCEDPROC)(GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
+typedef void (APIENTRYP PFNGLVERTEXATTRIB3FVPROC)(GLuint index, const GLfloat *v);
+typedef void (APIENTRYP PFNGLVERTEXATTRIB4FVPROC)(GLuint index, const GLfloat *v);
+typedef void (APIENTRYP PFNGLBINDATTRIBLOCATIONPROC)(GLuint program, GLuint index, const char *name);
 
 static PFNGLGENBUFFERSPROC glGenBuffers = NULL;
 static PFNGLBINDBUFFERPROC glBindBuffer = NULL;
@@ -138,6 +144,12 @@ static PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer = NULL;
 static PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage = NULL;
 static PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer = NULL;
 static PFNGLGENERATEMIPMAPPROC glGenerateMipmap = NULL;
+static PFNGLVERTEXATTRIBDIVISORPROC      glVertexAttribDivisor = NULL;
+static PFNGLDRAWELEMENTSINSTANCEDPROC    glDrawElementsInstanced = NULL;
+static PFNGLDRAWARRAYSINSTANCEDPROC      glDrawArraysInstanced = NULL;
+static PFNGLVERTEXATTRIB3FVPROC glVertexAttrib3fv = NULL;
+static PFNGLVERTEXATTRIB4FVPROC glVertexAttrib4fv = NULL;
+static PFNGLBINDATTRIBLOCATIONPROC glBindAttribLocation = NULL;
 
 static int glewDidInit = 0;
 static void glewInit(void) {
@@ -202,6 +214,15 @@ static void glewInit(void) {
   glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)wglGetProcAddress("glFramebufferRenderbuffer");
 
   glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmap");
+
+  glVertexAttribDivisor      = (PFNGLVERTEXATTRIBDIVISORPROC)wglGetProcAddress("glVertexAttribDivisor");
+  glDrawElementsInstanced    = (PFNGLDRAWELEMENTSINSTANCEDPROC)wglGetProcAddress("glDrawElementsInstanced");
+  glDrawArraysInstanced      = (PFNGLDRAWARRAYSINSTANCEDPROC)wglGetProcAddress("glDrawArraysInstanced");
+
+  glVertexAttrib3fv = (PFNGLVERTEXATTRIB3FVPROC)wglGetProcAddress("glVertexAttrib3fv");
+  glVertexAttrib4fv = (PFNGLVERTEXATTRIB4FVPROC)wglGetProcAddress("glVertexAttrib4fv");
+
+  glBindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)wglGetProcAddress("glBindAttribLocation");
 }
 
 #endif

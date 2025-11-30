@@ -20,6 +20,7 @@ var TO_C = function(cfg){
   #include <stdlib.h>
   #include <string.h>
   #include <inttypes.h>
+  #include <math.h>
   #define PRIf32 "f"
   #define PRIf64 "f"
   #define DBG_GC 0
@@ -1015,7 +1016,11 @@ var TO_C = function(cfg){
           os+="F";
         }
         if (op == "div" && (typ == 'float' || typ == 'double')){
-          o.push(`${a} = ${os}((${typ})${b},(${typ})${c});`);
+          if (c === 0){
+            o.push(`${a} = (${typ})${b}/trunc(${c});`);
+          }else{
+            o.push(`${a} = ${os}((${typ})${b},(${typ})${c});`);
+          }
         }else{
           // o.push(`printf("%f ${os} %f\\n",(float)${b},(float)${c});`);
           o.push(`${a} = ${os}(${b},${c});`);
