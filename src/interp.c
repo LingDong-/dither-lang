@@ -1374,11 +1374,7 @@ void to_str_(int vart, void* u, str_t* s, int depth){
       if (dic->map.slots[k].cap){
         for (int i = 0; i < dic->map.slots[k].len; i++){
           pair_t p = dic->map.slots[k].data[i];
-          if (ta->vart <= VART_F64){
-            to_str_(ta->vart, p.key, s, depth-1);
-          }else{
-            str_add(s,p.key);
-          }
+          to_str_(ta->vart, p.key, s, depth-1);
           str_addch(s,':');
           if (ta->vart == VART_VEC || ta->vart == VART_TUP){
             to_str_(tb->vart, & (((pair_t*)(p.val))->val), s, depth-1);
@@ -1647,12 +1643,16 @@ void* get_addr(term_t* a, int* nbytes){
       }else{
         ((double*)bs)[0] = idx;
       }
-    }else{
+    }else if (ta->vart == VART_VEC || ta->vart == VART_TUP){
       str_t s = str_new();
       var_t* u = find_var(&(a->u.addr.offs));
       to_str(u->type->vart, &(u->u), &s);
       bs = s.data;
       bl = s.len;
+    }else{
+      var_t* u = find_var(&(a->u.addr.offs));
+      bs = malloc(bl=8);
+      memcpy(bs, &(u->u), 8);
     }
 
     if (ta->vart == VART_VEC || ta->vart == VART_TUP){

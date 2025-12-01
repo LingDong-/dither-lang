@@ -455,6 +455,43 @@ z := dict[vec[i32,2],f32]{
 }
 ```
 
+## Macros
+
+Macros take specified parts from your code and generate new code on your behalf at compile time.
+
+For example, generating a GPU shader given an entry point function:
+
+```
+func f():vec[f32,4]{
+  return {1.0,0.0,0.0,1.0}; //red
+}
+embed f as "fragment" //string containing the shader program
+```
+
+The `@` operator (called "hints") can annotate the code for any information required by macros, but ignored by the general compiler.
+
+```
+func f(@varying normal:vec[f32,3]):vec[f32,4]{
+  return {...(normal*0.5+0.5).xyz, 1.0};
+}
+embed f as "fragment"
+```
+
+You can also build GUI automatically by annotating your code with `@param`.
+
+```
+@param[1,10] a := 3;
+@param[0.0,3.0] b := 2.0;
+@param c := "hi";
+embed global as "gui/layout"
+while (1){
+  embed global as "gui/sync"
+  // ...
+}
+```
+
+See documentaiton for the standard libraries (frag & gui) for more details on macro usage.
+
 # Standard Libraries
 
 ## io
@@ -514,7 +551,7 @@ math.PI
 // ... and all the other stuff you can expect
 ```
 
-## dr
+## drw
 
 A simple Processing/p5 style 2D graphics library.
 

@@ -100,9 +100,52 @@ EXPORTED void dict_values(var_t* ret,  gstate_t* _g){
 }
 
 
+
+
+
+EXPORTED void dict_has(var_t* ret,  gstate_t* _g){
+  var_t* u = ARG_POP_VAR_NO_FREE(_g);
+
+  dic_t* dic = ARG_POP(_g,dic);
+
+  type_t* ta = (type_t*)(dic->type->u.elem.head->data);
+  type_t* tb = (type_t*)(dic->type->u.elem.tail->data);
+
+  int ds = type_size(ta);
+
+  map_t* m = &(dic->map);
+  int found = 0;
+  for (int k = 0; k < NUM_MAP_SLOTS; k++){
+    if (m->slots[k].cap){
+      for (int i = 0; i < m->slots[k].len;i++){
+        pair_t p = m->slots[k].data[i];
+        int r = 0;
+        if (ta->vart == VART_VEC){
+          r = vec_eq((void*) (((pair_t*)p.val)->key),  u->u.vec);
+        }else if (ta->vart == VART_TUP){
+          r = tup_eq((void*) (((pair_t*)p.val)->key),  u->u.tup);
+        }else if (ta->vart == VART_STR){
+          r = strcmp(p.key, u->u.str->data) == 0;
+        }else{
+          r = memcmp(p.key, &(u->u), ds) == 0;
+        }
+        if (r){
+          found = 1;
+          goto done;
+        }
+      }
+    }
+  }
+done:
+  ret->u.i32 = found;
+  free(u);
+}
+
+
 EXPORTED void lib_init_dict(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "dict.keys", dict_keys);
   register_cfunc(&(_g->cfuncs), "dict.values", dict_values);
+  register_cfunc(&(_g->cfuncs), "dict.has", dict_has);
 }
 
 

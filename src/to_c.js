@@ -1027,8 +1027,10 @@ var TO_C = function(cfg){
       let os = {
         leq:'<=',geq:'>=',lt:'<',gt:'>',eq:'==',neq:'!='
       }[op];
-      let t = lookup[b];
-      if (t.con == "vec"){
+      let t = lookup[b]??lookup[c];
+      if (!t){
+        o.push(`${a} = ${b} ${os} ${c};`);
+      }else if (t.con == "vec"){
         let s = [];
         let n = vec_type_flat_n(t);
         for (let i = 0; i < n; i++){
