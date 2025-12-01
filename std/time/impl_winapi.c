@@ -46,9 +46,9 @@ int high_precision_sleep(const struct timespec *req) {
     initialized = TRUE;
   }
   QueryPerformanceCounter(&start);
-  int64_t coarse_sleep_ms = (int64_t)(target_ns / 1e6) - 1;
-  if (coarse_sleep_ms > 0) {
-    Sleep(coarse_sleep_ms);
+  int64_t coarse_sleep_ms = (int64_t)(target_ns / 1e6);
+  if (coarse_sleep_ms > 100) {
+    Sleep(coarse_sleep_ms - 10);
   }
   do {
     QueryPerformanceCounter(&now);
