@@ -5,6 +5,13 @@ globalThis.$rdr = new function(){
   const DIRTY_UVS      = 8 ;
   const DIRTY_NORMALS  = 16;
 
+  const LOC_POSITION   = 0 ;
+  const LOC_COLOR      = 1 ;
+  const LOC_UV         = 2 ;
+  const LOC_NORMAL     = 3 ;
+  const LOC_MODEL      = 4 ;
+  const LOC_NM         = 8 ;
+
   let that = this;
   let cnv;
   let gl;
@@ -16,19 +23,20 @@ attribute vec3 a_position;
 attribute vec4 a_color;
 attribute vec2 a_uv;
 attribute vec3 a_normal;
+attribute mat4 a_model;
+attribute mat3 a_normal_matrix;
 varying vec4 v_color;
 varying vec2 v_uv;
 varying vec3 v_normal;
 varying vec3 v_position;
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 normal_matrix;
 void main() {
   v_color = a_color;
   v_uv = a_uv;
-  v_normal = normalize(normal_matrix * a_normal);
-  vec4 world_pos = model * vec4(a_position, 1.0);
+  v_normal = normalize(a_normal_matrix * a_normal);
+  vec4 world_pos = a_model * vec4(a_position, 1.0);
   vec4 view_pos = view * world_pos;
   v_position = world_pos.xyz/world_pos.w;
   gl_Position = projection * view_pos;
@@ -43,7 +51,7 @@ void main() {
   gl_FragColor = v_color;
 }
   `;
-  let vaos = [];
+  let meshes = [];
   let index_cons = Uint16Array;
   let index_type = 5123;//gl.UNSIGNED_SHORT;
   function compileShader(type, source) {
@@ -57,6 +65,14 @@ void main() {
     }
     return shader;
   }
+  function bindShaderAttribLocs(shader){
+    gl.bindAttribLocation(shader, LOC_POSITION,"a_position");
+    gl.bindAttribLocation(shader, LOC_COLOR,   "a_color");
+    gl.bindAttribLocation(shader, LOC_UV,      "a_uv");
+    gl.bindAttribLocation(shader, LOC_NORMAL,  "a_normal");
+    gl.bindAttribLocation(shader, LOC_MODEL,   "a_model");
+    gl.bindAttribLocation(shader, LOC_NM,      "a_normal_matrix");
+  }
   that.init = function(){
     let [id] = $pop_args(1);
     cnv = document.getElementById(id);
@@ -67,6 +83,7 @@ void main() {
     shader = gl.createProgram();
     gl.attachShader(shader, vertexShader);
     gl.attachShader(shader, fragmentShader);
+    bindShaderAttribLocs(shader);
     gl.linkProgram(shader);
 
     gl.enable(gl.DEPTH_TEST);
@@ -78,6 +95,14 @@ void main() {
       index_type = gl.UNSIGNED_INT;
       index_cons = Uint32Array;
     }
+    let ext1 = gl.getExtension('OES_vertex_array_object');
+    gl.bindVertexArray = function(){return ext1.bindVertexArrayOES(...arguments)};
+    gl.createVertexArray = function(){return ext1.createVertexArrayOES(...arguments)};
+    gl.deleteVertexArray = function(){return ext1.deleteVertexArrayOES(...arguments)};
+    let ext2 = gl.getExtension('ANGLE_instanced_arrays');
+    gl.vertexAttribDivisor = function(){return ext2.vertexAttribDivisorANGLE(...arguments)};
+    gl.drawArraysInstanced = function(){return ext2.drawArraysInstancedANGLE(...arguments)};
+    gl.drawElementsInstanced = function(){return ext2.drawElementsInstancedANGLE(...arguments)};
   }
   function copy_list_vec_pack(lst,vn){
     let data = new Float32Array(lst.length*vn);
@@ -90,7 +115,7 @@ void main() {
   }
 
   that._update_mesh = function(){
-    let [vao,flags,vertices,indices,colors,uvs,normals] = $pop_args(7);
+    let [mesh_id,flags,vertices,indices,colors,uvs,normals] = $pop_args(7);
     let p_vertices, p_colors, p_uvs, p_normals;
     if (flags & DIRTY_VERTICES) p_vertices = copy_list_vec_pack(vertices,3);
     if (flags & DIRTY_COLORS) p_colors = copy_list_vec_pack(colors,4);
@@ -98,51 +123,105 @@ void main() {
     if (flags & DIRTY_NORMALS) p_normals = copy_list_vec_pack(normals,3);
 
     let mesh;
-    if (vao == -1){
+    if (mesh_id == -1){
       mesh = {
         vbo_vertices:gl.createBuffer(),
         vbo_colors:gl.createBuffer(),
         vbo_uvs:gl.createBuffer(),
         vbo_normals:gl.createBuffer(),
         ebo_indices:gl.createBuffer(),
+        vbo_models: gl.createBuffer(),
+        vbo_normal_matrices : gl.createBuffer(),
+        VAO:gl.createVertexArray(),
       }
-      // let dummy = new Float32Array(8);
-      // gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_uvs);
-      // gl.bufferData(gl.ARRAY_BUFFER, dummy, gl.STATIC_DRAW);
+      
+      gl.bindVertexArray(mesh.VAO);
+      gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_models);
+      for (let i = 0; i < 4; i++){
+        gl.enableVertexAttribArray(LOC_MODEL + i);
+        gl.vertexAttribPointer(
+          LOC_MODEL + i,
+          4,
+          gl.FLOAT,
+          false,
+          4*16,
+          i*4*4
+        );
+        gl.vertexAttribDivisor(LOC_MODEL + i, 1);
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_normal_matrices);
+      for (let i = 0; i < 3; i++){
+        gl.enableVertexAttribArray(LOC_NM + i);
+        gl.vertexAttribPointer(
+          LOC_NM + i,
+          3,
+          gl.FLOAT,
+          false,
+          4*9,
+          i*4*3
+        )
+        gl.vertexAttribDivisor(LOC_NM+i, 1);
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_vertices);
+      gl.enableVertexAttribArray(LOC_POSITION);
+      gl.vertexAttribPointer(LOC_POSITION,3,gl.FLOAT,false,0,0);
 
-      vao = vaos.length;
-      vaos.push(mesh);
+      mesh_id = meshes.length;
+      meshes.push(mesh);
     }else{
-      mesh = vaos[vao];
+      mesh = meshes[mesh_id];
+      gl.bindVertexArray(mesh.VAO);
     }
     if ((flags & DIRTY_VERTICES) && vertices.length){
       gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_vertices);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(p_vertices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, p_vertices, gl.STATIC_DRAW);
     }
     if ((flags & DIRTY_INDICES) && indices.length){
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new index_cons(indices), gl.STATIC_DRAW);
     }
-    if ((flags & DIRTY_COLORS) && colors.length){
+    if (flags & DIRTY_COLORS){
       gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_colors);
-      gl.bufferData(gl.ARRAY_BUFFER, p_colors, gl.STATIC_DRAW);
+      if (colors && colors.length > 0) {
+        gl.bufferData(gl.ARRAY_BUFFER, p_colors, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(LOC_COLOR);
+        gl.vertexAttribPointer(LOC_COLOR, 4, gl.FLOAT, false, 0, 0);
+      }else{
+        gl.disableVertexAttribArray(LOC_COLOR);
+        gl.vertexAttrib4f(LOC_COLOR, 1.0, 1.0, 1.0, 1.0);
+      }
     }
-    if ((flags & DIRTY_UVS) && uvs.length){
+    if (flags & DIRTY_UVS){
       gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_uvs);
-      gl.bufferData(gl.ARRAY_BUFFER, p_uvs, gl.STATIC_DRAW);
+      if (uvs && uvs.length > 0){
+        gl.bufferData(gl.ARRAY_BUFFER, p_uvs, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(LOC_UV);
+        gl.vertexAttribPointer(LOC_UV,2,gl.FLOAT,false,0,0);
+      }else{
+        gl.disableVertexAttribArray(LOC_UV);
+        gl.vertexAttrib2f(LOC_UV, 0.0, 0.0);
+      }
     }
-    if ((flags & DIRTY_NORMALS) && normals.length){
+    if (flags & DIRTY_NORMALS){
       gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_normals);
-      gl.bufferData(gl.ARRAY_BUFFER, p_normals, gl.STATIC_DRAW);
+      if (normals && normals.length > 0){
+        gl.bufferData(gl.ARRAY_BUFFER, p_normals, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(LOC_NORMAL);
+        gl.vertexAttribPointer(LOC_NORMAL,3,gl.FLOAT,false,0,0);
+      }else{
+        gl.disableVertexAttribArray(LOC_NORMAL);
+        gl.vertexAttrib3f(LOC_NORMAL, 0.0, 0.0, 1.0);
+      }
     }
-    vaos[vao].n_vertices = vertices.length;
-    vaos[vao].n_indices = indices.length;
-    vaos[vao].n_normals = normals.length;
-    vaos[vao].n_uvs = uvs.length;
-    vaos[vao].n_colors = colors.length;
-    return vao;
+    meshes[mesh_id].n_vertices = vertices.length;
+    meshes[mesh_id].n_indices = indices.length;
+    meshes[mesh_id].n_normals = normals.length;
+    meshes[mesh_id].n_uvs = uvs.length;
+    meshes[mesh_id].n_colors = colors.length;
+    gl.bindVertexArray(null);
+    return mesh_id;
   }
-  function compute_normal_mat(modelMatrix) {
+  function compute_normal_mat(out, outIndex, modelMatrix) {
     let m = [
       modelMatrix[0], modelMatrix[4], modelMatrix[8],
       modelMatrix[1], modelMatrix[5], modelMatrix[9],
@@ -159,17 +238,15 @@ void main() {
       return new Float32Array(m);
     }
     let invDet = 1.0 / det;
-    let out = new Float32Array(9);
-    out[0] = b01 * invDet;
-    out[1] = (-a22 * a01 + a02 * a21) * invDet;
-    out[2] = (a12 * a01 - a02 * a11) * invDet;
-    out[3] = b11 * invDet;
-    out[4] = (a22 * a00 - a02 * a20) * invDet;
-    out[5] = (-a12 * a00 + a02 * a10) * invDet;
-    out[6] = b21 * invDet;
-    out[7] = (-a21 * a00 + a01 * a20) * invDet;
-    out[8] = (a11 * a00 - a01 * a10) * invDet;
-    return out;
+    out[outIndex+0] = b01 * invDet;
+    out[outIndex+1] = (-a22 * a01 + a02 * a21) * invDet;
+    out[outIndex+2] = (a12 * a01 - a02 * a11) * invDet;
+    out[outIndex+3] = b11 * invDet;
+    out[outIndex+4] = (a22 * a00 - a02 * a20) * invDet;
+    out[outIndex+5] = (-a12 * a00 + a02 * a10) * invDet;
+    out[outIndex+6] = b21 * invDet;
+    out[outIndex+7] = (-a21 * a00 + a01 * a20) * invDet;
+    out[outIndex+8] = (a11 * a00 - a01 * a10) * invDet;
   }
   function glUniformMatrix4fv(loc,transpose,m){
     if (transpose) {
@@ -182,75 +259,67 @@ void main() {
     }
     return gl.uniformMatrix4fv(loc, false, m);
   }
-  function impl_draw_mesh(vao,mode,model_matrix){
-    let mesh = vaos[vao];
-    let program = gl.getParameter(gl.CURRENT_PROGRAM);
+  let m_buffer = new ArrayBuffer(64);
+  function impl_draw_instances(mesh_id,mode,model_matrices){
+    let mesh = meshes[mesh_id];
+    let n_models = model_matrices.length;
+    gl.bindVertexArray(mesh.VAO);
 
-    let loc_model = gl.getUniformLocation(program, "model");
-    glUniformMatrix4fv(loc_model, true, model_matrix);
-
-    let nm = compute_normal_mat(model_matrix);
-    let loc_nm = gl.getUniformLocation(program, "normal_matrix");
-    gl.uniformMatrix3fv(loc_nm, false, nm);
-    
-    let loc_uv = gl.getAttribLocation(program, "a_uv");
-    if (mesh.n_uvs){
-      gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_uvs);
-      gl.enableVertexAttribArray(loc_uv);
-      gl.vertexAttribPointer(loc_uv, 2, gl.FLOAT, false, 0, 0);
-    }else{
-      gl.disableVertexAttribArray(loc_uv);
-      gl.vertexAttrib2f(loc_uv, 0.0, 0.0);
+    let nm_sz = n_models*9*4;
+    if (m_buffer.byteLength < nm_sz){
+      m_buffer = new ArrayBuffer(nm_sz);
     }
+    let p_normal_matrices = new Float32Array(m_buffer, 0, 9*n_models);
 
-    let loc_color = gl.getAttribLocation(program, "a_color");
-    if (mesh.n_colors){
-      gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_colors);
-      gl.enableVertexAttribArray(loc_color);
-      gl.vertexAttribPointer(loc_color, 4, gl.FLOAT, false, 0, 0);
-    }else{
-      gl.disableVertexAttribArray(loc_color);
-      gl.vertexAttrib4f(loc_color, 1.0, 1.0, 1.0, 1.0);
+    for (let i = 0; i < n_models; i++){
+      compute_normal_mat(p_normal_matrices, i*9, model_matrices[i]);
     }
-    
-    let loc_norm = gl.getAttribLocation(program, "a_normal");
-    if (loc_norm >= 0) {
-      if (mesh.n_normals){
-        gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_normals);
-        gl.enableVertexAttribArray(loc_norm);
-        gl.vertexAttribPointer(loc_norm, 3, gl.FLOAT, false, 0, 0);
-      }else{
-        gl.disableVertexAttribArray(loc_norm);
-        gl.vertexAttrib3f(loc_norm, 0.0, 0.0, 1.0);
-      }
-    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_normal_matrices);
+    gl.bufferData(gl.ARRAY_BUFFER, p_normal_matrices, gl.DYNAMIC_DRAW);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_vertices);
-    let loc_pos = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(loc_pos);
-    gl.vertexAttribPointer(loc_pos, 3, gl.FLOAT, false, 0, 0);
+    let md_sz = n_models*16*4;
+    if (m_buffer.byteLength < md_sz){
+      m_buffer = new ArrayBuffer(md_sz);
+    }
+    let p_models = new Float32Array(m_buffer, 0, 16*n_models);
+    for (let i = 0; i < n_models; i++){
+      p_models[i*16+ 0] = model_matrices[i][ 0];
+      p_models[i*16+ 1] = model_matrices[i][ 4];
+      p_models[i*16+ 2] = model_matrices[i][ 8];
+      p_models[i*16+ 3] = model_matrices[i][12];
+      p_models[i*16+ 4] = model_matrices[i][ 1];
+      p_models[i*16+ 5] = model_matrices[i][ 5];
+      p_models[i*16+ 6] = model_matrices[i][ 9];
+      p_models[i*16+ 7] = model_matrices[i][13];
+      p_models[i*16+ 8] = model_matrices[i][ 2];
+      p_models[i*16+ 9] = model_matrices[i][ 6];
+      p_models[i*16+10] = model_matrices[i][10];
+      p_models[i*16+11] = model_matrices[i][14];
+      p_models[i*16+12] = model_matrices[i][ 3];
+      p_models[i*16+13] = model_matrices[i][ 7];
+      p_models[i*16+14] = model_matrices[i][11];
+      p_models[i*16+15] = model_matrices[i][15];
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_models);
+    gl.bufferData(gl.ARRAY_BUFFER, p_models, gl.DYNAMIC_DRAW);
 
     if (mesh.n_indices){
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-      gl.drawElements(mode,mesh.n_indices,index_type,0);
+      gl.drawElementsInstanced(mode,mesh.n_indices,index_type,0,n_models);
     }else{
-      gl.drawArrays(mode,0,mesh.n_vertices);
+      gl.drawArraysInstanced(mode,0,mesh.n_vertices,n_models);
     }
-    if (loc_pos>=0)   gl.disableVertexAttribArray(loc_pos);
-    if (loc_norm>=0)  gl.disableVertexAttribArray(loc_norm);
-    if (loc_uv>=0)    gl.disableVertexAttribArray(loc_uv);
-    if (loc_color>=0) gl.disableVertexAttribArray(loc_color);
-
+    gl.bindVertexArray(null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
   }
   that._draw_mesh = function(){
-    let [vao,mode,model_matrix] = $pop_args(3);
-    impl_draw_mesh(vao,mode,model_matrix);
+    let [mesh_id,mode,model_matrix] = $pop_args(3);
+    impl_draw_instances(mesh_id,mode,[model_matrix]);
   }
   that._draw_instances = function(){
-    let [vao,mode,model_matrices] = $pop_args(3);
-    for (let i = 0; i < model_matrices.length; i++){
-      impl_draw_mesh(vao,mode,model_matrices[i]);
-    }
+    let [mesh_id,mode,model_matrices] = $pop_args(3);
+    impl_draw_instances(mesh_id,mode,model_matrices);
   }
 
   that._look_at = function(){
@@ -394,6 +463,7 @@ void main() {
   let font_texture = -1;
   let text_vbo = 0;
   let text_uv_vbo = 0;
+  let vao_text = 0;
   let text_shader = 0;
   let font_bitmap = new Uint8Array([
     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -494,14 +564,17 @@ void main() {
   ]);
   const text_vertex_src = `precision mediump float;
     attribute vec3 a_position;
+    attribute vec4 a_color;
     attribute vec2 a_uv;
+    attribute vec3 a_normal;
+    attribute mat4 a_model;
+    attribute mat3 a_normal_matrix;
     varying vec2 v_uv;
-    uniform mat4 model;
     uniform mat4 view;
     uniform mat4 projection;
     void main() {
       v_uv = a_uv;
-      vec4 p = projection * view * model * vec4(a_position, 1.0);
+      vec4 p = projection * view * a_model * vec4(a_position, 1.0);
       gl_Position = p;
     }`;
 
@@ -533,14 +606,33 @@ void main() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
+    vao_text = gl.createVertexArray();
+    gl.bindVertexArray(vao_text);
+
     text_vbo = gl.createBuffer();
     text_uv_vbo = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, text_uv_vbo);
+    gl.enableVertexAttribArray(LOC_UV);
+    gl.vertexAttribPointer(LOC_UV, 2, gl.FLOAT, false, 0,0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, text_vbo);
+    gl.enableVertexAttribArray(LOC_POSITION);
+    gl.vertexAttribPointer(LOC_POSITION, 3, gl.FLOAT, false, 0,0);
+
+    gl.disableVertexAttribArray(LOC_COLOR);
+    gl.vertexAttrib4f(LOC_COLOR, 1,1,1,1);
+    gl.disableVertexAttribArray(LOC_NORMAL);
+    gl.vertexAttrib3f(LOC_NORMAL, 0,0,1);
+
+    gl.bindVertexArray(null);
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, text_vertex_src);
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, text_fragment_src);
     text_shader = gl.createProgram();
     gl.attachShader(text_shader, vertexShader);
     gl.attachShader(text_shader, fragmentShader);
+    bindShaderAttribLocs(text_shader);
     gl.linkProgram(text_shader);
 
   }
@@ -550,7 +642,7 @@ void main() {
     if (font_texture == -1){
       build_font_texture();
     }
-    let prev_prog = gl.getParameter(gl.CURRENT_PROGRAM);;
+    let prev_prog = gl.getParameter(gl.CURRENT_PROGRAM);
     let program = 0;
     if (prev_prog == 0 || prev_prog == shader){
       gl.useProgram(text_shader);
@@ -562,10 +654,8 @@ void main() {
     }else{
       program = prev_prog;
     }
-    
- 
-    let loc_model = gl.getUniformLocation(program,"model");
-    glUniformMatrix4fv(loc_model,true,model_matrix);
+
+    gl.bindVertexArray(vao_text);
 
     let len = str.length;
     let vertices = new Float32Array(len*18);
@@ -596,21 +686,28 @@ void main() {
       uvs[i*12+10]=u0;uvs[i*12+11]=v1;
     }
 
+    for (let i = 0; i < 4; i++){
+      gl.disableVertexAttribArray(LOC_MODEL + i);
+      gl.vertexAttrib4f(LOC_MODEL + i, 
+        model_matrix[0*4+i],
+        model_matrix[1*4+i],
+        model_matrix[2*4+i],
+        model_matrix[3*4+i]
+      );
+    }
+
+    gl.disableVertexAttribArray(LOC_NM);
+    gl.vertexAttrib3f(LOC_NM,   1,0,0);
+    gl.disableVertexAttribArray(LOC_NM+1);
+    gl.vertexAttrib3f(LOC_NM+1, 0,1,0);
+    gl.disableVertexAttribArray(LOC_NM+2);
+    gl.vertexAttrib3f(LOC_NM+2, 0,0,1);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, text_vbo);
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, text_uv_vbo);
     gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.DYNAMIC_DRAW);
-
-    let loc_uv = gl.getAttribLocation(program, "a_uv");
-    gl.bindBuffer(gl.ARRAY_BUFFER, text_uv_vbo);
-    gl.enableVertexAttribArray(loc_uv);
-    gl.vertexAttribPointer(loc_uv, 2, gl.FLOAT, false, 0, 0);
-
-    let loc_pos = gl.getAttribLocation(program, "a_position");
-    gl.bindBuffer(gl.ARRAY_BUFFER, text_vbo);
-    gl.enableVertexAttribArray(loc_pos);
-    gl.vertexAttribPointer(loc_pos, 3, gl.FLOAT, false, 0, 0);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, font_texture);
@@ -618,8 +715,8 @@ void main() {
     gl.uniform1i(tex_loc, 0);
     gl.drawArrays(gl.TRIANGLES, 0, len*6);
 
-    gl.disableVertexAttribArray(loc_uv);
-    gl.disableVertexAttribArray(loc_pos);
+    gl.bindVertexArray(null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     gl.useProgram(prev_prog);
 

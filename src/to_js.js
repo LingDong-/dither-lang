@@ -623,15 +623,20 @@ var TO_JS = function(cfg){
         let b = clean(ins[3]);
         let ta = lookup[a];
         let tb = lookup[b];
+        let tc = lookup[c];
         let nr0 = ta.elt[1];
         let nc0 = 1;
-        let nr1 = tb.elt[1];
+        // let nr1 = tb.elt[1];
         let nc1 = 1;
         if (ta.elt.length == 3){
           nc0 = ta.elt[2];
         }
-        if (tb.elt.length == 3){
-          nc1 = tb.elt[2];
+        if (tb){
+          if (tb.elt.length == 3){
+            nc1 = tb.elt[2];
+          }
+        }else{
+          nc1 = tc.elt[2];
         }
         let nr = nr0;
         let nc = nc1;

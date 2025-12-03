@@ -1,4 +1,11 @@
 globalThis.$frag = new function(){
+  const LOC_POSITION   = 0 ;
+  const LOC_COLOR      = 1 ;
+  const LOC_UV         = 2 ;
+  const LOC_NORMAL     = 3 ;
+  const LOC_MODEL      = 4 ;
+  const LOC_NM         = 8 ;
+
   let that = this;
   let cnv;
   let gl;
@@ -12,19 +19,19 @@ attribute vec3 a_position;
 attribute vec4 a_color;
 attribute vec2 a_uv;
 attribute vec3 a_normal;
+attribute mat4 a_model;
+attribute mat3 a_normal_matrix;
 varying vec4 v_color;
 varying vec2 v_uv;
 varying vec3 v_normal;
 varying vec3 v_position;
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat3 normal_matrix;
 void main() {
   v_color = a_color;
   v_uv = a_uv;
-  v_normal = normalize(normal_matrix * a_normal);
-  vec4 world_pos = model * vec4(a_position, 1.0);
+  v_normal = normalize(a_normal_matrix * a_normal);
+  vec4 world_pos = a_model * vec4(a_position, 1.0);
   vec4 view_pos = view * world_pos;
   v_position = world_pos.xyz/world_pos.w;
   gl_Position = projection * view_pos;
@@ -73,6 +80,14 @@ void main() {
     const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
+
+    gl.bindAttribLocation(program, LOC_POSITION,"a_position");
+    gl.bindAttribLocation(program, LOC_COLOR,   "a_color");
+    gl.bindAttribLocation(program, LOC_UV,      "a_uv");
+    gl.bindAttribLocation(program, LOC_NORMAL,  "a_normal");
+    gl.bindAttribLocation(program, LOC_MODEL,   "a_model");
+    gl.bindAttribLocation(program, LOC_NM,      "a_normal_matrix");
+
     gl.linkProgram(program);
     programs.push(program);
     return programs.length-1;
@@ -158,16 +173,32 @@ void main() {
     tex_cnt = 0;
   }
 
+
+
   that.render = function(){
     let shader = gl.getParameter(gl.CURRENT_PROGRAM);
     let vbo, vbo_uvs;
 
     let iden = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
-    let nm = new Float32Array([1,0,0, 0,1,0, 0,0,1])
-    gl.uniformMatrix4fv(gl.getUniformLocation(shader,"model"),false,iden)
+
     gl.uniformMatrix4fv(gl.getUniformLocation(shader,"view"),false,iden)
     gl.uniformMatrix4fv(gl.getUniformLocation(shader,"projection"),false,iden)
-    gl.uniformMatrix3fv(gl.getUniformLocation(shader,"normal_matrix"),false,nm)
+
+    gl.disableVertexAttribArray(LOC_MODEL);
+    gl.vertexAttrib4f(LOC_MODEL,   1,0,0,0);
+    gl.disableVertexAttribArray(LOC_MODEL+1);
+    gl.vertexAttrib4f(LOC_MODEL+1, 0,1,0,0);
+    gl.disableVertexAttribArray(LOC_MODEL+2);
+    gl.vertexAttrib4f(LOC_MODEL+2, 0,0,1,0);
+    gl.disableVertexAttribArray(LOC_MODEL+3);
+    gl.vertexAttrib4f(LOC_MODEL+3, 0,0,0,1);
+
+    gl.disableVertexAttribArray(LOC_NM);
+    gl.vertexAttrib3f(LOC_NM,   1,0,0);
+    gl.disableVertexAttribArray(LOC_NM+1);
+    gl.vertexAttrib3f(LOC_NM+1, 0,1,0);
+    gl.disableVertexAttribArray(LOC_NM+2);
+    gl.vertexAttrib3f(LOC_NM+2, 0,0,1);
 
     let uvs = new Float32Array(8);
     for (let i = 0; i < 4; i++){
@@ -178,30 +209,25 @@ void main() {
     gl.bindBuffer(gl.ARRAY_BUFFER,vbo_uvs);
     gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
 
-    let loc_uv = gl.getAttribLocation(shader,'a_uv');
     gl.bindBuffer(gl.ARRAY_BUFFER,vbo_uvs);
-    gl.enableVertexAttribArray(loc_uv);
-    gl.vertexAttribPointer(loc_uv,2,gl.FLOAT,false,0,0);
+    gl.enableVertexAttribArray(LOC_UV);
+    gl.vertexAttribPointer(LOC_UV,2,gl.FLOAT,false,0,0);
 
-    let loc_color = gl.getAttribLocation(shader,'a_color');
-    gl.disableVertexAttribArray(loc_color);
-    gl.vertexAttrib4f(loc_color,1,1,1,1);
+    gl.disableVertexAttribArray(LOC_COLOR);
+    gl.vertexAttrib4f(LOC_COLOR,1,1,1,1);
     
-    let loc_normal = gl.getAttribLocation(shader,'a_normal');
-    gl.disableVertexAttribArray(loc_normal);
-    gl.vertexAttrib3f(loc_normal,0,0,1);
+    gl.disableVertexAttribArray(LOC_NORMAL);
+    gl.vertexAttrib3f(LOC_NORMAL,0,0,1);
     
     vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
     gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);
 
-    const posAttrib = gl.getAttribLocation(shader, 'a_position');
-    gl.enableVertexAttribArray(posAttrib);
-    gl.vertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(LOC_POSITION);
+    gl.vertexAttribPointer(LOC_POSITION, 3, gl.FLOAT, false, 0, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-    gl.disableVertexAttribArray(posAttrib);
     gl.bindBuffer(gl.ARRAY_BUFFER,null);
     gl.deleteBuffer(vbo);
     gl.deleteBuffer(vbo_uvs);

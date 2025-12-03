@@ -268,8 +268,6 @@ int rdr_impl__update_mesh(int mesh_id, int flags,
   if ((flags & DIRTY_VERTICES) && vertices && n_vertices > 0) {
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_vertices * 3, vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(LOC_UV);
-    glVertexAttribPointer(LOC_UV, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
   }
   
   if ((flags & DIRTY_INDICES) && indices && n_indices > 0) {
@@ -633,10 +631,7 @@ const char* text_vertex_src = "#version 120\n"
 "attribute vec3 a_normal;\n"
 "attribute mat4 a_model;\n"
 "attribute mat3 a_normal_matrix;\n"
-"varying vec4 v_color;\n"
 "varying vec2 v_uv;\n"
-"varying vec3 v_normal;\n"
-"varying vec3 v_position;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
 "void main() {\n"
@@ -784,6 +779,5 @@ void rdr_impl_text(char* str, float* model_matrix){
 
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glUseProgram(prev_prog);
 }
