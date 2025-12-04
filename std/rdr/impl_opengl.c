@@ -34,6 +34,9 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
+#define MAT_TFRM(A,v) {((A)[0]*(v)[0]+(A)[1]*(v)[1]+(A)[2]*(v)[2]+(A)[3])/((A)[12]*(v)[0]+(A)[13]*(v)[1]+(A)[14]*(v)[2]+(A)[15]),((A)[4]*(v)[0]+(A)[5]*(v)[1]+(A)[6]*(v)[2]+(A)[7])/((A)[12]*(v)[0]+(A)[13]*(v)[1]+(A)[14]*(v)[2]+(A)[15]),((A)[8]*(v)[0]+(A)[9]*(v)[1]+(A)[10]*(v)[2]+(A)[11])/((A)[12]*(v)[0]+(A)[13]*(v)[1]+(A)[14]*(v)[2]+(A)[15])}
+#define MAT_MULT(A,B) {(A)[0]*(B)[0]+(A)[1]*(B)[4]+(A)[2]*(B)[8]+(A)[3]*(B)[12],(A)[0]*(B)[1]+(A)[1]*(B)[5]+(A)[2]*(B)[9]+(A)[3]*(B)[13],(A)[0]*(B)[2]+(A)[1]*(B)[6]+(A)[2]*(B)[10]+(A)[3]*(B)[14],(A)[0]*(B)[3]+(A)[1]*(B)[7]+(A)[2]*(B)[11]+(A)[3]*(B)[15],(A)[4]*(B)[0]+(A)[5]*(B)[4]+(A)[6]*(B)[8]+(A)[7]*(B)[12],(A)[4]*(B)[1]+(A)[5]*(B)[5]+(A)[6]*(B)[9]+(A)[7]*(B)[13],(A)[4]*(B)[2]+(A)[5]*(B)[6]+(A)[6]*(B)[10]+(A)[7]*(B)[14],(A)[4]*(B)[3]+(A)[5]*(B)[7]+(A)[6]*(B)[11]+(A)[7]*(B)[15],(A)[8]*(B)[0]+(A)[9]*(B)[4]+(A)[10]*(B)[8]+(A)[11]*(B)[12],(A)[8]*(B)[1]+(A)[9]*(B)[5]+(A)[10]*(B)[9]+(A)[11]*(B)[13],(A)[8]*(B)[2]+(A)[9]*(B)[6]+(A)[10]*(B)[10]+(A)[11]*(B)[14],(A)[8]*(B)[3]+(A)[9]*(B)[7]+(A)[10]*(B)[11]+(A)[11]*(B)[15],(A)[12]*(B)[0]+(A)[13]*(B)[4]+(A)[14]*(B)[8]+(A)[15]*(B)[12],(A)[12]*(B)[1]+(A)[13]*(B)[5]+(A)[14]*(B)[9]+(A)[15]*(B)[13],(A)[12]*(B)[2]+(A)[13]*(B)[6]+(A)[14]*(B)[10]+(A)[15]*(B)[14],(A)[12]*(B)[3]+(A)[13]*(B)[7]+(A)[14]*(B)[11]+(A)[15]*(B)[15]}
+
 #undef ARR_DEF
 #define ARR_DEF(dtype) \
   typedef struct { int len; int cap; dtype* data; } dtype ## _arr_t;
@@ -71,6 +74,7 @@
 #define DIRTY_COLORS   4
 #define DIRTY_UVS      8
 #define DIRTY_NORMALS  16
+#define DIRTY_BOUNDS   32
 
 #define LOC_POSITION 0
 #define LOC_COLOR    1
@@ -78,6 +82,8 @@
 #define LOC_NORMAL   3
 #define LOC_MODEL    4
 #define LOC_NM       8
+
+#define CULL_FRUSTUM 16
 
 GLint fbo_zero;
 
@@ -95,6 +101,7 @@ typedef struct mesh_st {
   int n_uvs;
   int n_normals;
   int n_indices;
+  float bsphere[4];
 } mesh_t;
 
 
@@ -120,7 +127,7 @@ const char* vertex_src = "#version 120\n"
 "  v_color = a_color;\n"
 "  v_uv = a_uv;\n"
 "  v_normal = normalize(a_normal_matrix * a_normal);\n"
-"  vec4 world_pos = transpose(a_model) * vec4(a_position, 1.0);\n"
+"  vec4 world_pos = a_model * vec4(a_position, 1.0);\n"
 "  vec4 view_pos = view * world_pos;\n"
 "  v_position = world_pos.xyz/world_pos.w;\n"
 "  gl_Position = projection * view_pos;\n"
@@ -203,7 +210,34 @@ void rdr_impl_background(float r, float g, float b, float a){
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-int rdr_impl__update_mesh(int mesh_id, int flags,
+void compute_bounding_sphere(float* out, float* vertices, int n_vertices){
+  float mx = INFINITY;
+  float my = INFINITY;
+  float mz = INFINITY;
+  float Mx =-INFINITY;
+  float My =-INFINITY;
+  float Mz =-INFINITY;
+  for (int i = 0; i < n_vertices; i++){
+    float x = vertices[i*3+0];
+    float y = vertices[i*3+1];
+    float z = vertices[i*3+2];
+    mx = fmin(x,mx);
+    my = fmin(y,my);
+    mz = fmin(z,mz);
+    Mx = fmax(x,Mx);
+    My = fmax(y,My);
+    Mz = fmax(z,Mz);
+  }
+  out[0] = (mx+Mx)*0.5;
+  out[1] = (my+My)*0.5;
+  out[2] = (mz+Mz)*0.5;
+  float dx = Mx-out[0];
+  float dy = My-out[1];
+  float dz = Mz-out[2];
+  out[3] = sqrt(dx*dx+dy*dy+dz*dz);
+}
+
+int rdr_impl__update_mesh(int mesh_id, int flags, int mode,
   float* vertices, int n_vertices,
   int32_t* indices, int n_indices,
   float* colors, int n_colors,
@@ -268,6 +302,9 @@ int rdr_impl__update_mesh(int mesh_id, int flags,
   if ((flags & DIRTY_VERTICES) && vertices && n_vertices > 0) {
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_vertices);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * n_vertices * 3, vertices, GL_STATIC_DRAW);
+  }
+  if (((flags & DIRTY_BOUNDS) || (flags & DIRTY_VERTICES)) && vertices && n_vertices > 0){
+    compute_bounding_sphere(mesh.bsphere, vertices, n_vertices);
   }
   
   if ((flags & DIRTY_INDICES) && indices && n_indices > 0) {
@@ -415,10 +452,15 @@ void rdr_mat_impl_rotate(float* out, float* axis, float ang){
 
 void compute_normal_mat(float* out, const float* modelMatrix) {
 
+  // float m[9] = {
+  //   modelMatrix[0], modelMatrix[4], modelMatrix[8],
+  //   modelMatrix[1], modelMatrix[5], modelMatrix[9],
+  //   modelMatrix[2], modelMatrix[6], modelMatrix[10],
+  // };
   float m[9] = {
-    modelMatrix[0], modelMatrix[4], modelMatrix[8],
-    modelMatrix[1], modelMatrix[5], modelMatrix[9],
-    modelMatrix[2], modelMatrix[6], modelMatrix[10],
+    modelMatrix[0], modelMatrix[1], modelMatrix[2],
+    modelMatrix[4], modelMatrix[5], modelMatrix[6],
+    modelMatrix[8], modelMatrix[9], modelMatrix[10],
   };
   float a00 = m[0], a01 = m[3], a02 = m[6];
   float a10 = m[1], a11 = m[4], a12 = m[7];
@@ -442,9 +484,31 @@ void compute_normal_mat(float* out, const float* modelMatrix) {
   out[7] = (-a21 * a00 + a01 * a20) * invDet;
   out[8] = (a11 * a00 - a01 * a10) * invDet;
 }
+
+void extract_frustum_planes(float* out, float* m){
+
+  float p[6][4] = {
+    { m[3*4+0]+m[0*4+0], m[3*4+1]+m[0*4+1], m[3*4+2]+m[0*4+2], m[3*4+3]+m[0*4+3] }, // left
+    { m[3*4+0]-m[0*4+0], m[3*4+1]-m[0*4+1], m[3*4+2]-m[0*4+2], m[3*4+3]-m[0*4+3] }, // right
+    { m[3*4+0]+m[1*4+0], m[3*4+1]+m[1*4+1], m[3*4+2]+m[1*4+2], m[3*4+3]+m[1*4+3] }, // bottom
+    { m[3*4+0]-m[1*4+0], m[3*4+1]-m[1*4+1], m[3*4+2]-m[1*4+2], m[3*4+3]-m[1*4+3] }, // top
+    { m[3*4+0]+m[2*4+0], m[3*4+1]+m[2*4+1], m[3*4+2]+m[2*4+2], m[3*4+3]+m[2*4+3] }, // near
+    { m[3*4+0]-m[2*4+0], m[3*4+1]-m[2*4+1], m[3*4+2]-m[2*4+2], m[3*4+3]-m[2*4+3] }, // far
+  };
+  for (int i = 0; i < 6; i++) {
+    float a = p[i][0], b = p[i][1], c = p[i][2];
+    float inv = 1.0f / sqrtf(a*a + b*b + c*c);
+    out[i*4+0] = a * inv;
+    out[i*4+1] = b * inv;
+    out[i*4+2] = c * inv;
+    out[i*4+3] = p[i][3] * inv;
+  }
+}
+
 GLint currentProgram = 0;
 float cached_view[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
 float cached_proj[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+float cached_frust_planes[24];
 void rdr_impl__camera_begin(float* view, float* proj){
 
   glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
@@ -459,6 +523,8 @@ void rdr_impl__camera_begin(float* view, float* proj){
   if (loc_proj >= 0) glUniformMatrix4fv(loc_proj, 1, GL_TRUE, proj);
   memcpy(cached_view,view,sizeof(cached_view));
   memcpy(cached_proj,proj,sizeof(cached_proj));
+  float vp[16] = MAT_MULT(proj,view);
+  extract_frustum_planes(cached_frust_planes,vp);
 }
 
 void rdr_impl__camera_end(){
@@ -469,10 +535,34 @@ void rdr_impl__camera_end(){
 }
 
 
+int sphere_test(float* bsphere, float* m, float* planes){
+  float center[3] = MAT_TFRM(m, bsphere);
+  float sx = m[0]*m[0]+m[1]*m[1]+m[2]*m[2];
+  float sy = m[4]*m[4]+m[5]*m[5]+m[6]*m[6];
+  float sz = m[8]*m[8]+m[9]*m[9]+m[10]*m[10];
+  float radius = sqrt(fmax(sx,fmax(sy,sz))) * bsphere[3];
+  for (int i = 0; i < 6; i++) {
+    float dist =  planes[i*4+0]*center[0] +
+                  planes[i*4+1]*center[1] +
+                  planes[i*4+2]*center[2] +
+                  planes[i*4+3];
+    if (dist < - radius) return 0;
+  }
+  
+  return 1;
+}
 
 
-float* normal_matrices = NULL;
-int n_normal_matrices = 0;
+void mat_copy_transpose(float* dst, float* src){
+  dst[0]=src[0]; dst[1]=src[4], dst[2]=src[8] ; dst[3]=src[12];
+  dst[4]=src[1]; dst[5]=src[5], dst[6]=src[9] ; dst[7]=src[13];
+  dst[8]=src[2]; dst[9]=src[6], dst[10]=src[10]; dst[11]=src[14];
+  dst[12]=src[3]; dst[13]=src[7], dst[14]=src[11]; dst[15]=src[15];
+}
+
+float* buf_nm = NULL;
+float * buf_model = NULL;
+int n_buf_mat = 0;
 
 void rdr_impl__draw_instances(int mesh_id, int mode, int n_models, float* model_matrices) {
   
@@ -482,25 +572,43 @@ void rdr_impl__draw_instances(int mesh_id, int mode, int n_models, float* model_
 
   glGetIntegerv(GL_CURRENT_PROGRAM, &program);
 
-  if (n_models > n_normal_matrices){
-    normal_matrices = realloc(normal_matrices, 9*sizeof(float)*n_models);
-    n_normal_matrices = n_models;
+  if (n_models > n_buf_mat){
+    buf_nm = realloc(buf_nm, 9*sizeof(float)*n_models);
+    buf_model = realloc(buf_model, 16*sizeof(float)*n_models);
+    n_buf_mat = n_models;
   }
-  for (int i = 0; i < n_models; i++){
-    compute_normal_mat(normal_matrices+i*9, model_matrices+i*16);
+
+  int n_draw = n_models;
+  if (mode & CULL_FRUSTUM){
+    n_draw = 0;
+    for (int i = 0; i < n_models; i++){
+      int vis = sphere_test(mesh.bsphere, model_matrices+(i*16), cached_frust_planes);
+      if (vis){
+        mat_copy_transpose(buf_model+(n_draw*16), model_matrices+(i*16));
+        n_draw++;
+      }
+    }
+  }else{
+    for (int i = 0; i < n_models; i++){
+      mat_copy_transpose(buf_model+(i*16), model_matrices+(i*16));
+    }
+  }
+
+  for (int i = 0; i < n_draw; i++){
+    compute_normal_mat(buf_nm+i*9, buf_model+i*16);
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_models);
-  glBufferData(GL_ARRAY_BUFFER, n_models*16*sizeof(float), model_matrices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, n_draw*16*sizeof(float), buf_model, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_normal_matrices);
-  glBufferData(GL_ARRAY_BUFFER, n_models*9*sizeof(float), normal_matrices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, n_draw*9*sizeof(float), buf_nm, GL_STATIC_DRAW);
 
   if (mesh.n_indices){
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-    glDrawElementsInstanced(mode,mesh.n_indices,GL_UNSIGNED_INT,(void*)0,n_models);
+    glDrawElementsInstanced(mode&0xf,mesh.n_indices,GL_UNSIGNED_INT,(void*)0,n_draw);
   }else{
-    glDrawArraysInstanced(mode, 0, mesh.n_vertices,n_models);
+    glDrawArraysInstanced(mode&0xf, 0, mesh.n_vertices,n_draw);
   }
   glBindVertexArray(0);
 
@@ -636,7 +744,7 @@ const char* text_vertex_src = "#version 120\n"
 "uniform mat4 projection;\n"
 "void main() {\n"
 "  v_uv = a_uv;\n"
-"  vec4 p = projection * view * transpose(a_model) * vec4(a_position, 1.0);\n"
+"  vec4 p = projection * view * a_model * vec4(a_position, 1.0);\n"
 "  gl_Position = p;\n"
 "}\n";
 
@@ -751,10 +859,15 @@ void rdr_impl_text(char* str, float* model_matrix){
     uvs[i*12+10]=u0;uvs[i*12+11]=v1;
   }
 
-  for (int i = 0; i < 4; i++) {
-    glDisableVertexAttribArray(LOC_MODEL + i);
-    glVertexAttrib4fv(LOC_MODEL + i, &model_matrix[i*4]);
-  }
+  glDisableVertexAttribArray(LOC_MODEL + 0);
+  glVertexAttrib4f(LOC_MODEL + 0, model_matrix[0],model_matrix[4],model_matrix[8],model_matrix[12]);
+  glDisableVertexAttribArray(LOC_MODEL + 1);
+  glVertexAttrib4f(LOC_MODEL + 1, model_matrix[1],model_matrix[5],model_matrix[9],model_matrix[13]);
+  glDisableVertexAttribArray(LOC_MODEL + 2);
+  glVertexAttrib4f(LOC_MODEL + 2, model_matrix[2],model_matrix[6],model_matrix[10],model_matrix[14]);
+  glDisableVertexAttribArray(LOC_MODEL + 3);
+  glVertexAttrib4f(LOC_MODEL + 3, model_matrix[3],model_matrix[7],model_matrix[11],model_matrix[15]);
+
   float nm[9] = {1,0,0, 0,1,0, 0,0,1};
   for (int i = 0; i < 3; i++) {
     glDisableVertexAttribArray(LOC_NM + i);

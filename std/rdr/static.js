@@ -4,6 +4,9 @@ globalThis.$rdr = new function(){
   const DIRTY_COLORS   = 4 ;
   const DIRTY_UVS      = 8 ;
   const DIRTY_NORMALS  = 16;
+  const DIRTY_BOUNDS   = 32;
+
+  const CULL_FRUSTUM   = 16;
 
   const LOC_POSITION   = 0 ;
   const LOC_COLOR      = 1 ;
@@ -11,6 +14,9 @@ globalThis.$rdr = new function(){
   const LOC_NORMAL     = 3 ;
   const LOC_MODEL      = 4 ;
   const LOC_NM         = 8 ;
+
+  function MAT_TFRM(A,v) {return [((A)[0]*(v)[0]+(A)[1]*(v)[1]+(A)[2]*(v)[2]+(A)[3])/((A)[12]*(v)[0]+(A)[13]*(v)[1]+(A)[14]*(v)[2]+(A)[15]),((A)[4]*(v)[0]+(A)[5]*(v)[1]+(A)[6]*(v)[2]+(A)[7])/((A)[12]*(v)[0]+(A)[13]*(v)[1]+(A)[14]*(v)[2]+(A)[15]),((A)[8]*(v)[0]+(A)[9]*(v)[1]+(A)[10]*(v)[2]+(A)[11])/((A)[12]*(v)[0]+(A)[13]*(v)[1]+(A)[14]*(v)[2]+(A)[15])];}
+  function MAT_MULT(A,B) {return [(A)[0]*(B)[0]+(A)[1]*(B)[4]+(A)[2]*(B)[8]+(A)[3]*(B)[12],(A)[0]*(B)[1]+(A)[1]*(B)[5]+(A)[2]*(B)[9]+(A)[3]*(B)[13],(A)[0]*(B)[2]+(A)[1]*(B)[6]+(A)[2]*(B)[10]+(A)[3]*(B)[14],(A)[0]*(B)[3]+(A)[1]*(B)[7]+(A)[2]*(B)[11]+(A)[3]*(B)[15],(A)[4]*(B)[0]+(A)[5]*(B)[4]+(A)[6]*(B)[8]+(A)[7]*(B)[12],(A)[4]*(B)[1]+(A)[5]*(B)[5]+(A)[6]*(B)[9]+(A)[7]*(B)[13],(A)[4]*(B)[2]+(A)[5]*(B)[6]+(A)[6]*(B)[10]+(A)[7]*(B)[14],(A)[4]*(B)[3]+(A)[5]*(B)[7]+(A)[6]*(B)[11]+(A)[7]*(B)[15],(A)[8]*(B)[0]+(A)[9]*(B)[4]+(A)[10]*(B)[8]+(A)[11]*(B)[12],(A)[8]*(B)[1]+(A)[9]*(B)[5]+(A)[10]*(B)[9]+(A)[11]*(B)[13],(A)[8]*(B)[2]+(A)[9]*(B)[6]+(A)[10]*(B)[10]+(A)[11]*(B)[14],(A)[8]*(B)[3]+(A)[9]*(B)[7]+(A)[10]*(B)[11]+(A)[11]*(B)[15],(A)[12]*(B)[0]+(A)[13]*(B)[4]+(A)[14]*(B)[8]+(A)[15]*(B)[12],(A)[12]*(B)[1]+(A)[13]*(B)[5]+(A)[14]*(B)[9]+(A)[15]*(B)[13],(A)[12]*(B)[2]+(A)[13]*(B)[6]+(A)[14]*(B)[10]+(A)[15]*(B)[14],(A)[12]*(B)[3]+(A)[13]*(B)[7]+(A)[14]*(B)[11]+(A)[15]*(B)[15]];}
 
   let that = this;
   let cnv;
@@ -114,8 +120,39 @@ void main() {
     return data;
   }
 
+  function compute_bounding_sphere(vertices){
+    let mx = Infinity;
+    let my = Infinity;
+    let mz = Infinity;
+    let Mx =-Infinity;
+    let My =-Infinity;
+    let Mz =-Infinity;
+    for (let i = 0; i < vertices.length; i++){
+      let x = vertices[i][0];
+      let y = vertices[i][1];
+      let z = vertices[i][2];
+      mx = Math.min(x,mx);
+      my = Math.min(y,my);
+      mz = Math.min(z,mz);
+      Mx = Math.max(x,Mx);
+      My = Math.max(y,My);
+      Mz = Math.max(z,Mz);
+    }
+    let out = [
+      (mx+Mx)*0.5,
+      (my+My)*0.5,
+      (mz+Mz)*0.5,
+      0
+    ];
+    let dx = Mx-out[0];
+    let dy = My-out[1];
+    let dz = Mz-out[2];
+    out[3] = Math.sqrt(dx*dx+dy*dy+dz*dz);
+    return out;
+  }
+
   that._update_mesh = function(){
-    let [mesh_id,flags,vertices,indices,colors,uvs,normals] = $pop_args(7);
+    let [mesh_id,flags,mode,vertices,indices,colors,uvs,normals] = $pop_args(8);
     let p_vertices, p_colors, p_uvs, p_normals;
     if (flags & DIRTY_VERTICES) p_vertices = copy_list_vec_pack(vertices,3);
     if (flags & DIRTY_COLORS) p_colors = copy_list_vec_pack(colors,4);
@@ -133,6 +170,7 @@ void main() {
         vbo_models: gl.createBuffer(),
         vbo_normal_matrices : gl.createBuffer(),
         VAO:gl.createVertexArray(),
+        bsphere:[0,0,0,Infinity],
       }
       
       gl.bindVertexArray(mesh.VAO);
@@ -176,6 +214,10 @@ void main() {
       gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_vertices);
       gl.bufferData(gl.ARRAY_BUFFER, p_vertices, gl.STATIC_DRAW);
     }
+    if (((flags & DIRTY_BOUNDS) || (flags & DIRTY_VERTICES)) && vertices.length){
+      mesh.bsphere = compute_bounding_sphere(vertices);
+    }
+  
     if ((flags & DIRTY_INDICES) && indices.length){
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new index_cons(indices), gl.STATIC_DRAW);
@@ -259,55 +301,80 @@ void main() {
     }
     return gl.uniformMatrix4fv(loc, false, m);
   }
-  let m_buffer = new ArrayBuffer(64);
+  function sphere_test(bsphere, m, planes){
+    let center = MAT_TFRM(m, bsphere);
+    let sx = m[0]*m[0]+m[1]*m[1]+m[2]*m[2];
+    let sy = m[4]*m[4]+m[5]*m[5]+m[6]*m[6];
+    let sz = m[8]*m[8]+m[9]*m[9]+m[10]*m[10];
+    let radius = Math.sqrt(Math.max(sx,Math.max(sy,sz))) * bsphere[3];
+    for (let i = 0; i < 6; i++) {
+      let dist =  planes[i*4+0]*center[0] +
+                  planes[i*4+1]*center[1] +
+                  planes[i*4+2]*center[2] +
+                  planes[i*4+3];
+      if (dist < - radius) return 0;
+    }
+    return 1;
+  }
+
+  let buf_nm = new ArrayBuffer(36);
+  let buf_model = new ArrayBuffer(64)
   function impl_draw_instances(mesh_id,mode,model_matrices){
     let mesh = meshes[mesh_id];
     let n_models = model_matrices.length;
     gl.bindVertexArray(mesh.VAO);
 
     let nm_sz = n_models*9*4;
-    if (m_buffer.byteLength < nm_sz){
-      m_buffer = new ArrayBuffer(nm_sz);
+    if (buf_nm.byteLength < nm_sz){
+      buf_nm = new ArrayBuffer(nm_sz);
     }
-    let p_normal_matrices = new Float32Array(m_buffer, 0, 9*n_models);
-
+    let md_sz = n_models*16*4;
+    if (buf_model.byteLength < md_sz){
+      buf_model = new ArrayBuffer(md_sz);
+    }
+    let p_models = new Float32Array(buf_model, 0, 16*n_models);
+    let p_normal_matrices = new Float32Array(buf_nm, 0, 9*n_models);
+    let n_draw = 0;
     for (let i = 0; i < n_models; i++){
-      compute_normal_mat(p_normal_matrices, i*9, model_matrices[i]);
+      let vis = 1;
+      if (mode & CULL_FRUSTUM){
+        vis = sphere_test(mesh.bsphere, model_matrices[i], cached_frust_planes);
+      }
+      if (vis){
+        p_models[n_draw*16+ 0] = model_matrices[i][ 0];
+        p_models[n_draw*16+ 1] = model_matrices[i][ 4];
+        p_models[n_draw*16+ 2] = model_matrices[i][ 8];
+        p_models[n_draw*16+ 3] = model_matrices[i][12];
+        p_models[n_draw*16+ 4] = model_matrices[i][ 1];
+        p_models[n_draw*16+ 5] = model_matrices[i][ 5];
+        p_models[n_draw*16+ 6] = model_matrices[i][ 9];
+        p_models[n_draw*16+ 7] = model_matrices[i][13];
+        p_models[n_draw*16+ 8] = model_matrices[i][ 2];
+        p_models[n_draw*16+ 9] = model_matrices[i][ 6];
+        p_models[n_draw*16+10] = model_matrices[i][10];
+        p_models[n_draw*16+11] = model_matrices[i][14];
+        p_models[n_draw*16+12] = model_matrices[i][ 3];
+        p_models[n_draw*16+13] = model_matrices[i][ 7];
+        p_models[n_draw*16+14] = model_matrices[i][11];
+        p_models[n_draw*16+15] = model_matrices[i][15];
+        compute_normal_mat(p_normal_matrices, n_draw*9, model_matrices[i]);
+        n_draw ++;
+      }
     }
+    p_models = new Float32Array(buf_model, 0, 16*n_draw);
+    p_normal_matrices = new Float32Array(buf_nm, 0, 9*n_draw);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_normal_matrices);
     gl.bufferData(gl.ARRAY_BUFFER, p_normal_matrices, gl.DYNAMIC_DRAW);
 
-    let md_sz = n_models*16*4;
-    if (m_buffer.byteLength < md_sz){
-      m_buffer = new ArrayBuffer(md_sz);
-    }
-    let p_models = new Float32Array(m_buffer, 0, 16*n_models);
-    for (let i = 0; i < n_models; i++){
-      p_models[i*16+ 0] = model_matrices[i][ 0];
-      p_models[i*16+ 1] = model_matrices[i][ 4];
-      p_models[i*16+ 2] = model_matrices[i][ 8];
-      p_models[i*16+ 3] = model_matrices[i][12];
-      p_models[i*16+ 4] = model_matrices[i][ 1];
-      p_models[i*16+ 5] = model_matrices[i][ 5];
-      p_models[i*16+ 6] = model_matrices[i][ 9];
-      p_models[i*16+ 7] = model_matrices[i][13];
-      p_models[i*16+ 8] = model_matrices[i][ 2];
-      p_models[i*16+ 9] = model_matrices[i][ 6];
-      p_models[i*16+10] = model_matrices[i][10];
-      p_models[i*16+11] = model_matrices[i][14];
-      p_models[i*16+12] = model_matrices[i][ 3];
-      p_models[i*16+13] = model_matrices[i][ 7];
-      p_models[i*16+14] = model_matrices[i][11];
-      p_models[i*16+15] = model_matrices[i][15];
-    }
     gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo_models);
     gl.bufferData(gl.ARRAY_BUFFER, p_models, gl.DYNAMIC_DRAW);
 
     if (mesh.n_indices){
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ebo_indices);
-      gl.drawElementsInstanced(mode,mesh.n_indices,index_type,0,n_models);
+      gl.drawElementsInstanced(mode&0xf,mesh.n_indices,index_type,0,n_draw);
     }else{
-      gl.drawArraysInstanced(mode,0,mesh.n_vertices,n_models);
+      gl.drawArraysInstanced(mode&0xf,0,mesh.n_vertices,n_draw);
     }
     gl.bindVertexArray(null);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -388,8 +455,29 @@ void main() {
     gl.clearColor(r,g,b,a);
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   }
+
+  function extract_frustum_planes(out, m){
+    let p = [
+      m[3*4+0]+m[0*4+0], m[3*4+1]+m[0*4+1], m[3*4+2]+m[0*4+2], m[3*4+3]+m[0*4+3], // left
+      m[3*4+0]-m[0*4+0], m[3*4+1]-m[0*4+1], m[3*4+2]-m[0*4+2], m[3*4+3]-m[0*4+3], // right
+      m[3*4+0]+m[1*4+0], m[3*4+1]+m[1*4+1], m[3*4+2]+m[1*4+2], m[3*4+3]+m[1*4+3], // bottom
+      m[3*4+0]-m[1*4+0], m[3*4+1]-m[1*4+1], m[3*4+2]-m[1*4+2], m[3*4+3]-m[1*4+3], // top
+      m[3*4+0]+m[2*4+0], m[3*4+1]+m[2*4+1], m[3*4+2]+m[2*4+2], m[3*4+3]+m[2*4+3], // near
+      m[3*4+0]-m[2*4+0], m[3*4+1]-m[2*4+1], m[3*4+2]-m[2*4+2], m[3*4+3]-m[2*4+3], // far
+    ];
+    for (let i = 0; i < 6; i++) {
+      let a = p[i*4+0], b = p[i*4+1], c = p[i*4+2];
+      let inv = 1.0 / Math.sqrt(a*a + b*b + c*c);
+      out[i*4+0] = a * inv;
+      out[i*4+1] = b * inv;
+      out[i*4+2] = c * inv;
+      out[i*4+3] = p[i*4+3] * inv;
+    }
+  }
+
   let cached_view = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
   let cached_proj = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+  let cached_frust_planes = new Float32Array(24);
   that._camera_begin = function(){
     let [view,proj] = $pop_args(2);
     currentProgram = gl.getParameter(gl.CURRENT_PROGRAM);
@@ -405,6 +493,8 @@ void main() {
     );
     cached_view = view;
     cached_proj = proj;
+    let vp = MAT_MULT(proj,view);
+    extract_frustum_planes(cached_frust_planes,vp);
   }
   that._camera_end = function(){
     if (!currentProgram){

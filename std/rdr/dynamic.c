@@ -33,6 +33,7 @@ EXPORTED void rdr__update_mesh(var_t* ret, gstate_t* _g){
   lst_t* colors  = ARG_POP(_g,lst);
   lst_t* indices = ARG_POP(_g,lst);
   lst_t* vertices= ARG_POP(_g,lst);
+  int32_t mode = ARG_POP(_g,i32);
   int32_t flags = ARG_POP(_g,i32);
   int32_t vao = ARG_POP(_g,i32);
 
@@ -43,7 +44,7 @@ EXPORTED void rdr__update_mesh(var_t* ret, gstate_t* _g){
   if (flags & DIRTY_NORMALS) p_normals = copy_list_vec_pack(normals,12);
   
   vao = rdr_impl__update_mesh(
-    vao,flags,
+    vao,flags,mode,
     p_vertices, vertices->n,
     (int32_t*)(indices->data), indices->n,
     p_colors, colors->n,

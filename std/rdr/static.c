@@ -16,11 +16,12 @@ void rdr___update_mesh(){
   __list_t* __ARG(colors);
   __list_t* __ARG(indices);
   __list_t* __ARG(vertices);
+  int32_t __ARG(mode);
   int32_t __ARG(flags);
   int32_t __ARG(vao);
   // printf("%p %d\n",vertices->data,vertices->w);
   vao = rdr_impl__update_mesh(
-    vao,flags,
+    vao,flags,mode,
     (float*)(vertices->data), vertices->n,
     (int32_t*)(indices->data), indices->n,
     (float*)(colors->data), colors->n,

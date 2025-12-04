@@ -4,11 +4,13 @@ namespace rdr{
   MODE_LINE_LIST :=0x0001;
   MODE_LINE_STRIP:=0x0003;
   MODE_POINT_LIST:=0x0000;
+  CULL_FRUSTUM   := 16;
   DIRTY_VERTICES := 1
   DIRTY_INDICES  := 2
   DIRTY_COLORS   := 4
   DIRTY_UVS      := 8
   DIRTY_NORMALS  := 16
+  DIRTY_BOUNDS   := 32
   AXIS_X := {1.,0.,0.};
   AXIS_Y := {0.,1.,0.};
   AXIS_Z := {0.,0.,1.};
@@ -30,7 +32,7 @@ namespace rdr{
   func background(r:f32,g:f32,b:f32,a:f32);
   func background(r:f32,g:f32,b:f32){background(r,g,b,1.0);};
   func background(r:f32){background(r,r,r,1.0);};
-  func _update_mesh(vao:i32,flags:i32,vertices:list[vec[f32,3]],indices:list[i32],colors:list[vec[f32,4]],uvs:list[vec[f32,2]],normals:list[vec[f32,3]]):i32;
+  func _update_mesh(vao:i32,flags:i32,mode:i32,vertices:list[vec[f32,3]],indices:list[i32],colors:list[vec[f32,4]],uvs:list[vec[f32,2]],normals:list[vec[f32,3]]):i32;
   func _draw_mesh(vao:i32,mode:i32,transform:vec[f32,4,4]);
   func _draw_instances(vao:i32,mode:i32,transforms:list[vec[f32,4,4]]);
   typedef Mesh = {
@@ -41,7 +43,7 @@ namespace rdr{
     colors:=list[vec[f32,4]]{};
     uvs:=list[vec[f32,2]]{};
     normals:=list[vec[f32,3]]{};
-    func update(flags:i32){.vao=_update_mesh(.vao,flags,.vertices,.indices,.colors,.uvs,.normals);};
+    func update(flags:i32){.vao=_update_mesh(.vao,flags,.mode,.vertices,.indices,.colors,.uvs,.normals);};
     func draw(transform:vec[f32,4,4]){if (.vao==-1){.update(0xff);};_draw_mesh(.vao,.mode,transform)};
     func draw(transforms:list[vec[f32,4,4]]){if (.vao==-1){.update(0xff);};_draw_instances(.vao,.mode,transforms)};
   };
