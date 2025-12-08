@@ -9,8 +9,8 @@ namespace geom {
   RET_PARAMS := 16;
   BY_COUNT := 0;
   BY_SPACING := 1;
-  MODE_POLYLINE := 0;
-  MODE_POLYGON  := 1;
+  MODE_POLYLINE :=  0;
+  MODE_POLYGON  :=128;
   MODE_ALIGNED  := 0;
   MODE_ORIENTED := 1;
   MODE_BEZIER  := 16;
@@ -19,9 +19,9 @@ namespace geom {
   ORD_QUADRATIC := 2;
   ORD_CUBIC     := 3;
   func line_intersect[N](p0:vec[f32,N],p1:vec[f32,N],q0:vec[f32,N],q1:vec[f32,N],flags:i32):tup[i32,vec[f32,N]];
-  func resample(poly:list[vec[f32,2]], n:f32, flags:i32):list[vec[f32,2]];
-  func poly_simplify(poly:list[vec[f32,2]],eps:f32,flags:i32):list[vec[f32,2]];
-  func triangulate(poly:list[vec[f32,2]],holes:list[i32]):list[i32];
+  func poly_resample(poly:list[vec[f32,2]], n:f32, flags:i32):list[vec[f32,2]];
+  func poly_simplify(poly:list[vec[f32,2]],eps:f32):list[vec[f32,2]];
+  func triangulate(poly:list[vec[f32,2]]):list[i32];
   func convex_hull(poly:list[vec[f32,2]]):list[vec[f32,2]];
   func pt_in_poly(pt:vec[f32,2],poly:list[vec[f32,2]]):i32;
   func delaunay(ps:list[vec[f32,2]]):list[i32];
