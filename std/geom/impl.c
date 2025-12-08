@@ -331,8 +331,8 @@ float* geom_impl_convex_hull(int n_points, float* points, int* n_out){
   CWISE(p0x,p0y, p2x,p2y, p3x,p3y)>=0 && \
   CWISE(p0x,p0y, p3x,p3y, p1x,p1y)>=0)
   
-int32_t* geom_impl_triangulate_simple(int n_points, float* points, int* o_n_tri){
-  *o_n_tri = (n_points-2)*3;
+int32_t* geom_impl_triangulate_simple(int n_points, float* points, int* o_n_ids){
+  *o_n_ids = (n_points-2)*3;
   int32_t* out = (int32_t*)malloc(3*(n_points-2)*sizeof(int32_t));
   int* skips = calloc(n_points,sizeof(int));
   int n_out = 0;
@@ -343,7 +343,7 @@ int32_t* geom_impl_triangulate_simple(int n_points, float* points, int* o_n_tri)
     skipped++;
     if (skipped > n_points){
       free(skips);
-      *o_n_tri = n_out*3;
+      *o_n_ids = n_out*3;
       return out;
     }
     int i0 = i % n_points;
@@ -402,4 +402,248 @@ int32_t* geom_impl_triangulate_simple(int n_points, float* points, int* o_n_tri)
   }
   free(skips);
   return out;
+}
+
+int circum_circle(float xp,float yp,
+  float x1,float y1,float x2,float y2,float x3,float y3,
+  float *xc,float *yc,float *rsqr){
+  const static float EPSILON = 0.000001;
+  float m1,m2,mx1,mx2,my1,my2;
+  float dx,dy,drsqr;
+  float fabsy1y2 = fabs(y1-y2);
+  float fabsy2y3 = fabs(y2-y3);
+  if (fabsy1y2 < EPSILON && fabsy2y3 < EPSILON) return 0;
+  if (fabsy1y2 < EPSILON) {
+    m2 = - (x3-x2) / (y3-y2);
+    mx2 = (x2 + x3) / 2.0;
+    my2 = (y2 + y3) / 2.0;
+    *xc = (x2 + x1) / 2.0;
+    *yc = m2 * (*xc - mx2) + my2;
+  } else if (fabsy2y3 < EPSILON) {
+    m1 = - (x2-x1) / (y2-y1);
+    mx1 = (x1 + x2) / 2.0;
+    my1 = (y1 + y2) / 2.0;
+    *xc = (x3 + x2) / 2.0;
+    *yc = m1 * (*xc - mx1) + my1;
+  } else {
+    m1 = - (x2-x1) / (y2-y1);
+    m2 = - (x3-x2) / (y3-y2);
+    mx1 = (x1 + x2) / 2.0;
+    mx2 = (x2 + x3) / 2.0;
+    my1 = (y1 + y2) / 2.0;
+    my2 = (y2 + y3) / 2.0;
+    *xc = (m1 * mx1 - m2 * mx2 + my2 - my1) / (m1 - m2);
+    if (fabsy1y2 > fabsy2y3) {
+      *yc = m1 * (*xc - mx1) + my1;
+    } else {
+      *yc = m2 * (*xc - mx2) + my2;
+    }
+  }
+  dx = x2 - *xc;
+  dy = y2 - *yc;
+  *rsqr = dx*dx + dy*dy;
+  dx = xp - *xc;
+  dy = yp - *yc;
+  drsqr = dx*dx + dy*dy;
+  return ((drsqr - *rsqr) <= EPSILON);
+}
+
+int cmp_x(const void *a, const void *b){
+  float x0 = ((float*)a)[0];
+  float x1 = ((float*)b)[0];
+  return SIGN(x0-x1);
+}
+
+int delaunay_bowyer_watson_bourke(int nv, float* pxyz, int32_t* V){
+  // based on https://paulbourke.net/papers/triangulate/
+  int *complete = NULL;
+  int *edges = NULL;
+  int nedge = 0;
+  int trimax,emax = 200;
+  int status = 0;
+  int inside;
+  int ntri;
+  float xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,r;
+  float xmin,xmax,ymin,ymax,xmid,ymid;
+  float dx,dy,dmax;
+  trimax = 4 * nv;
+  complete = malloc(trimax*sizeof(int));
+  edges = malloc(emax*(long)sizeof(int)*2);
+  xmin = pxyz[0];
+  ymin = pxyz[1];
+  xmax = xmin;
+  ymax = ymin;
+  for (int i=1;i<nv;i++) {
+    if (pxyz[i*3+0] < xmin) xmin = pxyz[i*3+0];
+    if (pxyz[i*3+0] > xmax) xmax = pxyz[i*3+0];
+    if (pxyz[i*3+1] < ymin) ymin = pxyz[i*3+1];
+    if (pxyz[i*3+1] > ymax) ymax = pxyz[i*3+1];
+  }
+  dx = xmax - xmin;
+  dy = ymax - ymin;
+  dmax = (dx > dy) ? dx : dy;
+  xmid = (xmax + xmin) / 2.0;
+  ymid = (ymax + ymin) / 2.0;
+  pxyz[(nv+0)*3+0] = xmid - 20 * dmax;
+  pxyz[(nv+0)*3+1] = ymid - dmax;
+  pxyz[(nv+1)*3+0] = xmid;
+  pxyz[(nv+1)*3+1] = ymid + 20 * dmax;
+  pxyz[(nv+2)*3+0] = xmid + 20 * dmax;
+  pxyz[(nv+2)*3+1] = ymid - dmax;
+  V[0] = nv;
+  V[1] = nv+1;
+  V[2] = nv+2;
+  complete[0] = 0;
+  ntri = 1;
+  
+  for (int i=0;i<nv;i++) {
+    xp = pxyz[i*3+0];
+    yp = pxyz[i*3+1];
+    nedge = 0;
+    for (int j=0;j<ntri;j++) {
+      if (complete[j]) continue;
+      x1 = pxyz[V[j*3+0]*3+0];
+      y1 = pxyz[V[j*3+0]*3+1];
+      x2 = pxyz[V[j*3+1]*3+0];
+      y2 = pxyz[V[j*3+1]*3+1];
+      x3 = pxyz[V[j*3+2]*3+0];
+      y3 = pxyz[V[j*3+2]*3+1];
+      inside = circum_circle(xp,yp,x1,y1,x2,y2,x3,y3,&xc,&yc,&r);
+      if (xc < xp && ((xp-xc)*(xp-xc)) > r) complete[j] = 1;
+      if (inside) {
+        if (nedge+3 >= emax) {
+          emax += 100;
+          edges = realloc(edges,emax*(long)sizeof(int)*2);
+        }
+        edges[(nedge+0)*2+0] = V[j*3+0];
+        edges[(nedge+0)*2+1] = V[j*3+1];
+        edges[(nedge+1)*2+0] = V[j*3+1];
+        edges[(nedge+1)*2+1] = V[j*3+2];
+        edges[(nedge+2)*2+0] = V[j*3+2];
+        edges[(nedge+2)*2+1] = V[j*3+0];
+        nedge += 3;
+        V[j*3+0] = V[(ntri-1)*3+0];
+        V[j*3+1] = V[(ntri-1)*3+1];
+        V[j*3+2] = V[(ntri-1)*3+2];
+        complete[j] = complete[ntri-1];
+        ntri--;
+        j--;
+      }
+    }
+    for (int j=0;j<nedge-1;j++) {
+      for (int k=j+1;k<nedge;k++) {
+        if ((edges[j*2] == edges[k*2+1]) && (edges[j*2+1] == edges[k*2])) {
+          edges[j*2+0] = -1;
+          edges[j*2+1] = -1;
+          edges[k*2+0] = -1;
+          edges[k*2+1] = -1;
+        }
+        if ((edges[j*2] == edges[k*2]) && (edges[j*2+1] == edges[k*2+1])) {
+          edges[j*2+0] = -1;
+          edges[j*2+1] = -1;
+          edges[k*2+0] = -1;
+          edges[k*2+1] = -1;
+        }
+      }
+    }
+    for (int j=0;j<nedge;j++) {
+      if (edges[j*2] < 0 || edges[j*2+1] < 0) continue;
+      V[ntri*3+0] = edges[j*2];
+      V[ntri*3+1] = edges[j*2+1];
+      V[ntri*3+2] = i;
+      complete[ntri] = 0;
+      ntri++;
+    }
+  }
+  free(edges);
+  free(complete);
+  return ntri;
+}
+
+int32_t* geom_impl_delaunay(int n_points, float* points, int* n_out){
+  float* pxyz = malloc(sizeof(float)*3*(n_points+3));
+  for (int i = 0; i < n_points; i++){
+    pxyz[i*3] = points[i*2];
+    pxyz[i*3+1] = points[i*2+1];
+    ((int32_t*)pxyz)[i*3+2] = i;
+  }
+  qsort(pxyz, n_points, sizeof(float)*3, cmp_x);
+  int32_t* V = malloc(n_points*3*sizeof(int32_t)*3);
+  int ntri = delaunay_bowyer_watson_bourke(n_points, pxyz, V);
+  for (int i=0;i<ntri;i++) {
+    if (V[i*3+0] >= n_points || V[i*3+1] >= n_points || V[i*3+2] >= n_points) {
+      V[i*3+0] = V[(ntri-1)*3+0];
+      V[i*3+1] = V[(ntri-1)*3+1];
+      V[i*3+2] = V[(ntri-1)*3+2];
+      ntri--;
+      i--;
+    }
+  }
+  for (int i = 0; i < ntri*3; i++){
+    V[i] = ((int32_t*)pxyz)[V[i]*3+2];
+  }
+  *n_out = ntri*3;
+  free(pxyz);
+  return V;
+}
+
+typedef struct site_st {
+  int mv;
+  int nv;
+  float* vs;
+  float* angs;
+} site_t;
+
+void site_add_vertex(float* points, site_t* sites, int idx, float x, float y){
+  if (sites[idx].nv >= sites[idx].mv){
+    sites[idx].vs = realloc(sites[idx].vs, (sites[idx].mv+=8)*2*sizeof(float));
+    sites[idx].angs = realloc(sites[idx].angs, (sites[idx].mv)*2*sizeof(float));
+  }
+  float ang = atan2(y-points[idx*2+1], x-points[idx*2]);
+  int ii;
+  for (ii = 0; ii < sites[idx].nv; ii++){
+    if (ang < sites[idx].angs[ii]){
+      memmove(sites[idx].angs+(ii+1), sites[idx].angs+ii, (sites[idx].nv-ii)*sizeof(float) );
+      memmove(sites[idx].vs+((ii+1)*2), sites[idx].vs+(ii*2), (sites[idx].nv-ii)*sizeof(float)*2);
+      break;
+    }
+  }
+  sites[idx].vs[ii*2  ] = x;
+  sites[idx].vs[ii*2+1] = y;
+  sites[idx].angs[ii] = ang;
+  sites[idx].nv++;
+}
+
+site_t* geom_impl_voronoi(int n_points, float* points){
+
+  float* pxyz = malloc(sizeof(float)*3*(n_points+3));
+  for (int i = 0; i < n_points; i++){
+    pxyz[i*3] = points[i*2];
+    pxyz[i*3+1] = points[i*2+1];
+    ((int32_t*)pxyz)[i*3+2] = i;
+  }
+  qsort(pxyz, n_points, sizeof(float)*3, cmp_x);
+  int32_t* V = malloc(n_points*3*sizeof(int32_t)*3);
+  int ntri = delaunay_bowyer_watson_bourke(n_points, pxyz, V);
+
+  site_t* sites = calloc(n_points,sizeof(site_t));
+
+  for (int i = 0; i < ntri; i++){
+    int i0 = V[i*3];
+    int i1 = V[i*3+1];
+    int i2 = V[i*3+2];
+    float xc,yc,rsqr;
+    circum_circle(0,0, 
+      pxyz[i0*3], pxyz[i0*3+1],
+      pxyz[i1*3], pxyz[i1*3+1],
+      pxyz[i2*3], pxyz[i2*3+1],
+      &xc,&yc,&rsqr
+    );
+    if (i0 < n_points) site_add_vertex(points,sites,((int32_t*)pxyz)[i0*3+2], xc,yc);
+    if (i1 < n_points) site_add_vertex(points,sites,((int32_t*)pxyz)[i1*3+2], xc,yc);
+    if (i2 < n_points) site_add_vertex(points,sites,((int32_t*)pxyz)[i2*3+2], xc,yc);
+  }
+  free(V);
+  free(pxyz);
+  return sites;
 }

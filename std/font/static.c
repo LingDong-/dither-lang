@@ -55,7 +55,7 @@ void font___glyph(){
     l->cap = m[i]+1;
     l->w = 8;
     l->data = calloc(l->w,l->cap);
-    l->t = VART_VEC;
+    l->t = VART_F32;
     for (int j = 0; j < m[i]; j++){
       ((float*)(l->data))[j*2]   = polys[pidx++];
       ((float*)(l->data))[j*2+1] = polys[pidx++];
