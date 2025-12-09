@@ -10,7 +10,7 @@ void geom__triangulate(){
   __list_t* a = __gc_alloc(VART_LST, sizeof(__list_t));
   a->w = 4;
   a->t = VART_I32;
-  a->data =  geom_impl_triangulate_simple(points->n, points->data, &(a->n));
+  a->data = (char*)geom_impl_triangulate_simple(points->n,(float*)(points->data), &(a->n));
   a->cap = points->n-2;
 
   __put_ret(&a);
@@ -22,7 +22,7 @@ void geom__convex_hull(){
   __list_t* a = __gc_alloc(VART_LST, sizeof(__list_t));
   a->w = 8;
   a->t = VART_F32;
-  a->data =  geom_impl_convex_hull(points->n, points->data, &(a->n));
+  a->data =  (char*)geom_impl_convex_hull(points->n, (float*)(points->data), &(a->n));
   a->cap = a->n;
 
   __put_ret(&a);
@@ -33,7 +33,7 @@ void geom__pt_in_poly(){
   float pt[2];
   __pop_arg(pt, 2*sizeof(float));
 
-  int32_t r = geom_impl_pt_in_poly(pt[0],pt[1],points->n, points->data);
+  int32_t r = geom_impl_pt_in_poly(pt[0],pt[1],points->n, (float*)(points->data));
   __put_ret(&r);
 }
 
@@ -45,7 +45,7 @@ void geom__poly_resample(){
   __list_t* a = __gc_alloc(VART_LST, sizeof(__list_t));
   a->w = 8;
   a->t = VART_F32;
-  a->data = geom_impl_poly_resample(points->n,points->data,n,flags,&(a->n));
+  a->data = (char*)geom_impl_poly_resample(points->n,(float*)(points->data),n,flags,&(a->n));
   a->cap = a->n;
   __put_ret(&a);
 }
@@ -57,7 +57,7 @@ void geom__poly_simplify(){
   __list_t* a = __gc_alloc(VART_LST, sizeof(__list_t));
   a->w = 8;
   a->t = VART_F32;
-  a->data = geom_impl_poly_simplify(points->data,0,points->n,eps,&(a->n));
+  a->data = (char*)geom_impl_poly_simplify((float*)(points->data),0,points->n,eps,&(a->n));
   a->cap = a->n;
   __put_ret(&a);
 }
@@ -69,7 +69,7 @@ void geom__delaunay(){
   __list_t* a = __gc_alloc(VART_LST, sizeof(__list_t));
   a->w = 4;
   a->t = VART_I32;
-  a->data =  geom_impl_delaunay(points->n, points->data, &(a->n));
+  a->data =  (char*)geom_impl_delaunay(points->n, (float*)(points->data), &(a->n));
   a->cap = a->n*3;
 
   __put_ret(&a);
@@ -86,7 +86,7 @@ void geom__voronoi(){
   lst->t = VART_LST;
   lst->data = malloc(lst->cap*lst->w);
 
-  site_t* sites = geom_impl_voronoi(points->n, points->data);
+  site_t* sites = geom_impl_voronoi(points->n, (float*)(points->data));
   for (int i = 0; i < points->n; i++){
     free(sites[i].angs);
 
@@ -94,7 +94,7 @@ void geom__voronoi(){
     l->n = sites[i].nv;
     l->cap = sites[i].nv;
     l->w = 8;
-    l->data = sites[i].vs;
+    l->data = (char*)(sites[i].vs);
     l->t = VART_F32;
     ((__list_t**)(lst->data))[i] = l;
   }
