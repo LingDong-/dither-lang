@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
@@ -14,7 +15,7 @@
 #define MODE_POLYLINE   0
 #define MODE_POLYGON  128
 #define MODE_ALIGNED   0
-#define MODE_ORIENTED  1
+#define MODE_ORIENTED 16
 #define MODE_BEZIER   16
 #define MODE_CATROM   17
 #define MODE_BSPLINE  18
@@ -274,6 +275,11 @@ int cmp_angle(const void *a, const void *b){
 }
 
 float* geom_impl_convex_hull(int n_points, float* points, int* n_out){
+  if (n_points <= 1){
+    *n_out = n_points;
+    float* dum = malloc(n_points*sizeof(float)*2);
+    return memcpy(dum,points,n_points*sizeof(float)*2);
+  }
   int mi = 0;
   float my = INFINITY;
   float mx = INFINITY;
@@ -293,9 +299,6 @@ float* geom_impl_convex_hull(int n_points, float* points, int* n_out){
   memcpy(sorted + (mi*2), points + ((mi+1)*2), (n_points-mi-1)*2*sizeof(float) );
 
   qsort(sorted, n_points-1, sizeof(float)*2, cmp_angle);
-
-  // *n_out = n_points-1;
-  // return sorted;
 
   int cap_stack = 4+n_points/4;
   float* stack = (float*)malloc(sizeof(float)*2*cap_stack);
@@ -646,4 +649,359 @@ site_t* geom_impl_voronoi(int n_points, float* points){
   free(V);
   free(pxyz);
   return sites;
+}
+
+void aabb_2d(int n_points, float* points, float* out){
+  float minX = INFINITY, maxX = -INFINITY;
+  float minY = INFINITY, maxY = -INFINITY;
+  for (int i = 0; i < n_points; i++){
+    float x = points[i*2];
+    float y = points[i*2+1];
+    minX = fmin(minX, x);
+    maxX = fmax(maxX, x);
+    minY = fmin(minY, y);
+    maxY = fmax(maxY, y);
+  }
+  float w = maxX - minX;
+  float h = maxY - minY;
+  out[0] = (minX+maxX)*0.5;
+  out[1] = (minY+maxY)*0.5;
+  out[2] = w/2;
+  out[3] = h/2;
+  out[4] = 1;
+  out[5] = 0;
+  out[6] = 0;
+  out[7] = 1;
+}
+
+void obb_2d_pca(int n_points, float* points, float* out){
+  float meanX = 0;
+  float meanY = 0;
+  for (int i = 0; i < n_points; i++){
+    meanX += points[i*2];
+    meanY += points[i*2+1];
+  }
+  meanX /= n_points;
+  meanY /= n_points;
+  float covXX = 0, covXY = 0, covYY = 0;
+  for (int i = 0; i < n_points; i++){
+    float dx = points[i*2] - meanX;
+    float dy = points[i*2+1] - meanY;
+    covXX += dx*dx;
+    covXY += dx*dy;
+    covYY += dy*dy;
+  }
+  covXX /= n_points;
+  covXY /= n_points;
+  covYY /= n_points;
+  float trace = covXX + covYY;
+  float det = covXX*covYY - covXY*covXY;
+  float temp = sqrtf((trace*trace)/4 - det);
+  float eig1X = trace/2 + temp;
+  float eig1Y = trace/2 - temp;
+  float eigvec1X = 1;
+  float eigvec1Y = 0;
+  if (fabs(covXY) > 1e-6){
+    eigvec1X = eig1X - covYY;
+    eigvec1Y = covXY;
+  }
+  float mag = hypot(eigvec1X,eigvec1Y);
+  eigvec1X /= mag;
+  eigvec1Y /= mag;
+  float eigvec2X = -eigvec1Y;
+  float eigvec2Y = eigvec1X;
+  float minX = INFINITY, maxX = -INFINITY;
+  float minY = INFINITY, maxY = -INFINITY;
+  for (int i = 0; i < n_points; i++){
+    float dx = points[i*2] - meanX;
+    float dy = points[i*2+1] - meanY;
+    float projX = dx*eigvec1X + dy*eigvec1Y;
+    float projY = dx*eigvec2X + dy*eigvec2Y;
+    minX = fmin(minX, projX);
+    maxX = fmax(maxX, projX);
+    minY = fmin(minY, projY);
+    maxY = fmax(maxY, projY);
+  }
+  float w = maxX - minX;
+  float h = maxY - minY;
+  float cx = (maxX+minX)/2;
+  float cy = (maxY+minY)/2;
+  float ccx = cx*eigvec1X + cy*eigvec2X;
+  float ccy = cx*eigvec1Y + cy*eigvec2Y;
+  out[0] = meanX+ccx;
+  out[1] = meanY+ccy;
+  out[2] = w/2;
+  out[3] = h/2;
+  out[4] = eigvec1X;
+  out[5] = eigvec2X;
+  out[6] = eigvec1Y;
+  out[7] = eigvec2Y;
+}
+
+#define RCHULL_PROJ(ux,uy,idx) ((ux)*hull[((idx)%nh)*2] + (uy)*hull[((idx)%nh)*2+1])
+#define RCHULL_EDGE(ux,uy,idx) (ux) = (hull[(((idx)+1)%nh)*2]-hull[((idx)%nh)*2]); (uy) = (hull[(((idx)+1)%nh)*2+1]-hull[((idx)%nh)*2+1]); {float l = hypot(ux,uy); if (l){ux/=l; uy/=l;}}
+
+void obb_2d_rotcal(int n_points, float* points, float* out){
+  int nh;
+  float* hull = geom_impl_convex_hull(n_points, points, &nh);
+  int kMinX,kMinY,kMaxX,kMaxY;
+  float u1x,u1y,u2x,u2y;
+  RCHULL_EDGE(u1x,u1y,0);
+  u2x = -u1y, u2y = u1x;
+  float maxX=-INFINITY, minX=INFINITY, maxY=-INFINITY, minY=INFINITY;
+  for(int t=0;t<nh;t++){
+    float px = RCHULL_PROJ(u1x,u1y,t);
+    float py = RCHULL_PROJ(u2x,u2y,t);
+    if(px>maxX){maxX=px; kMaxX=t;}
+    if(px<minX){minX=px; kMinX=t;}
+    if(py>maxY){maxY=py; kMaxY=t;}
+    if(py<minY){minY=py; kMinY=t;}
+  }
+  float bestArea = INFINITY;
+  for (int i = 0; i < nh; i++){
+    float maxX=-INFINITY, minX=INFINITY, maxY=-INFINITY, minY=INFINITY;
+    float u1x,u1y,u2x,u2y;
+    RCHULL_EDGE(u1x,u1y,i);
+    u2x = -u1y, u2y = u1x;
+    while(RCHULL_PROJ(u1x,u1y,kMaxX+1) > (maxX=RCHULL_PROJ(u1x,u1y,kMaxX))) kMaxX++; 
+    while(RCHULL_PROJ(u1x,u1y,kMinX+1) < (minX=RCHULL_PROJ(u1x,u1y,kMinX))) kMinX++; 
+    while(RCHULL_PROJ(u2x,u2y,kMaxY+1) > (maxY=RCHULL_PROJ(u2x,u2y,kMaxY))) kMaxY++; 
+    while(RCHULL_PROJ(u2x,u2y,kMinY+1) < (minY=RCHULL_PROJ(u2x,u2y,kMinY))) kMinY++; 
+    float width = (maxX-minX);
+    float height = (maxY-minY);
+    float area = width*height;
+    if (area < bestArea){
+      bestArea = area;
+      float cx = (minX+maxX)*0.5;
+      float cy = (minY+maxY)*0.5;
+      out[0] = u1x*cx + u2x*cy;
+      out[1] = u1y*cx + u2y*cy;
+      out[2] = width*0.5;
+      out[3] = height*0.5;
+      out[4] = u1x;
+      out[5] = u2x;
+      out[6] = u1y;
+      out[7] = u2y;
+    }
+  }
+}
+
+
+void power_iter(
+  float a00, float a01, float a02,
+  float a10, float a11, float a12,
+  float a20, float a21, float a22,
+  float* o0, float* o1, float* o2
+){
+  float v0 = M_PI;
+  float v1 = M_E;
+  float v2 = M_SQRT2;
+  for (int k = 0; k < 12; k++){
+    float x0 = a00*v0+a01*v1+a02*v2;
+    float x1 = a10*v0+a11*v1+a12*v2;
+    float x2 = a20*v0+a21*v1+a22*v2;
+    float n = sqrt(x0*x0+x1*x1+x2*x2);
+    if (n < 1e-12) break;
+    v0 = x0/n;
+    v1 = x1/n;
+    v2 = x2/n;
+  }
+  *o0 = v0;
+  *o1 = v1;
+  *o2 = v2;
+}
+
+
+void obb_3d_pca(int n_points, float* points, float* out){
+  float meanX = 0, meanY = 0, meanZ = 0;
+  for (int i = 0; i < n_points; i++){
+    meanX += points[i*3];
+    meanY += points[i*3+1];
+    meanZ += points[i*3+2];
+  }
+  meanX /= n_points;
+  meanY /= n_points;
+  meanZ /= n_points;
+  float cxx=0, cxy=0, cxz=0, cyy=0, cyz=0, czz=0;
+  for (int i = 0; i < n_points; i++){
+    float dx = points[i*3+0] - meanX;
+    float dy = points[i*3+1] - meanY;
+    float dz = points[i*3+2] - meanZ;
+    cxx += dx*dx; cxy += dx*dy; cxz += dx*dz; 
+    cyy += dy*dy; cyz += dy*dz; czz += dz*dz;
+  }
+  cxx/=n_points; cxy/=n_points; cxz/=n_points;
+  cyy/=n_points; cyz/=n_points; czz/=n_points;
+
+  float e1x, e1y, e1z;
+  power_iter(
+    cxx,cxy,cxz, 
+    cxy,cyy,cyz, 
+    cxz,cyz,czz, &e1x,&e1y,&e1z);
+
+  float lambda =
+    e1x*(cxx*e1x+cxy*e1y+cxz*e1z)+
+    e1y*(cxy*e1x+cyy*e1y+cyz*e1z)+
+    e1z*(cxz*e1x+cyz*e1y+czz*e1z);
+  
+  float e2x, e2y, e2z;
+  power_iter(
+    cxx-lambda*e1x*e1x, cxy-lambda*e1x*e1y, cxz-lambda*e1x*e1z,
+    cxy-lambda*e1y*e1x, cyy-lambda*e1y*e1y, cyz-lambda*e1y*e1z,
+    cxz-lambda*e1z*e1x, cyz-lambda*e1z*e1y, czz-lambda*e1z*e1z,
+    &e2x,&e2y,&e2z
+  );
+
+  float e3x = e1y*e2z-e1z*e2y;
+  float e3y = e1z*e2x-e1x*e2z;
+  float e3z = e1x*e2y-e1y*e2x;
+
+  float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
+  float maxX =-INFINITY, maxY =-INFINITY, maxZ =-INFINITY;
+
+  for (int i = 0; i < n_points; i++){
+    float dx = points[i*3] - meanX;
+    float dy = points[i*3+1] - meanY;
+    float dz = points[i*3+2] - meanZ;
+    float projX = dx*e1x+dy*e1y+dz*e1z;
+    float projY = dx*e2x+dy*e2y+dz*e2z;
+    float projZ = dx*e3x+dy*e3y+dz*e3z;
+    minX = fmin(minX, projX);
+    maxX = fmax(maxX, projX);
+    minY = fmin(minY, projY);
+    maxY = fmax(maxY, projY);
+    minZ = fmin(minZ, projZ);
+    maxZ = fmax(maxZ, projZ);
+  }
+  float cx = (minX+maxX)*0.5;
+  float cy = (minY+maxY)*0.5;
+  float cz = (minZ+maxZ)*0.5;
+
+  out[0] = meanX + cx*e1x + cy*e2x + cz*e3x;
+  out[1] = meanY + cx*e1y + cy*e2y + cz*e3y;
+  out[2] = meanZ + cx*e1z + cy*e2z + cz*e3z;
+  out[3] = (maxX-minX)*0.5;
+  out[4] = (maxY-minY)*0.5;
+  out[5] = (maxZ-minZ)*0.5;
+  out[6] = e1x; out[7] = e2x; out[8] = e3x;
+  out[9] = e1y; out[10]= e2y; out[11]= e3y;
+  out[12]= e1z; out[13]= e2z; out[14]= e3z;
+}
+
+void rotate_axes(float* a, float* b, float th, float* a1, float* b1){
+  float c=cos(th), s=sin(th);
+  float o[6] = { c*a[0]+s*b[0], c*a[1]+s*b[1], c*a[2]+s*b[2],
+                -s*a[0]+c*b[0],-s*a[1]+c*b[1],-s*a[2]+c*b[2]};
+  memcpy(a1,o,sizeof(float)*3);
+  memcpy(b1,o+3,sizeof(float)*3);
+}
+
+void obb_3d_refine(int n_points, float* points, float* out){
+  float best_vol = out[3]*out[4]*out[5]*8;
+  float best_axes[9] = {
+    out[6], out[9], out[12],
+    out[7], out[10],out[13],
+    out[8], out[11],out[14]
+  };
+  float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
+  float maxX =-INFINITY, maxY =-INFINITY, maxZ =-INFINITY;
+  float angle = 0.15;
+  float cx,cy,cz;
+  for (int iter = 0; iter < 2; iter++){
+    for (int i = 0; i < 3; i++){
+      int j = (i+1)%3;
+      int k = (i+2)%3;
+      for (int s = -1; s <=1; s+=2){
+        float try_axes[9];
+        rotate_axes(best_axes + (i*3), best_axes + (j*3), s*angle, try_axes + (i*3), try_axes + (j*3));
+        memcpy(try_axes + (k*3), best_axes + (k*3), sizeof(float)*3);
+
+        float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
+        float maxX =-INFINITY, maxY =-INFINITY, maxZ =-INFINITY;
+        for (int p = 0; p < n_points; p++){
+          float dx = points[p*3] -  out[0];
+          float dy = points[p*3+1] -out[1];
+          float dz = points[p*3+2] -out[2];
+          float projX = dx*try_axes[0]+dy*try_axes[1]+dz*try_axes[2];
+          float projY = dx*try_axes[3]+dy*try_axes[4]+dz*try_axes[5];
+          float projZ = dx*try_axes[6]+dy*try_axes[7]+dz*try_axes[8];
+          minX = fmin(minX, projX);
+          maxX = fmax(maxX, projX);
+          minY = fmin(minY, projY);
+          maxY = fmax(maxY, projY);
+          minZ = fmin(minZ, projZ);
+          maxZ = fmax(maxZ, projZ);
+        }
+        float vol = (maxX-minX)*(maxY-minY)*(maxZ-minZ);
+        if (vol < best_vol){
+          best_vol = vol;
+          memcpy(best_axes, try_axes, sizeof(float)*9);
+          cx = (minX+maxX)*0.5;
+          cy = (minY+maxY)*0.5;
+          cz = (minZ+maxZ)*0.5;
+          out[3] = (maxX-minX)*0.5;
+          out[4] = (maxY-minY)*0.5;
+          out[5] = (maxZ-minZ)*0.5;
+        }
+      }
+    }
+    angle *= 0.5;
+  }
+
+  out[0] += cx*best_axes[0] + cy*best_axes[3] + cz*best_axes[6];
+  out[1] += cx*best_axes[1] + cy*best_axes[4] + cz*best_axes[7];
+  out[2] += cx*best_axes[2] + cy*best_axes[5] + cz*best_axes[8];
+  out[6] = best_axes[0]; out[7] = best_axes[3]; out[8] = best_axes[6];
+  out[9] = best_axes[1]; out[10]= best_axes[4]; out[11]= best_axes[7];
+  out[12]= best_axes[2]; out[13]= best_axes[5]; out[14]= best_axes[8];
+}
+
+void aabb_3d(int n_points, float* points, float* out){
+  float minX = INFINITY, maxX = -INFINITY;
+  float minY = INFINITY, maxY = -INFINITY;
+  float minZ = INFINITY, maxZ = -INFINITY;
+  for (int i = 0; i < n_points; i++){
+    float x = points[i*3];
+    float y = points[i*3+1];
+    float z = points[i*3+2];
+    minX = fmin(minX, x);
+    maxX = fmax(maxX, x);
+    minY = fmin(minY, y);
+    maxY = fmax(maxY, y);
+    minZ = fmin(minZ, z);
+    maxZ = fmax(maxZ, z);
+  }
+  out[0] = (minX+maxX)*0.5;
+  out[1] = (minY+maxY)*0.5;
+  out[2] = (minZ+maxZ)*0.5;
+  out[3] = (maxX-minX)*0.5;
+  out[4] = (maxY-minY)*0.5;
+  out[5] = (maxZ-minZ)*0.5;
+  out[6] = 1; out[7] = 0; out[8] = 0;
+  out[9] = 0; out[10]= 1; out[11]= 0;
+  out[12]= 0; out[13]= 0; out[13]= 1;
+}
+
+void geom_impl_bbox_2d(int n_points, float* points, int flags, float* out){
+  if ((flags&0xf0)==MODE_ORIENTED){
+    if (flags&0xf){
+      obb_2d_rotcal(n_points,points,out);
+    }else{
+      obb_2d_pca(n_points,points,out);
+    }
+  }else if ((flags&0xf0)==MODE_ALIGNED){
+    aabb_2d(n_points,points,out);
+  }
+}
+
+
+void geom_impl_bbox_3d(int n_points, float* points, int flags, float* out){
+  if ((flags&0xf0)==MODE_ORIENTED){
+    obb_3d_pca(n_points,points,out);
+    if (flags&0xf){
+      obb_3d_refine(n_points,points,out);
+    }
+  }else if ((flags&0xf0)==MODE_ALIGNED){
+    aabb_3d(n_points,points,out);
+  }
 }

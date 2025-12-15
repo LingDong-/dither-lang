@@ -12,7 +12,7 @@ namespace geom {
   MODE_POLYLINE :=  0;
   MODE_POLYGON  :=128;
   MODE_ALIGNED  := 0;
-  MODE_ORIENTED := 1;
+  MODE_ORIENTED :=16;
   MODE_BEZIER  := 16;
   MODE_CATROM  := 17;
   MODE_BSPLINE := 18;

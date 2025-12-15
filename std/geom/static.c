@@ -101,3 +101,41 @@ void geom__voronoi(){
   free(sites);
   __put_ret(&lst);
 }
+
+void geom__bbox(){
+  int32_t __ARG(flags);
+  __list_t* __ARG(points);
+
+  if (points->w == 8){
+    char* tup = __gc_alloc(VART_TUP,59);
+    ((char*)tup)[0]  = VART_F32;
+    ((char*)tup)[5]  = VART_F32;
+    ((char*)tup)[10] = VART_F32;
+    ((char*)tup)[15] = 0;
+
+    *(int32_t*)(tup+1)  = 20;
+    *(int32_t*)(tup+6)  = 28;
+    *(int32_t*)(tup+11) = 36;
+    *(int32_t*)(tup+16) = 52;
+
+    float* out = (float*)(tup+20);
+    geom_impl_bbox_2d(points->n, (float*)(points->data),flags,out);
+    __put_ret(&tup);
+  }else if (points->w == 12){
+    char* tup = __gc_alloc(VART_TUP,87);
+    ((char*)tup)[0]  = VART_F32;
+    ((char*)tup)[5]  = VART_F32;
+    ((char*)tup)[10] = VART_F32;
+    ((char*)tup)[15] = 0;
+
+    *(int32_t*)(tup+1)  = 20;
+    *(int32_t*)(tup+6)  = 32;
+    *(int32_t*)(tup+11) = 44;
+    *(int32_t*)(tup+16) = 80;
+
+    float* out = (float*)(tup+20);
+    geom_impl_bbox_3d(points->n, (float*)(points->data),flags,out);
+    __put_ret(&tup);
+  }
+
+}
