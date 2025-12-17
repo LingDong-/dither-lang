@@ -13,9 +13,11 @@ namespace geom {
   MODE_POLYGON  :=128;
   MODE_ALIGNED  := 0;
   MODE_ORIENTED :=16;
-  MODE_BEZIER  := 16;
-  MODE_CATROM  := 17;
-  MODE_BSPLINE := 18;
+  OP_INCLUDE := 1;
+  OP_EXCLUDE := 2;
+  TYPE_BEZIER  := 16;
+  TYPE_CATROM  := 32;
+  TYPE_BSPLINE := 48;
   ORD_QUADRATIC := 2;
   ORD_CUBIC     := 3;
   func line_intersect[N](p0:vec[f32,N],p1:vec[f32,N],q0:vec[f32,N],q1:vec[f32,N],flags:i32):tup[i32,vec[f32,N]];
@@ -26,7 +28,7 @@ namespace geom {
   func pt_in_poly(pt:vec[f32,2],poly:list[vec[f32,2]]):i32;
   func delaunay(ps:list[vec[f32,2]]):list[i32];
   func voronoi(ps:list[vec[f32,2]]):list[list[vec[f32,2]]];
-  func clip(pline:list[vec[f32,2]],region:list[vec[f32,2]]):list[list[vec[f32,2]]];
+  func clip(pline:list[vec[f32,2]],region:list[vec[f32,2]],flags:i32):list[list[vec[f32,2]]];
   func bbox[N](ps:list[vec[f32,N]],flags:i32):tup[vec[f32,N],vec[f32,N],vec[f32,N,N]];
-  func curve[N](ps:list[vec[f32,N]],a:f32,t:f32,flags:i32):vec[f32,N];
+  func curve[N](ps:list[vec[f32,N]],params:list[f32],t:f32,flags:i32):vec[f32,N];
 }

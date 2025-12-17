@@ -16,9 +16,11 @@
 #define MODE_POLYGON  128
 #define MODE_ALIGNED   0
 #define MODE_ORIENTED 16
-#define MODE_BEZIER   16
-#define MODE_CATROM   17
-#define MODE_BSPLINE  18
+#define OP_INCLUDE 1
+#define OP_EXCLUDE 2
+#define TYPE_BEZIER   16
+#define TYPE_CATROM   32
+#define TYPE_BSPLINE  48
 #define ORD_QUADRATIC  2
 #define ORD_CUBIC      3
 
@@ -65,9 +67,9 @@ int geom_impl_line_intersect_3d(
   }
   if (
     (0 <= t || !(flags & LHS_CAPL)) && 
-    (t < 1 || !(flags & LHS_CAPR)) && 
+    (t <= 1 || !(flags & LHS_CAPR)) && 
     (0 <= s || !(flags & RHS_CAPL)) && 
-    (s < 1 || !(flags & RHS_CAPR))
+    (s <= 1 || !(flags & RHS_CAPR))
   ) {
     return 1;
   }
@@ -1003,5 +1005,204 @@ void geom_impl_bbox_3d(int n_points, float* points, int flags, float* out){
     }
   }else if ((flags&0xf0)==MODE_ALIGNED){
     aabb_3d(n_points,points,out);
+  }
+}
+
+float** clipped = NULL;
+int n_clipped = 0;
+int m_clipped = 0;
+int* l_clipped = 0;
+int m_clipping = 0;
+
+void clip_add_seg(float ls0x, float ls0y, float ls1x, float ls1y){
+  if (!n_clipped){
+    float* clipping = (float*)malloc(sizeof(float)*2*(m_clipping = 8));
+    if (!m_clipped){
+      clipped = (float**)malloc(sizeof(float*)*(m_clipped = 8));
+      l_clipped = (int*)malloc(sizeof(float*)*m_clipped);
+    }
+    l_clipped[n_clipped] = 0;
+    clipped[n_clipped++] = clipping;
+  }
+  if (!l_clipped[n_clipped-1]){
+    clipped[n_clipped-1][0] = ls0x;
+    clipped[n_clipped-1][1] = ls0y;
+    clipped[n_clipped-1][2] = ls1x;
+    clipped[n_clipped-1][3] = ls1y;
+    l_clipped[n_clipped-1]=2;
+    return;
+  }
+  if (clipped[n_clipped-1][(l_clipped[n_clipped-1]-1)*2  ] == ls0x && 
+      clipped[n_clipped-1][(l_clipped[n_clipped-1]-1)*2+1] == ls0y){
+    if (l_clipped[n_clipped-1] >= m_clipping){
+      clipped[n_clipped-1] = (float*)realloc(clipped[n_clipped-1], sizeof(float)*2*(m_clipping=m_clipping*2+1));
+    }
+    clipped[n_clipped-1][l_clipped[n_clipped-1]*2  ] = ls1x;
+    clipped[n_clipped-1][l_clipped[n_clipped-1]*2+1] = ls1y;
+    l_clipped[n_clipped-1]++;
+  }else{
+    if (n_clipped >= m_clipped){
+      clipped = (float**)realloc(clipped,sizeof(float*)*(m_clipped=m_clipped*2+1));
+      l_clipped = (int*)realloc(l_clipped,sizeof(float*)*m_clipped);
+    }
+    clipped[n_clipped] = (float*)malloc(sizeof(float)*2*(m_clipping=8));
+    clipped[n_clipped][0] = ls0x;
+    clipped[n_clipped][1] = ls0y;
+    clipped[n_clipped][2] = ls1x;
+    clipped[n_clipped][3] = ls1y;
+    l_clipped[n_clipped]=2;
+    n_clipped ++;
+  }
+}
+
+
+float** geom_impl_clip(int n_polyline, float* polyline, int n_polygon, float* polygon, int flags, int* o_n_clipped, int** o_l_clipped){
+  int do_diff = flags == OP_EXCLUDE;
+  n_clipped = 0;
+
+  float* isx = malloc(n_polygon*sizeof(float));
+  int n_isx = 0;
+  for (int i = 0; i < n_polyline-1; i++){
+    float ls0x = polyline[i*2];
+    float ls0y = polyline[i*2+1];
+    float ls1x = polyline[(i+1)*2];
+    float ls1y = polyline[(i+1)*2+1];
+    
+    n_isx = 0;
+    for (int j = 0; j < n_polygon; j++){
+      float t, s;
+      int ret = geom_impl_line_intersect_2d(
+        ls0x,ls0y,ls1x,ls1y,
+        polygon[j*2], polygon[j*2+1], polygon[((j+1)%n_polygon)*2], polygon[((j+1)%n_polygon)*2+1],
+        LHS_CAPL|LHS_CAPR|RHS_CAPL|RHS_CAPR|RET_PARAMS, &t, &s
+      );
+      if (ret){
+        isx[n_isx++] = t;
+      }
+    };
+    if (!n_isx){
+      if (do_diff == !geom_impl_pt_in_poly(ls0x,ls0y,n_polygon,polygon)){
+        clip_add_seg(ls0x,ls0y,ls1x,ls1y);
+      }
+    }else{
+      isx[n_isx++] = 0;
+      isx[n_isx++] = 1;
+
+      qsort(isx, n_isx, sizeof(float), cmp_x);
+      
+      float dx = ls1x-ls0x;
+      float dy = ls1y-ls0y;
+      float td = dx*dx+dy*dy;
+      for (int k = 0; k < n_isx-1; k++){
+        float_t t0 = isx[k];
+        float_t t1 = isx[k+1];
+        float x0 = ls0x*(1-t0)+ls1x*(t0);
+        float y0 = ls0y*(1-t0)+ls1y*(t0);        
+        float x1 = ls0x*(1-t1)+ls1x*(t1);
+        float y1 = ls0y*(1-t1)+ls1y*(t1);
+        float ds = (t1-t0)*td;
+        if (ds >= 0.001){
+          if (do_diff == !geom_impl_pt_in_poly((x0+x1)*0.5,(y0+y1)*0.5,n_polygon,polygon)){
+            clip_add_seg(x0,y0,x1,y1);
+          }
+        }
+      }
+    }
+  }
+  free(isx);
+  *o_n_clipped = n_clipped;
+  *o_l_clipped = l_clipped;
+  return clipped;
+}
+
+
+void quadratic_rational_bezier(float* p, int nd, float* w, float t, float* o){
+  float tt = t*t;
+  float l_tl_t = (1-t)*(1-t);
+  float ztl_tw = 2*t*(1-t)*w[0];
+  float u = l_tl_t+ztl_tw+tt;
+  for (int i = 0; i < nd; i++){
+    o[i] = (l_tl_t*p[i]+ztl_tw*p[nd+i]+tt*p[nd*2+i])/u;
+  }
+}
+void cubic_rational_bezier(float* p, int nd, float* w, float t, float* o){
+  float tt = t*t;
+  float ttt = tt*t;
+  float l_t2 = (1-t)*(1-t);
+  float l_t3 = l_t2 * (1-t);
+  float tl_t2w3 = t*l_t2*w[0]*3;
+  float ttl_tw3 = tt*(1-t)*w[1]*3;
+  float u = l_t3 + tl_t2w3 + ttl_tw3 + ttt;
+  for (int i = 0; i < nd; i++){
+    o[i] = (l_t3*p[i]+tl_t2w3*p[nd+i]+ttl_tw3*p[nd*2+i]+ttt*p[nd*3+i])/u;
+  }
+}
+
+float catrom_getT(float* p, int nd, float alpha){
+  float d = 0;
+  for (int i = 0; i < nd; i++){
+    float dx = p[i]-p[nd+i];
+    d += dx*dx;
+  }
+  if (d < 1e-4) d = 1e-4;
+  return powf(d, 0.5*alpha);
+}
+
+void catrom(float* p, int nd, float* alpha, float t, float* o){
+  float t0 = 0.0;
+  float t1 = t0 + catrom_getT(p, nd, alpha[0]);
+  float t2 = t1 + catrom_getT(p+nd, nd, alpha[0]);
+  float t3 = t2 + catrom_getT(p+(nd*2), nd, alpha[0]);
+  float t_ = t1 * (1-t) + t2 * t;
+  for (int i = 0; i < nd; i++){
+    float A1 = ( t1-t_ )/( t1-t0 )*p[0+i] + ( t_-t0 )/( t1-t0 )*p[nd+i];
+    float A2 = ( t2-t_ )/( t2-t1 )*p[nd+i] + ( t_-t1 )/( t2-t1 )*p[nd*2+i];
+    float A3 = ( t3-t_ )/( t3-t2 )*p[nd*2+i] + ( t_-t2 )/( t3-t2 )*p[nd*3+i];
+    float B1 = ( t2-t_ )/( t2-t0 )*A1 + ( t_-t0 )/( t2-t0 )*A2;
+    float B2 = ( t3-t_ )/( t3-t1 )*A2 + ( t_-t1 )/( t3-t1 )*A3;
+    float C  = ( t2-t_ )/( t2-t1 )*B1 + ( t_-t1 )/( t2-t1 )*B2;
+    o[i] = C;
+  }
+}
+
+void cubic_bspline(float* p, int nd, float* w, float t, float* o){
+  float t2 = t * t;
+  float t3 = t2 * t;
+  float b0 = (-t3 + 3*t2 - 3*t + 1) / 6*w[0];
+  float b1 = ( 3*t3 - 6*t2 + 4) / 6*w[1];
+  float b2 = (-3*t3 + 3*t2 + 3*t + 1) / 6*w[2];
+  float b3 = ( t3 ) / 6*w[3];
+  float denom = b0+b1+b2+b3;
+  for (int i = 0; i < nd; i++){
+    o[i] = (b0*p[i] + b1*p[nd+i] + b2*p[nd*2+i] + b3*p[nd*3+i])/denom;
+  }
+}
+
+void quadratic_bspline(float* p, int nd, float* w, float t, float* o){
+  float t2 = t * t;
+  float b0 = 0.5 * (t2 - 2*t + 1)*w[0];
+  float b1 = 0.5 * (-2*t2 + 2*t + 1)*w[1];
+  float b2 = 0.5 * (t2)*w[2];
+  float denom = b0+b1+b2;
+  for (int i = 0; i < nd; i++){
+    o[i] = (b0*p[i] + b1*p[nd+i] + b2*p[nd*2+i])/denom;
+  }
+}
+
+void geom_impl_curve(float* p, int nd, float* a, float t, int flags, float* o){
+  if ((flags & 0xf0) == TYPE_BEZIER){
+    if ((flags & 0xf) == ORD_QUADRATIC){
+      quadratic_rational_bezier(p,nd,a,t,o);
+    }else if ((flags & 0xf) == ORD_CUBIC){
+      cubic_rational_bezier(p,nd,a,t,o);
+    }
+  }else if ((flags & 0xf0) == TYPE_CATROM){
+    catrom(p,nd,a,t,o);
+  }else if ((flags & 0xf0) == TYPE_BSPLINE){
+    if ((flags & 0xf) == ORD_QUADRATIC){
+      quadratic_bspline(p,nd,a,t,o);
+    }else if ((flags & 0xf) == ORD_CUBIC){
+      cubic_bspline(p,nd,a,t,o);
+    }
   }
 }

@@ -139,3 +139,51 @@ void geom__bbox(){
   }
 
 }
+
+void geom__clip(){
+  int32_t __ARG(flags);
+  __list_t* __ARG(polygon);
+  __list_t* __ARG(polyline);
+
+  int n_out;
+  int* l_out;
+  float** out = geom_impl_clip(
+    polyline->n, (float*)(polyline->data),
+    polygon->n, (float*)(polygon->data),
+    flags, &n_out, &l_out
+  );
+
+  __list_t* lst = __gc_alloc(VART_LST, sizeof(__list_t));
+  lst->w = 8;
+  lst->n = n_out;
+  lst->cap = lst->n+1;
+  lst->t = VART_LST;
+  lst->data = malloc(lst->cap*lst->w);
+
+  for (int i = 0; i < n_out; i++){    
+    __list_t* l = __gc_alloc(VART_LST,sizeof(__list_t));
+    l->n = l_out[i];
+    l->cap = l_out[i];
+    l->w = 8;
+    l->data = (char*)(out[i]);
+    l->t = VART_F32;
+    ((__list_t**)(lst->data))[i] = l;
+  }
+
+  __put_ret(&lst);
+}
+
+void geom__curve(){
+  int32_t __ARG(flags);
+  float __ARG(t);
+  __list_t* __ARG(params);
+  __list_t* __ARG(ps);
+
+  float fparams[4] = {1.0,1.0,1.0,1.0};
+  memcpy(fparams, params->data, sizeof(float)*params->n);
+
+  int nd = ps->w/4;
+  __vla(float,v,nd);
+  geom_impl_curve(ps->data,ps->w/4,fparams,t,flags,v);
+  __put_ret(v);
+}
