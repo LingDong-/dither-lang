@@ -2567,6 +2567,8 @@ void cast(term_t* a, term_t* b){
         v->u.f64 = (double)(b->u.f);
       }else if (b->mode == TERM_STRL){
         v->u.f64 = atof(b->u.str.data);
+      }else if (b->mode == TERM_IDEN){
+        v->u.f64 = get_val_num(b);
       }else{
         UNIMPL
       }

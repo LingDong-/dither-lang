@@ -70,7 +70,7 @@ void geom__delaunay(){
   a->w = 4;
   a->t = VART_I32;
   a->data =  (char*)geom_impl_delaunay(points->n, (float*)(points->data), &(a->n));
-  a->cap = a->n*3;
+  a->cap = a->n;
 
   __put_ret(&a);
 }
