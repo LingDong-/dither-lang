@@ -84,7 +84,7 @@ int get_key_code(MSG* msg){
   GetKeyboardState(keyboardState);
   UINT scanCode = (msg->lParam >> 16) & 0xFF;
   int len = ToUnicode((UINT)msg->wParam, scanCode, keyboardState, unicodeChar, 4, 0);
-  if (len == 1 && unicodeChar[0] >= 32 && unicodeChar[0] < 127) {
+  if (len == 1 && unicodeChar[0] >= 0 && unicodeChar[0] < 127) {
     return (int)unicodeChar[0];
   } else {
     UINT vk = msg->wParam;

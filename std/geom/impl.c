@@ -118,18 +118,22 @@ int geom_impl_line_intersect_2d(
 float* acc_len = NULL;
 int n_acc_len = 0;
 float* geom_impl_poly_resample(int n_points, float* points, float n, int flags, int* n_out){
-  if (n_points+1 > n_acc_len){
-    acc_len = (float*)realloc(acc_len,(n_acc_len = n_points+1)*sizeof(float));
+  int n_poly = n_points;
+  if (flags & MODE_POLYGON){
+    n_poly++;
+  }
+  if (n_poly+1 > n_acc_len){
+    acc_len = (float*)realloc(acc_len,(n_acc_len = n_poly+1)*sizeof(float));
   }
   float tot_len = 0;
-  for (int i = 0; i < n_points-1; i++){
-    float dx = points[i*2] - points[(i+1)*2];
-    float dy = points[i*2+1] - points[(i+1)*2+1];
+  for (int i = 0; i < n_poly-1; i++){
+    float dx = points[i*2] - points[((i+1)%n_points)*2];
+    float dy = points[i*2+1] - points[((i+1)%n_points)*2+1];
     tot_len += sqrt(dx*dx+dy*dy);
     acc_len[i+1] = tot_len;
   }
   acc_len[0] = 0;
-  acc_len[n_points] = tot_len;
+  acc_len[n_poly] = tot_len;
   float spacing = 0;
   int count = 0;
   if (flags & BY_COUNT){
@@ -144,11 +148,11 @@ float* geom_impl_poly_resample(int n_points, float* points, float n, int flags, 
   *n_out = count;
   int lidx = 0;
   for (float l = 0; l < tot_len; l+= spacing){
-    for (int i = lidx; i < n_points; i++){
+    for (int i = lidx; i < n_poly; i++){
       if (acc_len[i] <= l && l < acc_len[i+1]){
         float t = (l-acc_len[i])/(acc_len[i+1]-acc_len[i]);
-        float x = points[i*2]*(1-t)+points[(i+1)*2]*t;
-        float y = points[(i*2)+1]*(1-t)+points[(i+1)*2+1]*t;
+        float x = points[i*2]*(1-t)+points[((i+1)%n_points)*2]*t;
+        float y = points[(i*2)+1]*(1-t)+points[((i+1)%n_points)*2+1]*t;
         out[idx*2]   = x;
         out[idx*2+1] = y;
         idx ++;
@@ -1205,4 +1209,13 @@ void geom_impl_curve(float* p, int nd, float* a, float t, int flags, float* o){
       cubic_bspline(p,nd,a,t,o);
     }
   }
+}
+
+float geom_impl_poly_area(int n_points, float* points){
+  int n = n_points;
+  float a = 0;
+  for (int p=n-1,q=0; q<n; p=q++){
+    a += points[p*2]*points[q*2+1] - points[q*2]*points[p*2+1];
+  }
+  return a*0.5;
 }
