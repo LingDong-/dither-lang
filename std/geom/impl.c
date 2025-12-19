@@ -158,14 +158,12 @@ float* geom_impl_poly_resample(int n_points, float* points, float n, int flags, 
         idx ++;
         lidx = i;
         if (idx == count){
-          free(acc_len);
           return out;
         }
         break;
       }
     }
   }
-  free(acc_len);
   return out;
 }
 
@@ -202,7 +200,7 @@ float dist_pt_seg(float x0,float y0,float x1,float y1,float x2,float y2){
   float D = y2-y1;
   float dot = A*C+B*D;
   float len_sq = C*C+D*D;
-  float param = 01;
+  float param = -1.0;
   if (len_sq != 0){
     param = dot/len_sq;
   }
@@ -469,7 +467,6 @@ int delaunay_bowyer_watson_bourke(int nv, float* pxyz, int32_t* V){
   int *edges = NULL;
   int nedge = 0;
   int trimax,emax = 200;
-  int status = 0;
   int inside;
   int ntri;
   float xp,yp,x1,y1,x2,y2,x3,y3,xc,yc,r;
@@ -909,8 +906,6 @@ void obb_3d_refine(int n_points, float* points, float* out){
     out[7], out[10],out[13],
     out[8], out[11],out[14]
   };
-  float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
-  float maxX =-INFINITY, maxY =-INFINITY, maxZ =-INFINITY;
   float angle = 0.15;
   float cx,cy,cz;
   for (int iter = 0; iter < 2; iter++){

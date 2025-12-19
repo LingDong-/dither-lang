@@ -15,6 +15,8 @@ globalThis.$drw = new function(){
     ctx.fillStyle="white";
     ctx.font = "15px monospace";
     ctx.textBaseline = "bottom";
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
   }
   that._init_graphics = function(){
     let [pg,w,h] = $pop_args(3);

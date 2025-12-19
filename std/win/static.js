@@ -23,6 +23,7 @@ globalThis.$win = new function(){
     Control:   0xffe3,
     Alt:       0xffe9,
     Meta:      0xffeb,
+    Escape:    27,
   };
   that.init = function(){
     let [w,h,flags] = $pop_args(3);
