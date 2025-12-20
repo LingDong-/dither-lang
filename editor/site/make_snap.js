@@ -1,6 +1,6 @@
 let TODOS = [
   // list here new examples that need to be snapped
-  "lissajous.dh"
+  "geomsink.dh"
 ]
 
 const fs = require('fs');

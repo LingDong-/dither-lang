@@ -23,6 +23,7 @@ globalThis.$geom = new function(){
 
   function point_list_typed(x,nd){
     for (let i = 0; i < x.length; i++){
+      x[i] = new Float32Array(x[i]);
       x[i].__type = {con:'vec',elt:['f32',nd]}
     }
     return x;
@@ -898,4 +899,103 @@ globalThis.$geom = new function(){
       return [a,b,c];
     }
   }
+
+
+  function quadratic_rational_bezier(p, nd, w, t, o){
+    let tt = t*t;
+    let l_tl_t = (1-t)*(1-t);
+    let ztl_tw = 2*t*(1-t)*w[0];
+    let u = l_tl_t+ztl_tw+tt;
+    for (let i = 0; i < nd; i++){
+      o[i] = (l_tl_t*p[0][i]+ztl_tw*p[1][i]+tt*p[2][i])/u;
+    }
+  }
+  function cubic_rational_bezier(p, nd, w, t, o){
+    let tt = t*t;
+    let ttt = tt*t;
+    let l_t2 = (1-t)*(1-t);
+    let l_t3 = l_t2 * (1-t);
+    let tl_t2w3 = t*l_t2*w[0]*3;
+    let ttl_tw3 = tt*(1-t)*w[1]*3;
+    let u = l_t3 + tl_t2w3 + ttl_tw3 + ttt;
+    for (let i = 0; i < nd; i++){
+      o[i] = (l_t3*p[0][i]+tl_t2w3*p[1][i]+ttl_tw3*p[2][i]+ttt*p[3][i])/u;
+    }
+  }
+
+  function catrom_getT(p,idx,nd,alpha){
+    let d = 0;
+    for (let i = 0; i < nd; i++){
+      let dx = p[idx][i]-p[idx+1][i];
+      d += dx*dx;
+    }
+    if (d < 1e-4) d = 1e-4;
+    return Math.pow(d, 0.5*alpha);
+  }
+
+  function catrom(p, nd, alpha, t, o){
+    let t0 = 0.0;
+    let t1 = t0 + catrom_getT(p,0, nd, alpha[0]);
+    let t2 = t1 + catrom_getT(p,1, nd, alpha[0]);
+    let t3 = t2 + catrom_getT(p,2, nd, alpha[0]);
+    let t_ = t1 * (1-t) + t2 * t;
+    for (let i = 0; i < nd; i++){
+      let A1 = ( t1-t_ )/( t1-t0 )*p[0][i] + ( t_-t0 )/( t1-t0 )*p[1][i];
+      let A2 = ( t2-t_ )/( t2-t1 )*p[1][i] + ( t_-t1 )/( t2-t1 )*p[2][i];
+      let A3 = ( t3-t_ )/( t3-t2 )*p[2][i] + ( t_-t2 )/( t3-t2 )*p[3][i];
+      let B1 = ( t2-t_ )/( t2-t0 )*A1 + ( t_-t0 )/( t2-t0 )*A2;
+      let B2 = ( t3-t_ )/( t3-t1 )*A2 + ( t_-t1 )/( t3-t1 )*A3;
+      let C  = ( t2-t_ )/( t2-t1 )*B1 + ( t_-t1 )/( t2-t1 )*B2;
+      o[i] = C;
+    }
+  }
+
+  function cubic_bspline(p, nd, w, t, o){
+    let t2 = t * t;
+    let t3 = t2 * t;
+    let b0 = (-t3 + 3*t2 - 3*t + 1) / 6*w[0];
+    let b1 = ( 3*t3 - 6*t2 + 4) / 6*w[1];
+    let b2 = (-3*t3 + 3*t2 + 3*t + 1) / 6*w[2];
+    let b3 = ( t3 ) / 6*w[3];
+    let denom = b0+b1+b2+b3;
+    for (let i = 0; i < nd; i++){
+      o[i] = (b0*p[0][i] + b1*p[1][i] + b2*p[2][i] + b3*p[3][i])/denom;
+    }
+  }
+
+  function quadratic_bspline(p, nd, w, t, o){
+    let t2 = t * t;
+    let b0 = 0.5 * (t2 - 2*t + 1)*w[0];
+    let b1 = 0.5 * (-2*t2 + 2*t + 1)*w[1];
+    let b2 = 0.5 * (t2)*w[2];
+    let denom = b0+b1+b2;
+    for (let i = 0; i < nd; i++){
+      o[i] = (b0*p[0][i] + b1*p[1][i] + b2*p[2][i])/denom;
+    }
+  }
+
+  that.curve = function(){
+    let [points,params,t,flags] = $pop_args(4);
+    let nd = Number(points.__type.elt[0].elt[1]);
+    let p = points;
+    let a = [...params,1,1,1,1];
+    let o = new Float32Array(nd);
+    if ((flags & 0xf0) == TYPE_BEZIER){
+      if ((flags & 0xf) == ORD_QUADRATIC){
+        quadratic_rational_bezier(p,nd,a,t,o);
+      }else if ((flags & 0xf) == ORD_CUBIC){
+        cubic_rational_bezier(p,nd,a,t,o);
+      }
+    }else if ((flags & 0xf0) == TYPE_CATROM){
+      catrom(p,nd,a,t,o);
+    }else if ((flags & 0xf0) == TYPE_BSPLINE){
+      if ((flags & 0xf) == ORD_QUADRATIC){
+        quadratic_bspline(p,nd,a,t,o);
+      }else if ((flags & 0xf) == ORD_CUBIC){
+        cubic_bspline(p,nd,a,t,o);
+      }
+    }
+    return o;
+  }
+
 };
