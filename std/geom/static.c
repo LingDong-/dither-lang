@@ -184,6 +184,6 @@ void geom__curve(){
 
   int nd = ps->w/4;
   __vla(float,v,nd);
-  geom_impl_curve(ps->data,ps->w/4,fparams,t,flags,v);
+  geom_impl_curve((float*)(ps->data),ps->w/4,fparams,t,flags,v);
   __put_ret(v);
 }

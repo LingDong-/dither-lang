@@ -7,6 +7,13 @@
 #define FEAT_LIGA 256
 #define FEAT_KERN 65536
 
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+#ifndef MAX
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
 #undef ARR_DEF
 #define ARR_DEF(dtype) \
   typedef struct { int len; int cap; dtype* data; } dtype ## _arr_t;
