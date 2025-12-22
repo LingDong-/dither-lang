@@ -36,6 +36,90 @@ globalThis.$geom = new function(){
     return x;
   }
 
+  function line_intersect_2d(
+    p0x, p0y, p1x, p1y,
+    q0x, q0y, q1x, q1y, flags
+  ){
+    let o0,o1;
+    let d0x = p1x - p0x;
+    let d0y = p1y - p0y;
+    let d1x = q1x - q0x;
+    let d1y = q1y - q0y;
+    let vc = d0x * d1y - d0y * d1x;
+    if (vc == 0) {
+      return [0,0,0];
+    }
+    let vcn = vc * vc;
+    let q0x_p0x = q0x - p0x;
+    let q0y_p0y = q0y - p0y;
+    let vc_vcn = vc / vcn;
+    let t = (q0x_p0x * d1y - q0y_p0y * d1x) * vc_vcn;
+    let s = (q0x_p0x * d0y - q0y_p0y * d0x) * vc_vcn;
+    if (flags & RET_PARAMS){
+      o0 = t;
+      o1 = s;
+    }else{
+      o0 = p0x * (1-t) + p1x * t;
+      o1 = p0y * (1-t) + p1y * t;
+    }
+    if (
+      (0 <= t || !(flags & LHS_CAPL)) && 
+      (t < 1 || !(flags & LHS_CAPR)) && 
+      (0 <= s || !(flags & RHS_CAPL)) && 
+      (s < 1 || !(flags & RHS_CAPR))
+    ) {
+      return [1,o0,o1];
+    }
+    return [0,o0,o1];
+  }
+
+  let DET3=(a,b,c,d,e,f,g,h,i)=>((a)*(e)*(i) + (b)*(f)*(g) + (c)*(d)*(h) - (c)*(e)*(g) - (b)*(d)*(i) - (a)*(f)*(h))
+
+  function line_intersect_3d(
+    p0x, p0y, p0z,
+    p1x, p1y, p1z,
+    q0x, q0y, q0z,
+    q1x, q1y, q1z, flags
+  ){
+    let o0,o1,o2;
+    let d0x = p1x - p0x;
+    let d0y = p1y - p0y;
+    let d0z = p1z - p0z;
+    let d1x = q1x - q0x;
+    let d1y = q1y - q0y;
+    let d1z = q1z - q0z;
+    let vcx = d0y*d1z-d0z*d1y;
+    let vcy = d0z*d1x-d0x*d1z;
+    let vcz = d0x*d1y-d0y*d1x;
+    let vcn = vcx*vcx+vcy*vcy+vcz*vcz;
+    if (vcn == 0){
+      return [0,0,0,0];
+    }
+    let q0x_p0x = q0x - p0x;
+    let q0y_p0y = q0y - p0y;
+    let q0z_p0z = q0z - p0z;
+    let t = DET3(q0x_p0x,q0y_p0y,q0z_p0z,d1x,d1y,d1z,vcx,vcy,vcz)/vcn;
+    let s = DET3(q0x_p0x,q0y_p0y,q0z_p0z,d0x,d0y,d0z,vcx,vcy,vcz)/vcn;
+    if (flags & RET_PARAMS){
+      o0 = t;
+      o1 = s;
+      o2 = 0;
+    }else{
+      o0 = p0x * (1-t) + p1x * t;
+      o1 = p0y * (1-t) + p1y * t;
+      o2 = p0z * (1-t) + p1z * t;
+    }
+    if (
+      (0 <= t || !(flags & LHS_CAPL)) && 
+      (t <= 1 || !(flags & LHS_CAPR)) && 
+      (0 <= s || !(flags & RHS_CAPL)) && 
+      (s <= 1 || !(flags & RHS_CAPR))
+    ) {
+      return [1,o0,o1,o2];
+    }
+    return [0,o0,o1,o2];
+  }
+
   let acc_len = [];
   let n_acc_len = 0;
   that.poly_resample = function(){
@@ -90,9 +174,7 @@ globalThis.$geom = new function(){
 
   let CWISE=(x0,y0,x1,y1,x2,y2)=>(((x1)-(x0))*((y2)-(y0)) - ((x2)-(x0))*((y1)-(y0)));
 
-  that.pt_in_poly = function(){
-    let [pt,points] = $pop_args(3);
-    let [x,y] = pt;
+  function pt_in_poly(x,y, points){
     let n_points = points.length;
     let wn = 0;
     for (let i = 0, j = n_points-1; i < n_points; j = i++){
@@ -115,6 +197,11 @@ globalThis.$geom = new function(){
       }
     }
     return Number(wn != 0);
+  }
+
+  that.pt_in_poly = function(){
+    let [pt,points] = $pop_args(3);
+    return pt_in_poly(...pt,points);
   }
 
   function dist_pt_seg(x0,y0,x1,y1,x2,y2){
@@ -898,6 +985,71 @@ globalThis.$geom = new function(){
       c.__type = {con:'vec',elt:['f32',3,3]}
       return [a,b,c];
     }
+  }
+
+  function clip_add_seg(clipped, ls0x,ls0y,ls1x,ls1y){
+    if (!clipped.length){
+      clipped.push([])
+    }
+    if (!clipped.at(-1).length){
+      clipped.at(-1).push([ls0x,ls0y],[ls1x,ls1y]);
+      return;
+    }
+    if (clipped.at(-1)[0] == ls0x && clipped.at(-1)[1] == ls0y){
+      clipped.push([ls1x,ls1y])
+    }else{
+      clipped.push([[ls0x,ls0y],[ls1x,ls1y]]);
+    }
+  }
+
+  that.clip = function(){
+    let [polyline,polygon,flags] = $pop_args(3);
+    let do_diff = flags == OP_EXCLUDE;
+    let clipped = [];
+    for (let i = 0; i < polyline.length-1; i++){
+      let ls0x = polyline[i][0];
+      let ls0y = polyline[i][1];
+      let ls1x = polyline[i+1][0];
+      let ls1y = polyline[i+1][1];
+      let isx = [];
+      for (let j = 0; j < polygon.length; j++){
+        let [ret,t,s] = line_intersect_2d(
+          ls0x,ls0y,ls1x,ls1y,
+          polygon[j][0], polygon[j][1], 
+          polygon[(j+1)%polygon.length][0], polygon[(j+1)%polygon.length][1],
+          LHS_CAPL|LHS_CAPR|RHS_CAPL|RHS_CAPR|RET_PARAMS
+        );
+        if (ret){
+          isx.push(t);
+        }
+      }
+      if (!isx.length){
+        if (do_diff == !pt_in_poly(ls0x,ls0y,polygon)){
+          clip_add_seg(clipped,ls0x,ls0y,ls1x,ls1y);
+        }
+      }else{
+        isx.push(0,1);
+        isx.sort((a,b)=>(a-b));
+        let dx = ls1x-ls0x;
+        let dy = ls1y-ls0y;
+        let td = dx*dx+dy*dy;
+        for (let k = 0; k < isx.length-1; k++){
+          let t0 = isx[k];
+          let t1 = isx[k+1];
+          let x0 = ls0x*(1-t0)+ls1x*(t0);
+          let y0 = ls0y*(1-t0)+ls1y*(t0);        
+          let x1 = ls0x*(1-t1)+ls1x*(t1);
+          let y1 = ls0y*(1-t1)+ls1y*(t1);
+          let ds = (t1-t0)*td;
+          if (ds >= 0.001){
+            if (do_diff == !pt_in_poly((x0+x1)*0.5,(y0+y1)*0.5,polygon)){
+              clip_add_seg(clipped, x0,y0,x1,y1);
+            }
+          }
+        }
+      }
+    }
+    return point_list_list_typed(clipped);
   }
 
 
