@@ -995,8 +995,8 @@ globalThis.$geom = new function(){
       clipped.at(-1).push([ls0x,ls0y],[ls1x,ls1y]);
       return;
     }
-    if (clipped.at(-1)[0] == ls0x && clipped.at(-1)[1] == ls0y){
-      clipped.push([ls1x,ls1y])
+    if (clipped.at(-1).at(-1)[0] == ls0x && clipped.at(-1).at(-1)[1] == ls0y){
+      clipped.at(-1).push([ls1x,ls1y])
     }else{
       clipped.push([[ls0x,ls0y],[ls1x,ls1y]]);
     }

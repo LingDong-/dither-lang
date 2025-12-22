@@ -301,7 +301,7 @@ EXPORTED void geom_curve(var_t* ret, gstate_t* _g){
   v->type = ret->type;
 
   float* data = copy_list_vecf_pack(ps, nd);
-  geom_impl_curve(data,nd,fparams,t,flags,v->data);
+  geom_impl_curve(data,nd,fparams,t,flags,(float*)(v->data));
 
   ret->u.vec = v;
   free(data);
