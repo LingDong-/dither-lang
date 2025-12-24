@@ -140,11 +140,13 @@ EXPORTED void str_join(var_t* ret,  gstate_t* _g){
  
   int n = 0;
   int sl = s->n;
+  int nsl = 0;
   for (int i = 0; i < a->n; i++){
     n += ((stn_t**)(a->data))[i]->n;
+    nsl += sl;
   }
   
-  stn_t* o = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+1);
+  stn_t* o = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+nsl+1);
   n = 0;
   for (int i = 0; i < a->n; i++){
     int l = ((stn_t**)(a->data))[i]->n;

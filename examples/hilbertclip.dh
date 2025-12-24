@@ -1,0 +1,85 @@
+include "std/io"
+include "std/str"
+include "std/drw"
+include "std/list"
+include "std/font"
+include "std/geom"
+include "std/math"
+include "std/time"
+
+bytes := io.read_file("examples/assets/caslon.ttf");
+tf := font.decode(bytes);
+qs := tf.glyph(tf.lookup(list[i32]{'s','t'},font.FEAT_LIGA))[0];
+for (i := 0; i < qs.length(); i++){
+  qs[i] = qs[i]*525.0+{30.0,460.0};
+}
+
+func hilbert(itr:i32,scl:f32,ini:vec[f32,2]):list[vec[f32,2]]{
+  s := "A"
+  for (i := 0; i < itr; i++){
+    s = "b".join(s.split("B"));
+    s = "-BF+AFA+FB-".join(s.split("A"));
+    s = "+AF-BFB-FA+".join(s.split("b"));
+  }
+  p := ini;
+  ps := list[vec[f32,2]]{p};
+  d := {scl,0.};
+  for (i := 0; i < s.length(); i++){
+    if (s[i] == '-'){
+      d = {-d.y,d.x};
+    }else if (s[i] == '+'){
+      d = {d.y,-d.x};
+    }else if (s[i] == 'F'){
+      p += d;
+      ps.push(p);
+    }
+  }
+  return ps;
+}
+
+func rot_around(ps:list[vec[f32,2]],c:vec[f32,2],th:f32){
+  costh := math.cos(th);
+  sinth := math.sin(th);
+  for (i := 0; i < ps.length(); i++){
+    ({x,y}) := ps[i]-c;
+    ps[i] = c+{
+      x*costh-y*sinth,
+      x*sinth+y*costh,
+    }
+  }
+}
+
+ps := hilbert(6,12.0,{-132.,-132.});
+
+drw.size(480,480);
+
+frame := 0;
+
+while (1){
+  time.fps(60);
+  drw.background(0);
+  
+  drw.no_fill();
+  drw.stroke(0);
+  drw.stroke_weight(2);
+
+  rot_around(ps,{240.,240},0.001);
+  flip := (frame/60)%2;
+  cps := geom.clip(ps,qs,flip?geom.OP_EXCLUDE:geom.OP_INCLUDE);
+  for (i := 0; i < cps.length(); i++){
+    if (!cps[i].length()) continue;
+    drw.stroke(cps[i][0].x/320.0,cps[i][0].y/320.0,1.0);
+    drw.ellipse(...cps[i][0],4,4);
+    drw.ellipse(...cps[i][cps[i].length()-1],4,4);
+    drw.begin_shape();
+    for (j := 0; j < cps[i].length(); j++){
+      drw.vertex(...cps[i][j]);
+    }
+    drw.end_shape();
+  }
+  
+
+  
+  drw.poll();
+  frame++;
+}
