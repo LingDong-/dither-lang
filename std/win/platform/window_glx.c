@@ -127,19 +127,51 @@ EXPORTED event_t* window_poll(int* out_count){
       }
     }
     if (event.type == ButtonPress) {
-      add_event(
-        MOUSE_PRESSED,
-        event.xbutton.button,
-        event.xbutton.x,
-        event.xbutton.y
-      );
+      if (event.xbutton.button == 4){
+        add_event(
+          0,
+          event.xbutton.button,
+          0,
+          1
+        );
+      }else if (event.xbutton.button == 5){
+        add_event(
+          WHEEL_SCROLLED,
+          0,
+          0,
+          -1
+        );
+      }else if (event.xbutton.button == 6){
+        add_event(
+          WHEEL_SCROLLED,
+          0,
+          -1,
+          0
+        );
+      }else if (event.xbutton.button == 7){
+        add_event(
+          WHEEL_SCROLLED,
+          0,
+          1,
+          0
+        );
+      }else{
+        add_event(
+          MOUSE_PRESSED,
+          event.xbutton.button,
+          event.xbutton.x,
+          event.xbutton.y
+        );
+      }
     }else if (event.type == ButtonRelease) {
-      add_event(
-        MOUSE_RELEASED,
-        event.xbutton.button,
-        event.xbutton.x,
-        event.xbutton.y
-      );
+      if (event.xbutton.button < 4 || event.xbutton.button > 7){
+        add_event(
+          MOUSE_RELEASED,
+          event.xbutton.button,
+          event.xbutton.x,
+          event.xbutton.y
+        );
+      }
     }else if (event.type == MotionNotify) {
       add_event(
         MOUSE_MOVED,

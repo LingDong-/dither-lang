@@ -205,6 +205,20 @@ EXPORTED event_t* window_poll(int* out_count){
         0,
         0
       );
+    }else if (msg.message == WM_MOUSEWHEEL){
+      add_event(
+        WHEEL_SCROLLED,
+        0,
+        0,
+        GET_WHEEL_DELTA_WPARAM(msg.wParam)
+      );
+    }else if (msg.message == WM_MOUSEHWHEEL){
+      add_event(
+        WHEEL_SCROLLED,
+        0,
+        GET_WHEEL_DELTA_WPARAM(msg.wParam),
+        0
+      );
     }
     TranslateMessage(&msg);
     DispatchMessage(&msg);

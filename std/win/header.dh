@@ -31,6 +31,7 @@ namespace win {
   MOUSE_MOVED    := 3;
   KEY_PRESSED    := 4;
   KEY_RELEASED   := 5;
+  WHEEL_SCROLLED := 6;
   CONTEXT_2D     := 1;
   CONTEXT_3D     := 2;
   typedef Event = {

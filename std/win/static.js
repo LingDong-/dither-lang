@@ -37,26 +37,31 @@ globalThis.$win = new function(){
 
     cnv.addEventListener('mousedown',function(e){
       let r = cnv.getBoundingClientRect();
-      x = (e.clientX-r.left);
-      y = (e.clientY-r.top);
+      let x = (e.clientX-r.left);
+      let y = (e.clientY-r.top);
       evtq.push({type:1,key:[1,0,2][e.button],x,y})
     });
     cnv.addEventListener('mouseup',function(e){
       let r = cnv.getBoundingClientRect();
-      x = (e.clientX-r.left);
-      y = (e.clientY-r.top);
+      let x = (e.clientX-r.left);
+      let y = (e.clientY-r.top);
       evtq.push({type:2,key:[1,0,2][e.button],x,y})
     });
     cnv.addEventListener('mousemove',function(e){
       let r = cnv.getBoundingClientRect();
-      x = (e.clientX-r.left);
-      y = (e.clientY-r.top);
+      let x = (e.clientX-r.left);
+      let y = (e.clientY-r.top);
       if (evtq.length && evtq.at(-1).type == 3){
         evtq[evtq.length-1].x = x;
         evtq[evtq.length-1],y = y;
       }else{
         evtq.push({type:3,key:0,x,y})
       }
+    });
+    cnv.addEventListener('wheel',function(e){
+      let x = e.deltaX;
+      let y = e.deltaY;
+      evtq.push({type:6,key:0,x,y})
     });
     function mapkey(k){
       let m = keymap[k];

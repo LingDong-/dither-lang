@@ -2105,7 +2105,9 @@ var PARSER = function(sys,extensions={}){
       if (ast.tag){
         if (ast.tag == 'numbr'){
           ast.key = 'term';
-          if (ast.val.toLowerCase().includes('e') || ast.val.toLowerCase().includes('.')){
+          if (ast.val.toLowerCase().startsWith('0x') || ast.val.toLowerCase().startsWith('0b')){
+            ast.typ = 'i32';
+          }else if (ast.val.toLowerCase().includes('e') || ast.val.toLowerCase().includes('.')){
             ast.typ = 'f32';
           }else{
             ast.typ = 'i32';
