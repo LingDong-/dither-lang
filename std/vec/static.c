@@ -31,9 +31,11 @@ void vec__dir(){
   }
   if (s){
     s = 1.0/sqrt(s);
-    for (int i = 0; i < n; i++){
-      u[i] = v[i]*s;
-    }
+  }else{
+    s = 1.0;
+  }
+  for (int i = 0; i < n; i++){
+    u[i] = v[i]*s;
   }
   __put_ret(u);
 }

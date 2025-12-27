@@ -3,7 +3,7 @@ globalThis.$list = new function(){
 
   that.slice = function(){
     let [a,i,j] = $pop_args(3);
-    return a.slice(i,j)
+    return a.slice(i,j).map($value);
   }
   that.insert = function(){
     let [a,i,x] = $pop_args(3);

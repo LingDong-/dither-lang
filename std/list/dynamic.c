@@ -27,8 +27,18 @@ EXPORTED void list_slice(var_t* ret,  gstate_t* _g){
   ret->u.lst->type = lst->type;
   ret->u.lst->cap = n;
 
-  memcpy(ret->u.lst->data, lst->data + (i*lst->w), n*lst->w);
-
+  type_t* t = (type_t*)(lst->type->u.elem.head->data);
+  if (t->vart == VART_VEC){
+    for (int k = 0; k < n; k++){
+      ((vec_t**)(ret->u.lst->data))[k] = vec_copy_(_g, ((vec_t**)(lst->data))[i+k]);
+    }
+  }else if (t->vart == VART_TUP){
+    for (int k = 0; k < n; k++){
+      ((tup_t**)(ret->u.lst->data))[k] = tup_copy_(_g, ((tup_t**)(lst->data))[i+k]);
+    }
+  }else{
+    memcpy(ret->u.lst->data, lst->data + (i*lst->w), n*lst->w);
+  }
 }
 
 
