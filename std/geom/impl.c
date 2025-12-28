@@ -136,12 +136,12 @@ float* geom_impl_poly_resample(int n_points, float* points, float n, int flags, 
   acc_len[n_poly] = tot_len;
   float spacing = 0;
   int count = 0;
-  if (flags & BY_COUNT){
-    spacing = tot_len/n;
-    count = ceil(n);
-  }else{ // BY_SPACING
+  if (flags & BY_SPACING){
     spacing = n;
     count = ceil(tot_len/spacing);
+  }else{ // BY_COUNT
+    spacing = tot_len/n;
+    count = ceil(n);
   }
   float* out = (float*)malloc(count*sizeof(float)*2);
   int idx = 0;
@@ -158,11 +158,16 @@ float* geom_impl_poly_resample(int n_points, float* points, float n, int flags, 
         idx ++;
         lidx = i;
         if (idx == count){
-          return out;
+          goto readout;
         }
         break;
       }
     }
+  }
+readout:
+  if (!(flags & MODE_POLYGON)){
+    out[(count-1)*2] = points[(n_poly-1)%n_points*2];
+    out[(count-1)*2+1] = points[(n_poly-1)%n_points*2+1];
   }
   return out;
 }

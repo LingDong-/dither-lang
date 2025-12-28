@@ -143,17 +143,18 @@ globalThis.$geom = new function(){
     acc_len[n_poly] = tot_len;
     let spacing = 0;
     let count = 0;
-    if (flags & BY_COUNT){
-      spacing = tot_len/n;
-      count = Math.ceil(n);
-    }else{ // BY_SPACING
+    if (flags & BY_SPACING){
       spacing = n;
       count = Math.ceil(tot_len/spacing);
+    }else{ // BY_COUNT
+      spacing = tot_len/n;
+      count = Math.ceil(n);
     }
     let out = new Array(count);
     let idx = 0;
     let lidx = 0;
     for (let l = 0; l < tot_len; l+= spacing){
+      let readout = 0;
       for (let i = lidx; i < n_poly; i++){
         if (acc_len[i] <= l && l < acc_len[i+1]){
           let t = (l-acc_len[i])/(acc_len[i+1]-acc_len[i]);
@@ -163,11 +164,16 @@ globalThis.$geom = new function(){
           idx ++;
           lidx = i;
           if (idx == count){
-            return out;
+            readout = 1;
           }
           break;
         }
       }
+      if (readout) break;
+    }
+    if (!(flags & MODE_POLYGON)){
+      out[count-1][0] = points[(n_poly-1)%n_points][0];
+      out[count-1][1] = points[(n_poly-1)%n_points][1];
     }
     return point_list_typed(out,2);
   }
