@@ -46,7 +46,7 @@ This step is only required if you plan to run scripts on the VM.
 If you want to run graphical applications locally (using the VM or C backends), you need to compile a windowing shared library.
 
 * **For macOS (Cocoa backend):**
-    `cd std/win/platform; make cocoa`
+    `cd std/win/platform; make glcocoa coregraphics`
 * **For Linux/X11 (X11/GLX backend):**
     This requires X11 development libraries. On Debian-based systems, you can install them with `sudo apt-get install libx11-dev libgl-dev`. Then, run the following command:
     `cd std/win/platform; make glx`
