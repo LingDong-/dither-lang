@@ -890,6 +890,7 @@ var PARSER = function(sys,extensions={}){
                 // let pth2 = sys.path.join(urpth,"dynamic.so");
                 let _ = reader(pth);
                 let rpath = sys.path.relative(sys.process.cwd(), urpth);
+                if (rpath.length == 0) rpath = sys.path.resolve(rpath);
                 stmt.val.val = '"'+rpath.replace(/\\/g,'/')+'"'
                 cst.val.push(stmt);
                 let hdpth = pth;
