@@ -3373,7 +3373,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     }
     int l = strlen(name);
     char *nname;
-    if (name[l-1] == 'o' && name[l-2] == 's' && name[l-3] == '.'){ 
+    if (l >= 3 && name[l-1] == 'o' && name[l-2] == 's' && name[l-3] == '.'){ 
       nname = name; 
     }else{
       nname = malloc(l+16);
@@ -3386,7 +3386,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
       #endif
       );
     }
-    // printf("%s",nname);
+    // printf("%s\n",nname);
     char buf[32] = "lib_init_";
     int i = 9;
     while (lid[0] != '.' && i < 31 && lid[0] != 0){
