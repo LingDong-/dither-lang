@@ -26,6 +26,14 @@ The easiest way to try Dither is with the [online editor](https://dither-lang.ne
 
 [![](https://github.com/user-attachments/assets/85d6da4a-fbde-481c-aa7a-a6b03d3cce75)](https://dither-lang.netlify.app/editor.html)
 
+### Build
+- macOS / Linux:  
+>./build.sh  
+>./build.sh dbg=1
+- Windows (MSVC):  
+>build.bat  
+>build.bat dbg=1
+
 You can also [download](https://github.com/LingDong-/dither-lang/releases) the stand-alone single-binary commandline tool for windows, mac or linux.
 
 ```

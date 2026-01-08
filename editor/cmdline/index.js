@@ -7,6 +7,7 @@ const PARSER = require('../../src/parser.js');
 const TO_JS = require('../../src/to_js.js');
 const TO_C = require('../../src/to_c.js');
 const embed_glsl = require('../../src/embed_glsl.js');
+const embed_gui = require('../../src/embed_gui.js');
 
 function tmpth(){
   // let t = _WIN32 ? os.tmpdir() : '/tmp';
@@ -173,7 +174,7 @@ let xprocess = {
 }
 let parser = new PARSER(
   {fs,path,process:xprocess,search_paths},
-  Object.assign({},embed_glsl),
+  Object.assign({},embed_glsl,embed_gui),
 );
 
 if (is_repl){
