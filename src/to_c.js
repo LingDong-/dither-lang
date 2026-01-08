@@ -1614,7 +1614,11 @@ var TO_C = function(cfg){
         let p = ins[1].slice(1,-1);
         let f = p+"/static.c";
         o.unshift(`#include "${f}"`);
-        cflags.push(`eval "$(cat ${p}/cflags.txt)"`);
+        let cf = `eval "$(cat ${p}/cflags.txt)"`;
+        if (!p.startsWith("std")){
+          cf = `CFLAGS="$CFLAGS -L${p}" && `+cf
+        }
+        cflags.push(cf);
       }else{
         console.log(ins)
       }
