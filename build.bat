@@ -1,9 +1,22 @@
-@echo off
-setlocal
+echo [build] platform = windows (msvc)
 
-echo [build] windows (MSVC)
+setlocal EnableDelayedExpansion
 
-nmake /f MSVC.mak ^
+@REM ---------- platform-specific std build ----------
+cd std/win/platform && nmake wgl winuser && cd ../../../
+
+@REM --------- download third-party headers ----------
+for /f "usebackq delims=" %%L in ("third_party/pull.sh") do (
+    set "line=%%L"
+    if "!line:~0,4!"=="curl" (
+        set "line=!line: > = -o !"
+    )
+    echo !line! >> "third_party/pull.bat"
+)
+cd third_party && call pull.bat && cd ../
+
+@REM ---------- normal build ----------
+nmake /f msvc.mak ^
     build\config.h ^
     std_all ^
     build\vm.exe ^
@@ -11,3 +24,4 @@ nmake /f MSVC.mak ^
     cmdline ^
     %*
 
+endlocal

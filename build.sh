@@ -21,8 +21,13 @@ pushd std/win/platform > /dev/null
 if [ "$PLATFORM" = "macos" ]; then
     make glcocoa coregraphics
 elif [ "$PLATFORM" = "linux" ]; then
-    make glx
+    make glx_linux
 fi
+popd > /dev/null
+
+# ---------- download third-party headers ----------
+pushd third_party > /dev/null
+bash pull.sh
 popd > /dev/null
 
 # ---------- normal build ----------
@@ -33,4 +38,3 @@ make \
     build/vm_dbg \
     cmdline \
     "$@"
-
