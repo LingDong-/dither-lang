@@ -2383,11 +2383,15 @@ var PARSER = function(sys,extensions={}){
 
           if (lht.con && lht.con == 'list'){
             ast.key = 'llit';
+            let t = lht.elt[0];
+            if (t == undefined) t = 'auto';
             for (let i = 0; i < ast.rhs.length; i++){
               doinfer(ast.rhs[i]);
               curpos = somepos(ast.rhs[i]);
-              maxtype(ast.rhs[i].typ, lht.elt[0]);
+              t = maxtype(ast.rhs[i].typ, t);
             }
+            lht.elt[0] = t;
+            if (t == 'auto') mkerr('typecheck',`list element type cannot be inferred from literal`,somepos(ast.lhs));
           }else if (lht.con && lht.con == 'dict'){
             ast.key = 'mlit';
             for (let i = 0; i < ast.rhs.length; i++){
