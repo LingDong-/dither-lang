@@ -109,6 +109,8 @@ ID2D1GeometrySink* sink = NULL;
 
 ID2D1RenderTarget* ctx;
 
+ID2D1StrokeStyle *stroke_style = NULL;
+
 void drw_impl__size(int w, int h, uint64_t _hwnd){
   hwnd = (HWND)(void*)(uintptr_t)_hwnd;
   width = w;
@@ -177,6 +179,20 @@ void drw_impl__size(int w, int h, uint64_t _hwnd){
     15.0f,
     L"en-us",
     &textFormat
+  );
+
+  D2D1_STROKE_STYLE_PROPERTIES1 props;
+  props.startCap = D2D1_CAP_STYLE_ROUND;
+  props.endCap = D2D1_CAP_STYLE_ROUND;
+  props.dashCap = D2D1_CAP_STYLE_ROUND;
+  props.lineJoin = D2D1_LINE_JOIN_ROUND;
+  props.miterLimit = 10.0f;
+  props.dashStyle = D2D1_DASH_STYLE_SOLID;
+  props.dashOffset = 0.0f;
+  props.transformType = D2D1_STROKE_TRANSFORM_TYPE_NORMAL;
+
+  ID2D1Factory1_CreateStrokeStyle(
+    d2dFactory, &props, NULL, 0, &stroke_style
   );
 
   ctx->lpVtbl->CreateSolidColorBrush(ctx,&color_stroke,NULL,&brush);
@@ -556,7 +572,7 @@ void drw_impl_end_shape(int bclose){
   }
   if (is_stroke){
     ID2D1SolidColorBrush_SetColor(brush,&color_stroke);
-    ctx->lpVtbl->DrawGeometry(ctx,geometry,brush,line_width,NULL);
+    ctx->lpVtbl->DrawGeometry(ctx,geometry,brush,line_width,stroke_style);
   }
   ID2D1PathGeometry_Release(geometry);
 }
