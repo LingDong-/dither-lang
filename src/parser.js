@@ -4069,7 +4069,12 @@ var PARSER = function(sys,extensions={}){
           '-':'sub',
         }[ast.key[0]];
         let tmp = mktmpvar(ast.typ);
-        pushins(ins,tmp,0,docompile(ast.val));
+        let zero = 0;
+        if (ast.val.typ.con){
+          zero = mktmpvar(ast.typ);
+          pushins('cast',zero,0);
+        }
+        pushins(ins,tmp,zero,docompile(ast.val));
         return tmp;
       }else if (['~u','!u'].includes(ast.key)){
         let ins = {
