@@ -312,7 +312,7 @@ void* map_get(map_t* m, str_t* s){
   if (m->slots[k].len){
     for (int i = 0; i < m->slots[k].len; i++){
       pair_t p = m->slots[k].data[i];
-      if (!memcmp(p.key, s->data, s->len)){
+      if (!memcmp(p.key, s->data, s->len+1)){
         return p.val;
       }
     }
