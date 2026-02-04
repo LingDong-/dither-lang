@@ -21,16 +21,20 @@ namespace drw {
   func size(w:i32,h:i32){_size(w,h,win.init(w,h,win.CONTEXT_2D));}
   func begin_shape();
   func end_shape(close:i32);
+  func end_shape(){end_shape(0);}
   func vertex(x:f32,y:f32);
   func background(r:f32,g:f32,b:f32,a:f32);
   func background(r:f32,g:f32,b:f32){background(r,g,b,1.0);};
   func background(r:f32){background(r,r,r,1.0);};
+  func background(r:f32,a:f32){background(r,r,r,a);};
   func fill(r:f32,g:f32,b:f32,a:f32);
   func stroke(r:f32,g:f32,b:f32,a:f32);
   func fill(r:f32,g:f32,b:f32){fill(r,g,b,1.0);};
   func stroke(r:f32,g:f32,b:f32){stroke(r,g,b,1.0);};
+  func fill(r:f32,a:f32){fill(r,r,r,a);};
   func fill(r:f32){fill(r,r,r,1.0);};
   func stroke(r:f32){stroke(r,r,r,1.0);};
+  func stroke(r:f32,a:f32){stroke(r,r,r,a);};
   func stroke_weight(w:f32);
   func no_fill();
   func no_stroke();
@@ -46,6 +50,7 @@ namespace drw {
   func rotate_deg(x:f32);
   func translate(x:f32,y:f32);
   func scale(x:f32,y:f32);
+  func scale(x:f32){scale(x,x);}
   func apply_matrix(x:vec[f32,3,3]);
   func text(s:str,x:f32,y:f32);
   func poll():win.Event{return win.poll()};

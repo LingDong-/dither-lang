@@ -12,4 +12,21 @@ namespace img {
     pix[y,x,2] = c[2];
     pix[y,x,3] = c[3];
   }
+  MORPH_ERODE := 1;
+  MORPH_DILATE := 2;
+  MORPH_OPEN := 3;
+  MORPH_CLOSE := 4;
+  MORPH_SKELETONIZE := 5;
+  MORPH_RECT := 16;
+  MORPH_ELLIPSE := 32;
+  MORPH_CROSS := 48;
+  MORPH_DIAMOND := 64;
+  THRESH_BINARY := 256;
+  THRESH_OTSU := 512;
+  THRESH_ADAPTIVE := 768;
+  func dist_transform(pix:arr[u8,2]):arr[f32,2];
+  func grayscale(pix:arr[u8,3]):arr[u8,2];
+  func morphology(pix:arr[u8,2],flags:i32);
+  func conv(pix:arr[u8,2],kern:arr[f32,2]);
+  func threshold(pix:arr[u8,2],thresh:i32,flags:i32);
 }

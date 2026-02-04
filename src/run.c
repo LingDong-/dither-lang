@@ -29,7 +29,7 @@ int main(int argc, char** argv){
   if (pth_tcp == NULL){
     fd = fopen(pth_inp,"rb");
     list_t instrs = read_ir(fd);
-    _G.layouts = read_layout(fd);
+    _G->layouts = read_layout(fd);
 
     if (pth_map){
       fclose(fd);
@@ -92,12 +92,12 @@ int main(int argc, char** argv){
           fwrite(line,1,n+i+1,fd);
           rewind(fd);
           list_t instrs = read_ir(fd);
-          // free_layouts(&(_G.layouts));
-          // _G.layouts = read_layout(fd);
+          // free_layouts(&(_G->layouts));
+          // _G->layouts = read_layout(fd);
           map_t layouts = read_layout(fd);
           fclose(fd);
 
-          map_t* m0 = &(_G.layouts);
+          map_t* m0 = &(_G->layouts);
           map_t* m1 = &(layouts);
           for (int k = 0; k < NUM_MAP_SLOTS; k++){
             for (int i = 0; i < m1->slots[k].len;i++){
@@ -113,7 +113,7 @@ int main(int argc, char** argv){
           // map_nuke(m1);
 
           // print_instrs(&instrs);
-          // print_layouts(&(_G.layouts));
+          // print_layouts(&(_G->layouts));
 
           list_node_t* node = instrs.head;
           while (node){

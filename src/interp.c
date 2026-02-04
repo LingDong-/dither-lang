@@ -314,14 +314,15 @@ typedef struct{
   uintptr_t_arr_t args;
 } gstate_t;
 
-gstate_t _G = {0};
+gstate_t _Gdat = {0};
+gstate_t* _G = &(_Gdat);
 
 void global_init(){
-  memset(&_G,0,sizeof(_G));
+  memset(_G,0,sizeof(_Gdat));
 
-  list_init(&_G.vars);
-  ARR_INIT(uintptr_t, _G.args);
-  ARR_INIT(retp_t, _G.ret_pts);
+  list_init(&_G->vars);
+  ARR_INIT(uintptr_t, _G->args);
+  ARR_INIT(retp_t, _G->ret_pts);
 }
 
 void* gc_alloc_(gstate_t* _g, int sz){
@@ -333,7 +334,7 @@ void* gc_alloc_(gstate_t* _g, int sz){
 }
 
 void* gc_alloc(int sz){
-  return gc_alloc_(&(_G),sz);
+  return gc_alloc_(_G,sz);
 }
 
 void* re_ptr_at(void* offsp){
@@ -1254,7 +1255,7 @@ int type_size(type_t* t){
 }
 
 var_t* find_var(str_t* name){
-  list_node_t* e = _G.vars.tail;
+  list_node_t* e = _G->vars.tail;
   var_t* v = NULL;
   while (e){
     v = (var_t*) map_get( (map_t*)(e->data), name);
@@ -1392,7 +1393,7 @@ void to_str_(int vart, void* u, str_t* s, int depth){
     obj_t* o = (*((obj_t**)u));
     if (!o) goto null_case;
     if (depth > 0){
-      lost_t* lost = (lost_t*)map_get(&_G.layouts,&(o->type->u.str));
+      lost_t* lost = (lost_t*)map_get(&_G->layouts,&(o->type->u.str));
       list_node_t* n = lost->fields.head;
       str_addch(s,'{');
       while (n){
@@ -1433,9 +1434,9 @@ void to_str(int vart, void* u, str_t* s){
 
 void print_vars(){
   printf("===============BEGIN===============\n");
-  list_node_t* e = _G.vars.head;
+  list_node_t* e = _G->vars.head;
   while (e){
-    if (e != _G.vars.head) printf("-----------------------------------\n");
+    if (e != _G->vars.head) printf("-----------------------------------\n");
     map_t* m = (map_t*)(e->data);
     for (int k = 0; k < NUM_MAP_SLOTS; k++){
       for (int i = 0; i < m->slots[k].len; i++){
@@ -1470,7 +1471,7 @@ void* get_addr(term_t* a, int* nbytes){
 
     // print_vars();
 
-    lost_t* lost = (lost_t*)map_get(&_G.layouts,&(v->type->u.str));
+    lost_t* lost = (lost_t*)map_get(&_G->layouts,&(v->type->u.str));
 
     
 
@@ -1789,7 +1790,7 @@ stn_t* stn_copy_(gstate_t* _g, stn_t* u){
 }
 
 stn_t* stn_copy(stn_t* u){
-  return stn_copy_(&_G,u);
+  return stn_copy_(_G,u);
 }
 
 stn_t* get_val_stn(term_t* a){
@@ -1821,7 +1822,7 @@ vec_t* vec_copy_(gstate_t* _g, vec_t* u){
 }
 
 vec_t* vec_copy(vec_t* u){
-  return vec_copy_(&_G,u);
+  return vec_copy_(_G,u);
 }
 
 vec_t* get_val_vec(term_t* a){
@@ -1890,7 +1891,7 @@ tup_t* tup_copy_(gstate_t* _g, tup_t* v){
 }
 
 tup_t* tup_copy(tup_t* u){
-  return tup_copy_(&_G,u);
+  return tup_copy_(_G,u);
 }
 
 tup_t* get_val_tup(term_t* a){
@@ -1968,7 +1969,7 @@ fun_t* get_ref_fun(term_t* a){
 void gc_mark(obj_t* o);
 
 void gc_mark_stt(obj_t* o){
-  lost_t* lost = (lost_t*)map_get(&_G.layouts,&(o->type->u.str));
+  lost_t* lost = (lost_t*)map_get(&_G->layouts,&(o->type->u.str));
   list_node_t* n = lost->fields.head;
   
   while (n){
@@ -2112,7 +2113,7 @@ void gc_mark(obj_t* o){
 
 
 void gc_sweep(){
-  mem_node_t* n = _G.objs.head;
+  mem_node_t* n = _G->objs.head;
   while (n){
     obj_t* obj = (obj_t*)(n->data);
     mem_node_t* n1 = n->next;
@@ -2151,7 +2152,7 @@ void gc_sweep(){
       }else{
         free(obj->data);
       }
-      mem_free((&_G.objs),obj);
+      mem_free((&_G->objs),obj);
     }else{
       obj->flag = 0;
     }
@@ -2164,10 +2165,10 @@ void gc_run(){
   // return;
   // print_vars();
   
-  list_node_t* e = _G.vars.head;
+  list_node_t* e = _G->vars.head;
 
   while (e){
-    // printf("%d\n",_G.vars.len);
+    // printf("%d\n",_G->vars.len);
 
     map_t* m = (map_t*)(e->data);
     for (int k = 0; k < NUM_MAP_SLOTS; k++){
@@ -2183,53 +2184,53 @@ void gc_run(){
     e = e->next;
   }
 
-  for (int i = 0; i < _G.args.len; i++){
-    var_t* v = (var_t*)(_G.args.data[i]);
+  for (int i = 0; i < _G->args.len; i++){
+    var_t* v = (var_t*)(_G->args.data[i]);
     if (v->type->mode == TYPM_CONT || v->type->mode == TYPM_SIMP){
       gc_mark(v->u.obj);
     }
   }
   
   gc_sweep();
-  _G.objs.prev_len = _G.objs.len;
-  _G.objs.prev_time = clock();
+  _G->objs.prev_len = _G->objs.len;
+  _G->objs.prev_time = clock();
 }
 
 
 
 map_t* frame_start(){
   map_t* frame = (map_t*)calloc(1,sizeof(map_t));
-  list_add(&_G.vars,frame);
+  list_add(&_G->vars,frame);
   return frame;
 }
 
 map_t* frame_end(){
-  // printf("end%d\n",_G.vars.len);
+  // printf("end%d\n",_G->vars.len);
   
   #if DBG
-    if (_G.vars.len<=2){
+    if (_G->vars.len<=2){
       print_vars();
     }
   #endif
 
-  map_t* frame = _G.vars.tail->data;
+  map_t* frame = _G->vars.tail->data;
 
   map_nuke(frame);
   free(frame);
-  list_pop(&_G.vars);
-  if (_G.vars.len == 0){
+  list_pop(&_G->vars);
+  if (_G->vars.len == 0){
     return NULL;
   }
   
-  if (!(_G.flags & GFLG_NOGC)){
-    int old_len = _G.objs.prev_len;
-    if (_G.objs.len - _G.objs.prev_len >= GC_THRESH_SIZE
-        && clock() - _G.objs.prev_time >= GC_THRESH_TIME
+  if (!(_G->flags & GFLG_NOGC)){
+    int old_len = _G->objs.prev_len;
+    if (_G->objs.len - _G->objs.prev_len >= GC_THRESH_SIZE
+        && clock() - _G->objs.prev_time >= GC_THRESH_TIME
     ){
       gc_run();
     }
   }
-  return (map_t*)(_G.vars.tail->data);
+  return (map_t*)(_G->vars.tail->data);
 }
 
 
@@ -2294,7 +2295,7 @@ var_t* var_new(type_t* typ){
       v->u.tup = gc_alloc(sizeof(tup_t)+n);
       v->u.tup->type = typ;
 
-      // list_add(&_G.objs,(obj_t*)(v->u.tup));
+      // list_add(&_G->objs,(obj_t*)(v->u.tup));
 
     }else if (typ->vart == VART_DIC){
 
@@ -2323,7 +2324,7 @@ var_t* var_new_alloc(type_t* typ,int cnt){
   type_t* b = typ;
 
   if (b->mode == TYPM_SIMP){
-    lost_t* lost = (lost_t*)map_get(&_G.layouts, &(b->u.str));
+    lost_t* lost = (lost_t*)map_get(&_G->layouts, &(b->u.str));
     
     obj_t* obj = (obj_t*)gc_alloc(sizeof(obj_t));
 
@@ -2499,7 +2500,7 @@ void addr_assign(void* v, int nbytes, term_t* b){
     // print_type(q->type);
     // printf(" %s\n",q->str.data);
     // print_vars();
-    // list_add(&_G.objs,(obj_t*)sp);
+    // list_add(&_G->objs,(obj_t*)sp);
   }else if (b->mode == TERM_ADDR){
     
     int nb;
@@ -2871,7 +2872,7 @@ vec_t* vec_matmul(type_t* rt, vec_t* u, vec_t* v){
   (((var_t*)ARR_POP(uintptr_t, G->args)))
 
 list_node_t* execute_instr(list_node_t* ins_node){
-  map_t* frame = (map_t*)(_G.vars.tail->data);
+  map_t* frame = (map_t*)(_G->vars.tail->data);
   instr_t* ins = (instr_t*)((ins_node)->data);
 
   #if DBG
@@ -3251,17 +3252,17 @@ list_node_t* execute_instr(list_node_t* ins_node){
     // print_vars();
     // list_add(args,v);
     // printf("+ %d\n",args->len);
-    ARR_PUSH(uintptr_t, _G.args, v);
+    ARR_PUSH(uintptr_t, _G->args, v);
 
   }else if (INSIS4("argr")){
     term_t* a = ((term_t*)(ins->a));
     type_t* typ = ((type_t*)(ins->b));
     // var_t* v = (var_t*)(args->tail->data);
     // list_pop(args);
-    var_t* v = (var_t*)ARR_POP(uintptr_t, _G.args);
+    var_t* v = (var_t*)ARR_POP(uintptr_t, _G->args);
     free(map_overwrite(frame, &(a->u.str), v));
 
-    // printf("- %d\n",_G.args.len);
+    // printf("- %d\n",_G->args.len);
   }else if (INSIS4("call")){
 
     retp_t r;
@@ -3269,7 +3270,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     r.frame = frame;
     r.v = find_var(&(((term_t*)(ins->a))->u.str));
     // list_add(ret_pts,r);
-    ARR_PUSH(retp_t, _G.ret_pts, r);
+    ARR_PUSH(retp_t, _G->ret_pts, r);
 
     frame = frame_start();
 
@@ -3282,7 +3283,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     r.frame = frame;
     r.v = find_var(&(((term_t*)(ins->a))->u.str));
     // list_add(ret_pts,r);
-    ARR_PUSH(retp_t, _G.ret_pts, r);
+    ARR_PUSH(retp_t, _G->ret_pts, r);
 
     fun_t* f = get_ref_fun((term_t*)(ins->b));
     
@@ -3307,7 +3308,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
 
   }else if (INSIS3("ret")){
     // retp_t* r = (retp_t*)(ret_pts->tail->data);
-    retp_t r = ARR_POP(retp_t, _G.ret_pts);
+    retp_t r = ARR_POP(retp_t, _G->ret_pts);
 
     if (ins->a){
       
@@ -3407,9 +3408,9 @@ list_node_t* execute_instr(list_node_t* ins_node){
     
     // printf("%s %s %p %p\n",name, buf, handle, l_init);
 
-    // printf("%p %p\n",&_G,&(_G.cfuncs));
+    // printf("%p %p\n",_G,&(_G->cfuncs));
 
-    l_init(&_G);
+    l_init(_G);
 
 
   }else if (INSIS5("ccall")){
@@ -3418,18 +3419,18 @@ list_node_t* execute_instr(list_node_t* ins_node){
 
     str_t name = ((term_t*)(ins->b))->u.str;
 
-    void (*cfun)(var_t* ret, gstate_t* _g) = (void (*)(var_t*, gstate_t*))map_get(&_G.cfuncs, &name);
-    // printf("%p %s %d %p\n",&_G.cfuncs,name.data,_G.args.len,cfun);
+    void (*cfun)(var_t* ret, gstate_t* _g) = (void (*)(var_t*, gstate_t*))map_get(&_G->cfuncs, &name);
+    // printf("%p %s %d %p\n",&_G->cfuncs,name.data,_G->args.len,cfun);
     
     // print_vars();
-    cfun(v,&_G);
+    cfun(v,_G);
     // printf(".\n");
   }else{
     UNIMPL;
   }
 
-  if (_G.flags & GFLG_TRGC){
-    _G.flags &= ~GFLG_TRGC;
+  if (_G->flags & GFLG_TRGC){
+    _G->flags &= ~GFLG_TRGC;
     gc_run();
   }
 
@@ -3445,12 +3446,12 @@ void execute(list_t* instrs){
   }
 
   frame = frame_end();
-  if (!(_G.flags & GFLG_NOGC)){
+  if (!(_G->flags & GFLG_NOGC)){
     gc_run();
   }
   
 #if DBG
-  printf("RMN %d\n",_G.objs.len);
+  printf("RMN %d\n",_G->objs.len);
 #endif
 }
 
@@ -3544,14 +3545,14 @@ void global_exit(){
   // retp_t_arr_t ret_pts;
   // uintptr_t_arr_t args;
 
-  while (_G.vars.len){
+  while (_G->vars.len){
     frame_end();
   }
   gc_sweep();
 
-  free_layouts(&(_G.layouts));
+  free_layouts(&(_G->layouts));
 
-  map_t* m = &(_G.cfuncs);
+  map_t* m = &(_G->cfuncs);
   for (int k = 0; k < NUM_MAP_SLOTS; k++){
     if (m->slots[k].cap){
       for (int i = 0; i < m->slots[k].len;i++){
@@ -3562,10 +3563,10 @@ void global_exit(){
     }
   }
 
-  free(_G.ret_pts.data);
-  free(_G.args.data);
+  free(_G->ret_pts.data);
+  free(_G->args.data);
 
-  memset(&_G,0,sizeof(_G));
+  memset(_G,0,sizeof(_Gdat));
 }
 
 

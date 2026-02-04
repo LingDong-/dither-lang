@@ -604,7 +604,7 @@ int sprint_opran(char* str, opran_t* a){
     if (((term_t*)a)->mode == TERM_IDEN){
       return sprintf(str,"%s",((term_t*)a)->u.str.data);
     }else if (((term_t*)a)->mode == TERM_STRL){
-      return sprintf(str,"\"%s\"",((term_t*)a)->u.str.data);
+      return snprintf(str,100,"\"%s\"",((term_t*)a)->u.str.data);
     }else if (((term_t*)a)->mode == TERM_ADDR){
       return sprintf(str,"%s+%s",((term_t*)a)->u.addr.base.data,((term_t*)a)->u.addr.offs.data);
     }else if (((term_t*)a)->mode == TERM_NUMI){
@@ -657,7 +657,7 @@ void shrink_string(char* out, char* inp, int n){
 
 void draw_var_table(){
   clear_textarea(&ta_var);
-  list_node_t* e = _G.vars.tail;
+  list_node_t* e = _G->vars.tail;
   char s[65] = {0};
   for (int i = 0; i < 64; i++){
     ((uint8_t*)s)[i] = 196;
@@ -766,7 +766,7 @@ void btn_atom(){
 
 void btn_stop(){
   if (is_started){
-    while (_G.vars.len){
+    while (_G->vars.len){
       frame_end();
     }
     gc_run();
@@ -846,7 +846,7 @@ void btn_asm(){
   global_init();
   fd = fopen("build/ir.dsm","r");
   instrs = read_ir(fd);
-  _G.layouts = read_layout(fd);
+  _G->layouts = read_layout(fd);
   fclose(fd);
   
   fd = fopen("build/ir.map","r");
@@ -1233,8 +1233,6 @@ void usr_enter(){
   
   if (usr_fbo){
     glBindFramebuffer(GL_FRAMEBUFFER, usr_fbo);
-    GLint tex = 0;
-    glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &tex);
     glViewport(0, 0, usr_w, usr_h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -1246,7 +1244,7 @@ void usr_enter(){
 }
 
 void usr_exit(){
-
+  
   if (usr_fbo){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     reshape();
@@ -1287,6 +1285,14 @@ void cb_init_(int w, int h){
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, usr_tex, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
+
+  GLuint depthBuffer;
+  glGenRenderbuffers(1, &depthBuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   usr_w = w;
   usr_h = h;
