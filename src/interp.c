@@ -2433,6 +2433,9 @@ void var_assign(var_t* v, term_t* b){
     if (b->mode == TERM_IDEN){
       var_t* u = find_var(&(b->u.str));
       v->u.arr = u->u.arr;
+    }else if (b->mode == TERM_ADDR){
+      arr_t* u = *((arr_t**)get_addr(b,NULL));
+      v->u.arr = u;
     }else{
       UNIMPL;
     }

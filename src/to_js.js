@@ -45,6 +45,30 @@ var TO_JS = function(cfg){
   function $pop_args(n){
     return $args.splice(-n).map($unwrap);
   }
+  class Int64Array extends BigInt64Array {
+    constructor(arg, ...rest) {
+      if (arg != null && typeof arg !== "number" && !ArrayBuffer.isView(arg) && !(arg instanceof ArrayBuffer)) {
+        const coerced = Array.from(arg, v =>
+          typeof v === "bigint" ? v : BigInt(v)
+        );
+        super(coerced);
+        return;
+      }
+      super(arg, ...rest);
+    }
+  }
+  class Uint64Array extends BigInt64Array {
+    constructor(arg, ...rest) {
+      if (arg != null && typeof arg !== "number" && !ArrayBuffer.isView(arg) && !(arg instanceof ArrayBuffer)) {
+        const coerced = Array.from(arg, v =>
+          typeof v === "bigint" ? v : BigInt(v)
+        );
+        super(coerced);
+        return;
+      }
+      super(arg, ...rest);
+    }
+  }
   var $typed_cons = {
     "u8":Uint8Array,
     "i8":Int8Array,
@@ -52,8 +76,8 @@ var TO_JS = function(cfg){
     "i16":Int16Array,
     "u32":Uint32Array,
     "i32":Int32Array,
-    "u64":BigUint64Array,
-    "i64":BigInt64Array,
+    "u64":Uint64Array,
+    "i64":Int64Array,
     "f32":Float32Array,
     "f64":Float64Array,
   }

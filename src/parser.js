@@ -856,7 +856,7 @@ var PARSER = function(sys,extensions={}){
         if (stmt.key == 'incl'){
           let mypth = state.src[stmt.pos[0]].pth;
           let mydir = sys.path.dirname(mypth);
-          let diropts = [...(sys.search_paths??[]), mydir, sys.process.cwd()];
+          let diropts = [...(sys.search_paths??[]), mydir, sys.process.cwd(), ''];
           
           let ok = 0;
           let urfil = stmt.val.val.slice(1,-1);
@@ -890,7 +890,7 @@ var PARSER = function(sys,extensions={}){
                 // let pth2 = sys.path.join(urpth,"dynamic.so");
                 let _ = reader(pth);
                 let rpath = sys.path.relative(sys.process.cwd(), urpth);
-                if (rpath.length == 0) rpath = sys.path.resolve(rpath);
+                rpath = sys.path.resolve(rpath);
                 stmt.val.val = '"'+rpath.replace(/\\/g,'/')+'"'
                 cst.val.push(stmt);
                 let hdpth = pth;
@@ -1199,7 +1199,7 @@ var PARSER = function(sys,extensions={}){
         let ori = vars[i].__names;//.replace(/\?\.?/g,'');
         for (let j = 0; j < recvs.length; j++){
           if (!recvs[j].map(x=>x.nom).includes(x)){
-            if (vars[i][x].typ.con != 'nmsp'){
+            if (vars[i][x].typ.con != 'nmsp' && x != 'this'){
               recvs[j].push({nom:x,typ:vars[i][x].typ,ori});
             }
             // console.log(recvs[j])
