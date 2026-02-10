@@ -57,7 +57,7 @@ void main() {
   that.init = function(){
     let [id] = $pop_args(1);
     cnv = document.getElementById(id);
-    gl = cnv.getContext('webgl');
+    gl = cnv.getContext('webgl',{ premultipliedAlpha: false });
   }
   
   that.program = function(){

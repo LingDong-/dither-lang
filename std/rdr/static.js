@@ -82,7 +82,7 @@ void main() {
   that.init = function(){
     let [id] = $pop_args(1);
     cnv = document.getElementById(id);
-    gl = cnv.getContext('webgl');
+    gl = cnv.getContext('webgl',{ premultipliedAlpha: false });
 
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSrc);
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentSrc);
@@ -94,7 +94,13 @@ void main() {
 
     gl.enable(gl.DEPTH_TEST);
     gl.enable( gl.BLEND );
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFuncSeparate(
+      gl.SRC_ALPHA,
+      gl.ONE_MINUS_SRC_ALPHA,
+      gl.ONE,
+      gl.ONE_MINUS_SRC_ALPHA
+    );
 
     let ext = gl.getExtension('OES_element_index_uint');
     if (ext){
