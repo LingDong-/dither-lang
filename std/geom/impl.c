@@ -353,13 +353,15 @@ int32_t* geom_impl_triangulate_simple(int n_points, float* points, int* o_n_ids)
   while (n_out < n_points-2){
     i++;
     skipped++;
+    i = i % n_points;
+    i = (i+skips[i])%n_points;
+
     if (skipped > n_points){
       free(skips);
       *o_n_ids = n_out*3;
       return out;
     }
-    int i0 = i % n_points;
-    i0 = (i0+skips[i0])%n_points;
+    int i0 = i;
 
     int i1 = (i0+1) % n_points;
     i1 = (i1+skips[i1])%n_points;

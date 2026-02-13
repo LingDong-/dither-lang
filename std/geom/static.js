@@ -120,6 +120,28 @@ globalThis.$geom = new function(){
     return [0,o0,o1,o2];
   }
 
+  that.line_intersect = function(retype){
+    let [p0,p1,q0,q1,flags] = $pop_args(5);
+    let v;
+    let b,o0,o1,o2;
+    if (p0.length == 2){
+      ;[b,o0,o1] = line_intersect_2d(
+        ...p0,...p1,...q0,...q1,flags
+      );
+      v = new Float32Array([o0,o1]);
+      v.__type = {con:'vec',elt:['f32',2]}
+    }else{
+      ;[b,o0,o1,o2] = line_intersect_3d(
+        ...p0,...p1,...q0,...q1,flags
+      );
+      v = new Float32Array([o0,o1,o2]);
+      v.__type = {con:'vec',elt:['f32',3]}
+    }
+    let tup = [b,v];
+    tup.__type = retype;
+    return tup;
+  }
+
   let acc_len = [];
   let n_acc_len = 0;
   that.poly_resample = function(){
@@ -342,11 +364,13 @@ globalThis.$geom = new function(){
     while (out.length < (n_points-2)*3){
       i++;
       skipped++;
+      i = i % n_points;
+      i = (i+skips[i])%n_points;
       if (skipped > n_points){
         return out;
       }
-      let i0 = i % n_points;
-      i0 = (i0+skips[i0])%n_points;
+      let i0 = i;
+
       let i1 = (i0+1) % n_points;
       i1 = (i1+skips[i1])%n_points;
       let i2 = (i1+1) % n_points;

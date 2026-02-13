@@ -55,10 +55,12 @@ EXPORTED void geom_line_intersect(var_t* ret, gstate_t* _g){
   vec_t* v = (vec_t*)gc_alloc_(_g,sizeof(vec_t)+(nd*4));
   v->n = nd;
   v->w = 4;
-  v->type = ret->type;
+  v->type = (type_t*)(ret->type->u.elem.tail->data);
+
+  int b = 0;
 
   if (nd == 2){
-    geom_impl_line_intersect_2d(
+    b = geom_impl_line_intersect_2d(
       ((float*)(p0->data))[0],((float*)(p0->data))[1],
       ((float*)(p1->data))[0],((float*)(p1->data))[1],
       ((float*)(q0->data))[0],((float*)(q0->data))[1],
@@ -66,7 +68,7 @@ EXPORTED void geom_line_intersect(var_t* ret, gstate_t* _g){
       flags, (float*)(v->data), ((float*)(v->data))+1
     );
   }else if (nd == 3){
-    geom_impl_line_intersect_3d(
+    b = geom_impl_line_intersect_3d(
       ((float*)(p0->data))[0],((float*)(p0->data))[1],((float*)(p0->data))[2],
       ((float*)(p1->data))[0],((float*)(p1->data))[1],((float*)(p1->data))[2],
       ((float*)(q0->data))[0],((float*)(q0->data))[1],((float*)(q0->data))[2],
@@ -74,7 +76,12 @@ EXPORTED void geom_line_intersect(var_t* ret, gstate_t* _g){
       flags, (float*)(v->data), ((float*)(v->data))+1, ((float*)(v->data))+2
     );
   }
-  ret->u.vec = v;
+
+  tup_t* tup = gc_alloc_(_g,sizeof(tup_t)+24);
+  tup->type = ret->type;
+  ((int32_t*)(tup->data))[0] = b;
+  ((vec_t**)(((char*)(tup->data))+4))[0] = v;
+  ret->u.tup = tup;
 }
 
 EXPORTED void geom_triangulate(var_t* ret, gstate_t* _g){
@@ -321,4 +328,5 @@ EXPORTED void lib_init_geom(gstate_t* _g){
   QK_REG(pt_in_poly);
   QK_REG(convex_hull);
   QK_REG(triangulate);
+  QK_REG(line_intersect);
 }

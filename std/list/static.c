@@ -72,7 +72,10 @@ void list__slice(){
 }
 
 int _list_cmp(const void *a, const void *b){
-  return (*(float *)a - *(float *)b);
+  float c = (*(float *)a - *(float *)b);
+  if (c < 0) return -1;
+  if (c > 0) return 1;
+  return 0;
 }
 
 void list___sort(){

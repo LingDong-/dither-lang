@@ -398,6 +398,12 @@ var TO_JS = function(cfg){
         o.push(`${get_ptr(a)}=Number(${get_ptr(b)}==$to_str(${get_ptr(c)}));`);
       }else if (op == 'eq' && tc == 'str'){
         o.push(`${get_ptr(a)}=Number(${get_ptr(c)}==$to_str(${get_ptr(b)}));`);
+      }else if (op == 'eq' && tb.con == 'vec' && tc.con == 'vec'){
+        let s = [];
+        for (let i = 0; i < vec_type_flat_n(tb); i++){
+          s.push(`(${get_ptr(b)}[${i}] == ${get_ptr(c)}[${i}])`);
+        }
+        o.push(`${get_ptr(a)}=Number(${s.join('&&')});`);
       }else{
         UNIMPL();
       }

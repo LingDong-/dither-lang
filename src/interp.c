@@ -1898,6 +1898,9 @@ tup_t* get_val_tup(term_t* a){
   if (a->mode == TERM_IDEN){
     var_t* v = find_var(&(a->u.str));
     return tup_copy(v->u.tup);
+  }else if (a->mode == TERM_ADDR){
+    tup_t* v = *((tup_t**)get_addr(a,NULL));
+    return tup_copy(v);
   }else{
     UNIMPL;
   }

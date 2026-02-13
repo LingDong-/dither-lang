@@ -4,6 +4,48 @@
 
 #include "impl.c"
 
+void geom__line_intersect(){
+  int32_t __ARG(flags);
+  int n = __peek_arg_size()/sizeof(float);
+  __vla(float,v0,n);
+  __vla(float,v1,n);
+  __vla(float,v2,n);
+  __vla(float,v3,n);
+  __vla(float,v,n);
+  __pop_arg(v3, n*sizeof(float));
+  __pop_arg(v2, n*sizeof(float));
+  __pop_arg(v1, n*sizeof(float));
+  __pop_arg(v0, n*sizeof(float));
+  int32_t b = 0;
+  if (n == 2){
+    b = geom_impl_line_intersect_2d(
+      v0[0],v0[1],v1[0],v1[1],v2[0],v2[1],v3[0],v3[1],
+      flags,&(v[0]),&(v[1])
+    );
+  }else if (n == 3){
+    b = geom_impl_line_intersect_3d(
+      v0[0],v0[1],v0[2], v1[0],v1[1],v1[2],
+      v2[0],v2[1],v2[2], v3[0],v3[1],v3[2],
+      flags,&(v[0]),&(v[1]),&(v[2])
+    );
+  }
+  char* tup = __gc_alloc(VART_TUP,19+n*4);
+  ((char*)tup)[0]  = VART_I32;
+  ((char*)tup)[5]  = VART_F32;
+  ((char*)tup)[10] = 0;
+
+  *(int32_t*)(tup+1)  = 15;
+  *(int32_t*)(tup+6)  = 19;
+  *(int32_t*)(tup+11) = 19+n*4;
+  
+  *(int32_t*)(tup+15) = b;
+  for (int i = 0; i < n; i++){
+    *(float*)(tup+19+i*4) = v[i];
+  }
+  __put_ret(&tup);
+  
+}
+
 void geom__triangulate(){
   __list_t* __ARG(points);
 

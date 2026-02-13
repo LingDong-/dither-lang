@@ -14,6 +14,11 @@ namespace list {
   func pop[T](a:list[T]) : T {
     x := a[a.length()-1]; a.erase(a.length()-1,a.length()); return x;
   }
+  func concat[T](a:list[T],b:list[T]):list[T]{
+    c := a.slice();
+    for (i:=0;i<b.length();i++) c.push(b[i]);
+    return c;
+  }
   func map[T,U](a:list[T],f:func[tup[T],U]):list[U]{
     b := list[U]{};
     for (i:=0;i<a.length();i++){
