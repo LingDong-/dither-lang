@@ -241,7 +241,7 @@ var TO_C = function(cfg){
     __vars_stack = __vars_top;
     if (__stack_top+1>=__stack_cap){
       __stack_cap = (__stack_cap)*2+1;
-      __stack = realloc(__stack,__stack_cap);
+      __stack = realloc(__stack,__stack_cap*sizeof(int));
     }
     __stack[__stack_top++] = __vars_stack;
   }
@@ -365,23 +365,20 @@ var TO_C = function(cfg){
       node = next;
     }
   }
-  int __put_prv_stack = 0;
-  int __put_prv_idx = 0;
+  
   void __put_var(int idx, void* ptr){
     if (DBG_GC) printf("put %d %p %d\\n", idx, ptr, (char)(((__mem_node_t*)((char*)ptr-sizeof(__mem_node_t)))->flag));
     if (__vars_stack+idx+1>__vars_cap){
-      __vars = realloc(__vars,(__vars_stack+idx+1)*2);
+      __vars_cap = (__vars_stack+idx+1)*2;
+      __vars = realloc(__vars,__vars_cap*sizeof(uintptr_t));
     }
-    if (__put_prv_stack == __vars_stack){
-      for (int i = __put_prv_idx+1; i < idx; i++) __vars[__vars_stack+i]=0;
-    }
+    for (int i = __vars_top; i < __vars_stack+idx; i++) __vars[i]=0;
     __vars[__vars_stack+idx] = (uintptr_t)ptr;
     if (__vars_stack+idx+1 > __vars_top){
       __vars_top = __vars_stack+idx+1;
     }
-    __put_prv_stack = __vars_stack;
-    __put_prv_idx = idx;
   }
+
   char* __to_str(void* ptr, int vart, int w){
     char* o;
     if (*(void**)ptr == NULL && (vart > VART_VEC || vart == VART_STR)){

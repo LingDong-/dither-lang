@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 ifeq ($(dbg),1)
-	OPT = -DDBG
+	OPT = -DDBG -g -O0 -fsanitize=address -fno-omit-frame-pointer
 	VM_CHOICE = vm_dbg
 else
 	OPT = -O3
@@ -62,7 +62,7 @@ run_c: build/config.h to_c
 	source config.env;\
 	eval $$(head -n 1 "build/out.c" | cut -c 3-);\
 	echo $$CFLAGS;\
-	gcc -include build/config.h -I. -O3 build/out.c $$CFLAGS -lm -o build/a.out && build/a.out;
+	gcc -include build/config.h -I. $(OPT) build/out.c $$CFLAGS -lm -o build/a.out && build/a.out;
 nwedit:
 	source config.env;\
 	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
