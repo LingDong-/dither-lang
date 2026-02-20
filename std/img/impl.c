@@ -5,3 +5,4 @@
 #elif DITHER_IMGIO_USE_WIC
 #include "impl_io_wic.c"
 #endif
+#include "impl_proc.c"

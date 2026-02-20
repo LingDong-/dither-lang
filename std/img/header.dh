@@ -3,30 +3,71 @@ namespace img {
   func decode(buf:list[u8]):arr[u8,3];
   func encode(ext:str,pix:arr[u8,3]):list[u8];
 
-  func get[T](pix:arr[T,3],x:i32,y:i32):vec[T,4]{
-    return {pix[y,x,0],pix[y,x,1],pix[y,x,2],pix[y,x,3]}
+  func get[T,N](pix:arr[T,3],x:i32,y:i32):vec[T,N]{
+    c := vec[T,N]{};
+    return c.map(func(a:T,i:i32):T{
+      return pix[y,x,i];
+    })
   }
-  func set[T](pix:arr[T,3],x:i32,y:i32,c:vec[T,4]){
-    pix[y,x,0] = c[0];
-    pix[y,x,1] = c[1];
-    pix[y,x,2] = c[2];
-    pix[y,x,3] = c[3];
+  func set[T,N](pix:arr[T,3],x:i32,y:i32,c:vec[T,N]){
+    c.map(func(a:T,i:i32):T{
+      pix[y,x,i] = c[i];
+      return 0;
+    })
   }
   MORPH_ERODE := 1;
   MORPH_DILATE := 2;
   MORPH_OPEN := 3;
   MORPH_CLOSE := 4;
   MORPH_SKELETONIZE := 5;
-  MORPH_RECT := 16;
-  MORPH_ELLIPSE := 32;
-  MORPH_CROSS := 48;
-  MORPH_DIAMOND := 64;
-  THRESH_BINARY := 256;
-  THRESH_OTSU := 512;
-  THRESH_ADAPTIVE := 768;
-  func dist_transform(pix:arr[u8,2]):arr[f32,2];
-  func grayscale(pix:arr[u8,3]):arr[u8,2];
+  MORPH_RECT     := 16;
+  MORPH_ELLIPSE  := 32;
+  MORPH_CROSS    := 48;
+  MORPH_DIAMOND  := 64;
+  THRESH_BINARY  := 256;
+  THRESH_AUTO    := 512;
+  THRESH_ADAPTIVE:= 768;
+  BYPROD_NONE    := 0;
+  BYPROD_VORONOI := 4;
+  NORM_L1   := 1;
+  NORM_L2   := 0;
+  NORM_LINF := 2;
+  BORDER_ZERO := 0;
+  BORDER_WRAP := 256;
+  BORDER_COPY := 512;
+  COLOR_COPY    :=  0;
+  COLOR_RGB_GRAY:=  1;
+  COLOR_RGB_BGR :=  2;
+  COLOR_RGB_HSV :=  3;
+  COLOR_HSV_RGB :=  4;
+  COLOR_LIN_SRGB:=  5;
+  COLOR_SRGB_LIN:=  6;
+  ALPHA_COPY       :=  0;
+  ALPHA_DROP       := 16;
+  ALPHA_PREMUL     := 32;
+  ALPHA_STRAIGHTEN := 48;
+
+
+  func dist_transform(pix:arr[u8,2],flags:i32,out:arr[f32,2]);
+  func dist_transform(pix:arr[u8,2],flags:i32):arr[f32,2]{
+    out := arr[f32,2]{};
+    dist_transform(pix,flags,out);
+    return out;
+  }
+  func convert[T,N,U,M](pix:arr[T,N],flags:i32,out:arr[U,M]);
+  func convert[T,N,U,M](pix:arr[T,N],flags:i32):arr[U,M]{
+    out := arr[U,M]{};
+    convert(pix,flags,out);
+    return out;
+  }
   func morphology(pix:arr[u8,2],flags:i32);
-  func conv(pix:arr[u8,2],kern:arr[f32,2]);
+  func convolve(pix:arr[f32,2],kern:arr[f32,2],flags:i32,out:arr[f32,2]);
+  func convolve(pix:arr[u8,2],kern:arr[f32,2],flags:i32,out:arr[u8,2]);
+  func convolve[T](pix:arr[T,2],kern:arr[f32,2],flags:i32){
+    out := arr[T,2]{};
+    convolve(pix,kern,flags,out);
+    return out;
+  }
   func threshold(pix:arr[u8,2],thresh:i32,flags:i32);
+  func palette(pix:arr[u8,3],n:i32):list[vec[u8,3]];
 }

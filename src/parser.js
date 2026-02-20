@@ -2353,7 +2353,10 @@ var PARSER = function(sys,extensions={}){
                 wi ++;
               }
               curpos = somepos(ast.val[i][j]);
-              t = maxtype(t,tj);
+              let tt = maxtype(t,tj);
+              if (!ast.ano){
+                t = tt;
+              }
             }
             //  w = Math.max(w,ast.val[i].length);
             w = Math.max(w,wi);
@@ -3507,7 +3510,9 @@ var PARSER = function(sys,extensions={}){
 
           let d0 = ast.val.length;
           let d1 = Math.max(...ast.val.map(x=>x.length));
-          if (d0 == 1){
+          if (d0 == 0){
+            tmp = alloctmpvar(ast.typ,0);
+          }else if (d0 == 1){
             tmp = alloctmpvar(ast.typ,d1);
           }else{
             tmp = alloctmpvar(ast.typ, (1<<30) | (d0<<15) | (d1) );

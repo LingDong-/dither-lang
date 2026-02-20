@@ -1321,14 +1321,15 @@ var TO_C = function(cfg){
           let is2d = cnt & (1<<30);
           let n = cnt;
           let d0 = cnt;
-          let d1 = 1;
+          let dx = cnt ? 1 : 0;
+          let d1 = dx;
           if (is2d){
             d0 = ((cnt >> 15) & 0x7fff);
             d1 = (cnt & 0x7fff);
             n = d0 * d1;
           }
           let ds = [d0,d1];
-          while (ds.length < ndim) ds.push(1);
+          while (ds.length < ndim) ds.push(dx);
 
           o.push(`__arr_t* ${nom} = __gc_alloc(VART_ARR,sizeof(__arr_t)+${ndim}*4);`);
           o.push(`${nom}->n = ${n};`);

@@ -1734,7 +1734,9 @@ double get_val_f64(term_t* a){
     return *(CTYPE*)(&q);\
   }
 
-double get_val_num(term_t* a){
+double get_val_num(term_t* a, uint64_t* maybe_u64, int64_t* maybe_i64){
+  if (maybe_u64) *maybe_u64 = 0;
+  if (maybe_i64) *maybe_i64 = 0;
   if (a->mode == TERM_IDEN){
     var_t* v = find_var(&(a->u.str));
   tryagain:
@@ -1747,10 +1749,19 @@ double get_val_num(term_t* a){
     }else if (v->type->vart == VART_UON){
       v = v->u.uon->var;
       goto tryagain;
-      
+    }else if (v->type->vart == VART_I64){
+      int64_t x = v->u.i64;
+      if (maybe_i64 && (x >= 4503599627370495L || x <= -4503599627370495L)){
+        *maybe_i64 = x;
+      }
+      return x;
+    }else if (v->type->vart == VART_U64){
+      uint64_t x = v->u.u64;
+      if (maybe_u64 && x >= 4503599627370495L){
+        *maybe_u64 = x;
+      }
+      return x;
     }
-      GVN_IDEN_VAL_INT(I64,int64_t)
-      GVN_IDEN_VAL_INT(U64,uint64_t)
       GVN_IDEN_VAL_INT(I32,int32_t)
       GVN_IDEN_VAL_INT(U32,uint32_t)
       GVN_IDEN_VAL_INT(I16,int16_t)
@@ -2367,7 +2378,8 @@ var_t* var_new_alloc(type_t* typ,int cnt){
       int is2d = cnt & (1<<30);
       int n = cnt;
       int d0 = cnt;
-      int d1 = 1;
+      int dx = cnt ? 1 : 0;
+      int d1 = dx;
       if (is2d){
         d0 = ((cnt >> 15) & 0x7fff);
         d1 = (cnt & 0x7fff);
@@ -2390,7 +2402,7 @@ var_t* var_new_alloc(type_t* typ,int cnt){
         }else if (i == 1){
           arr->dims[i] = d1;
         }else{
-          arr->dims[i] = 1;
+          arr->dims[i] = dx;
         }
       }
       v->u.arr= arr;
@@ -2536,7 +2548,16 @@ void cast(term_t* a, term_t* b){
       }else if (b->mode == TERM_NUMF){
         v->u.u64 = b->u.f;
       }else if (b->mode == TERM_IDEN){
-        v->u.u64 = get_val_num(b);
+        uint64_t mu=0;
+        int64_t mi=0;
+        double d = get_val_num(b,&mu,&mi);
+        if (mu){
+          v->u.u64 = mu;
+        }else if (mi){
+          v->u.i64 = mi;
+        }else{
+          v->u.u64 = d;
+        }
       }else if (b->mode == TERM_STRL){
         v->u.u64 = atoll(b->u.str.data);
       }else{
@@ -2551,15 +2572,7 @@ void cast(term_t* a, term_t* b){
       }else if (b->mode == TERM_NUMF){
         v->u.f32 = (float)(b->u.f);
       }else if (b->mode == TERM_IDEN){
-        
-        // var_t* u = find_var(&(b->u.str));
-        // if (u->type->vart == VART_I32){
-        //   v->u.f32 = u->u.i32;
-        // }else{
-        //   printf("%d\n",u->type->vart);
-        //   UNIMPL
-        // }
-        v->u.f32 = get_val_num(b);
+        v->u.f32 = get_val_num(b,NULL,NULL);
       }else if (b->mode == TERM_STRL){
         v->u.f32 = atof(b->u.str.data);
       }else{
@@ -2575,7 +2588,7 @@ void cast(term_t* a, term_t* b){
       }else if (b->mode == TERM_STRL){
         v->u.f64 = atof(b->u.str.data);
       }else if (b->mode == TERM_IDEN){
-        v->u.f64 = get_val_num(b);
+        v->u.f64 = get_val_num(b,NULL,NULL);
       }else{
         UNIMPL
       }
@@ -2684,7 +2697,7 @@ void cast(term_t* a, term_t* b){
           UNIMPL
         }
       }else if (b->mode == TERM_NUMU || b->mode == TERM_NUMF || b->mode == TERM_NUMI){
-        double bv = get_val_num(b);
+        double bv = get_val_num(b,NULL,NULL);
         int vm = ((type_t*)(v->type->u.elem.head->data))->vart;
              if (vm == VART_U08) for (int i = 0; i < v->u.vec->n; i++) ((uint8_t*)(v->u.vec->data))[i] = bv;
         else if (vm == VART_I08) for (int i = 0; i < v->u.vec->n; i++) (( int8_t*)(v->u.vec->data))[i] = bv;
@@ -3176,7 +3189,7 @@ list_node_t* execute_instr(list_node_t* ins_node){
     term_t* b = ((term_t*)(ins->b));
     if (a->mode == TERM_IDEN){
       var_t* v = find_var(&(a->u.str));
-      v->u.u64 = !get_val_num(b);
+      v->u.u64 = !get_val_num(b,NULL,NULL);
     }else{
       UNIMPL
     }
@@ -3195,16 +3208,40 @@ list_node_t* execute_instr(list_node_t* ins_node){
     term_t* c = ((term_t*)(ins->c));
     if (a->mode == TERM_IDEN){
       var_t* v = find_var(&(a->u.str));
-      double bv = get_val_num(b);
-      double cv = get_val_num(c);
-      if (st0){
-        v->u.i32 = bv>cv;
-      }else if (st1){
-        v->u.i32 = bv>=cv;
-      }else if (st2){
-        v->u.i32 = bv<=cv;
+      uint64_t bmu, cmu;
+      int64_t bmi, cmi;
+      double bv = get_val_num(b,&bmu,&bmi);
+      double cv = get_val_num(c,&cmu,&cmi);
+      if (bmu && cmu){
+        if (st0){
+          v->u.i32 = bmu>cmu;
+        }else if (st1){
+          v->u.i32 = bmu>=cmu;
+        }else if (st2){
+          v->u.i32 = bmu<=cmu;
+        }else{
+          v->u.i32 = bmu<cmu;
+        }
+      }else if (bmi && cmi){
+        if (st0){
+          v->u.i32 = bmi>cmi;
+        }else if (st1){
+          v->u.i32 = bmi>=cmi;
+        }else if (st2){
+          v->u.i32 = bmi<=cmi;
+        }else{
+          v->u.i32 = bmi<cmi;
+        }
       }else{
-        v->u.i32 = bv<cv;
+        if (st0){
+          v->u.i32 = bv>cv;
+        }else if (st1){
+          v->u.i32 = bv>=cv;
+        }else if (st2){
+          v->u.i32 = bv<=cv;
+        }else{
+          v->u.i32 = bv<cv;
+        }
       }
     }else{
       UNIMPL
@@ -3228,7 +3265,17 @@ list_node_t* execute_instr(list_node_t* ins_node){
       }else if ((u && u->type->vart == VART_STR) || b->mode == TERM_STRL){
         v->u.i32 = strcmp(get_val_stn(b)->data,get_val_stn(c)->data)==0;
       }else{
-        v->u.i32 = get_val_num(b)==get_val_num(c);
+        uint64_t bmu, cmu;
+        int64_t bmi, cmi;
+        double bv = get_val_num(b,&bmu,&bmi);
+        double cv = get_val_num(c,&cmu,&cmi);
+        if (bmu && cmu){
+          v->u.i32 = bmu==cmu;
+        }else if (bmi && cmi){
+          v->u.i32 = bmi==cmi;
+        }else{
+          v->u.i32 = bv==cv;
+        }
       }
       if (st0){
         v->u.i32 = 1 - (v->u.i32);

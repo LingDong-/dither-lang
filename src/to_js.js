@@ -597,14 +597,15 @@ var TO_JS = function(cfg){
           let is2d = cnt & (1<<30);
           let n = cnt;
           let d0 = cnt;
-          let d1 = 1;
+          let dx = cnt ? 1 : 0;
+          let d1 = dx;
           if (is2d){
             d0 = ((cnt >> 15) & 0x7fff);
             d1 = (cnt & 0x7fff);
             n = d0 * d1;
           }
           let ds = [d0,d1];
-          while (ds.length < ndim) ds.push(1);
+          while (ds.length < ndim) ds.push(dx);
           o.push(`var ${nom} = Object.assign(new Array(${n}).fill(0).map(_=>$value(${type_zero(typ.elt[0],1)})), {__dims:${JSON.stringify(ds)},__type:${JSON.stringify(typ)}})`);
         }else if (typ.con == 'dict'){
           o.push(`var ${nom} = {__zero:${type_zero(typ.elt[1],1)},__type:${JSON.stringify(typ)}}`);

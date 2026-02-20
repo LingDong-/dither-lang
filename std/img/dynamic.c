@@ -53,12 +53,62 @@ EXPORTED void img_encode(var_t* ret, gstate_t* _g){
   ret->u.lst = lst;
 }
 
+EXPORTED void img_dist_transform(var_t* ret, gstate_t* _g){
+  arr_t* out = ARG_POP(_g,arr);
+  int flags = ARG_POP(_g,i32);
+  arr_t* pix = ARG_POP(_g,arr);
+  if (out->dims[0]*out->dims[1]<pix->dims[0]*pix->dims[1]){
+    out->n = pix->dims[0]*pix->dims[1];
+    out->data = realloc(out->data, out->n*sizeof(float));
+  }
+  out->dims[0] = pix->dims[0];
+  out->dims[1] = pix->dims[1];
+  img_impl_dist_transform((uint8_t*)(pix->data), pix->dims[1], pix->dims[0], flags, (float*)(out->data));
+}
+
+EXPORTED void img_convert(var_t* ret, gstate_t* _g){
+  arr_t* out = ARG_POP(_g,arr);
+  int flags = ARG_POP(_g,i32);
+  arr_t* pix = ARG_POP(_g,arr);
+
+  type_t* it = (type_t*)(pix->type->u.elem.head->data);
+  type_t* ot = (type_t*)(out->type->u.elem.head->data);
+  if (out->ndim == 3 && (out->dims[2] == 0 || (out->dims[0]==0 && out->dims[1]==0))){
+    out->dims[2] = 1;
+    if (pix->ndim == 3){
+      out->dims[2] = pix->dims[2];
+    }
+    if ((out->dims[2] == 4 || out->dims[2] == 2) && (flags&MASK_ALPHA) == ALPHA_DROP){
+      out->dims[2] --;
+    }
+  }
+  int oc = out->ndim == 3 ? out->dims[2] : 1;
+  if (out->dims[0]*out->dims[1]<pix->dims[0]*pix->dims[1]){
+    out->n = pix->dims[0]*pix->dims[1]*oc;
+    out->data = realloc(out->data, out->n*type_size( ot ));
+  }
+  out->dims[0] = pix->dims[0];
+  out->dims[1] = pix->dims[1];
+  
+  void (*Fs[])(void*,int,int,int,int,void*,int) = {
+    img_impl_convert_uint8_t_uint8_t,
+    img_impl_convert_uint8_t_float,
+    img_impl_convert_float_uint8_t,
+    img_impl_convert_float_float,
+  };
+  int idx = ((it->vart == VART_F32)<<1)|(ot->vart == VART_F32);
+  
+  Fs[idx](pix->data,pix->dims[1],pix->dims[0],pix->dims[2],flags,out->data,oc);
+}
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "img." QUOTE(name), img_ ## name);
 
 
 EXPORTED void lib_init_img(gstate_t* _g){
   QK_REG(decode)
   QK_REG(encode)
+  QK_REG(dist_transform)
+  QK_REG(convert)
 }
 
 
