@@ -15,15 +15,11 @@ namespace img {
       return 0;
     })
   }
-  MORPH_ERODE := 1;
-  MORPH_DILATE := 2;
-  MORPH_OPEN := 3;
-  MORPH_CLOSE := 4;
-  MORPH_SKELETONIZE := 5;
-  MORPH_RECT     := 16;
-  MORPH_ELLIPSE  := 32;
-  MORPH_CROSS    := 48;
-  MORPH_DIAMOND  := 64;
+  MORPH_ERODE := 16;
+  MORPH_DILATE := 32;
+  MORPH_OPEN := 48;
+  MORPH_CLOSE := 64;
+  MORPH_SKELETONIZE := 80;
   THRESH_BINARY  := 256;
   THRESH_AUTO    := 512;
   THRESH_ADAPTIVE:= 768;
@@ -42,6 +38,7 @@ namespace img {
   COLOR_HSV_RGB :=  4;
   COLOR_LIN_SRGB:=  5;
   COLOR_SRGB_LIN:=  6;
+  COLOR_INVERT  :=  7;
   ALPHA_COPY       :=  0;
   ALPHA_DROP       := 16;
   ALPHA_PREMUL     := 32;
@@ -60,7 +57,12 @@ namespace img {
     convert(pix,flags,out);
     return out;
   }
-  func morphology(pix:arr[u8,2],flags:i32);
+  func morphology(pix:arr[u8,2],rad:i32,flags:i32,out:arr[u8,2]);
+  func morphology(pix:arr[u8,2],rad:i32,flags:i32){
+    out := arr[u8,2]{};
+    morphology(pix,rad,flags,out);
+    return out;
+  }
   func convolve(pix:arr[f32,2],kern:arr[f32,2],flags:i32,out:arr[f32,2]);
   func convolve(pix:arr[u8,2],kern:arr[f32,2],flags:i32,out:arr[u8,2]);
   func convolve[T](pix:arr[T,2],kern:arr[f32,2],flags:i32){
@@ -70,4 +72,5 @@ namespace img {
   }
   func threshold(pix:arr[u8,2],thresh:i32,flags:i32);
   func palette(pix:arr[u8,3],n:i32):list[vec[u8,3]];
+  func find_contours(pix:arr[u8,2]):list[list[vec[f32,2]]];
 }

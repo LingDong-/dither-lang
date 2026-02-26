@@ -43,4 +43,13 @@ namespace list {
   func sort[T](a:list[T]){
     sort(a,func(x:T):f32{return x as f32});
   }
+  func reverse[T](a:list[T]){
+    i0 := 0;
+    i1 := a.length()-1;
+    while (i0 < i1){
+      [a[i0],a[i1]] = [a[i1],a[i0]];
+      i0++;
+      i1--;
+    }
+  }
 }

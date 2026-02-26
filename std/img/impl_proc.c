@@ -15,10 +15,21 @@
 #define COLOR_HSV_RGB    4
 #define COLOR_LIN_SRGB   5
 #define COLOR_SRGB_LIN   6
+#define COLOR_INVERT     7
 #define ALPHA_COPY       0
 #define ALPHA_DROP       16
 #define ALPHA_PREMUL     32
 #define ALPHA_STRAIGHTEN 48
+
+#define THRESH_BINARY   256
+#define THRESH_AUTO     512
+#define THRESH_ADAPTIVE 768
+
+#define MORPH_ERODE       16
+#define MORPH_DILATE      32
+#define MORPH_OPEN        48
+#define MORPH_CLOSE       64
+#define MORPH_SKELETONIZE 80
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -221,7 +232,17 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           for (int k = 0; k < occ; k++){\
-            out[(i*w+j)*oc+k] = inp[(i*w+j)*ic+k%icc];\
+            out[(i*w+j)*oc+k] = inp[(i*w+j)*ic+k%icc]*div1/div0;\
+          }\
+        }\
+      }\
+    }else if ((flags & MASK_COLOR) == COLOR_INVERT){\
+      int icc = (ic <= 2) ? 1 : 3;\
+      int occ = (oc <= 2) ? 1 : 3;\
+      for (int i = 0; i < h; i++){\
+        for (int j = 0; j < w; j++){\
+          for (int k = 0; k < occ; k++){\
+            out[(i*w+j)*oc+k] = (div0-inp[(i*w+j)*ic+k%icc])*div1/div0;\
           }\
         }\
       }\
@@ -240,7 +261,7 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           for (int k = 0; k < occ; k++){\
-            out[(i*w+j)*oc+k] = inp[(i*w+j)*ic+icc-1-(k%icc)];\
+            out[(i*w+j)*oc+k] = inp[(i*w+j)*ic+icc-1-(k%icc)]*div1/div0;\
           }\
         }\
       }\
@@ -274,7 +295,7 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
         }\
       }\
     }\
-    if ((flags & MASK_ALPHA) != ALPHA_DROP && (oc == 2 || oc == 4)){\
+    if ((flags & MASK_ALPHA) != ALPHA_DROP && (oc == 2 || oc == 4) && (ic == 2 || ic == 4)){\
       int icc = (ic <= 2) ? 1 : 3;\
       int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
@@ -297,6 +318,254 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
   }
 
 GENERATE_CONVERTER(uint8_t,255,uint8_t,255);
-GENERATE_CONVERTER(uint8_t,255,float,1);
-GENERATE_CONVERTER(float,1,uint8_t,255);
-GENERATE_CONVERTER(float,1,float,1);
+GENERATE_CONVERTER(uint8_t,255,float,1.0);
+GENERATE_CONVERTER(float,1.0,uint8_t,255);
+GENERATE_CONVERTER(float,1.0,float,1.0);
+
+
+void img_impl_threshold(uint8_t* pix, int w, int h, int thresh, int flags){
+  if ((flags & 0xff00) == THRESH_BINARY){
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        int b = pix[i*w+j] > thresh;
+        pix[i*w+j] = b ? 255 : 0;
+      }
+    }
+  }else if ((flags & 0xff00) == THRESH_AUTO){
+    int hsz = 256 * sizeof(int);
+    if (tmp_buf_len < hsz){
+      tmp_buf_len = hsz;
+      tmp_buf = realloc(tmp_buf,hsz);
+    }
+    int* hist = (int*)tmp_buf;
+    memset(hist,0,sizeof(int)*256);
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        uint8_t v = pix[i*w+j];
+        hist[v] ++;
+      }
+    }
+    int64_t total = (int64_t)w*(int64_t)h;
+    int64_t sum = 0;
+    for (int i = 0; i < 256; i++) sum += i*(int64_t)hist[i];
+    int64_t sumB = 0;
+    int64_t wB = 0;
+    double maxVar = 0;
+    int threshold = 0;
+    for (int t = 0; t < 256; t++){
+      wB += hist[t];
+      if (wB == 0) continue;
+      int64_t wF = total - wB;
+      if (wF == 0) break;
+      sumB += t * hist[t];
+      double mB = sumB / (double)wB;
+      double mF = (sum - sumB) / (double)wF;
+      double betweenVar = wB * wF * (mB-mF) * (mB-mF);
+      if (betweenVar > maxVar){
+        maxVar = betweenVar;
+        threshold = t;
+      }
+    }
+    thresh = threshold;
+
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        int b = pix[i*w+j] > thresh;
+        pix[i*w+j] = b ? 255 : 0;
+      }
+    }
+  }else if ((flags & 0xff00) == THRESH_ADAPTIVE){
+    int sz = w*h*sizeof(uint8_t)*2;
+    if (tmp_buf_len < sz){
+      tmp_buf_len = sz;
+      tmp_buf = realloc(tmp_buf,tmp_buf_len);
+    }
+    uint8_t* blurx = (uint8_t*)(tmp_buf);
+    uint8_t* blury = (uint8_t*)(tmp_buf + (w*h*sizeof(uint8_t)));
+    int sig = flags & 0xff;
+    int rad = sig*3;
+    int ksz = rad*2+1;
+    float kern[ksz];
+    for (int i = 0; i < ksz; i++){
+      kern[i] = exp(-(i-rad)*(i-rad)/(2.0*sig*sig));
+    }
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        float n = 0;
+        float s = 0;
+        for (int k = j-rad; k <= j+rad; k++){
+          if (k < 0) continue;
+          if (k >= w) continue;
+          float ki = kern[k-j+rad];
+          s += pix[i*w+k]*ki;
+          n+=ki;
+        }
+        blurx[i*w+j] = s/n;
+      }
+    }
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        float n = 0;
+        float s = 0;       
+        for (int k = i-rad; k <= i+rad; k++){
+          if (k < 0) continue;
+          if (k >= h) continue;
+          float ki = kern[k-i+rad];
+          s += blurx[k*w+j]*ki;
+          n+=ki;
+        }
+        blury[i*w+j] = s/n;
+      }
+    }
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        int b = pix[i*w+j] > blury[i*w+j]+thresh;
+        pix[i*w+j] = b ? 255 : 0;
+        // pix[i*w+j] = blurx[i*w+j];
+      }
+    }
+  }
+}
+
+void erode_or_dilate(uint8_t* pix, int w, int h, uint8_t* kern, int rad, int flags, uint8_t* out){
+  int v0 = ((flags & 0xf0) == MORPH_DILATE) ? 0 : 255;
+  int ksz = rad*2+1;
+  for (int i = 0; i < h; i++){
+    for (int j = 0; j < w; j++){
+      int v = v0;
+      for (int k = i-rad; k <= i+rad; k++){
+        if (k < 0) continue;
+        if (k >= h) continue;
+        for (int l = j-rad; l <= j+rad; l++){
+          if (l < 0) continue;
+          if (l >= w) continue;
+          int e = kern[ (k-i+rad) * ksz + (l-j+rad) ];
+          if (!e) continue;
+          if (v0){
+            v = MIN(v,pix[k*w+l]);
+          }else{
+            v = MAX(v,pix[k*w+l]);
+          }
+        }
+      }
+      out[i*w+j] = v;
+    }
+  }
+}
+
+int thinning_zs_iteration(uint8_t* im, int W, int H, int iter) {
+  int diff = 0;
+  for (int i = 1; i < H-1; i++){
+    for (int j = 1; j < W-1; j++){
+      int p2 = im[(i-1)*W+j]   & 1;
+      int p3 = im[(i-1)*W+j+1] & 1;
+      int p4 = im[(i)*W+j+1]   & 1;
+      int p5 = im[(i+1)*W+j+1] & 1;
+      int p6 = im[(i+1)*W+j]   & 1;
+      int p7 = im[(i+1)*W+j-1] & 1;
+      int p8 = im[(i)*W+j-1]   & 1;
+      int p9 = im[(i-1)*W+j-1] & 1;
+      int A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) +
+               (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) +
+               (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
+               (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
+      int B  = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+      int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
+      int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
+      if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
+        im[i*W+j] |= 2;
+    }
+  }
+  for (int i = 0; i < H*W; i++){
+    int marker = im[i]>>1;
+    int old = im[i]&1;
+    im[i] = old & (!marker);
+    if ((!diff) && (im[i] != old)){
+      diff = 1;
+    }
+  }
+  return diff;
+}
+
+void thinning_zs(uint8_t* im, int W, int H){
+  int diff = 1;
+  do {
+    diff &= thinning_zs_iteration(im,W,H,0);
+    diff &= thinning_zs_iteration(im,W,H,1);
+  }while (diff);
+}
+
+void img_impl_morphology(uint8_t* pix, int w, int h, int rad, int flags, uint8_t* out){
+  if (((flags & 0xf0) == MORPH_SKELETONIZE)){
+    int sz = w*h*sizeof(uint8_t);
+    if (tmp_buf_len < sz){
+      tmp_buf_len = sz;
+      tmp_buf = realloc(tmp_buf,tmp_buf_len);
+    }
+    uint8_t* buf = (uint8_t*)tmp_buf;
+    for (int i = 0; i < w*h; i++){
+      buf[i] = pix[i] > 128 ? 1 : 0;
+    }
+    thinning_zs(buf,w,h);
+    for (int i = 0; i < w*h; i++){
+      out[i] = buf[i]?255:0;
+    }
+    return;
+  }
+
+  int ksz = rad*2+1;
+  int sz = ksz*ksz*sizeof(uint8_t);
+  uint8_t* proc = out;
+  if (out == pix){
+    sz += w*h*sizeof(uint8_t);
+  }
+  uint8_t* inter = NULL;
+  int twostep = ((flags & 0xf0) == MORPH_OPEN) || ((flags & 0xf0) == MORPH_CLOSE);
+  if (twostep){
+    sz += w*h*sizeof(uint8_t);
+  }
+  if (tmp_buf_len < sz){
+    tmp_buf_len = sz;
+    tmp_buf = realloc(tmp_buf,tmp_buf_len);
+  }
+  sz = ksz*ksz*sizeof(uint8_t);
+  if (out == pix){
+    proc = (uint8_t*)(tmp_buf + sz);
+    sz += w*h*sizeof(uint8_t);
+  }
+  if (twostep){
+    inter = (uint8_t*)(tmp_buf + sz);
+  }
+
+  uint8_t* kern = (uint8_t*)tmp_buf;
+
+  if ((flags & 0xf) == NORM_LINF){
+    memset(kern, 1, ksz*ksz);
+  }else if ((flags & 0xf) == NORM_L1){
+    for (int i = 0; i < ksz; i++){
+      for (int j = 0; j < ksz; j++){
+        int d = abs(i-rad)+abs(j-rad);
+        kern[i*ksz+j] = (d <= rad);
+      }
+    }
+  }else if ((flags & 0xf) == NORM_L2){
+    for (int i = 0; i < ksz; i++){
+      for (int j = 0; j < ksz; j++){
+        float d = hypot(i-rad,j-rad);
+        kern[i*ksz+j] = (d <= rad);
+      }
+    }
+  }
+  if ((flags & 0xf0) == MORPH_ERODE || (flags & 0xf0) == MORPH_DILATE){
+    erode_or_dilate(pix,w,h,kern,rad,flags,proc);
+  }else if ((flags & 0xf0) == MORPH_OPEN){
+    erode_or_dilate(pix,w,h,kern,rad,MORPH_ERODE,inter);
+    erode_or_dilate(inter,w,h,kern,rad,MORPH_DILATE,proc);
+  }else if ((flags & 0xf0) == MORPH_CLOSE){
+    erode_or_dilate(pix,w,h,kern,rad,MORPH_DILATE,inter);
+    erode_or_dilate(inter,w,h,kern,rad,MORPH_ERODE,proc);
+  }
+
+  if (out == proc) return;
+  memcpy(out,proc,w*h*sizeof(uint8_t));
+}

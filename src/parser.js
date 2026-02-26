@@ -1586,6 +1586,9 @@ var PARSER = function(sys,extensions={}){
             }else{
               for (let j = 0; j < pte.length; j++){
                 let q = shrinktype(pte[j]);
+                if (funs[i].ipl.pte[j] == null){
+                  continue;
+                }
                 if (printtype(q) != printtype(shrinktype(funs[i].ipl.pte[j]))){
                   s = 0;              
                 }
@@ -3302,9 +3305,20 @@ var PARSER = function(sys,extensions={}){
           // console.trace();
           let cs = getcaps(src,trg);
           pushins('fpak',nom,printtypeser(trg),src+'_'+printtypeser(trg));
+          
           for (let i = 0; i < cs.length; i++){
             // pushins('cap',nom,cs[i].ori+'.'+cs[i].nom,cs[i].typ);
-            pushins('cap',nom,shortori(cs[i].ori)+'.'+cs[i].nom,cs[i].typ);
+            let typ = cs[i].typ;
+            
+            if (typeof typ == 'string' && typ.startsWith('__func_ovld_')){
+              let f = findfuncbytype(scopes,typ);
+              console.assert(f.val.length==1);
+            //   typ += '_'+printtypeser(f.val[0].typ)
+              docast(shortori(cs[i].ori)+'.'+cs[i].nom,typ,f.val[0].typ);
+              pushins('cap',nom,shortori(cs[i].ori)+'.'+cs[i].nom,typ);
+            }else{
+              pushins('cap',nom,shortori(cs[i].ori)+'.'+cs[i].nom,typ);
+            }
           }
           return nom;
         }else{

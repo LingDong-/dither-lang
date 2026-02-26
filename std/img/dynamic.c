@@ -83,6 +83,7 @@ EXPORTED void img_convert(var_t* ret, gstate_t* _g){
     }
   }
   int oc = out->ndim == 3 ? out->dims[2] : 1;
+  int ic = pix->ndim == 3 ? pix->dims[2] : 1;
   if (out->dims[0]*out->dims[1]<pix->dims[0]*pix->dims[1]){
     out->n = pix->dims[0]*pix->dims[1]*oc;
     out->data = realloc(out->data, out->n*type_size( ot ));
@@ -98,8 +99,31 @@ EXPORTED void img_convert(var_t* ret, gstate_t* _g){
   };
   int idx = ((it->vart == VART_F32)<<1)|(ot->vart == VART_F32);
   
-  Fs[idx](pix->data,pix->dims[1],pix->dims[0],pix->dims[2],flags,out->data,oc);
+  Fs[idx](pix->data,pix->dims[1],pix->dims[0],ic,flags,out->data,oc);
 }
+
+EXPORTED void img_threshold(var_t* ret, gstate_t* _g){
+  int flags = ARG_POP(_g,i32);
+  int thresh = ARG_POP(_g,i32);
+  arr_t* pix = ARG_POP(_g,arr);
+
+  img_impl_threshold((uint8_t*)(pix->data), pix->dims[1], pix->dims[0], thresh, flags);
+}
+
+EXPORTED void img_morphology(var_t* ret, gstate_t* _g){
+  arr_t* out = ARG_POP(_g,arr);
+  int flags = ARG_POP(_g,i32);
+  int rad = ARG_POP(_g,i32);
+  arr_t* pix = ARG_POP(_g,arr);
+  if (out->dims[0]*out->dims[1]<pix->dims[0]*pix->dims[1]){
+    out->n = pix->dims[0]*pix->dims[1];
+    out->data = realloc(out->data, out->n*sizeof(float));
+  }
+  out->dims[0] = pix->dims[0];
+  out->dims[1] = pix->dims[1];
+  img_impl_morphology((uint8_t*)(pix->data), pix->dims[1], pix->dims[0], rad, flags, (uint8_t*)(out->data));
+}
+
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "img." QUOTE(name), img_ ## name);
 
@@ -109,6 +133,8 @@ EXPORTED void lib_init_img(gstate_t* _g){
   QK_REG(encode)
   QK_REG(dist_transform)
   QK_REG(convert)
+  QK_REG(threshold)
+  QK_REG(morphology)
 }
 
 
