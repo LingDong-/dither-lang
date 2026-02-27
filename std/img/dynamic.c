@@ -124,6 +124,24 @@ EXPORTED void img_morphology(var_t* ret, gstate_t* _g){
   img_impl_morphology((uint8_t*)(pix->data), pix->dims[1], pix->dims[0], rad, flags, (uint8_t*)(out->data));
 }
 
+EXPORTED void img_convolve(var_t* ret, gstate_t* _g){
+  arr_t* out = ARG_POP(_g,arr);
+  int flags = ARG_POP(_g,i32);
+  arr_t* kern = ARG_POP(_g,arr);
+  arr_t* pix = ARG_POP(_g,arr);
+  if (out->dims[0]*out->dims[1]<pix->dims[0]*pix->dims[1]){
+    out->n = pix->dims[0]*pix->dims[1];
+    out->data = realloc(out->data, out->n*sizeof(float));
+  }
+  out->dims[0] = pix->dims[0];
+  out->dims[1] = pix->dims[1];
+  if (pix->w == 4){
+    img_impl_convolve_f32((float*)(pix->data), pix->dims[1], pix->dims[0], (float*)(kern->data), kern->dims[1], kern->dims[0], flags, (float*)(out->data));
+  }else{
+    img_impl_convolve_u8((uint8_t*)(pix->data), pix->dims[1], pix->dims[0], (float*)(kern->data), kern->dims[1], kern->dims[0], flags, (uint8_t*)(out->data));
+  }
+}
+
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "img." QUOTE(name), img_ ## name);
 
@@ -135,6 +153,7 @@ EXPORTED void lib_init_img(gstate_t* _g){
   QK_REG(convert)
   QK_REG(threshold)
   QK_REG(morphology)
+  QK_REG(convolve)
 }
 
 

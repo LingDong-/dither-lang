@@ -1,3 +1,8 @@
+#ifdef __APPLE__
+#include <Accelerate/Accelerate.h>
+#define USE_ACCELERATE
+#endif
+
 #include <stdlib.h>
 
 #define MASK_NORM 3
@@ -31,11 +36,20 @@
 #define MORPH_CLOSE       64
 #define MORPH_SKELETONIZE 80
 
+#define BORDER_ZERO 0
+#define BORDER_COPY 256
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+#if _WIN32
+#define VLA(dtype,name,n) dtype* name = (dtype*)_alloca((n)*sizeof(dtype));
+#else
+#define VLA(dtype,name,n) dtype name[n];
 #endif
 
 char* tmp_buf = NULL;
@@ -385,72 +399,94 @@ void img_impl_threshold(uint8_t* pix, int w, int h, int thresh, int flags){
     int sig = flags & 0xff;
     int rad = sig*3;
     int ksz = rad*2+1;
-    float kern[ksz];
+    VLA(float,kern,ksz);
     for (int i = 0; i < ksz; i++){
       kern[i] = exp(-(i-rad)*(i-rad)/(2.0*sig*sig));
     }
-    for (int i = 0; i < h; i++){
-      for (int j = 0; j < w; j++){
-        float n = 0;
-        float s = 0;
-        for (int k = j-rad; k <= j+rad; k++){
-          if (k < 0) continue;
-          if (k >= w) continue;
-          float ki = kern[k-j+rad];
-          s += pix[i*w+k]*ki;
-          n+=ki;
+    #ifdef USE_ACCELERATE
+      vImage_Buffer src = { pix, h, w, w * sizeof(uint8_t) };
+      vImage_Buffer dst = { blury, h, w, w * sizeof(uint8_t) };
+      float sum = 0;
+      for (int i = 0; i < ksz; i++)sum += kern[i];
+      for (int i = 0; i < ksz; i++)kern[i]/=sum;
+      vImageSepConvolve_Planar8(&src,&dst,(void*)blurx,0,0,kern,ksz,kern,ksz,0,0,kvImageTruncateKernel);
+    #else
+      for (int i = 0; i < h; i++){
+        for (int j = 0; j < w; j++){
+          float n = 0;
+          float s = 0;
+          for (int k = j-rad; k <= j+rad; k++){
+            if (k < 0) continue;
+            if (k >= w) continue;
+            float ki = kern[k-j+rad];
+            s += pix[i*w+k]*ki;
+            n+=ki;
+          }
+          blurx[i*w+j] = s/n;
         }
-        blurx[i*w+j] = s/n;
       }
-    }
-    for (int i = 0; i < h; i++){
-      for (int j = 0; j < w; j++){
-        float n = 0;
-        float s = 0;       
-        for (int k = i-rad; k <= i+rad; k++){
-          if (k < 0) continue;
-          if (k >= h) continue;
-          float ki = kern[k-i+rad];
-          s += blurx[k*w+j]*ki;
-          n+=ki;
+      for (int i = 0; i < h; i++){
+        for (int j = 0; j < w; j++){
+          float n = 0;
+          float s = 0;       
+          for (int k = i-rad; k <= i+rad; k++){
+            if (k < 0) continue;
+            if (k >= h) continue;
+            float ki = kern[k-i+rad];
+            s += blurx[k*w+j]*ki;
+            n+=ki;
+          }
+          blury[i*w+j] = s/n;
         }
-        blury[i*w+j] = s/n;
       }
-    }
+    #endif
     for (int i = 0; i < h; i++){
       for (int j = 0; j < w; j++){
         int b = pix[i*w+j] > blury[i*w+j]+thresh;
         pix[i*w+j] = b ? 255 : 0;
-        // pix[i*w+j] = blurx[i*w+j];
+        // pix[i*w+j] = blury[i*w+j];
       }
     }
   }
 }
 
 void erode_or_dilate(uint8_t* pix, int w, int h, uint8_t* kern, int rad, int flags, uint8_t* out){
-  int v0 = ((flags & 0xf0) == MORPH_DILATE) ? 0 : 255;
   int ksz = rad*2+1;
-  for (int i = 0; i < h; i++){
-    for (int j = 0; j < w; j++){
-      int v = v0;
-      for (int k = i-rad; k <= i+rad; k++){
-        if (k < 0) continue;
-        if (k >= h) continue;
-        for (int l = j-rad; l <= j+rad; l++){
-          if (l < 0) continue;
-          if (l >= w) continue;
-          int e = kern[ (k-i+rad) * ksz + (l-j+rad) ];
-          if (!e) continue;
-          if (v0){
-            v = MIN(v,pix[k*w+l]);
-          }else{
-            v = MAX(v,pix[k*w+l]);
+
+  #ifdef USE_ACCELERATE
+    vImage_Buffer src = { pix, h, w, w * sizeof(uint8_t) };
+    vImage_Buffer dst = { out, h, w, w * sizeof(uint8_t) };
+    if ((flags & 0xf0) == MORPH_DILATE){
+      for (int i = 0; i < ksz*ksz; i++) kern[i] = kern[i]?0:255;
+      vImageDilate_Planar8(&src,&dst,0,0,kern,ksz,ksz,kvImageNoFlags);
+    }else{
+      for (int i = 0; i < ksz*ksz; i++) kern[i] = kern[i]?255:0;
+      vImageErode_Planar8(&src,&dst,0,0,kern,ksz,ksz,kvImageNoFlags);
+    }
+  #else
+    int v0 = ((flags & 0xf0) == MORPH_DILATE) ? 0 : 255;
+    for (int i = 0; i < h; i++){
+      for (int j = 0; j < w; j++){
+        int v = v0;
+        for (int k = i-rad; k <= i+rad; k++){
+          if (k < 0) continue;
+          if (k >= h) continue;
+          for (int l = j-rad; l <= j+rad; l++){
+            if (l < 0) continue;
+            if (l >= w) continue;
+            int e = kern[ (k-i+rad) * ksz + (l-j+rad) ];
+            if (!e) continue;
+            if (v0){
+              v = MIN(v,pix[k*w+l]);
+            }else{
+              v = MAX(v,pix[k*w+l]);
+            }
           }
         }
+        out[i*w+j] = v;
       }
-      out[i*w+j] = v;
     }
-  }
+  #endif
 }
 
 int thinning_zs_iteration(uint8_t* im, int W, int H, int iter) {
@@ -568,4 +604,106 @@ void img_impl_morphology(uint8_t* pix, int w, int h, int rad, int flags, uint8_t
 
   if (out == proc) return;
   memcpy(out,proc,w*h*sizeof(uint8_t));
+}
+
+
+#define CONVOLVE_SIMPLE \
+  int kx = (kw-1)/2;\
+  int ky = (kh-1)/2;\
+  int border = (flags&0xf0)==BORDER_COPY;\
+  for (int i = 0; i < h; i++){\
+    for (int j = 0; j < w; j++){\
+      float s = 0.0;\
+      for (int k = 0; k < kh; k++){\
+        for (int l = 0; l < kw; l++){\
+          int ii = i+k-kx;\
+          int jj = j+l-ky;\
+          int iii = MIN(MAX(ii,0),h);\
+          int jjj = MIN(MAX(jj,0),w);\
+          if (border || (iii==ii&&jjj==jj)){\
+            s += pix[iii*w+jjj]*kern[k*kw+l];\
+          }\
+        }\
+      }\
+      proc[i*w+j] = s;\
+    }\
+  }
+
+void img_impl_convolve_u8(uint8_t* pix, int w, int h, float* kern, int kw, int kh, int flags, uint8_t* out){
+  uint8_t* proc = out;
+  if (out == pix){
+    int sz = w*h*sizeof(uint8_t);
+    if (tmp_buf_len < sz){
+      tmp_buf_len = sz;
+      tmp_buf = realloc(tmp_buf,tmp_buf_len);
+    }
+    proc = (uint8_t*)tmp_buf;
+  }
+  #ifdef USE_ACCELERATE
+    vImage_Buffer src = { pix, h, w, w * sizeof(uint8_t) };
+    vImage_Buffer dst = { proc, h, w, w * sizeof(uint8_t) };
+    vImage_Flags border = ((flags&0xf0)==BORDER_COPY) ? kvImageEdgeExtend : kvImageBackgroundColorFill;
+    int okw = kw;
+    int okh = kh;
+    if (!(okw&1)) okw++;
+    if (!(okh&1)) okh++;
+    VLA(int16_t, k16, okw*okh);
+    memset(k16,0,sizeof(int16_t)*okw*okh);
+    float extrema = 0.0;
+    for (int i = 0; i < kw*kh; i++){
+      float a = fabsf(kern[i]);
+      if (a>extrema){
+        extrema = a;
+      }
+    }
+    int divisor = 16384 / extrema;
+    for (int i = 0; i < kw; i++){
+      for (int j = 0; j < kh; j++){
+        k16[i*okw+j] = kern[i*kw+j]*divisor;
+      }
+    }
+    vImageConvolve_Planar8(&src,&dst,NULL,0,0,k16,okh,okw,divisor,0,border);
+  #else
+    CONVOLVE_SIMPLE
+  #endif
+  if (out == proc) return;
+  memcpy(out,proc,w*h*sizeof(uint8_t));
+}
+
+
+void img_impl_convolve_f32(float* pix, int w, int h, float* kern, int kw, int kh, int flags, float* out){
+  float* proc = out;
+  if (out == pix){
+    int sz = w*h*sizeof(float);
+    if (tmp_buf_len < sz){
+      tmp_buf_len = sz;
+      tmp_buf = realloc(tmp_buf,tmp_buf_len);
+    }
+    proc = (float*)tmp_buf;
+  }
+  #ifdef USE_ACCELERATE
+    vImage_Buffer src = { pix, h, w, w * sizeof(float) };
+    vImage_Buffer dst = { proc, h, w, w * sizeof(float) };
+    vImage_Flags border = ((flags&0xf0)==BORDER_COPY) ? kvImageEdgeExtend : kvImageBackgroundColorFill;
+    int okw = kw;
+    int okh = kh;
+    if (!(okw&1)) okw++;
+    if (!(okh&1)) okh++;
+    if (okw == kw && okh == kh){
+      vImageConvolve_PlanarF(&src,&dst,NULL,0,0,kern,kh,kw,0.0,border);
+    }else{
+      VLA(float,kp,okw*okh);
+      memset(kp,0,sizeof(float)*okw*okh);
+      for (int i = 0; i < kw; i++){
+        for (int j = 0; j < kh; j++){
+          kp[i*okw+j] = kern[i*kw+j];
+        }
+      }
+      vImageConvolve_PlanarF(&src,&dst,NULL,0,0,kp,okh,okw,0.0,border);
+    }
+  #else
+    CONVOLVE_SIMPLE
+  #endif
+  if (out == proc) return;
+  memcpy(out,proc,w*h*sizeof(float));
 }

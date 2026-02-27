@@ -29,8 +29,7 @@ namespace img {
   NORM_L2   := 0;
   NORM_LINF := 2;
   BORDER_ZERO := 0;
-  BORDER_WRAP := 256;
-  BORDER_COPY := 512;
+  BORDER_COPY := 256;
   COLOR_COPY    :=  0;
   COLOR_RGB_GRAY:=  1;
   COLOR_RGB_BGR :=  2;
