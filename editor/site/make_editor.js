@@ -105,7 +105,7 @@ let html = [`
 .cm-s-theme span.cm-comment { color:  #777; }
 .cm-s-theme span.cm-string { color:  #ffb; }
 .cm-s-theme span.cm-string-2 { color:  #fbb; }
-.cm-s-theme span.cm-number { color:  #b9f; cursor:ns-resize;}
+.cm-s-theme span.cm-number { color:  #b9f; }
 .cm-s-theme span.cm-variable { color:  #6fdfcf; }
 .cm-s-theme span.cm-property { color:  #ccc; }
 .cm-s-theme span.cm-fun { color:  #ccc; }
@@ -526,6 +526,9 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
   let dragState = null;
   wrapper.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
+    if (!e.shiftKey) return;
+    let selection = CML.getSelection();
+    // if (selection) return;
     const cursor = CML.getCursor();
     const line = CML.getLine(cursor.line);
     let start = cursor.ch;
@@ -534,9 +537,9 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
     const numberChars = /[0-9.]/;
     while (start > 0 && numberChars.test(line[start - 1])) start--;
     while (end < line.length && numberChars.test(line[end])) end++;
-    if (start >= cursor.ch){
-      return;
-    }
+    // if (start >= cursor.ch){
+    //   return;
+    // }
     const text = line.slice(start, end);
     if (/^-?\d+(\.\d+)?$/.test(text)) {
       range = {
