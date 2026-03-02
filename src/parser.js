@@ -685,7 +685,7 @@ var PARSER = function(sys,extensions={}){
       let out7 = dobinary(out6,['sigil:,']);
 
       if (out7.length != 1){
-        console.dir(out7,{depth:100000})
+        // console.dir(out7,{depth:100000})
         mkerr('parse',`extra elements in expression`,roughpos);
       }
       return out7[0];
@@ -1823,7 +1823,7 @@ var PARSER = function(sys,extensions={}){
       }
     }
 
-    function fixtype(x){
+    function fixtype(x,_ast=ast){
 
       let m;
       if (x == 'void') return x;
@@ -1910,7 +1910,7 @@ var PARSER = function(sys,extensions={}){
             }
           }
           if (m = scozoo[idx].__alias[idx+'.'+xb]){
-            return fixtype(scozoo[idx].__alias[idx+'.'+xb])
+            return fixtype(scozoo[idx].__alias[idx+'.'+xb],_ast)
           }
           
           if (m = scozoo[idx].__types[idx+'.'+xb]){
@@ -1923,7 +1923,8 @@ var PARSER = function(sys,extensions={}){
           }
         }
       }
-      mkerr('typecheck',`unrecognized type '${printtype(x)}'`,somepos(ast));
+      console.trace();
+      mkerr('typecheck',`unrecognized type '${printtype(x)}'`,somepos(_ast));
     }
 
 
@@ -1977,14 +1978,14 @@ var PARSER = function(sys,extensions={}){
 
       if (ast.ttp == 'smtp'){
         let o = unalias(ast.val.val);
-        if (strict) return fixtype(o);
+        if (strict) return fixtype(o,ast);
         return o;
       }else if (ast.ttp == 'cntp'){
         let o = {con:unalias(ast.con.val),elt:ast.elt.map(x=>shrinktype(x,strict))};
         // if (o.con == 'vec'){
         //   o.elt = [o.elt[0],o.elt.slice(1).reduce((a,b)=>a*b,1)];
         // }
-        if (strict) return fixtype(o);
+        if (strict) return fixtype(o,ast);
         return o;
       }else if (ast.ttp == 'nmtp'){
         return Number(ast.val.val);

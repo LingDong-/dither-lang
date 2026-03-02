@@ -74,6 +74,7 @@ int main(int argc, char** argv){
   
     char buffer[1024];
     char* line = NULL;
+    int dbg = 0;
     while (1) {
       int bytes = recv(sock, buffer, sizeof(buffer), 0);
       if (bytes <= 0) {
@@ -86,45 +87,58 @@ int main(int argc, char** argv){
           int n = line == NULL ? 0 : strlen(line);
           line = realloc(line,n+i+1);
           memcpy(line+n,buffer,i+1);
-          
-          FILE* fd;
-          fd = tmpfile();
-          fwrite(line,1,n+i+1,fd);
-          rewind(fd);
-          list_t instrs = read_ir(fd);
-          // free_layouts(&(_G->layouts));
-          // _G->layouts = read_layout(fd);
-          map_t layouts = read_layout(fd);
-          fclose(fd);
-
-          map_t* m0 = &(_G->layouts);
-          map_t* m1 = &(layouts);
-          for (int k = 0; k < NUM_MAP_SLOTS; k++){
-            for (int i = 0; i < m1->slots[k].len;i++){
-              pair_t p = m1->slots[k].data[i];
-              str_t s;
-              s.data = p.key;
-              s.len = strlen(p.key);
-              map_overwrite(m0,&s,p.val);
-              free(p.key);
+          if (line[0] == '$'){
+            if (!strcmp(line,"$dump")){
+              print_vars();
+            }else if (!strcmp(line,"$nuke")){
+              global_exit();
+              global_init();
+              frame = frame_start();
+            }else if (!strcmp(line,"$dbug")){
+              dbg ^= 1;
             }
-            free(m1->slots[k].data);
-          }
-          // map_nuke(m1);
+          }else{
+            FILE* fd;
+            fd = tmpfile();
+            fwrite(line,1,n+i+1,fd);
+            rewind(fd);
+            list_t instrs = read_ir(fd);
+            // free_layouts(&(_G->layouts));
+            // _G->layouts = read_layout(fd);
+            map_t layouts = read_layout(fd);
+            fclose(fd);
 
-          // print_instrs(&instrs);
-          // print_layouts(&(_G->layouts));
+            if (dbg) print_layouts(&(layouts));
 
-          list_node_t* node = instrs.head;
-          while (node){
-            node = execute_instr(node);
+            map_t* m0 = &(_G->layouts);
+            map_t* m1 = &(layouts);
+            for (int k = 0; k < NUM_MAP_SLOTS; k++){
+              for (int i = 0; i < m1->slots[k].len;i++){
+                pair_t p = m1->slots[k].data[i];
+                str_t s;
+                s.data = p.key;
+                s.len = strlen(p.key);
+                map_overwrite(m0,&s,p.val);
+                free(p.key);
+              }
+              free(m1->slots[k].data);
+            }
+            // map_nuke(m1);
+
+            if (dbg) print_instrs(&instrs);
+            
+
+            list_node_t* node = instrs.head;
+            while (node){
+              node = execute_instr(node);
+            }
+            // print_vars();
+            // free_instrs(&instrs);
           }
-          // print_vars();
           line = realloc(line,bytes-i);
           memcpy(line,buffer+i+1,bytes-i-1);
           line[bytes-i-1] = 0;
 
-          // free_instrs(&instrs);
           break;
         }
       }

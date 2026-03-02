@@ -228,6 +228,9 @@ if (is_repl){
     let np = idx.toString().length;
     let pr = '\x1b[34m'+(ansbuf.length?`${" ".repeat(np+4)}> `:`dh(${idx})> `)+'\x1b[0m';
     rl.question(pr,answer=>{
+      if (answer.startsWith('$')){
+        return cb(answer);
+      }
       ansbuf += ' '+answer;
       if (!check_done(ansbuf)){
         return ask(cb);
@@ -277,15 +280,16 @@ if (is_repl){
     });
     ask(send);
   });
-  server.listen(3000,()=>{
-    if (verbose) console.log("[info] REPL server ready, initializing client...");
+  server.listen(0,()=>{
+    const port = server.address().port;
+    if (verbose) console.log(`[info] REPL server ready (port ${port}), initializing client...`);
     if (_WIN32){
       fs.writeFileSync(tmpth('vm.exe'), fs.readFileSync(__dirname+'\\..\\..\\build\\vm.exe'), { mode: 0o755 });
-      let cmd = [tmpth('vm.exe'),['--tcp','127.0.0.1:3000']];
+      let cmd = [tmpth('vm.exe'),['--tcp','127.0.0.1:'+port]];
       spawn(...cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
     }else{
       fs.writeFileSync(tmpth('vm'), fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
-      let cmd = [tmpth('vm'),['--tcp','127.0.0.1:3000']];
+      let cmd = [tmpth('vm'),['--tcp','127.0.0.1:'+port]];
       spawn(...cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
     }
   });

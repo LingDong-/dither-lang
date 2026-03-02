@@ -68,7 +68,7 @@ int MDT_Sep(int i, int u, int g_i, int g_u) {
   if (g_u >= (g_i + u - i))
     return INT16_MAX;
   if (g_i > (g_u + u - i))
-    return -INT16_MAX;
+    return INT16_MIN;
   return (g_u - g_i + u + i)/2;
 }
 int CDT_f(int x, int i, int g_i) {	
@@ -150,8 +150,8 @@ void img_impl_dist_transform(uint8_t* b, int m, int n, int flags, float* dt){
     }
     for (int u = m - 1; u >= 0; u--) {
       int d = f(u, s[q], g[s[q] + y * m]);
-      if (f == EDT_f) d = sqrt(d);
       dt[u + y * m] = d;
+      if (f == EDT_f) dt[u + y * m] = sqrt(dt[u + y * m]);
       if (do_voro) b[u + y * m] = v[s[q] + y * m];
       if (u == t[q]) q--;
     }
@@ -217,6 +217,8 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
   ){\
     dtype0* inp = (dtype0*) void_inp;\
     dtype1* out = (dtype1*) void_out;\
+    int icc = (ic <= 2) ? 1 : 3;\
+    int occ = (oc <= 2) ? 1 : 3;\
     if ((flags & MASK_ALPHA) == ALPHA_STRAIGHTEN && (ic == 2 || ic == 4)){\
       int n = w*h*ic*sizeof(dtype0);\
       if (n > tmp_buf_len){\
@@ -241,8 +243,6 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
     }\
     if ((flags & MASK_COLOR) == COLOR_COPY || \
         ((flags & MASK_COLOR) == COLOR_RGB_GRAY) && ic <= 2){\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           for (int k = 0; k < occ; k++){\
@@ -251,8 +251,6 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
         }\
       }\
     }else if ((flags & MASK_COLOR) == COLOR_INVERT){\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           for (int k = 0; k < occ; k++){\
@@ -270,8 +268,6 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
         }\
       }\
     }else if ((flags & MASK_COLOR) == COLOR_RGB_BGR){\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           for (int k = 0; k < occ; k++){\
@@ -283,8 +279,6 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
       void (*F)(float,float,float,float*,float*,float*);\
       if ((flags & MASK_COLOR) == COLOR_RGB_HSV) F = rgb2hsv;\
       if ((flags & MASK_COLOR) == COLOR_HSV_RGB) F = hsv2rgb;\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           float ir = (float)(inp[(i*w+j)*ic+0%icc])/div0;\
@@ -299,8 +293,6 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
       }\
     }else if ((flags & MASK_COLOR) == COLOR_SRGB_LIN || (flags & MASK_COLOR) == COLOR_LIN_SRGB){\
       float gamma = ((flags & MASK_COLOR) == COLOR_SRGB_LIN) ? 2.2 : 0.45;\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           for (int k = 0; k < occ; k++){\
@@ -310,8 +302,6 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
       }\
     }\
     if ((flags & MASK_ALPHA) != ALPHA_DROP && (oc == 2 || oc == 4) && (ic == 2 || ic == 4)){\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
           out[(i*w+j)*oc+occ] = inp[(i*w+j)*ic+icc];\
@@ -319,11 +309,9 @@ void hsv2rgb(float h, float s, float v, float* r, float* g, float* b){
       }\
     }\
     if ((flags & MASK_ALPHA) == ALPHA_PREMUL && (oc == 2 || oc == 4)){\
-      int icc = (ic <= 2) ? 1 : 3;\
-      int occ = (oc <= 2) ? 1 : 3;\
       for (int i = 0; i < h; i++){\
         for (int j = 0; j < w; j++){\
-          for (int k = 0; k < oc; k++){\
+          for (int k = 0; k < occ; k++){\
             out[(i*w+j)*oc+k] = (out[(i*w+j)*ic+k]*inp[(i*w+j)*ic+icc])*div1/div0/div0;\
           }\
         }\

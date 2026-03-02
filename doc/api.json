@@ -51,265 +51,6 @@
     "dict to query",
     "a new list containing all values (shallow copy)"
   ],
-  "exch": [
-    "Data exchange formats serialization/deserialization"
-  ],
-  "exch-decode:T=JSON:str": [
-    "Parse JSON from a string",
-    "string to parse",
-    "JSON parsed"
-  ],
-  "exch-encode::JSON": [
-    "Convert JSON to a string",
-    "JSON to serialize",
-    "string representing the JSON"
-  ],
-  "exch-JSON": [
-    "Recursive datatype holding a JSON (javascript object notation)"
-  ],
-  "exch-JSON-data": [
-    "The data held: can be a list, a dict, a string or a number. Booleans are stored as numbers as the language does not have them."
-  ],
-  "frag": [
-    "Fragment shader library. Can be used for shader-toy style pipeline, or in conjunction with std/rdr for shading 3D meshes."
-  ],
-  "frag-begin::i32*Texture": [
-    "Start rendering with given shader program onto given texture",
-    "shader program (from .program(...))",
-    "texture to render to"
-  ],
-  "frag-begin::i32": [
-    "Start rendering with given shader program onto default rendering target",
-    "shader program (from .program(...))"
-  ],
-  "frag-end::": [
-    "Stop rendering with current shader program onto current texture"
-  ],
-  "frag-init::u64": [
-    "Initialize the library. Required before calling any other functions from the library.",
-    "the windowing context (from win.init(...))"
-  ],
-  "frag-program::str": [
-    "Compile a shader program from fragment shader source. The shader language is dependent on 3D backend; Better to generate with the `embed` statement.",
-    "fragment source code",
-    "handler representing the compiled shader program"
-  ],
-  "frag-render::": [
-    "Draw a rectangle filling the entire texture with the current shader program."
-  ],
-  "frag-texture::i32*i32": [
-    "Create a new texture. The texture can be used as both sampler and render target.",
-    "desired width",
-    "desired height",
-    "a new texture"
-  ],
-  "frag-Texture": [
-    "A datatype holding information for a texture on the GPU. A texture can be used as both sampler and render target."
-  ],
-  "frag-Texture-fbo": [
-    "Internal ID/handler of the texture"
-  ],
-  "frag-Texture-read_pixels::": [
-    "Download all pixel values from the GPU into an array",
-    "array holding RGBA colors of each pixel (0-255)"
-  ],
-  "frag-Texture-sample::vec(f32,2)": [
-    "Read color at specific uv-coordinate on the texture. Mostly used in shaders.",
-    "normalized uv-coordinate (0-1)",
-    "RGBA color (0-1)"
-  ],
-  "frag-Texture-write_pixels::arr(u8,3)": [
-    "Upload pixel values from an array to the GPU",
-    "array holding desired RGBA colors of each pixel (0-255)"
-  ],
-  "frag-uniform:T:str*T": [
-    "Set a uniform (global shader variable/parameter) for the current shader program.",
-    "name of the uniform (matches name in shader)",
-    "the desired value"
-  ],
-  "rdr": [
-    "3D graphics library."
-  ],
-  "rdr-AXIS_X": [
-    "Unit vector for positive X axis"
-  ],
-  "rdr-AXIS_Y": [
-    "Unit vector for positive Y axis"
-  ],
-  "rdr-AXIS_Z": [
-    "Unit vector for positive Z axis"
-  ],
-  "rdr-background::f32*f32*f32*f32": [
-    "Clear graphics and fill with background color (RGBA 0-1)",
-    "red",
-    "green",
-    "blue",
-    "alpha"
-  ],
-  "rdr-background::f32*f32*f32": [
-    "Clear graphics and fill with background color (RGB 0-1, A=1)",
-    "red",
-    "green",
-    "blue"
-  ],
-  "rdr-background::f32": [
-    "Clear graphics and fill with background color (R=G=B 0-1, A=1)",
-    "grayscale"
-  ],
-  "rdr-Camera": [
-    "Virtual camera for rendering 3D scenes"
-  ],
-  "rdr-Camera-begin::": [
-    "Start using the camera"
-  ],
-  "rdr-Camera-end::": [
-    "Stop using the camera"
-  ],
-  "rdr-Camera-look_at::vec(f32,3)*vec(f32,3)*vec(f32,3)": [
-    "Place the camera and orient toward given target. Sets the .view matrix of the camera.",
-    "camera position",
-    "target position",
-    "up vector"
-  ],
-  "rdr-Camera-ortho::f32*f32*f32*f32*f32*f32": [
-    "Use orthographic projection for the camera. Sets the .proj matrix of the camera.",
-    "left clipping plane",
-    "right clipping plane",
-    "bottom clipping plane",
-    "top clipping plane",
-    "near clipping plane",
-    "far clipping plane"
-  ],
-  "rdr-Camera-perspective::f32*f32*f32*f32": [
-    "Use perspective projection for the camera. Sets the .proj matrix of the camera.",
-    "field of view angle, in degrees, in the Y direction",
-    "aspect ratio (X/Y)",
-    "near clipping plane",
-    "far clipping plane"
-  ],
-  "rdr-Camera-proj": [
-    "Projection matrix (as in model-view-projection) of the camera"
-  ],
-  "rdr-Camera-view": [
-    "View matrix (as in model-view-projection) of the camera"
-  ],
-  "rdr-DIRTY_COLORS": [
-    "Flag for Mesh.update() to indicate mesh colors are modified"
-  ],
-  "rdr-DIRTY_INDICES": [
-    "Flag for Mesh.update() to indicate mesh indices are modified"
-  ],
-  "rdr-DIRTY_NORMALS": [
-    "Flag for Mesh.update() to indicate mesh normals are modified"
-  ],
-  "rdr-DIRTY_UVS": [
-    "Flag for Mesh.update() to indicate mesh UVs are modified"
-  ],
-  "rdr-DIRTY_VERTICES": [
-    "Flag for Mesh.update() to indicate mesh vertices are modified"
-  ],
-  "rdr-flush::": [
-    "Flush queued commands to GPU (no-op on some backends)"
-  ],
-  "rdr-init::u64": [
-    "Initialize the library. Required before calling any other functions from the library.",
-    "the windowing context (from win.init(...))"
-  ],
-  "rdr-mat": [
-    "Sub-namespace containing utilities for constructing transformation matrices"
-  ],
-  "rdr-mat-id": [
-    "The 4x4 identity matrix"
-  ],
-  "rdr-mat-rotate_deg::vec(f32,3)*f32": [
-    "Generate a matrix that can rotate vectors around given axis by given degrees",
-    "axis of rotation",
-    "angle in degrees",
-    "rotation matrix"
-  ],
-  "rdr-mat-scale::f32*f32*f32": [
-    "Generate a matrix that can scale vectors by given factor on each axis",
-    "scale factor on X axis",
-    "scale factor on Y axis",
-    "scale factor on Z axis",
-    "scale matrix"
-  ],
-  "rdr-mat-scale::f32": [
-    "Generate a matrix that can scale vectors uniformly on all axes by given factor",
-    "scale factor",
-    "scale matrix"
-  ],
-  "rdr-mat-translate::f32*f32*f32": [
-    "Generate a matrix that can translate (move) vectors by given offset on each axis",
-    "offset on X axis",
-    "offset on Y axis",
-    "offset on Z axis",
-    "translation matrix"
-  ],
-  "rdr-Mesh": [
-    "Datatype holding a 3D mesh"
-  ],
-  "rdr-Mesh-colors": [
-    "Per-vertex color buffer, RGBA 0-1 for each vertex. Optionally empty."
-  ],
-  "rdr-Mesh-draw::vec(f32,4,4)": [
-    "Draw the mesh, given a transformation, using current shader and camera config onto current render target.",
-    "transformation (a.k.a. model as in model-view-projection) matrix"
-  ],
-  "rdr-Mesh-indices": [
-    "Vertex index buffer, specifying vertex winding. Zero-indexed. Optionally empty."
-  ],
-  "rdr-Mesh-mode": [
-    "Winding/primitive mode for indices"
-  ],
-  "rdr-Mesh-normals": [
-    "Per-vertex normal buffer. Optionally empty"
-  ],
-  "rdr-Mesh-update::i32": [
-    "Upload buffers indicated by given flags to GPU",
-    "a bitwise OR of .DIRTY_* flags, e.g. .DIRTY_VERTICES|.DIRTY_COLORS"
-  ],
-  "rdr-Mesh-uvs": [
-    "UV (texcoords) buffer. Normalized 0-1. Optionally empty."
-  ],
-  "rdr-Mesh-vao": [
-    "Internal ID/handler of the mesh"
-  ],
-  "rdr-Mesh-vertices": [
-    "Vertex buffer"
-  ],
-  "rdr-MODE_LINE_LIST": [
-    "Primitive mode for disjoint lines"
-  ],
-  "rdr-MODE_LINE_STRIP": [
-    "Primitive mode for a polyline"
-  ],
-  "rdr-MODE_POINT_LIST": [
-    "Primitive mode for point cloud"
-  ],
-  "rdr-MODE_TRIG_LIST": [
-    "Primitive mode for disjoint triangles"
-  ],
-  "rdr-MODE_TRIG_STRIP": [
-    "Primitive mode for connected strip of triangles"
-  ],
-  "rdr-text::str*vec(f32,4,4)": [
-    "Draw text using built-in monospace fixed-size pixel font",
-    "string containing text to draw",
-    "transformation matrix"
-  ],
-  "guts": [
-    "Runtime internals"
-  ],
-  "guts-gc::": [
-    "Trigger garbage collection as soon as possible"
-  ],
-  "guts-gc_off::": [
-    "Disable garbage collection"
-  ],
-  "guts-gc_on::": [
-    "Enable garbage collection"
-  ],
   "drw": [
     "2D Processing-like graphics library"
   ],
@@ -530,13 +271,515 @@
     "X coordinate",
     "Y coordinate"
   ],
+  "exch": [
+    "Data exchange formats serialization/deserialization"
+  ],
+  "exch-decode:T=JSON:str": [
+    "Parse JSON from a string",
+    "string to parse",
+    "JSON parsed"
+  ],
+  "exch-encode::JSON": [
+    "Convert JSON to a string",
+    "JSON to serialize",
+    "string representing the JSON"
+  ],
+  "exch-JSON": [
+    "Recursive datatype holding a JSON (javascript object notation)"
+  ],
+  "exch-JSON-data": [
+    "The data held: can be a list, a dict, a string or a number. Booleans are stored as numbers as the language does not have them."
+  ],
+  "font": [
+    "Font library. Currently supports parsing TTF (truetype) fonts and the built-in Hershey fonts."
+  ],
+  "font-decode::list(u8)": [
+    "Decode a font stored in a supported format (currently TTF only). The format is automatically detected",
+    "list of bytes",
+    "a font"
+  ],
+  "font-decode::i32": [
+    "Decode a built-in Hershey font",
+    "the Hershey font character set, e.g. H1_SANS",
+    "a font"
+  ],
+  "font-FEAT_HIST": [
+    "Flag for historical glyphs"
+  ],
+  "font-FEAT_KERN": [
+    "Flag for kerning"
+  ],
+  "font-FEAT_LIGA": [
+    "Flag for ligatures"
+  ],
+  "font-FEAT_NONE": [
+    "Flag for no features"
+  ],
+  "font-FEAT_ONUM": [
+    "Flag for old numbers"
+  ],
+  "font-FEAT_SMCP": [
+    "Flag for small caps"
+  ],
+  "font-Font": [
+    "a font"
+  ],
+  "font-Font-advance::i32*i32*u32": [
+    "Compute the distance the cursor should move after rendering a given glyph",
+    "glyph index of the glyph being rendered",
+    "glyph index of the next glyph (or -1)",
+    "flags, e.g. FEAT_KERN",
+    "the advancement"
+  ],
+  "font-Font-advance::i32*i32": [
+    "Compute the distance the cursor should move after rendering a given glyph",
+    "glyph index of the glyph being rendered",
+    "glyph index of the next glyph (or -1)",
+    "the advancement"
+  ],
+  "font-Font-glyph::i32*i32": [
+    "Retrieve a glyph as a list of polylines, given a glyph index",
+    "glyph index",
+    "resolution (number of samples) for curves",
+    "a list of polylines describing the contours of the glyph"
+  ],
+  "font-Font-glyph::i32": [
+    "Retrieve a glyph as a list of polylines, given a glyph index",
+    "glyph index",
+    "a list of polylines describing the contours of the glyph"
+  ],
+  "font-Font-id": [
+    "Internal unique ID for the font"
+  ],
+  "font-Font-lookup::i32*u32": [
+    "Find glyph index given a unicode entry point.",
+    "ASCII/unicode entry point",
+    "flags, e.g. FEAT_ONUM",
+    "glyph index"
+  ],
+  "font-Font-lookup::list(i32)*u32": [
+    "Find glyph index given a list of unicode entry points. The list will be mutated, with consumed code points removed from the start of the list",
+    "list of ASCII/unicode entry points (that are potentially eligible for ligatures)",
+    "flags, e.g. FEAT_LIGA",
+    "glyph index"
+  ],
+  "font-H1_SANS": [
+    "Hershey font for sans-serif simplex"
+  ],
+  "font-H1_SANS_SM": [
+    "Hershey font for small sans-serif simplex"
+  ],
+  "font-H1_SCPT": [
+    "Hershey font for cursive simplex"
+  ],
+  "font-H2_ITAL": [
+    "Hershey font for italic duplex"
+  ],
+  "font-H2_ITAL_SM": [
+    "Hershey font for small italic duplex"
+  ],
+  "font-H2_SANS": [
+    "Hershey font for sans-serif duplex"
+  ],
+  "font-H2_SCPT": [
+    "Hershey font for cursive duplex"
+  ],
+  "font-H2_SRIF": [
+    "Hershey font for serif duplex"
+  ],
+  "font-H2_SRIF_SM": [
+    "Hershey font for small serif duplex"
+  ],
+  "font-H3_GOTH_DE": [
+    "Hershey font for German gothic triplex"
+  ],
+  "font-H3_GOTH_EN": [
+    "Hershey font for English gothic triplex"
+  ],
+  "font-H3_GOTH_IT": [
+    "Hershey font for Italian gothic triplex"
+  ],
+  "font-H3_ITAL": [
+    "Hershey font for italic triplex"
+  ],
+  "font-H3_SRIF": [
+    "Hershey font for serif triplex"
+  ],
+  "frag": [
+    "Fragment shader library. Can be used for shader-toy style pipeline, or in conjunction with std/rdr for shading 3D meshes."
+  ],
+  "frag-begin::i32*Texture": [
+    "Start rendering with given shader program onto given texture",
+    "shader program (from .program(...))",
+    "texture to render to"
+  ],
+  "frag-begin::i32": [
+    "Start rendering with given shader program onto default rendering target",
+    "shader program (from .program(...))"
+  ],
+  "frag-end::": [
+    "Stop rendering with current shader program onto current texture"
+  ],
+  "frag-FILTER_LINEAR": [
+    ""
+  ],
+  "frag-FILTER_MIPMAP": [
+    ""
+  ],
+  "frag-FILTER_NEAREST": [
+    ""
+  ],
+  "frag-init::u64": [
+    "Initialize the library. Required before calling any other functions from the library.",
+    "the windowing context (from win.init(...))"
+  ],
+  "frag-program::str": [
+    "Compile a shader program from fragment shader source. The shader language is dependent on 3D backend; Better to generate with the `embed` statement.",
+    "fragment source code",
+    "handler representing the compiled shader program"
+  ],
+  "frag-render::": [
+    "Draw a rectangle filling the entire texture with the current shader program."
+  ],
+  "frag-texture::i32*i32*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "frag-texture::i32*i32": [
+    "Create a new texture. The texture can be used as both sampler and render target.",
+    "desired width",
+    "desired height",
+    "a new texture"
+  ],
+  "frag-Texture": [
+    "A datatype holding information for a texture on the GPU. A texture can be used as both sampler and render target."
+  ],
+  "frag-Texture-fbo": [
+    "Internal ID/handler of the texture"
+  ],
+  "frag-Texture-read_pixels::": [
+    "Download all pixel values from the GPU into an array",
+    "array holding RGBA colors of each pixel (0-255)"
+  ],
+  "frag-Texture-sample::vec(f32,2)": [
+    "Read color at specific uv-coordinate on the texture. Mostly used in shaders.",
+    "normalized uv-coordinate (0-1)",
+    "RGBA color (0-1)"
+  ],
+  "frag-Texture-write_pixels::arr(u8,3)": [
+    "Upload pixel values from an array to the GPU",
+    "array holding desired RGBA colors of each pixel (0-255)"
+  ],
+  "frag-uniform:T:str*T": [
+    "Set a uniform (global shader variable/parameter) for the current shader program.",
+    "name of the uniform (matches name in shader)",
+    "the desired value"
+  ],
+  "frag-WRAP_CLAMP": [
+    ""
+  ],
+  "frag-WRAP_REPEAT": [
+    ""
+  ],
+  "geom": [
+    ""
+  ],
+  "geom-bbox:N:list(vec(f32,N))*i32": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-BY_COUNT": [
+    ""
+  ],
+  "geom-BY_SPACING": [
+    ""
+  ],
+  "geom-clip::list(vec(f32,2))*list(vec(f32,2))*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-convex_hull::list(vec(f32,2))": [
+    "",
+    "",
+    ""
+  ],
+  "geom-curve:N:list(vec(f32,N))*list(f32)*f32*i32": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-delaunay::list(vec(f32,2))": [
+    "",
+    "",
+    ""
+  ],
+  "geom-LHS_LINE": [
+    ""
+  ],
+  "geom-LHS_RAY": [
+    ""
+  ],
+  "geom-LHS_SEGMENT": [
+    ""
+  ],
+  "geom-line_intersect:N:vec(f32,N)*vec(f32,N)*vec(f32,N)*vec(f32,N)*i32": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-MODE_ALIGNED": [
+    ""
+  ],
+  "geom-MODE_ORIENTED": [
+    ""
+  ],
+  "geom-MODE_POLYGON": [
+    ""
+  ],
+  "geom-MODE_POLYLINE": [
+    ""
+  ],
+  "geom-OP_EXCLUDE": [
+    ""
+  ],
+  "geom-OP_INCLUDE": [
+    ""
+  ],
+  "geom-ORD_CUBIC": [
+    ""
+  ],
+  "geom-ORD_QUADRATIC": [
+    ""
+  ],
+  "geom-poly_resample::list(vec(f32,2))*f32*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-poly_simplify::list(vec(f32,2))*f32": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-pt_in_poly::vec(f32,2)*list(vec(f32,2))": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "geom-RET_PARAMS": [
+    ""
+  ],
+  "geom-RET_POINTS": [
+    ""
+  ],
+  "geom-RHS_LINE": [
+    ""
+  ],
+  "geom-RHS_RAY": [
+    ""
+  ],
+  "geom-RHS_SEGMENT": [
+    ""
+  ],
+  "geom-triangulate::list(vec(f32,2))": [
+    "",
+    "",
+    ""
+  ],
+  "geom-TYPE_BEZIER": [
+    ""
+  ],
+  "geom-TYPE_BSPLINE": [
+    ""
+  ],
+  "geom-TYPE_CATROM": [
+    ""
+  ],
+  "geom-voronoi::list(vec(f32,2))": [
+    "",
+    "",
+    ""
+  ],
+  "gui": [
+    ""
+  ],
+  "gui-field::str*str": [
+    "",
+    "",
+    ""
+  ],
+  "gui-get:T:str": [
+    "",
+    "",
+    ""
+  ],
+  "gui-init::": [
+    ""
+  ],
+  "gui-poll::": [
+    ""
+  ],
+  "gui-set:T:str*T": [
+    "",
+    "",
+    ""
+  ],
+  "gui-slider::str*f32*f32*f32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "gui-slider::str*i32*i32*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "gui-slider:T*N:str*vec(T,N)*vec(T,N)*vec(T,N)": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "gui-toggle::str*i32": [
+    "",
+    "",
+    ""
+  ],
+  "guts": [
+    "Runtime internals"
+  ],
+  "guts-gc::": [
+    "Trigger garbage collection as soon as possible"
+  ],
+  "guts-gc_off::": [
+    "Disable garbage collection"
+  ],
+  "guts-gc_on::": [
+    "Enable garbage collection"
+  ],
   "img": [
     "Imaging library"
+  ],
+  "img-ALPHA_COPY": [
+    ""
+  ],
+  "img-ALPHA_DROP": [
+    ""
+  ],
+  "img-ALPHA_PREMUL": [
+    ""
+  ],
+  "img-ALPHA_STRAIGHTEN": [
+    ""
+  ],
+  "img-BORDER_COPY": [
+    ""
+  ],
+  "img-BORDER_ZERO": [
+    ""
+  ],
+  "img-BYPROD_NONE": [
+    ""
+  ],
+  "img-BYPROD_VORONOI": [
+    ""
+  ],
+  "img-COLOR_COPY": [
+    ""
+  ],
+  "img-COLOR_HSV_RGB": [
+    ""
+  ],
+  "img-COLOR_INVERT": [
+    ""
+  ],
+  "img-COLOR_LIN_SRGB": [
+    ""
+  ],
+  "img-COLOR_RGB_BGR": [
+    ""
+  ],
+  "img-COLOR_RGB_GRAY": [
+    ""
+  ],
+  "img-COLOR_RGB_HSV": [
+    ""
+  ],
+  "img-COLOR_SRGB_LIN": [
+    ""
+  ],
+  "img-convert:T*N*U*M:arr(T,N)*i32*arr(U,M)": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-convert:T*N*U*M:arr(T,N)*i32": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-convolve::arr(f32,2)*arr(f32,2)*i32*arr(f32,2)": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-convolve::arr(u8,2)*arr(f32,2)*i32*arr(u8,2)": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-convolve:T:arr(T,2)*arr(f32,2)*i32": [
+    "",
+    "",
+    "",
+    ""
   ],
   "img-decode::list(u8)": [
     "Decode an image stored in a supported format (PNG, JPG, ...). The format is automatically detected",
     "list of bytes holding the image in its encoded form",
     "array of pixels (RGBA 0-255)"
+  ],
+  "img-dist_transform::arr(u8,2)*i32*arr(f32,2)": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-dist_transform::arr(u8,2)*i32": [
+    "",
+    "",
+    "",
+    ""
   ],
   "img-encode::str*arr(u8,3)": [
     "Encode an image to a supported format (PNG, JPG, ...)",
@@ -544,19 +787,82 @@
     "array of pixels (RGBA 0-255)",
     "list of bytes holding the encoded form"
   ],
-  "img-get:T:arr(T,3)*i32*i32": [
-    "Retrieve the color of a single pixel in an image",
-    "array of pixels",
-    "X coordinate",
-    "Y coordinate",
-    "pixel color components at given coordinate"
+  "img-find_contours::arr(u8,2)": [
+    "",
+    "",
+    ""
   ],
-  "img-set:T:arr(T,3)*i32*i32*vec(T,4)": [
-    "Set the color of a single pixel in an image",
-    "array of pixels",
-    "X coordinate",
-    "Y coordinate",
-    "pixel color components"
+  "img-get:T*N:arr(T,3)*i32*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-MORPH_CLOSE": [
+    ""
+  ],
+  "img-MORPH_DILATE": [
+    ""
+  ],
+  "img-MORPH_ERODE": [
+    ""
+  ],
+  "img-MORPH_OPEN": [
+    ""
+  ],
+  "img-MORPH_SKELETONIZE": [
+    ""
+  ],
+  "img-morphology::arr(u8,2)*i32*i32*arr(u8,2)": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-morphology::arr(u8,2)*i32*i32": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-NORM_L1": [
+    ""
+  ],
+  "img-NORM_L2": [
+    ""
+  ],
+  "img-NORM_LINF": [
+    ""
+  ],
+  "img-palette::arr(u8,3)*i32": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-set:T*N:arr(T,3)*i32*i32*vec(T,N)": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "img-THRESH_ADAPTIVE": [
+    ""
+  ],
+  "img-THRESH_AUTO": [
+    ""
+  ],
+  "img-THRESH_BINARY": [
+    ""
+  ],
+  "img-threshold::arr(u8,2)*i32*i32": [
+    "",
+    "",
+    "",
+    ""
   ],
   "io": [
     "Input/output library: File and console I/O"
@@ -582,12 +888,24 @@
   "list": [
     "Ordered, variable-size collection of homogeneous items"
   ],
+  "list-concat:T:list(T)*list(T)": [
+    "",
+    "",
+    "",
+    ""
+  ],
   "list-erase:T:list(T)*i32*i32": [
     "Remove elements in a given index range from a list",
     "list to modify",
     "start index (inclusive)",
     "end index (exclusive)",
     "new length of list"
+  ],
+  "list-filter:T:list(T)*func(tup(T),i32)": [
+    "",
+    "",
+    "",
+    ""
   ],
   "list-insert:T:list(T)*i32*T": [
     "Insert an element before a given index into a list",
@@ -624,12 +942,30 @@
     "element to be pushed",
     "new length of list"
   ],
+  "list-reverse:T:list(T)": [
+    "",
+    ""
+  ],
   "list-slice:T:list(T)*i32*i32": [
     "Shallow copy a portion of a list into a new list",
     "list to be sliced",
     "start index (inclusive)",
     "end index (exclusive)",
     "new list containing the sliced elements"
+  ],
+  "list-slice:T:list(T)": [
+    "",
+    "",
+    ""
+  ],
+  "list-sort:T:list(T)*func(tup(T),f32)": [
+    "",
+    "",
+    ""
+  ],
+  "list-sort:T:list(T)": [
+    "",
+    ""
   ],
   "math": [
     "Math library"
@@ -724,6 +1060,9 @@
     "first argument",
     "second argument",
     "output"
+  ],
+  "math-INF": [
+    ""
   ],
   "math-lerp:T:T*T*f32": [
     "Liner interpolation",
@@ -865,6 +1204,187 @@
     "Seed the .random() generator",
     "the seed"
   ],
+  "rdr": [
+    "3D graphics library."
+  ],
+  "rdr-AXIS_X": [
+    "Unit vector for positive X axis"
+  ],
+  "rdr-AXIS_Y": [
+    "Unit vector for positive Y axis"
+  ],
+  "rdr-AXIS_Z": [
+    "Unit vector for positive Z axis"
+  ],
+  "rdr-background::f32*f32*f32*f32": [
+    "Clear graphics and fill with background color (RGBA 0-1)",
+    "red",
+    "green",
+    "blue",
+    "alpha"
+  ],
+  "rdr-background::f32*f32*f32": [
+    "Clear graphics and fill with background color (RGB 0-1, A=1)",
+    "red",
+    "green",
+    "blue"
+  ],
+  "rdr-background::f32": [
+    "Clear graphics and fill with background color (R=G=B 0-1, A=1)",
+    "grayscale"
+  ],
+  "rdr-Camera": [
+    "Virtual camera for rendering 3D scenes"
+  ],
+  "rdr-Camera-begin::": [
+    "Start using the camera"
+  ],
+  "rdr-Camera-end::": [
+    "Stop using the camera"
+  ],
+  "rdr-Camera-look_at::vec(f32,3)*vec(f32,3)*vec(f32,3)": [
+    "Place the camera and orient toward given target. Sets the .view matrix of the camera.",
+    "camera position",
+    "target position",
+    "up vector"
+  ],
+  "rdr-Camera-ortho::f32*f32*f32*f32*f32*f32": [
+    "Use orthographic projection for the camera. Sets the .proj matrix of the camera.",
+    "left clipping plane",
+    "right clipping plane",
+    "bottom clipping plane",
+    "top clipping plane",
+    "near clipping plane",
+    "far clipping plane"
+  ],
+  "rdr-Camera-perspective::f32*f32*f32*f32": [
+    "Use perspective projection for the camera. Sets the .proj matrix of the camera.",
+    "field of view angle, in degrees, in the Y direction",
+    "aspect ratio (X/Y)",
+    "near clipping plane",
+    "far clipping plane"
+  ],
+  "rdr-Camera-proj": [
+    "Projection matrix (as in model-view-projection) of the camera"
+  ],
+  "rdr-Camera-view": [
+    "View matrix (as in model-view-projection) of the camera"
+  ],
+  "rdr-CULL_FRUSTUM": [
+    ""
+  ],
+  "rdr-DIRTY_BOUNDS": [
+    ""
+  ],
+  "rdr-DIRTY_COLORS": [
+    "Flag for Mesh.update() to indicate mesh colors are modified"
+  ],
+  "rdr-DIRTY_INDICES": [
+    "Flag for Mesh.update() to indicate mesh indices are modified"
+  ],
+  "rdr-DIRTY_NORMALS": [
+    "Flag for Mesh.update() to indicate mesh normals are modified"
+  ],
+  "rdr-DIRTY_UVS": [
+    "Flag for Mesh.update() to indicate mesh UVs are modified"
+  ],
+  "rdr-DIRTY_VERTICES": [
+    "Flag for Mesh.update() to indicate mesh vertices are modified"
+  ],
+  "rdr-flush::": [
+    "Flush queued commands to GPU (no-op on some backends)"
+  ],
+  "rdr-init::u64": [
+    "Initialize the library. Required before calling any other functions from the library.",
+    "the windowing context (from win.init(...))"
+  ],
+  "rdr-mat": [
+    "Sub-namespace containing utilities for constructing transformation matrices"
+  ],
+  "rdr-mat-id": [
+    "The 4x4 identity matrix"
+  ],
+  "rdr-mat-rotate_deg::vec(f32,3)*f32": [
+    "Generate a matrix that can rotate vectors around given axis by given degrees",
+    "axis of rotation",
+    "angle in degrees",
+    "rotation matrix"
+  ],
+  "rdr-mat-scale::f32*f32*f32": [
+    "Generate a matrix that can scale vectors by given factor on each axis",
+    "scale factor on X axis",
+    "scale factor on Y axis",
+    "scale factor on Z axis",
+    "scale matrix"
+  ],
+  "rdr-mat-scale::f32": [
+    "Generate a matrix that can scale vectors uniformly on all axes by given factor",
+    "scale factor",
+    "scale matrix"
+  ],
+  "rdr-mat-translate::f32*f32*f32": [
+    "Generate a matrix that can translate (move) vectors by given offset on each axis",
+    "offset on X axis",
+    "offset on Y axis",
+    "offset on Z axis",
+    "translation matrix"
+  ],
+  "rdr-Mesh": [
+    "Datatype holding a 3D mesh"
+  ],
+  "rdr-Mesh-colors": [
+    "Per-vertex color buffer, RGBA 0-1 for each vertex. Optionally empty."
+  ],
+  "rdr-Mesh-draw::vec(f32,4,4)": [
+    "Draw the mesh, given a transformation, using current shader and camera config onto current render target.",
+    "transformation (a.k.a. model as in model-view-projection) matrix"
+  ],
+  "rdr-Mesh-draw::list(vec(f32,4,4))": [
+    "",
+    ""
+  ],
+  "rdr-Mesh-indices": [
+    "Vertex index buffer, specifying vertex winding. Zero-indexed. Optionally empty."
+  ],
+  "rdr-Mesh-mode": [
+    "Winding/primitive mode for indices"
+  ],
+  "rdr-Mesh-normals": [
+    "Per-vertex normal buffer. Optionally empty"
+  ],
+  "rdr-Mesh-update::i32": [
+    "Upload buffers indicated by given flags to GPU",
+    "a bitwise OR of .DIRTY_* flags, e.g. .DIRTY_VERTICES|.DIRTY_COLORS"
+  ],
+  "rdr-Mesh-uvs": [
+    "UV (texcoords) buffer. Normalized 0-1. Optionally empty."
+  ],
+  "rdr-Mesh-vao": [
+    "Internal ID/handler of the mesh"
+  ],
+  "rdr-Mesh-vertices": [
+    "Vertex buffer"
+  ],
+  "rdr-MODE_LINE_LIST": [
+    "Primitive mode for disjoint lines"
+  ],
+  "rdr-MODE_LINE_STRIP": [
+    "Primitive mode for a polyline"
+  ],
+  "rdr-MODE_POINT_LIST": [
+    "Primitive mode for point cloud"
+  ],
+  "rdr-MODE_TRIG_LIST": [
+    "Primitive mode for disjoint triangles"
+  ],
+  "rdr-MODE_TRIG_STRIP": [
+    "Primitive mode for connected strip of triangles"
+  ],
+  "rdr-text::str*vec(f32,4,4)": [
+    "Draw text using built-in monospace fixed-size pixel font",
+    "string containing text to draw",
+    "transformation matrix"
+  ],
   "req": [
     "Network client library for HTTP etc."
   ],
@@ -925,6 +1445,12 @@
   "str": [
     "Immutable sequence of characters"
   ],
+  "str-affixed::str*str*i32": [
+    "",
+    "",
+    "",
+    ""
+  ],
   "str-chr::u32": [
     "Create a string holding 1 character given a code point",
     "code point",
@@ -942,6 +1468,15 @@
     "encoding, e.g. utf-8, ascii",
     "encoded list of bytes"
   ],
+  "str-join::str*list(str)": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "str-LEADING": [
+    ""
+  ],
   "str-length::str": [
     "Retrieve length of a string",
     "the string to query",
@@ -951,6 +1486,36 @@
     "Find code point of a character",
     "string containing the 1 character",
     "the code point"
+  ],
+  "str-pad::str*i32*str*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "str-slice::str*i32*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "str-split::str*str": [
+    "",
+    "",
+    "",
+    ""
+  ],
+  "str-TRAILING": [
+    ""
+  ],
+  "str-trim::str*str*i32": [
+    "",
+    "",
+    "",
+    "",
+    ""
   ],
   "time": [
     "Library for time-related functions"
@@ -1191,5 +1756,8 @@
   "win-poll::": [
     "Listen for user event (non-blocking)",
     "an event"
+  ],
+  "win-WHEEL_SCROLLED": [
+    ""
   ]
 }

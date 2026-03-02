@@ -102,36 +102,59 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 
-eval(fs.readFileSync("../../src/parser.js").toString());
-eval(fs.readFileSync("../../src/embed_glsl.js").toString());
+if (process.env.PWD && fs.existsSync(process.env.PWD)) {
+  process.chdir(process.env.PWD);
+}else{
+  process.chdir("../../");
+}
 
-CodeMirror.defineSimpleMode("ldcc", {
-  meta:{
-    lineComment: "//",
-    comment: "//",
-  },
-  start: [
-    {regex: /"(?:[^\\]|\\.)*?(?:"|$)/mi, token: "string"},
-    {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as|is|embed)\b/,
-      token: "keyword"},
-    {regex: /(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func)\b/,
-      token: "type"},
-    {regex: /0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i,
-      token: "number"},
-    {regex: /\/\*.*?\*\//, token: "comment"},
-    {regex: /\/\/.*/, token: "comment"},
-    {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\@]+/, token: "operator"},
-    {regex: /[\{\[\(]/, indent: true, token: "bracket"},
-    {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
-    {regex: /[A-Za-z$][\w$]*/, token: "variable"},
-  ],
-});
+eval(fs.readFileSync("src/parser.js").toString());
+eval(fs.readFileSync("src/embed_glsl.js").toString());
+eval(fs.readFileSync("src/embed_gui.js").toString());
 
-CodeMirror.defineSimpleMode("ansiesc", {
+CodeMirror.defineSimpleMode("dither", {
+    meta:{
+      lineComment: "//",
+      comment: "//",
+    },
+    doubleString: [
+      { regex: /[^%"\\]+/, token: "string" },         
+      { regex: /\\./, token: "string-2" },            
+      { regex: /%\{[^}]*\}/, token: "string-2" },         
+      { regex: /"/, token: "string", next: "start" }, 
+      { regex: /%/, token: "string" },                
+    ],
+    singleString: [
+      { regex: /[^'\\]+/, token: "string" },
+      { regex: /\\./, token: "string-2" },
+      { regex: /'/, token: "string", next: "start" },
+    ],
+    start: [
+      // {regex: /"(?:[^\\]|\\.)*?(?:"|$)/mi, token: "string"},
+      { regex: /"/, token: "string", next: "doubleString" },
+      { regex: /'/, token: "string", next: "singleString" },
+      {regex: /(?:namespace|continue|typedef|include|return|break|while|const|else|func|for|if|do|as|is|embed)\b/,
+        token: "keyword"},
+      {regex: /(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|arr|dict|str|func)\b/,
+        token: "type"},
+      {regex: /0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i,
+        token: "number"},
+      {regex: /\/\*.*?\*\//, token: "comment"},
+      {regex: /\/\/.*/, token: "comment"},
+      {regex: /[\{\[\(]/, indent: true, token: "bracket"},
+      {regex: /[\}\]\)]/, dedent: true, token: "bracket"},
+      {regex: /\.(\b[A-Za-z_$][\w$]*)/, token: "property"},
+      {regex: /\@[A-Za-z$][\w$]*/, token: "type"},
+      {regex: /[-+\/*=<>!\?\&\|\^\%\~\#\:\;\,\.]/, token: "operator"},
+      {regex: /[A-Za-z$][\w$]*/, token: "variable"},
+    ],
+  });
+
+CodeMirror.defineSimpleMode("dsm", {
   start: [
-    {regex: /(?:mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|argf)\b/,
+    {regex: /(?:mov|cast|bnot|lnot|decl|argr|argw|alloc|call|jeqz|fpak|cap|ret|ccall|rcall|jmp|incl|add|sub|mul|div|mod|pow|shl|shr|bor|xor|band|gt|lt|geq|leq|eq|neq|matmul|nop|bloc|end|utag|eoir|dcap)\b/,
       token: "keyword"},
-    {regex: /(?:i8|i08|u8|u08|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|lst|arr|dict|dic|str|func|fun|void)\b/i,
+    {regex: /(?:i8|i08|u8|u08|i16|u16|i32|u32|i64|u64|f32|f64|tup|list|vec|lst|arr|dict|dic|str|func|fun|void|union)\b/i,
       token: "type"},
   ],
 });
@@ -140,7 +163,7 @@ var CML = CodeMirror(document.getElementById("cl"), {
   lineNumbers:true,
   matchBrackets: true,
   theme:"theme",
-  mode:  "ldcc",
+  mode:  "dither",
   indentWithTabs: false,
   indentUnit: 2,
   tabSize: 2,
@@ -154,20 +177,20 @@ var CML = CodeMirror(document.getElementById("cl"), {
 });
 CML.setSize(null,null);
 
-let egs = fs.readdirSync("../../examples").filter(x=>x.endsWith(".dh"))
+let egs = fs.readdirSync("examples").filter(x=>x.endsWith(".dh"))
 for (let i = 0; i < egs.length; i++){
   let opt = document.createElement("option");
   opt.value = opt.innerHTML = egs[i];
   document.getElementById("sel-eg").appendChild(opt);
 }
-CML.setValue(fs.readFileSync("../../examples/"+egs[0]).toString())
+CML.setValue(fs.readFileSync("examples/"+egs[0]).toString())
 document.getElementById("sel-eg").onchange = function(){
-  CML.setValue(fs.readFileSync("../../examples/"+document.getElementById("sel-eg").value).toString())
+  CML.setValue(fs.readFileSync("examples/"+document.getElementById("sel-eg").value).toString())
 }
 
 var CMR = CodeMirror(document.getElementById("cr"), {
   theme:"theme",
-  mode:  "ansiesc",
+  mode:  "dsm",
 });
 
 document.getElementById("btn-compile").onclick = function(){
@@ -179,7 +202,7 @@ document.getElementById("btn-compile").onclick = function(){
       throw 'up';
     }
   });
-  let parser = new PARSER({fs,path,process:pro,search_paths:['../../']},{fragment:embed_glsl_frag});
+  let parser = new PARSER({fs,path,process:pro,search_paths:['']},{fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync});
 
   fs.writeFileSync("/tmp/source.dh",CML.getValue());
   
@@ -202,7 +225,7 @@ document.getElementById("btn-compile").onclick = function(){
 
     let irlo = irtxt+lotxt;
 
-    fs.writeFileSync("../../build/ir.dsm",irlo);
+    fs.writeFileSync("build/ir.dsm",irlo);
 
     CMR.setValue(irlo);
   }catch(e){
@@ -221,7 +244,7 @@ function runbin(pth, args=[]){
   }
   let firsttime = 1;
   
-  childProcess = child_process.spawn(pth, args, {env: { ...process.env, DITHER_ROOT:"../../"}});
+  childProcess = child_process.spawn(pth, args, {env: { ...process.env, DITHER_ROOT:"."}});
   childProcess.stdout.on('data', (data) => {
     if (firsttime){
       CMR.setValue("");
@@ -246,7 +269,7 @@ document.getElementById("btn-rundbg").onclick = function(){
   document.getElementById("btn-stop").onclick()
 
   if (!document.getElementById("btn-compile").onclick()){
-    runbin('../../build/vm_dbg',['../../build/ir.dsm'])
+    runbin('build/vm_dbg',['build/ir.dsm'])
   }
 }
 
@@ -254,7 +277,7 @@ document.getElementById("btn-run").onclick = function(){
   document.getElementById("btn-stop").onclick()
 
   if (!document.getElementById("btn-compile").onclick()){
-    runbin('../../build/vm',['../../build/ir.dsm'])
+    runbin('build/vm',['build/ir.dsm'])
   }
 }
 

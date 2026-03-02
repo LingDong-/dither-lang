@@ -105,7 +105,7 @@ let html = [`
 .cm-s-theme span.cm-comment { color:  #777; }
 .cm-s-theme span.cm-string { color:  #ffb; }
 .cm-s-theme span.cm-string-2 { color:  #fbb; }
-.cm-s-theme span.cm-number { color:  #b9f; }
+.cm-s-theme span.cm-number { color:  #b9f; cursor:ns-resize;}
 .cm-s-theme span.cm-variable { color:  #6fdfcf; }
 .cm-s-theme span.cm-property { color:  #ccc; }
 .cm-s-theme span.cm-fun { color:  #ccc; }
@@ -115,6 +115,110 @@ let html = [`
 .cm-s-theme span.cm-bracket { color: #ccc; }
 .cm-s-theme .CodeMirror-activeline-background { background: rgba(255,255,255,0.1); }
 .cm-s-theme .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }
+.CodeMirror-hints {
+  position: absolute;
+  z-index: 10;
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  -webkit-box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+  -moz-box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+  box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+  border-radius: 3px;
+  border: 1px solid #666;
+  background: white;
+  font-size: 90%;
+  font-family: monospace;
+  max-height: 20em;
+  overflow-y: auto;
+  background: #333;
+}
+.CodeMirror-hint {
+  margin: 0;
+  padding: 0 4px;
+  border-radius: 2px;
+  white-space: pre;
+  color: white;
+  background:#333;
+  cursor: pointer;
+}
+li.CodeMirror-hint-active {
+  background: #6D8A88;
+  color: white;
+}
+  /* The lint marker gutter */
+.CodeMirror-lint-markers {
+  width: 0px;
+}
+.CodeMirror-lint-tooltip {
+  background-color: #ffd;
+  border: 1px solid black;
+  border-radius: 4px 4px 4px 4px;
+  color: black;
+  font-family: monospace;
+  font-size: 9pt;
+  overflow: hidden;
+  padding: 2px 5px;
+  position: fixed;
+  white-space: pre;
+  white-space: pre-wrap;
+  z-index: 100;
+  max-width: 600px;
+  opacity: 0;
+  transition: opacity .4s;
+  -moz-transition: opacity .4s;
+  -webkit-transition: opacity .4s;
+  -o-transition: opacity .4s;
+  -ms-transition: opacity .4s;
+}
+.CodeMirror-lint-mark {
+  background-position: left bottom;
+  background-repeat: repeat-x;
+}
+.CodeMirror-lint-mark-warning {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJFhQXEbhTg7YAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAMklEQVQI12NkgIIvJ3QXMjAwdDN+OaEbysDA4MPAwNDNwMCwiOHLCd1zX07o6kBVGQEAKBANtobskNMAAAAASUVORK5CYII=");
+}
+.CodeMirror-lint-mark-error {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==");
+}
+.CodeMirror-lint-marker {
+  background-position: center center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  vertical-align: middle;
+  position: relative;
+}
+.CodeMirror-lint-message {
+  padding-left: 18px;
+  background-position: top left;
+  background-repeat: no-repeat;
+}
+.CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAANlBMVEX/uwDvrwD/uwD/uwD/uwD/uwD/uwD/uwD/uwD6twD/uwAAAADurwD2tQD7uAD+ugAAAAD/uwDhmeTRAAAADHRSTlMJ8mN1EYcbmiixgACm7WbuAAAAVklEQVR42n3PUQqAIBBFUU1LLc3u/jdbOJoW1P08DA9Gba8+YWJ6gNJoNYIBzAA2chBth5kLmG9YUoG0NHAUwFXwO9LuBQL1giCQb8gC9Oro2vp5rncCIY8L8uEx5ZkAAAAASUVORK5CYII=");
+}
+.CodeMirror-lint-marker-error, .CodeMirror-lint-message-error {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEW7AAC7AACxAAC7AAC7AAAAAAC4AAC5AAD///+7AAAUdclpAAAABnRSTlMXnORSiwCK0ZKSAAAATUlEQVR42mWPOQ7AQAgDuQLx/z8csYRmPRIFIwRGnosRrpamvkKi0FTIiMASR3hhKW+hAN6/tIWhu9PDWiTGNEkTtIOucA5Oyr9ckPgAWm0GPBog6v4AAAAASUVORK5CYII=");
+}
+.CodeMirror-lint-marker-multiple {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAMAAADzjKfhAAAACVBMVEUAAAAAAAC/v7914kyHAAAAAXRSTlMAQObYZgAAACNJREFUeNo1ioEJAAAIwmz/H90iFFSGJgFMe3gaLZ0od+9/AQZ0ADosbYraAAAAAElFTkSuQmCC");
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  width: 100%; height: 100%;
+}
+.CodeMirror-lint-line-error {
+  background-color: rgba(183, 76, 81, 0.08);
+}
+.CodeMirror-lint-line-warning {
+  background-color: rgba(255, 211, 0, 0.1);
+}
+.cm-dragging,
+.cm-dragging * {
+  cursor: ns-resize !important;
+}
 </style>
 ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"              )}
 ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/javascript/javascript.js"  )}
@@ -122,6 +226,8 @@ ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/
 ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/runmode/runmode.js"       )}
 ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js")}
 ${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"   )}
+${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/hint/show-hint.min.js"    )}
+${download("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/lint/lint.min.js"         )}
 <style>.CodeMirror { height: 100%; }</style>
 
 <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
@@ -201,12 +307,19 @@ function main(){
     CMR.replaceRange(x+"\n", { line: CMR.lineCount(), ch: 0 });
   }
 
+  let extensions = {fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync}
+  let pathrules = {
+      resolve: (x)=>x,
+      basename: (x)=>x.split('/').at(-1).split('.').slice(0,-1).join('.'),
+      dirname: (x)=>x.split('/').slice(0,-1).join('/'),
+      extname: (x)=>x.split('.').at(-1),
+      join: (x,y)=>(x.length?(x+'/'+y):y),
+      relative: (x,y)=>y,
+    }
   function compile_from_str(str){
     CMR.setValue("");
-
     let fs = {
       readFileSync:function(x){
-        // console.log(x);
         if (x == "CURRENT"){
           return new TextEncoder().encode(str);
         }
@@ -217,19 +330,12 @@ function main(){
         }
       },
     }
-    let path = {
-      resolve: (x)=>x,
-      basename: (x)=>x.split('/').at(-1).split('.').slice(0,-1).join('.'),
-      dirname: (x)=>x.split('/').slice(0,-1).join('/'),
-      extname: (x)=>x.split('.').at(-1),
-      join: (x,y)=>(x.length?(x+'/'+y):y),
-      relative: (x,y)=>y,
-    }
+    let path = pathrules;
     let process = {
       cwd: ()=>'',
       exit: ()=>{throw "up"},
     }
-    let parser = new PARSER({fs,path,process,search_paths:['']},{fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync});
+    let parser = new PARSER({fs,path,process,search_paths:['']},extensions);
     let toks = parser.tokenize("CURRENT");
     let cst = parser.parse(toks);
     let ast = parser.abstract(cst);
@@ -409,11 +515,275 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
       "Tab": function(cm) {
         cm.replaceSelection("  ", "end");
       }
-    }
-
+    },
+    lint:true,
+    // gutters:["CodeMirror-lint-markers"],
   });
 
   CML.setSize(null,null);
+
+  let wrapper = CML.getWrapperElement();
+  let dragState = null;
+  wrapper.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    const cursor = CML.getCursor();
+    const line = CML.getLine(cursor.line);
+    let start = cursor.ch;
+    let end = cursor.ch;
+    let range;
+    const numberChars = /[0-9.]/;
+    while (start > 0 && numberChars.test(line[start - 1])) start--;
+    while (end < line.length && numberChars.test(line[end])) end++;
+    if (start >= cursor.ch){
+      return;
+    }
+    const text = line.slice(start, end);
+    if (/^-?\d+(\.\d+)?$/.test(text)) {
+      range = {
+        from: { line: cursor.line, ch: start },
+        to: { line: cursor.line, ch: end },
+        text
+      };
+    }else{
+      return;
+    }
+    e.preventDefault();
+    dragState = {
+      startY: e.clientY,
+      startValue: parseFloat(range.text),
+      from: range.from,
+      to: range.to,
+      afterPoint: range.text.split(".")[1],
+      hasAppliedChange: false,
+      internalChange: false
+    };
+    wrapper.classList.add("cm-dragging");
+    window.addEventListener("mousemove", onDrag);
+    window.addEventListener("mouseup", stopDrag);
+  });
+  function onDrag(e) {
+    if (!dragState) return;
+    if (dragState.internalChange) return;
+    let sensitivity = dragState.afterPoint ? 0.1 : 1;
+    if (e.altKey) sensitivity *= 0.1;
+    let delta = dragState.startY - e.clientY;
+    let newValue = dragState.startValue + delta * sensitivity;
+    newValue = Math.max(newValue,0);
+    let formatted;
+    if (!dragState.afterPoint){
+      formatted = Math.round(newValue).toString();
+    }else{
+      formatted = newValue.toFixed(Math.max(2,dragState.afterPoint.length));
+      if (!formatted.includes(".")){
+        formatted += ".0"
+      }
+    }
+    dragState.internalChange = true;
+    CML.operation(() => {
+      if (dragState.hasAppliedChange && CML.historySize().undo > 0) {
+        CML.undo();
+      }
+      CML.replaceRange(
+        formatted,
+        dragState.from,
+        dragState.to
+      );
+      const newTo = {
+        line: dragState.from.line,
+        ch: dragState.from.ch + formatted.length
+      };
+      CML.setCursor(newTo);
+      dragState.hasAppliedChange = true;
+    });
+    dragState.internalChange = false;
+  }
+
+  function stopDrag() {
+    if (!dragState) return;
+    wrapper.classList.remove("cm-dragging");
+    dragState = null;
+    window.removeEventListener("mousemove", onDrag);
+    window.removeEventListener("mouseup", stopDrag);
+  }
+
+
+  CodeMirror.registerHelper("lint", "dither", function(str, options) {
+    let found = [];
+    let fs = {
+      readFileSync:function(x){
+        if (x == "CURRENT"){
+          return new TextEncoder().encode(str);
+        }
+        if (x.startsWith("std/")){
+          return new TextEncoder().encode(STD[x]);
+        }else{
+          return new TextEncoder().encode(EXAMPLES[x]);
+        }
+      },
+    }
+    let path = pathrules;
+    let process = {
+      cwd: ()=>'',
+      exit: ()=>{throw "up"},
+    }
+    let parser = new PARSER({fs,path,process,search_paths:['']},extensions);
+
+    let olderror = console.error;
+    let eidx = 0;
+    console.error = function(s){
+      if (!eidx){
+        let [err,loc] = s.split(` at file "CURRENT" line `);
+        if (err.length && loc.length){
+          if (err.includes(`error] `)){
+            err = err.split('error] ').slice(1).join('error] ');
+          }
+          let [ln,col] = loc.split(" column ").map(x=>Number(x));
+          found.push({
+            from: CodeMirror.Pos(ln-1,col-1),
+            to: CodeMirror.Pos(ln-1,col+80),
+            message: err,
+            severity : "error"
+          });
+        }
+      }
+      eidx = (eidx+1)%3;
+    }
+    try{
+      let toks = parser.tokenize("CURRENT");
+      let cst = parser.parse(toks);
+      let ast = parser.abstract(cst);
+      let scopes = parser.infertypes(ast);
+    }catch(e){
+      
+    }
+    console.error = olderror;
+
+
+    return found;
+  });
+
+  function get_completions(prefix, before){
+    // console.log(prefix,"|",before);
+    let list = [];
+    for (let k in API){
+      let nmsp = k.split('-')[0];
+      let name = k.split('-').slice(1).join('.');
+      let tem;
+      let sig;
+      let com=nmsp;
+      if (name){
+        [name,tem,sig] = name.split(':');
+        com += "."+name;
+      }
+      let arg;
+      if (sig){
+        sig = sig.replace(/\(/g,'[')
+        sig = sig.replace(/\)/g,']')
+        tem = tem.split("*");
+        arg = sig.split("*");
+      }
+      let doc = `<i>`+API[k][0]+`</i>`;
+      if (arg && arg.length){
+        doc += `<table style="font-size: 13px; color:white">`;
+        for (let i = 0; i < arg.length; i++){
+          doc += `<tr style="vertical-align: top;"><td style="vertical-align: top;min-width:50px;color:#1bf;font-family:monospace">${arg[i]}</td><td style="vertical-align: top;">${API[k][1+i]}</td></tr>`
+        }
+        if (API[k][arg.length+1]){
+          doc += `<tr style="vertical-align: top;"><td style="vertical-align: top;min-width:50px;color:#aaa;font-family:monospace">returns</td><td style="vertical-align: top;">${API[k].at(-1)}</td></tr>`
+        }
+        doc += `</table>`;
+      }
+      if (prefix.startsWith('.') && name){
+        if (before.endsWith(nmsp) && name.startsWith(prefix.slice(1))){
+          list.push({text:'.'+name, displayText:name, doc});
+        }
+      }else if (nmsp.startsWith(prefix) && prefix.length > 0){
+        list.push({text:com, displayText:com, doc});
+      }
+    }
+    return list;
+  }
+
+  CodeMirror.registerHelper("hint", "dither", function(cm) {
+    const cursor = cm.getCursor();
+    const token = cm.getTokenAt(cursor);
+    const line = cm.getLine(cursor.line);
+    const before = line.slice(0, cursor.ch);
+    let prefix = token.string.trim();
+    let from = CodeMirror.Pos(cursor.line, token.start);
+    let to   = CodeMirror.Pos(cursor.line, cursor.ch);
+    let list = get_completions(prefix,before.slice(0,-prefix.length));
+    return { list, from, to };
+  });
+
+  CML.on("inputRead", function(cm, change) {
+    if (!cm.state.completionActive && change.text[0]) {
+      trigger_completion(cm);
+    }
+  });
+
+  let docBox = null;
+  let docAnimationFrame = null;
+  function trigger_completion(cm) {
+    cm.showHint({ hint: CodeMirror.hint.dither, completeSingle:false });
+    if (!docBox) {
+      docBox = document.createElement("div");
+      docBox.style = `
+        position: absolute;
+        padding: 5px;
+        max-width: 300px;
+        border: 1px solid #666;
+        background: #333;
+        font-size: 13px;
+        color: white;
+        box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+        z-index: 3000;
+        font-family: sans-serif;
+        border-radius: 3px;
+      `;
+      document.body.appendChild(docBox);
+    }
+    function updateDoc() {
+      const widget = CML.state.completionActive;
+      if (!widget) {
+        if (docBox) docBox.style.display = "none";
+        docAnimationFrame = null;
+        return;
+      }
+      if (!widget.widget){
+        if (docBox) docBox.style.display = "none";
+        docAnimationFrame = requestAnimationFrame(updateDoc);
+        return;
+      }
+      const selectedIndex = widget.widget.selectedHint;
+      if (selectedIndex == null) return;
+      const hintData = widget.data.list[selectedIndex];
+      if (!hintData || !hintData.doc) {
+        docBox.style.display = "none";
+        return;
+      }
+      docBox.style.display = "block";
+      docBox.innerHTML = hintData.doc;
+      const rect = widget.widget.hints.getBoundingClientRect();
+      docBox.style.left = rect.right + 4 + "px";
+      docBox.style.top  = rect.top + "px";
+      docAnimationFrame = requestAnimationFrame(updateDoc);
+    }
+
+    if (!docAnimationFrame) updateDoc();
+    CML.on("endCompletion", function cleanup() {
+      if (docBox) {
+        docBox.remove();
+        docBox = null;
+      }
+      if (docAnimationFrame) {
+        cancelAnimationFrame(docAnimationFrame);
+        docAnimationFrame = null;
+      }
+      CML.off("endCompletion", cleanup);
+    });
+  }
+
 
   document.getElementById("sel-eg").style.display="none";
   for (let k in EXAMPLES){
@@ -661,6 +1031,7 @@ for (let i = 0; i < ff.length; i++){
 }
 html.push(`}</script>`);
 
+html.push(`<script>var API=`+fs.readFileSync("doc/api.json").toString()+`</script>`);
 
 html.push(`<script>var ASSETS = {`);
 ff = fs.readdirSync("examples/assets").filter(x=>!x.startsWith('.'));
