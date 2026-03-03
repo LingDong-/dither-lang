@@ -369,3 +369,24 @@ js.push(`})();`);
 
 fs.writeFileSync("build/dither-embed.js",js.join("\n"));
 
+fs.writeFileSync("build/embed.html",`
+<meta charset="UTF-8">
+<body></body>
+<script src="dither-embed.js"></script>
+<script>
+let div = document.createElement("div");
+document.body.appendChild(div);
+let txt = "";
+let queryString = window.location.search;
+let urlParams = new URLSearchParams(queryString);
+let b64 = window.location.hash.slice(1);
+if (b64) txt = atob(b64);
+window.dither_make_embed(div,txt,{
+  bleed:urlParams.get('bleed'),
+  lazy:urlParams.get('lazy')
+});
+function share(){
+  prompt("",window.location.origin+window.location.pathname+'#'+btoa(Array.from(document.getElementsByClassName('codemirror-line')).map(x=>x.innerText).join('\\n').replace(/\u200b/g, " ")));
+}
+</script>
+`);
