@@ -367,12 +367,12 @@ js.push(`${main.toString()};main();`)
 
 js.push(`})();`);
 
-fs.writeFileSync("build/dither-embed.js",js.join("\n"));
-
+let jsj = js.join("\n");
+fs.writeFileSync("build/dither-embed.js",jsj);
 fs.writeFileSync("build/embed.html",`
 <meta charset="UTF-8">
 <body></body>
-<script src="dither-embed.js"></script>
+<script>${jsj}</script>
 <script>
 let div = document.createElement("div");
 document.body.appendChild(div);
@@ -385,8 +385,8 @@ window.dither_make_embed(div,txt,{
   bleed:urlParams.get('bleed'),
   lazy:urlParams.get('lazy')
 });
-function share(){
-  prompt("",window.location.origin+window.location.pathname+'#'+btoa(Array.from(document.getElementsByClassName('codemirror-line')).map(x=>x.innerText).join('\\n').replace(/\u200b/g, " ")));
+function share(x){
+  console.log(window.location.origin+window.location.pathname+'#'+btoa(x));
 }
 </script>
 `);
