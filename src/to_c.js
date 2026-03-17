@@ -1211,8 +1211,13 @@ var TO_C = function(cfg){
         let typ = read_type(ins[2]);
         curfun.dcap.push({nom,typ});
       }else if (ins[0] == 'decl' && inmain == 1 && ins[1][0] != "_"){
-        liftdecl.push(["",ins]);
-        instrs[i][1] = ["nop"];
+        liftdecl.push(["",["decl.decl_only",...ins.slice(1)]]);
+        if (ins[2].startsWith('tup[') || ins[2].startsWith('union')){
+          instrs[i][1] = ["decl.init_only",...ins.slice(1)];
+        }else{
+          instrs[i][1] = ["nop"];
+        }
+        
       }
     }
     instrs.shift();
@@ -1270,34 +1275,38 @@ var TO_C = function(cfg){
     function trans_instr(ins){
       if (!ins.length || ins[0] == 'nop'){
 
-      }else if (ins[0] == 'decl'){
+      }else if (ins[0] == 'decl' || ins[0].startsWith('decl.')){
         let nom = clean(ins[1]);
         let typ = read_type(ins[2]);
         lookup[nom] = typ;
-        write_decl(typ,nom);
-        if (typ.con == 'vec'){
-          if (infun){
-            o.push(`memset(${nom},0,${type_size(typ)});`);
-          }
-        }else if (typ.con == 'tup'){
-          let nc = tup_size(typ,Infinity);
-          o.push(`${nom} = __gc_alloc(VART_TUP,(${nc}));`);
-          for (let i = 0; i < typ.elt.length; i++){
-            o.push(`((char*)${nom} + ${i}*5)[0] = ${vart(typ.elt[i])};`);
-            o.push(`((int*)((char*)${nom} + ${i}*5 + 1))[0] = ${tup_size(typ,i)};`);
-          }
-          o.push(`((char*)${nom} + ${typ.elt.length}*5)[0] = 0;`);
-          o.push(`((int*)((char*)${nom} + ${typ.elt.length}*5 + 1))[0] = ${tup_size(typ,Infinity)};`);
+        if (ins[0] == 'decl' || ins[0] == 'decl.decl_only'){
+          write_decl(typ,nom);
+        }
+        if (ins[0] == 'decl' || ins[0] == 'decl.init_only'){
+          if (typ.con == 'vec'){
+            if (infun){
+              o.push(`memset(${nom},0,${type_size(typ)});`);
+            }
+          }else if (typ.con == 'tup'){
+            let nc = tup_size(typ,Infinity);
+            o.push(`${nom} = __gc_alloc(VART_TUP,(${nc}));`);
+            for (let i = 0; i < typ.elt.length; i++){
+              o.push(`((char*)${nom} + ${i}*5)[0] = ${vart(typ.elt[i])};`);
+              o.push(`((int*)((char*)${nom} + ${i}*5 + 1))[0] = ${tup_size(typ,i)};`);
+            }
+            o.push(`((char*)${nom} + ${typ.elt.length}*5)[0] = 0;`);
+            o.push(`((int*)((char*)${nom} + ${typ.elt.length}*5 + 1))[0] = ${tup_size(typ,Infinity)};`);
 
-          o.push(`__put_var(${varcnt++},${nom});`);
-        }else if (typ.con == 'union'){
-          let ts = type_size(typ.elt[0]);
-          for (let i = 1; i < typ.elt.length; i++){
-            ts = `(((${type_size(typ.elt[i])})>(${ts}))?(${type_size(typ.elt[i])}):(${ts}))`;
+            o.push(`__put_var(${varcnt++},${nom});`);
+          }else if (typ.con == 'union'){
+            let ts = type_size(typ.elt[0]);
+            for (let i = 1; i < typ.elt.length; i++){
+              ts = `(((${type_size(typ.elt[i])})>(${ts}))?(${type_size(typ.elt[i])}):(${ts}))`;
+            }
+            o.push(`${nom} = __gc_alloc(VART_UON,sizeof(__union_t)+${ts});`);
+            o.push(`${nom}->sel = -1;`);
+            o.push(`__put_var(${varcnt++},${nom});`);
           }
-          o.push(`${nom} = __gc_alloc(VART_UON,sizeof(__union_t)+${ts});`);
-          o.push(`${nom}->sel = -1;`);
-          o.push(`__put_var(${varcnt++},${nom});`);
         }
       }else if (ins[0] == 'alloc'){
         let nom = clean(ins[1]);

@@ -886,20 +886,28 @@ var PARSER = function(sys,extensions={}){
                 xst.val.forEach(x=>cst.val.push(x));
                 ok = 1;
               }else{
-                let pth = sys.path.join(urpth,"header.dh");
-                // let pth2 = sys.path.join(urpth,"dynamic.so");
-                let _ = reader(pth);
-                let rpath = sys.path.relative(sys.process.cwd(), urpth);
-                rpath = sys.path.resolve(rpath);
-                stmt.val.val = '"'+rpath.replace(/\\/g,'/')+'"'
-                cst.val.push(stmt);
-                let hdpth = pth;
-                let tks = tokenize(sys.path.resolve(hdpth));
-                let xst = parse(tks);
-                xst.val.forEach(x=>cst.val.push(x));
-                ok = 1;
+                try{
+                  let pth = sys.path.join(urpth,"header.dh");
+                  // let pth2 = sys.path.join(urpth,"dynamic.so");
+                  let _ = reader(pth);
+                  let rpath = sys.path.relative(sys.process.cwd(), urpth);
+                  rpath = sys.path.resolve(rpath);
+                  stmt.val.val = '"'+rpath.replace(/\\/g,'/')+'"'
+                  cst.val.push(stmt);
+                  let hdpth = pth;
+                  let tks = tokenize(sys.path.resolve(hdpth));
+                  let xst = parse(tks);
+                  xst.val.forEach(x=>cst.val.push(x));
+                  ok = 1;
+                }catch(e){
+                  let pth = sys.path.join(urpth,"index.dh");
+                  let _ = reader(pth);
+                  let tks = tokenize(sys.path.resolve(pth));
+                  let xst = parse(tks);
+                  xst.val.forEach(x=>cst.val.push(x));
+                  ok = 1;
+                }
               }
-              
               break;
             }catch(e){
               // console.log(e)

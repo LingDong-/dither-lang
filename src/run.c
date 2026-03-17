@@ -13,11 +13,14 @@ int main(int argc, char** argv){
   char* pth_inp = NULL;
   char* pth_map = NULL;
   char* pth_tcp = NULL;
+  int do_step = 0;
   for (int i = 1; i < argc; i++){
     if (strcmp(argv[i],"--map")==0){
       pth_map = argv[++i];
     }else if (strcmp(argv[i],"--tcp")==0){
       pth_tcp = argv[++i];
+    }else if (strcmp(argv[i],"--step")==0){
+      do_step = 1;
     }else{
       pth_inp = argv[i];
     }
@@ -38,7 +41,61 @@ int main(int argc, char** argv){
     }
 
     fclose(fd);
-    execute(&instrs);
+
+    if (do_step){
+      map_t* frame = frame_start();
+      list_node_t* n = instrs.head;
+      list_node_t* bp = NULL;
+      while (n){
+        char cmd[64];
+        printf(">");
+        fflush(stdout);
+        fgets(cmd, sizeof(cmd), stdin);
+        cmd[strcspn(cmd, "\r\n")] = 0;
+        if (cmd[0] == 0 || !strncmp(cmd,"step",4)){
+          int cnt = 1;
+          if (cmd[0] && cmd[4]==' '){
+            cnt = atoi(cmd+5);
+          }
+          for (int i = 0; i < cnt; i++){
+            print_instr((instr_t*)(n->data));
+            n = execute_instr(n);
+            if (!n || n == bp){
+              break;
+            }
+          }
+        }else if (!strcmp(cmd,"go")){
+          while (n){
+            n = execute_instr(n);
+            if (n == bp){
+              break;
+            }
+          }
+        }else if (!strcmp(cmd,"dump")){
+          print_vars();
+        }else if (!strcmp(cmd,"list")){
+          list_node_t* nn = instrs.head;
+          while (nn){
+            instr_t* ins = (instr_t*)nn->data;
+            printf("%lx ",((uintptr_t)nn) );
+            print_instr(ins);
+            nn = nn->next;
+          }
+        }else if (!strncmp(cmd,"break ",6)){
+          bp = (list_node_t *)(uintptr_t)strtoull(cmd+6,NULL,16);
+        }else if (!strcmp(cmd,"peek")){
+          print_instr((instr_t*)(n->data));
+        }
+      }
+      frame = frame_end();
+      if (!(_G->flags & GFLG_NOGC)){
+        gc_run();
+      }
+
+    }else{
+      execute(&instrs);
+    }
+
   }else{
     int npth = strlen(pth_tcp);
     char* host = strdup(pth_tcp);
