@@ -48,7 +48,7 @@ int main(int argc, char** argv){
       list_node_t* bp = NULL;
       while (n){
         char cmd[64];
-        printf(">");
+        printf("\x1b[94mdbg>\x1b[0m");
         fflush(stdout);
         fgets(cmd, sizeof(cmd), stdin);
         cmd[strcspn(cmd, "\r\n")] = 0;
@@ -58,7 +58,7 @@ int main(int argc, char** argv){
             cnt = atoi(cmd+5);
           }
           for (int i = 0; i < cnt; i++){
-            print_instr((instr_t*)(n->data));
+            // print_instr((instr_t*)(n->data));
             n = execute_instr(n);
             if (!n || n == bp){
               break;
@@ -84,6 +84,7 @@ int main(int argc, char** argv){
         }else if (!strncmp(cmd,"break ",6)){
           bp = (list_node_t *)(uintptr_t)strtoull(cmd+6,NULL,16);
         }else if (!strcmp(cmd,"peek")){
+          printf("%lx ",((uintptr_t)n) );
           print_instr((instr_t*)(n->data));
         }
       }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+  <meta charset="utf-8"/>
 <head>
   <title>Sketchpad</title>
   <style>
@@ -7,19 +8,100 @@
       height:100%;
       overflow:hidden;
     }
+    ::-webkit-scrollbar {
+      width: 6px; 
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.3);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.3) transparent;
+    }
     .bigbtn{
       display: inline-block; 
       width: 24px; 
       height: 24px; 
       text-align: center; 
-      background: #444;
+      background: #555;
       margin: 3px;
       margin-right: 0px;
       cursor: pointer;
       border-radius: 2px;
+      position: relative;
+      z-index: 100000;
     }
     .bigbtn:hover{
-      background: #555;
+      background: #888;
+    }
+    .tooltip {
+      color:#AAA;
+      position: absolute;
+      z-index: 10000;
+      left: 50%;
+      top: 100%;
+      padding: 2px;
+      margin-left: 2px;
+      font-family: sans-serif;
+      background: rgba(0,0,0,.5);
+      font-size: 12px;
+      border: 1px solid #555;
+      border-radius: 2px;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .bigbtn:hover .tooltip {
+      opacity: 1;
+    }
+    .dbg-hl {
+      background: rgba(0,255,255,0.2);
+    }
+    .dbg-hhl {
+      background: rgba(0,255,255,0.3);
+    }
+    .bp-hl {
+      border: 1px solid orchid;
+      border-top:none;
+    }
+    .bp-marker {
+      position: absolute;
+      right: 0px;
+      top: 0.5px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+    }
+    .bp-marker::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: orchid;
+      border-radius: 50%;
+    }
+    .bp-overline {
+      position: relative;
+    }
+    .bp-overline::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      border-top: 1px solid orchid;
+    }
+    .log{
+      overflow:scroll;font-family:monospace;white-space:nowrap;
+      background-color: #252627!important;
+      color: #f8f8f8 !important;
+      filter: saturate(80%) hue-rotate(10deg);
     }
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
@@ -46,18 +128,120 @@
     .cm-s-theme span.cm-bracket { color: #ccc; }
     .cm-s-theme .CodeMirror-activeline-background { background: rgba(255,255,255,0.1); }
     .cm-s-theme .CodeMirror-matchingbracket { text-decoration: underline; color: white !important; }
+    .CodeMirror-hints {
+      position: absolute;
+      z-index: 10;
+      overflow: hidden;
+      list-style: none;
+      margin: 0;
+      padding: 2px;
+      -webkit-box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+      -moz-box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+      box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+      border-radius: 3px;
+      border: 1px solid #666;
+      background: white;
+      font-size: 90%;
+      font-family: monospace;
+      max-height: 20em;
+      overflow-y: auto;
+      background: #333;
+    }
+    .CodeMirror-hint {
+      margin: 0;
+      padding: 0 4px;
+      border-radius: 2px;
+      white-space: pre;
+      color: white;
+      background:#333;
+      cursor: pointer;
+    }
+    li.CodeMirror-hint-active {
+      background: #6D8A88;
+      color: white;
+    }
+      /* The lint marker gutter */
+    .CodeMirror-lint-markers {
+      width: 0px;
+    }
+    .CodeMirror-lint-tooltip {
+      background-color: #ffd;
+      border: 1px solid black;
+      border-radius: 4px 4px 4px 4px;
+      color: black;
+      font-family: monospace;
+      font-size: 9pt;
+      overflow: hidden;
+      padding: 2px 5px;
+      position: fixed;
+      white-space: pre;
+      white-space: pre-wrap;
+      z-index: 100;
+      max-width: 600px;
+      opacity: 0;
+      transition: opacity .4s;
+      -moz-transition: opacity .4s;
+      -webkit-transition: opacity .4s;
+      -o-transition: opacity .4s;
+      -ms-transition: opacity .4s;
+    }
+    .CodeMirror-lint-mark {
+      background-position: left bottom;
+      background-repeat: repeat-x;
+    }
+    .CodeMirror-lint-mark-warning {
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJFhQXEbhTg7YAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAMklEQVQI12NkgIIvJ3QXMjAwdDN+OaEbysDA4MPAwNDNwMCwiOHLCd1zX07o6kBVGQEAKBANtobskNMAAAAASUVORK5CYII=");
+    }
+    .CodeMirror-lint-mark-error {
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==");
+    }
+    .CodeMirror-lint-marker {
+      background-position: center center;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      display: inline-block;
+      height: 16px;
+      width: 16px;
+      vertical-align: middle;
+      position: relative;
+    }
+    .CodeMirror-lint-message {
+      padding-left: 18px;
+      background-position: top left;
+      background-repeat: no-repeat;
+    }
+    .CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning {
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAANlBMVEX/uwDvrwD/uwD/uwD/uwD/uwD/uwD/uwD/uwD6twD/uwAAAADurwD2tQD7uAD+ugAAAAD/uwDhmeTRAAAADHRSTlMJ8mN1EYcbmiixgACm7WbuAAAAVklEQVR42n3PUQqAIBBFUU1LLc3u/jdbOJoW1P08DA9Gba8+YWJ6gNJoNYIBzAA2chBth5kLmG9YUoG0NHAUwFXwO9LuBQL1giCQb8gC9Oro2vp5rncCIY8L8uEx5ZkAAAAASUVORK5CYII=");
+    }
+    .CodeMirror-lint-marker-error, .CodeMirror-lint-message-error {
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEW7AAC7AACxAAC7AAC7AAAAAAC4AAC5AAD///+7AAAUdclpAAAABnRSTlMXnORSiwCK0ZKSAAAATUlEQVR42mWPOQ7AQAgDuQLx/z8csYRmPRIFIwRGnosRrpamvkKi0FTIiMASR3hhKW+hAN6/tIWhu9PDWiTGNEkTtIOucA5Oyr9ckPgAWm0GPBog6v4AAAAASUVORK5CYII=");
+    }
+    .CodeMirror-lint-marker-multiple {
+      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAMAAADzjKfhAAAACVBMVEUAAAAAAAC/v7914kyHAAAAAXRSTlMAQObYZgAAACNJREFUeNo1ioEJAAAIwmz/H90iFFSGJgFMe3gaLZ0od+9/AQZ0ADosbYraAAAAAElFTkSuQmCC");
+      background-repeat: no-repeat;
+      background-position: right bottom;
+      width: 100%; height: 100%;
+    }
+    .CodeMirror-lint-line-error {
+      background-color: rgba(183, 76, 81, 0.08);
+    }
+    .CodeMirror-lint-line-warning {
+      background-color: rgba(255, 211, 0, 0.1);
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/simple.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/lint/lint.min.js"></script>
   <style>.CodeMirror { height: 100%; }</style>
 </head>
 
   <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
-    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:hidden">
+    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:visible;user-select: none;">
       
-      <div class="bigbtn" id="btn-compile">
+      <div class="bigbtn" id="btn-compile" style="display: none;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
           <g fill="#111">
             <rect x="8" y="3" width="8" height="4"  />
@@ -67,33 +251,87 @@
             <polygon points="16,3 22,7, 22,10, 16,7"/>
           </g>
         </svg>
+        <div class="tooltip">Compile</div>
       </div>
     
-      <div class="bigbtn" id="btn-rundbg">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
-          <polygon points="5,4 21,12 5,20" fill="none" stroke="#111" stroke-dasharray="4 2" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-      </div>
-
       <div class="bigbtn" id="btn-run">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
           <polygon points="5,4 21,12 5,20" fill="#111"/>
         </svg>
+        <div class="tooltip tooltip-a">Run</div>
+        <div class="tooltip tooltip-b" style="display:none">Start Debugger Session</div>
       </div>
 
       <div class="bigbtn" id="btn-stop">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
           <rect x="6" y="6" width="12" height="12" fill="#111"/>
         </svg>
+        <div class="tooltip tooltip-a">Stop</div>
+        <div class="tooltip tooltip-b" style="display:none">Exit Debugger Session</div>
       </div>
 
-      <select id="sel-eg" class="bigbtn" style="display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
-        
+      <select id="sel-mode" class="bigbtn" style="display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
+        <option value="vm">Interpreter</option>
+        <option value="dbg">Debugger</option>
+        <option value="c">Compiler → C</option>
+        <option value="html">Compiler → JS</option>
       </select>
-
+      <span id="mb-dbg" style="display: none;">
+        <div class="bigbtn" id="btn-step">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+            <g fill="#111">
+              <polygon points="5,4 17,12 5,20"/>
+              <rect x="16" y="4" width="3" height="16"/>
+            </g>
+          </svg>
+          <div class="tooltip">Step</div>
+        </div>
+        <div class="bigbtn" id="btn-faststep">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+            <g fill="#111">
+              <polygon points="5,4 13,12 5,20" />
+              <polygon points="11,4 19,12 11,20" />
+              <rect x="17" y="4" width="2.5" height="16"/>
+            </g>
+          </svg>
+          <div class="tooltip">Continuous Step</div>
+        </div>
+        <div class="bigbtn" id="btn-break">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+            <g stroke="#111" fill="none" stroke-width="2.5">
+              <circle cx="12" cy="12" r="8"/>
+              <line x1="10" y1="8" x2="10" y2="16"/>
+              <line x1="14" y1="8" x2="14" y2="16"/>
+            </g>
+          </svg>
+          <div class="tooltip">Toggle Breakpoint</div>
+        </div>
+        <div class="bigbtn" id="btn-continue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+            <g fill="#111">
+              <polygon points="5,4 15,12 5,20"/>
+              <polygon points="13,4 22,12 13,20" />
+            </g>
+          </svg>
+          <div class="tooltip">Run until Breakpoint</div>
+        </div>
+      </span>
+      <span id="mb-ddbg" style="display:none">
+        <div class="bigbtn" id="btn-pause">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+            <g fill="#111">
+              <rect x="5.5" y="5" width="5" height="14"/>
+              <rect x="13.5" y="5" width="5" height="14"/>
+            </g>
+          </svg>
+          <div class="tooltip">Pause</div>
+        </div>
+      </span>
     </div>
     <div id="cl" style="position:absolute;left:0px;top:30px;width:100%;height:calc(75% - 34px);"></div>
-    <div id="cr" style="position:absolute;left:0px;top:75%;width:100%;height:25%;"></div>
+    <div id="cr" class="log" aria-hidden="true" role="none" style="position:absolute;left:0px;top:75%;width:100%;height:25%;"></div>
+    <div id="ci" class="log" style="display:none;position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(40% - 34px);"></div>
+    <div id="cv" class="log" style="display:none;position:absolute;left:calc(50% + 4px);top:40%;width:calc(50% - 4px);height:calc(35% - 4px)"></div>
   </body>
 
   <script>
@@ -107,6 +345,8 @@ if (process.env.PWD && fs.existsSync(process.env.PWD)) {
 }else{
   process.chdir("../../");
 }
+
+var API=JSON.parse(fs.readFileSync("doc/api.json").toString());
 
 eval(fs.readFileSync("src/parser.js").toString());
 eval(fs.readFileSync("src/embed_glsl.js").toString());
@@ -173,28 +413,49 @@ var CML = CodeMirror(document.getElementById("cl"), {
     "Tab": function(cm) {
       cm.replaceSelection("  ", "end");
     }
-  }
+  },
+  lint:true,
 });
 CML.setSize(null,null);
-
-let egs = fs.readdirSync("examples").filter(x=>x.endsWith(".dh"))
-for (let i = 0; i < egs.length; i++){
-  let opt = document.createElement("option");
-  opt.value = opt.innerHTML = egs[i];
-  document.getElementById("sel-eg").appendChild(opt);
+CML.setValue(`
+include "std/math"
+include "std/io"
+while (1){
+  for (i := 0; i < 80; i++){
+    io.print((math.random()<0.5) ? "/" : "\\\\");
+  }
+  io.print("\\n");
 }
-CML.setValue(fs.readFileSync("examples/"+egs[0]).toString())
-document.getElementById("sel-eg").onchange = function(){
-  CML.setValue(fs.readFileSync("examples/"+document.getElementById("sel-eg").value).toString())
+`)
+
+var CMR = document.getElementById("cr");
+var CMI = document.getElementById("ci");
+var CMV = document.getElementById("cv");
+
+document.getElementById("sel-mode").onchange = function(){
+  if (document.getElementById("sel-mode").value == "dbg"){
+    document.getElementById("mb-dbg").style.display = "inline-block";
+    document.getElementById("mb-ddbg").style.display = "inline-block";
+    Array.from(document.getElementsByClassName("tooltip-a")).map(x=>x.style.display="none")
+    Array.from(document.getElementsByClassName("tooltip-b")).map(x=>x.style.display="block")
+    CML.setSize("50%",null);
+    CMI.style.display="block";
+    CMV.style.display="block";
+  }else{
+    document.getElementById("mb-dbg").style.display = "none";
+    document.getElementById("mb-ddbg").style.display = "none";
+    Array.from(document.getElementsByClassName("tooltip-a")).map(x=>x.style.display="block")
+    Array.from(document.getElementsByClassName("tooltip-b")).map(x=>x.style.display="none")
+    CML.setSize("100%",null);
+    CMI.style.display="none";
+    CMV.style.display="none";
+  }
 }
 
-var CMR = CodeMirror(document.getElementById("cr"), {
-  theme:"theme",
-  mode:  "dsm",
-});
+let extensions = {fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync}
 
 document.getElementById("btn-compile").onclick = function(){
-  CMR.setValue("");
+  CMR.innerHTML = "";
 
   let pro = Object.assign({},process);
   pro = Object.assign(pro,{
@@ -202,12 +463,16 @@ document.getElementById("btn-compile").onclick = function(){
       throw 'up';
     }
   });
-  let parser = new PARSER({fs,path,process:pro,search_paths:['']},{fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync});
+  let parser = new PARSER({fs,path,process:pro,search_paths:['']},extensions);
 
   fs.writeFileSync("/tmp/source.dh",CML.getValue());
   
   let olderror = console.error;
-  console.error=(x)=>CMR.replaceRange(x+'\n', CodeMirror.Pos(CMR.lastLine()))
+  console.error=(x)=>{
+    let div = document.createElement("div");
+    div.innerHTML = x;
+    CMR.appendChild(div);
+  }
   
   let bad = 0;
   try{
@@ -227,7 +492,7 @@ document.getElementById("btn-compile").onclick = function(){
 
     fs.writeFileSync("build/ir.dsm",irlo);
 
-    CMR.setValue(irlo);
+    CMR.innerHTML = irlo;
   }catch(e){
     bad = 1;
   }
@@ -236,6 +501,32 @@ document.getElementById("btn-compile").onclick = function(){
 }
 
 let childProcess = null;
+let popupWindow = null;
+
+function putmsg(txt){
+  let div = document.createElement("div");
+  div.innerHTML = `[editor] ${txt}\n`;
+  CMR.appendChild(div);
+  // div.scrollIntoView();
+  CMR.scrollTop = CMR.scrollHeight; 
+}
+function putout(txt){
+  let ps = txt.split('\n');
+  for (let i = 0; i < ps.length; i++){
+    let span;
+    if (ps[i].length){
+      span = document.createElement("span");
+      span.innerHTML = ps[i];
+      CMR.appendChild(span);
+    }
+    if (i == ps.length-1){
+      // if (span) span.scrollIntoView();
+      CMR.scrollTop = CMR.scrollHeight; 
+    }else{
+      CMR.appendChild(document.createElement("br"));
+    }
+  }
+}
 
 function runbin(pth, args=[]){
   if (childProcess){
@@ -244,51 +535,598 @@ function runbin(pth, args=[]){
   }
   let firsttime = 1;
   
-  childProcess = child_process.spawn(pth, args, {env: { ...process.env, DITHER_ROOT:"."}});
+  putmsg(`invoking subprocess...`);
+
+  let buf = "";
+  childProcess = child_process.spawn(pth, args, {env: { ...process.env}});
   childProcess.stdout.on('data', (data) => {
     if (firsttime){
-      CMR.setValue("");
       firsttime = 0;
     }
     let txt = data.toString();
     // txt = txt.replace(/\x1B/g, '$@$');
     txt = txt.replace(/\x1B\[[0-9;]*[mK]/g, '');
     txt = txt.replace(/\0/g, '');
-    CMR.replaceRange(txt, CodeMirror.Pos(CMR.lastLine()));
-    CMR.scrollTo(null, CMR.getScrollInfo().height);
+
+    putout(txt);
+
+    buf += txt;
+    if (buf.includes(`[info] serving `)){
+      let addr = buf.match(/http:\/\/localhost:\d\d\d\d/g)[0];
+      buf = "";
+      if (addr){
+        if (popupWindow && !popupWindow.closed){  
+        }else{
+          popupWindow = window.open(addr);
+        }
+        popupWindow.location.href = addr;
+        popupWindow.focus();
+      }
+    }
   });
   childProcess.stderr.on('data', (data) => {
     console.error(`stderr: ${data.toString()}`);
   });
-  childProcess.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
+  childProcess.on('close', (code, signal) => {
+    let reason = `code ${code}`;
+    if (code === null){
+      reason = `signal ${signal}`;
+    }
+    putmsg(`subprocess exited with ${reason}.`);
+    childProcess = null;
   });
 }
 
-document.getElementById("btn-rundbg").onclick = function(){
-  document.getElementById("btn-stop").onclick()
+let dbgready = 0;
+let curinsmap = {};
+let prvhline = -1;
+let prvmark = null;
+let dbgsigpause = 0;
+let bp_widget = null;
+let bp_mark = null;
+let bp_line = -1;
+let bp_addr = null;
 
-  if (!document.getElementById("btn-compile").onclick()){
-    runbin('build/vm_dbg',['build/ir.dsm'])
+function set_mb_dbg(){
+  if (dbgready == 1){
+    document.getElementById("mb-dbg").style.opacity = 1;
+    document.getElementById("mb-dbg").style.pointerEvents = "auto";
+  }else{
+    document.getElementById("mb-dbg").style.opacity = 0.333;
+    document.getElementById("mb-dbg").style.pointerEvents = "none";
+  }
+  if (dbgready == 20 || dbgready == 21 || dbgready == 22){
+    document.getElementById("mb-ddbg").style.opacity = 1;
+    document.getElementById("mb-ddbg").style.pointerEvents = "auto";
+  }else{
+    document.getElementById("mb-ddbg").style.opacity = 0.333;
+    document.getElementById("mb-ddbg").style.pointerEvents = "none";
+  }
+}
+set_mb_dbg();
+
+function parse_ins_print(txt){
+  txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
+  // txt = txt.replace(/\x1b\[[0-9;]*[mK]/g, '');
+  txt = txt.replace(/\0/g, '');
+  let lines = txt.split("\n");
+  for (let i = lines.length-1; i > 0; i--){
+    // let re = /[a-f0-9]{1,16} \(\d+:\d+\)\t.*/gm;
+    let re = /[a-f0-9]{1,16} \x1b\[2m\(\d+:\d+\)\x1b\[0m\t.*/gm;
+    if (re.test(lines[i])){
+      continue;
+    }else{
+      lines[i-1] += '\n'+lines[i];
+      lines.splice(i,1);
+    }
+  }
+  let out = {};
+  for (let i = 0; i < lines.length; i++){
+    let words = lines[i].split(' ');
+    let addr = words[0];
+    let loc = words[1].split(')')[0].split('(')[1].split(':').map(x=>Number(x));
+    let ins = lines[i].split('\t').slice(1)//.filter(x=>x.length);
+    ins = ins.map(ansi_color);
+    out[addr] = [loc,ins];
+  }
+  return out;
+}
+
+function ansi_color(txt){
+  let cmap = {
+    "2" : "#777",
+    "31": "#d66",//red
+    "32": "#ded",//green
+    "33": "#ffb",//yellow
+    "34": "#1bf",//blue
+    "35": "#b9f",//magenta
+    "36": "#6fdfcf",//cyan
+  }
+  let state = 0;
+  txt = txt.replace(/\x1b\[(\d+)m/g, function(m,n){
+    let o = `<span style="color:${cmap[n]}">`;
+    if (n == "0"){
+      return `</span>`;
+      state = 0;
+    }else if (state == 0){
+      state = 1;
+      return o;
+    }else{
+      return `</span>`+o;
+    }
+  });
+  if (state == 1){
+    txt += `</span>`;
+  }
+  return txt;
+}
+
+function parse_vars_print(txt){
+  txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
+  txt = txt.replace(/\x1b\[[0-9;]*[mK]/g, '');
+  // txt = txt.replace(/\n/g, '</td></tr><tr><td>');
+  // txt = txt.replace(/\t/g, '</td><td>');
+  // txt = `<table><tr><td>`+txt+`</td></tr></table>`
+  let splits = [
+    "===============BEGIN===============",
+    "================END================",
+    "-----------------------------------"
+  ]
+  let lines = txt.split('\n').filter(x=>x.length);
+  let hd = `<table style="font-size:12px;width:100%;border:1px solid #999;${lines.length?"border-collapse:collapse;":""}">`;
+  let out = `<div style="font-size:12px;font-weight:bold;color:#999">VARIABLES</div>`+hd;
+  
+  for (let i = lines.length-1; i > 0; i--){
+    if (splits.includes(lines[i]) || lines[i].split('\t').length >= 4){
+      continue;
+    }else{
+      lines[i-1] += '\n'+lines[i];
+      lines.splice(i,1);
+    }
+  }
+  for (let i = 0; i < lines.length; i++){
+    if (splits.includes(lines[i])){
+      if (lines[i] == splits[2]){
+        out += `</table>`+`<div style="font-size:12px;font-weight:bold;color:#999">FRAME BOUNDARY</div>`+hd;
+      }
+      continue;
+    }
+    let cells = lines[i].split('\t');
+    out += `<tr>`;
+    out += `<td style="color:#ded;border:1px solid #999">${cells[0]}</td>`;
+    out += `<td style="color:#1bf;border:1px solid #999">${cells[1]}</td>`;
+    out += `<td style="color:#b9f;border:1px solid #999">${cells.slice(3).join('\t')}</td>`;
+    out += `</tr>`;
+  }
+  out += `</table>`;
+  CMV.innerHTML = out;
+  CMV.scrollTop = CMV.scrollHeight; 
+}
+
+function unmark_bp(){
+  if (bp_line != -1){
+    CML.removeLineClass(bp_line, "wrap", "bp-overline")
+    bp_line = -1;
+  }
+  if (bp_widget) {
+    bp_widget.clear();
+    bp_widget = null;
+  }
+  if (bp_mark) {
+    bp_mark.clear();
+    bp_mark = null;
   }
 }
 
-document.getElementById("btn-run").onclick = function(){
-  document.getElementById("btn-stop").onclick()
+function mark_bp({line,ch}) {
+  unmark_bp();
+  const el = document.createElement("div");
+  el.className = "bp-marker";
+  bp_widget = CML.addLineWidget(line, el, {
+    above: true,
+    noHScroll: true,
+    coverGutter: false
+  });
+  bp_mark = CML.markText({line,ch}, {line,ch:ch+1}, {
+    className: "bp-hl"
+  });
+  bp_line = line;
+  CML.addLineClass(line, "wrap", "bp-overline")
+}
 
-  if (!document.getElementById("btn-compile").onclick()){
-    runbin('build/vm',['build/ir.dsm'])
+function clean_dbg_hl(){
+  if (prvhline != -1){
+    CML.removeLineClass(prvhline, "background", "dbg-hl");
+    prvhline = -1;
+  }
+  if (prvmark !== null){
+    prvmark.clear();
+    prvmark = null;
+  }
+}
+
+function render_ins(){
+  let out = `<table>`;
+  for (let k in curinsmap){
+    let loc = curinsmap[k][0];
+    out += `<tr id="${k}" style="${loc[0]?"opacity:0.5":""}">`;
+    for (let i = 0; i < curinsmap[k][1].length; i++){
+      let a = curinsmap[k][1][i];
+      out += `<td colspan="${Math.ceil(a.replace(/<[^>]+>/g, '').length/8)}" style="${(i==0)?"color:#f6a":""}">${a}</td>`;
+    }
+    out += `</tr>`;
+  }
+  out += `</table>`;
+  CMI.innerHTML = out;
+}
+
+let prvinstr = null;
+function hl_ins(addr){
+  if (prvinstr){
+    prvinstr.classList.remove("dbg-hl");
+    prvinstr = null;
+  }
+  let tr = document.getElementById(addr);
+  tr.classList.add("dbg-hl");
+  tr.scrollIntoView();
+  prvinstr = tr;
+}
+function unhl_ins(){
+  if (prvinstr){
+    prvinstr.classList.remove("dbg-hl");
+    prvinstr = null;
+  }
+}
+
+function rundbg(pth, args=[]){
+  dbgready = 10;
+  set_mb_dbg();
+
+  let firsttime = 1;
+  putmsg(`invoking subprocess...`);
+
+  childProcess = child_process.spawn(pth, args, {
+    env: { ...process.env},
+    stdio: 'pipe'
+  });
+  let buf = "";
+  childProcess.stdout.on('data', (data)=>{
+    let txt = data.toString();
+    buf += txt;
+    console.log(txt);
+    if (dbgready == 20 || dbgready == 30 || dbgready == 0){
+      txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
+      putout(txt);
+    }
+
+    if (buf.includes('\x1b[94mdbg>\x1b[0m')){
+      if (dbgready == 10){
+        childProcess.stdin.write("list\n");
+        dbgready = 11;
+      }else if (dbgready == 11){
+        // console.log(buf);
+        curinsmap = parse_ins_print(buf);
+        // console.log(curinsmap);
+        render_ins();
+        parse_vars_print("");
+        childProcess.stdin.write("peek\n");
+        dbgready = 32;
+      }else if (dbgready == 20 || dbgready == 30){
+        childProcess.stdin.write("dump\n");
+        dbgready ++;
+      }else if (dbgready == 21 || dbgready == 31){
+        parse_vars_print(buf);
+        childProcess.stdin.write("peek\n");
+        dbgready ++;
+      }else if (dbgready == 22 || dbgready == 32){
+        // console.log(buf);
+        let im = parse_ins_print(buf);
+        let loc = Object.values(im)[0][0];
+        let addr = Object.keys(im)[0];
+        if (loc[0] == 0){
+          let {line,ch} = CML.posFromIndex(loc[1]);
+          hl_ins(addr);
+          clean_dbg_hl();
+          CML.addLineClass(line,"background","dbg-hl");
+          prvmark = CML.markText({line,ch}, {line,ch:ch+1}, {
+            className: "dbg-hhl"
+          });
+          CML.scrollIntoView({line,ch});
+          prvhline = line;
+          if (dbgready == 22){
+            if (dbgsigpause == 1){
+              dbgsigpause = 0;
+              dbgready = 1;
+            }else{
+              if (addr == bp_addr){
+                dbgready = 1;
+              }else{
+                childProcess.stdin.write("step\n");
+                dbgready = 20;
+              }
+            }
+          }else{
+            dbgready = 1;
+            if (firsttime){
+              firsttime = 0;
+              putmsg(`debugger session ready.`);
+            }
+          }
+        }else{
+          childProcess.stdin.write("step\n");
+          dbgready-=2;
+        }
+        
+      }else if (dbgready == 0){
+        dbgready = 1;
+      }
+
+      buf = "";
+      set_mb_dbg();
+    }
+  })
+  childProcess.on('close', (code, signal) => {
+    let reason = `code ${code}`;
+    if (code === null){
+      reason = `signal ${signal}`;
+    }
+    putmsg(`subprocess exited with ${reason}.`);
+    clean_dbg_hl();
+    unmark_bp();
+    unhl_ins();
+    dbgready = 0;
+    set_mb_dbg();
+    bp_addr = 0;
+    childProcess = null;
+  });
+}
+
+document.getElementById("btn-step").onclick = function(){
+  childProcess.stdin.write("step\n");
+  dbgready = 30;
+}
+document.getElementById("btn-faststep").onclick = function(){
+  childProcess.stdin.write("step\n");
+  dbgready = 20;
+}
+document.getElementById("btn-continue").onclick = function(){
+  childProcess.stdin.write("go\n");
+  dbgready = 30;
+  set_mb_dbg();
+  clean_dbg_hl();
+}
+document.getElementById("btn-pause").onclick = function(){
+  dbgsigpause = 1;
+}
+
+document.getElementById("btn-break").onclick = function(){
+  if (bp_addr){
+    unmark_bp();
+    childProcess.stdin.write(`break 0\n`);
+    putmsg(`breakpoint removed.`);
+    bp_addr = null;
+    dbgready = 0;
+    return;
+  }
+  let {line,ch} = CML.getCursor();
+  let idx = CML.indexFromPos({line,ch});
+  let md = Infinity;
+  let addr = null;
+  let bidx = null;
+  for (let k in curinsmap){
+    let loc = curinsmap[k][0];
+    if (loc[0] != 0) continue;
+    let d = Math.abs(loc[1]-idx);
+    if (d < md){
+      md = d;
+      bidx = loc[1];
+      addr = k;
+    }
+  }
+  if (addr == null){
+    putmsg(`breakpoint insertion failed.`);
+    dbgready = 0;
+    return;
+  }
+  mark_bp(CML.posFromIndex(bidx));
+  childProcess.stdin.write(`break ${addr}\n`);
+  putmsg(`breakpoint inserted.`);
+  dbgready = 0;
+  bp_addr = addr;
+}
+
+document.getElementById("btn-run").onclick = function(){
+  document.getElementById("btn-stop").onclick();
+  fs.writeFileSync("/tmp/source.dh",CML.getValue());
+  let mode = document.getElementById("sel-mode").value;
+  CMR.innerHTML = "";
+  if (mode == 'dbg'){
+    rundbg('build/dither',['-xvt',mode,'/tmp/source.dh']);
+  }else{
+    runbin('build/dither',['-xvt',mode,'/tmp/source.dh']);
   }
 }
 
 document.getElementById("btn-stop").onclick = function(){
+  clean_dbg_hl();
   if (childProcess){
+    childProcess.stdout.removeAllListeners('data');
+    childProcess.stdout.destroy();
     childProcess.kill('SIGKILL');
     childProcess = null;
   }
 }
 
-  </script>
-  
+
+CodeMirror.registerHelper("lint", "dither", function(str, options) {
+  let found = [];
+
+  let pro = Object.assign({},process);
+  pro = Object.assign(pro,{
+    exit: function(){
+      throw 'up';
+    }
+  });
+  let parser = new PARSER({fs,path,process:pro,search_paths:['']},extensions);
+
+  fs.writeFileSync("/tmp/lint.dh",CML.getValue());
+
+  let olderror = console.error;
+  let eidx = 0;
+  console.error = function(s){
+    if (!eidx){
+      let [err,loc] = s.split(` at file "/tmp/lint.dh" line `);
+      if (err.length && loc.length){
+        if (err.includes(`error] `)){
+          err = err.split('error] ').slice(1).join('error] ');
+        }
+        let [ln,col] = loc.split(" column ").map(x=>Number(x));
+        found.push({
+          from: CodeMirror.Pos(ln-1,col-1),
+          to: CodeMirror.Pos(ln-1,col+80),
+          message: err,
+          severity : "error"
+        });
+      }
+    }
+    eidx = (eidx+1)%3;
+  }
+  try{
+    let toks = parser.tokenize("/tmp/lint.dh");
+    let cst = parser.parse(toks);
+    let ast = parser.abstract(cst);
+    let scopes = parser.infertypes(ast);
+  }catch(e){
+    
+  }
+  console.error = olderror;
+  return found;
+});
+
+function get_completions(prefix, before){
+  // console.log(prefix,"|",before);
+  let list = [];
+  for (let k in API){
+    let nmsp = k.split('-')[0];
+    let name = k.split('-').slice(1).join('.');
+    let tem;
+    let sig;
+    let com=nmsp;
+    if (name){
+      [name,tem,sig] = name.split(':');
+      com += "."+name;
+    }
+    let arg;
+    if (sig){
+      sig = sig.replace(/\(/g,'[')
+      sig = sig.replace(/\)/g,']')
+      tem = tem.split("*");
+      arg = sig.split("*");
+    }
+    let doc = `<i>`+API[k][0]+`</i>`;
+    if (arg && arg.length){
+      doc += `<table style="font-size: 13px; color:white">`;
+      for (let i = 0; i < arg.length; i++){
+        doc += `<tr style="vertical-align: top;"><td style="vertical-align: top;min-width:50px;color:#1bf;font-family:monospace">${arg[i]}</td><td style="vertical-align: top;">${API[k][1+i]}</td></tr>`
+      }
+      if (API[k][arg.length+1]){
+        doc += `<tr style="vertical-align: top;"><td style="vertical-align: top;min-width:50px;color:#aaa;font-family:monospace">returns</td><td style="vertical-align: top;">${API[k].at(-1)}</td></tr>`
+      }
+      doc += `</table>`;
+    }
+    if (prefix.startsWith('.') && name){
+      if (before.endsWith(nmsp) && name.startsWith(prefix.slice(1))){
+        list.push({text:'.'+name, displayText:name, doc});
+      }
+    }else if (nmsp.startsWith(prefix) && prefix.length > 0){
+      list.push({text:com, displayText:com, doc});
+    }
+  }
+  return list;
+}
+
+CodeMirror.registerHelper("hint", "dither", function(cm) {
+  const cursor = cm.getCursor();
+  const token = cm.getTokenAt(cursor);
+  const line = cm.getLine(cursor.line);
+  const before = line.slice(0, cursor.ch);
+  let prefix = token.string.trim();
+  let from = CodeMirror.Pos(cursor.line, token.start);
+  let to   = CodeMirror.Pos(cursor.line, cursor.ch);
+  let list = get_completions(prefix,before.slice(0,-prefix.length));
+  return { list, from, to };
+});
+
+CML.on("inputRead", function(cm, change) {
+  if (!cm.state.completionActive && change.text[0]) {
+    trigger_completion(cm);
+  }
+});
+
+let docBox = null;
+let docAnimationFrame = null;
+function trigger_completion(cm) {
+  cm.showHint({ hint: CodeMirror.hint.dither, completeSingle:false });
+  if (!docBox) {
+    docBox = document.createElement("div");
+    docBox.style = `
+      position: absolute;
+      padding: 5px;
+      max-width: 300px;
+      border: 1px solid #666;
+      background: #333;
+      font-size: 13px;
+      color: white;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+      z-index: 3000;
+      font-family: sans-serif;
+      border-radius: 3px;
+    `;
+    document.body.appendChild(docBox);
+  }
+  function updateDoc() {
+    const widget = CML.state.completionActive;
+    if (!widget) {
+      if (docBox) docBox.style.display = "none";
+      docAnimationFrame = null;
+      return;
+    }
+    if (!widget.widget){
+      if (docBox) docBox.style.display = "none";
+      docAnimationFrame = requestAnimationFrame(updateDoc);
+      return;
+    }
+    const selectedIndex = widget.widget.selectedHint;
+    if (selectedIndex == null) return;
+    const hintData = widget.data.list[selectedIndex];
+    if (!hintData || !hintData.doc) {
+      docBox.style.display = "none";
+      return;
+    }
+    docBox.style.display = "block";
+    docBox.innerHTML = hintData.doc;
+    const rect = widget.widget.hints.getBoundingClientRect();
+    docBox.style.left = rect.right + 4 + "px";
+    docBox.style.top  = rect.top + "px";
+    docAnimationFrame = requestAnimationFrame(updateDoc);
+  }
+
+  if (!docAnimationFrame) updateDoc();
+  CML.on("endCompletion", function cleanup() {
+    if (docBox) {
+      docBox.remove();
+      docBox = null;
+    }
+    if (docAnimationFrame) {
+      cancelAnimationFrame(docAnimationFrame);
+      docAnimationFrame = null;
+    }
+    CML.off("endCompletion", cleanup);
+  });
+}
+
+
+</script>
+
 
 </html>

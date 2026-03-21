@@ -1,5 +1,6 @@
 const os = require('os');
 const _WIN32 = os.platform() == 'win32';
+const __APPLE__ = os.platform() == 'darwin';
 const fs = require('fs');
 const path = require('path');
 const { execSync,spawn } = require('child_process');
@@ -90,7 +91,7 @@ if (out_pth == null && !is_repl){
   if (!do_run){
     console.warn("[warning] no output file.");
   }
-  if (targ == 'vm'){
+  if (targ == 'vm' || targ == 'dbg'){
     out_pth = tmpth('out.dsm');
   }else if (targ == 'c'){
     out_pth = tmpth('out.c');
@@ -226,7 +227,7 @@ if (is_repl){
   let ansbuf = "";
   function ask(cb){
     let np = idx.toString().length;
-    let pr = '\x1b[34m'+(ansbuf.length?`${" ".repeat(np+4)}> `:`dh(${idx})> `)+'\x1b[0m';
+    let pr = '\x1b[94m'+(ansbuf.length?`${" ".repeat(np+4)}> `:`dh(${idx})> `)+'\x1b[0m';
     rl.question(pr,answer=>{
       if (answer.startsWith('$')){
         return cb(answer);
@@ -305,18 +306,19 @@ if (is_repl){
   fs.writeFileSync(map_pth,parser.writesrcmap(instrs));
   let irlo = ir+lo;
 
-  if (targ == 'vm'){
+  if (targ == 'vm' || targ == 'dbg'){
+    let step = (targ == 'dbg')?' --step ':'';
     fs.writeFileSync(out_pth,irlo);
     if (do_run){
       if (_WIN32){
         fs.writeFileSync(tmpth('vm.exe'), fs.readFileSync(__dirname+'\\..\\..\\build\\vm.exe'), { mode: 0o755 });
         if (verbose) console.log("[info] compiled, running...");
-        let cmd = `${tmpth('vm.exe')} ${out_pth} --map ${tmpth('ir.map')}`;
+        let cmd = `${tmpth('vm.exe')} ${out_pth} --map ${tmpth('ir.map')} ${step}`;
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }else{
         fs.writeFileSync(tmpth('vm'), fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
         if (verbose) console.log("[info] compiled, running...");
-        let cmd = `${tmpth('vm')} ${out_pth} --map ${tmpth('ir.map')}`;
+        let cmd = `${tmpth('vm')} ${out_pth} --map ${tmpth('ir.map')} ${step}`;
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }
     }
@@ -360,7 +362,11 @@ if (is_repl){
         let c = `cd ${tmpth()} && source config.env && eval $(head -n 1 "${out_pth}" | cut -c 3-) && echo $CFLAGS`
         let cflags = execSync(c).toString().replace(/\n/g,' ');
         fs.writeFileSync(tmpth('config.h'), fs.readFileSync(__dirname+'/../../build/config.h'), { mode: 0o755 });
-        let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${cflags} ${out_pth} -o ${tmpth('a.out')} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')}`;
+        let xattr = "";
+        if (__APPLE__){
+          xattr = ` && xattr -cr ${tmpth('a.out')} `;
+        }
+        let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${cflags} ${out_pth} -o ${tmpth('a.out')} ${xattr} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')}`;
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }
     }

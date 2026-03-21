@@ -64,8 +64,11 @@ run_c: build/config.h to_c
 	echo $$CFLAGS;\
 	gcc -include build/config.h -I. $(OPT) build/out.c $$CFLAGS -lm -o build/a.out && build/a.out;
 nwedit:
+	NWJS=../nwjs-sdk/nwjs.app;\
 	source config.env;\
-	../nwjs-sdk/nwjs.app/Contents/MacOS/nwjs editor/nw
+	/usr/libexec/PlistBuddy -c "Set :LSFileQuarantineEnabled false" "$$NWJS/Contents/Info.plist";\
+	trap '/usr/libexec/PlistBuddy -c "Set :LSFileQuarantineEnabled true" "$$NWJS/Contents/Info.plist"' EXIT;\
+	$$NWJS/Contents/MacOS/nwjs editor/nw
 gledit:
 	rm -rf /tmp/examples;\
 	cp -r examples /tmp/examples;\
