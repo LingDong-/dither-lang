@@ -8,9 +8,19 @@
       height:100%;
       overflow:hidden;
     }
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-block;
+      padding-left: 4px;
+      font-size:13px;
+      background: #555 url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23222'/%3E%3C/svg%3E") no-repeat right 8px center;
+      background-size: 10px 6px;
+      border-radius:  2px;
+    }
     ::-webkit-scrollbar {
-      width: 6px; 
-      height: 6px;
+      width: 8px; 
+      height: 8px;
     }
     ::-webkit-scrollbar-thumb {
       background: rgba(0,0,0,0.3);
@@ -18,6 +28,9 @@
     }
     ::-webkit-scrollbar-track {
       background: transparent;
+    }
+    ::-webkit-scrollbar-corner {
+      background: #252627;
     }
     * {
       scrollbar-width: thin;
@@ -43,10 +56,9 @@
       color:#AAA;
       position: absolute;
       z-index: 10000;
-      left: 50%;
+      left: 0%;
       top: 100%;
       padding: 2px;
-      margin-left: 2px;
       font-family: sans-serif;
       background: rgba(0,0,0,.5);
       font-size: 12px;
@@ -56,6 +68,7 @@
       pointer-events: none;
       white-space: nowrap;
       user-select: none;
+      -webkit-user-select: none;
     }
     .bigbtn:hover .tooltip {
       opacity: 1;
@@ -98,7 +111,8 @@
       border-top: 1px solid orchid;
     }
     .log{
-      overflow:scroll;font-family:monospace;white-space:nowrap;
+      overflow:scroll;white-space:nowrap;
+      font-family:Menlo, monospace; font-size:13px;
       background-color: #252627!important;
       color: #f8f8f8 !important;
       filter: saturate(80%) hue-rotate(10deg);
@@ -106,6 +120,12 @@
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
   <style>
+    .CodeMirror-scrollbar-filler{
+      background: #252627;
+    }
+    .CodeMirror{
+      font-family:Menlo, monospace; font-size:13px;
+    }
     .cm-s-theme.CodeMirror, .cm-s-theme .CodeMirror-gutters {
       background-color: #252627!important;
       color: #f8f8f8 !important;
@@ -160,86 +180,17 @@
       background: #6D8A88;
       color: white;
     }
-      /* The lint marker gutter */
-    .CodeMirror-lint-markers {
-      width: 0px;
-    }
-    .CodeMirror-lint-tooltip {
-      background-color: #ffd;
-      border: 1px solid black;
-      border-radius: 4px 4px 4px 4px;
-      color: black;
-      font-family: monospace;
-      font-size: 9pt;
-      overflow: hidden;
-      padding: 2px 5px;
-      position: fixed;
-      white-space: pre;
-      white-space: pre-wrap;
-      z-index: 100;
-      max-width: 600px;
-      opacity: 0;
-      transition: opacity .4s;
-      -moz-transition: opacity .4s;
-      -webkit-transition: opacity .4s;
-      -o-transition: opacity .4s;
-      -ms-transition: opacity .4s;
-    }
-    .CodeMirror-lint-mark {
-      background-position: left bottom;
-      background-repeat: repeat-x;
-    }
-    .CodeMirror-lint-mark-warning {
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJFhQXEbhTg7YAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAMklEQVQI12NkgIIvJ3QXMjAwdDN+OaEbysDA4MPAwNDNwMCwiOHLCd1zX07o6kBVGQEAKBANtobskNMAAAAASUVORK5CYII=");
-    }
-    .CodeMirror-lint-mark-error {
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==");
-    }
-    .CodeMirror-lint-marker {
-      background-position: center center;
-      background-repeat: no-repeat;
-      cursor: pointer;
-      display: inline-block;
-      height: 16px;
-      width: 16px;
-      vertical-align: middle;
-      position: relative;
-    }
-    .CodeMirror-lint-message {
-      padding-left: 18px;
-      background-position: top left;
-      background-repeat: no-repeat;
-    }
-    .CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning {
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAANlBMVEX/uwDvrwD/uwD/uwD/uwD/uwD/uwD/uwD/uwD6twD/uwAAAADurwD2tQD7uAD+ugAAAAD/uwDhmeTRAAAADHRSTlMJ8mN1EYcbmiixgACm7WbuAAAAVklEQVR42n3PUQqAIBBFUU1LLc3u/jdbOJoW1P08DA9Gba8+YWJ6gNJoNYIBzAA2chBth5kLmG9YUoG0NHAUwFXwO9LuBQL1giCQb8gC9Oro2vp5rncCIY8L8uEx5ZkAAAAASUVORK5CYII=");
-    }
-    .CodeMirror-lint-marker-error, .CodeMirror-lint-message-error {
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEW7AAC7AACxAAC7AAC7AAAAAAC4AAC5AAD///+7AAAUdclpAAAABnRSTlMXnORSiwCK0ZKSAAAATUlEQVR42mWPOQ7AQAgDuQLx/z8csYRmPRIFIwRGnosRrpamvkKi0FTIiMASR3hhKW+hAN6/tIWhu9PDWiTGNEkTtIOucA5Oyr9ckPgAWm0GPBog6v4AAAAASUVORK5CYII=");
-    }
-    .CodeMirror-lint-marker-multiple {
-      background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAMAAADzjKfhAAAACVBMVEUAAAAAAAC/v7914kyHAAAAAXRSTlMAQObYZgAAACNJREFUeNo1ioEJAAAIwmz/H90iFFSGJgFMe3gaLZ0od+9/AQZ0ADosbYraAAAAAElFTkSuQmCC");
-      background-repeat: no-repeat;
-      background-position: right bottom;
-      width: 100%; height: 100%;
-    }
-    .CodeMirror-lint-line-error {
-      background-color: rgba(183, 76, 81, 0.08);
-    }
-    .CodeMirror-lint-line-warning {
-      background-color: rgba(255, 211, 0, 0.1);
-    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/mode/simple.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/hint/show-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/lint/lint.min.js"></script>
   <style>.CodeMirror { height: 100%; }</style>
 </head>
 
   <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
-    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:visible;user-select: none;">
+    <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:visible;user-select: none;-webkit-user-select: none;white-space: nowrap;">
       
       <div class="bigbtn" id="btn-compile" style="display: none;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
@@ -270,7 +221,7 @@
         <div class="tooltip tooltip-b" style="display:none">Exit Debugger Session</div>
       </div>
 
-      <select id="sel-mode" class="bigbtn" style="display:inline-block;width:120px;margin:0px;padding:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
+      <select id="sel-mode" class="" style="display:inline-block;width:120px;margin:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
         <option value="vm">Interpreter</option>
         <option value="dbg">Debugger</option>
         <option value="c">Compiler → C</option>
@@ -328,29 +279,81 @@
         </div>
       </span>
     </div>
+    <div id="mbr" style="position:absolute;right:10px;top:0px;height:30px;overflow:visible;user-select: none;-webkit-user-select: none;white-space: nowrap;text-align: right;display:inline-block">
+      <div class="bigbtn" id="btn-eg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <!-- <path d="M4,8 8,4  20,4 20,16 16,20 4,20z  M8,6 8,16 18,16 18,6 " /> -->
+            <!-- <text x="10" y="14" font-family="monospace" font-size="8">e.g.</text> -->
+             <path d="M3,7 7,3  21,3 21,17 17,21 3,21z  M7,5 7,17 19,17 19,5 " />
+          </g>
+          <g stroke="#111" fill="none" stroke-width="1.5" stroke-linejoin="round">
+            <path d="M11,8 9,11 11,14 M15,8 17,11 15,14 M12,16 14,6" />
+          </g>
+        </svg>
+        <div class="tooltip">Examples</div>
+      </div>
+      <div class="bigbtn" id="btn-open">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <polygon points="4,8 6,6 10,6 12,8 20,8 20,18, 4,18" />
+          </g>
+        </svg>
+        <div class="tooltip">Open</div>
+      </div>
+      <div class="bigbtn" id="btn-save">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <path d="M4,4 16,4, 20,8 20,20 4,20z M8,14 8,18 16,18 16,14z M12,6 12,10 14,10 14,6z" />
+          </g>
+        </svg>
+        <div class="tooltip">Save</div>
+      </div>
+    </div>
     <div id="cl" style="position:absolute;left:0px;top:30px;width:100%;height:calc(75% - 34px);"></div>
     <div id="cr" class="log" aria-hidden="true" role="none" style="position:absolute;left:0px;top:75%;width:100%;height:25%;"></div>
     <div id="ci" class="log" style="display:none;position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(40% - 34px);"></div>
     <div id="cv" class="log" style="display:none;position:absolute;left:calc(50% + 4px);top:40%;width:calc(50% - 4px);height:calc(35% - 4px)"></div>
   </body>
-
   <script>
 
-const fs = require('fs');
-const path = require('path');
-const child_process = require('child_process');
+let date = new Date();
+let filename = "/tmp/sketch_"+(date.getFullYear()).toString().slice(-2) + (date.getMonth()+1).toString().padStart(2,"0").slice(-2) + (date.getDate()).toString().padStart(2,"0").slice(-2) + "_" + String.fromCharCode(~~(Math.random()*26)+97) + String.fromCharCode(~~(Math.random()*26)+97) + String.fromCharCode(~~(Math.random()*26)+97) + ".dh";
 
-if (process.env.PWD && fs.existsSync(process.env.PWD)) {
-  process.chdir(process.env.PWD);
+var API = {};
+
+if (window.WK){
+  ;(async function(){
+    API = JSON.parse((await fs.readFile((await WK.getBundlePaths()).resources+"/api.json")).toString());
+  })();
 }else{
-  process.chdir("../../");
+  window.fs= require('fs');
+  window.child_process = require('child_process');
+  API = JSON.parse(fs.readFileSync("../../doc/api.json").toString());
 }
 
-var API=JSON.parse(fs.readFileSync("doc/api.json").toString());
 
-eval(fs.readFileSync("src/parser.js").toString());
-eval(fs.readFileSync("src/embed_glsl.js").toString());
-eval(fs.readFileSync("src/embed_gui.js").toString());
+async function exec_1off(pth,args){
+  console.log(pth,args);
+  return new Promise((resolve,reject)=>{
+    let cp = child_process.spawn(pth,args);
+    let buf = "";
+    cp.stdout.on('data',function(x){
+      buf += x.toString();
+    })
+    cp.stderr.on('data',function(x){
+      console.error(x.toString());
+    })
+    cp.on('close',(code)=>{
+      if (code){
+        reject(code);
+      }else{
+        resolve(buf);
+      }
+    })
+  })
+}
+
 
 CodeMirror.defineSimpleMode("dither", {
     meta:{
@@ -414,23 +417,110 @@ var CML = CodeMirror(document.getElementById("cl"), {
       cm.replaceSelection("  ", "end");
     }
   },
-  lint:true,
 });
 CML.setSize(null,null);
-CML.setValue(`
-include "std/math"
-include "std/io"
-while (1){
-  for (i := 0; i < 80; i++){
-    io.print((math.random()<0.5) ? "/" : "\\\\");
+CML.setValue(``);
+let cleanGeneration = CML.changeGeneration();
+CML.on("change", () => {
+  make_title();
+});
+
+exec_1off("/usr/bin/touch",[filename]);
+
+async function make_title(){
+  let ind = "";
+  if (!CML.isClean(cleanGeneration)) {
+    ind = "*"
   }
-  io.print("\\n");
+  let home = (await WK.getBundlePaths()).home;
+  await WK.setTitle(filename.replace(home,"~")+ind);
 }
-`)
+
+make_title(filename);
 
 var CMR = document.getElementById("cr");
 var CMI = document.getElementById("ci");
 var CMV = document.getElementById("cv");
+
+async function save_sketch(){
+  // if (filename.startsWith((await WK.getBundlePaths()).resources)){
+  //   alert("Built-in examples are read-only");
+  //   return;
+  // }
+  if (filename.startsWith("/tmp")){
+    let res = await WK.saveFileDialog({startDir:"~/Documents",defaultName:filename.split("/").at(-1)});
+    if (res){
+      filename = res;
+    }else{
+      return;
+    }
+  }
+  cleanGeneration = CML.changeGeneration();
+  await fs.writeFile(filename, CML.getValue());
+  await make_title();
+}
+
+function dirty_cancel(){
+  if (!CML.isClean(cleanGeneration)) {
+    let ans = confirm("Closing current file without saving?");
+    if (ans) return 0;
+    return 1;
+  }
+  return 0;
+}
+
+async function do_load_file(){
+  // console.log(filename);
+  let txt = (await fs.readFile(filename)).toString();
+  CML.setValue(txt);
+  CML.clearHistory();
+  cleanGeneration = CML.changeGeneration();
+  make_title();
+}
+
+async function load_sketch(startDir){
+  if (dirty_cancel()) return;
+  let res = await WK.openFileDialog({startDir});
+  if (!res) return;
+  filename = res;
+  do_load_file();
+}
+
+document.getElementById("btn-save").onclick = function(){
+  save_sketch();
+}
+document.getElementById("btn-open").onclick = function(){
+  let startDir = "~/Documents";
+  if (!filename.startsWith("/tmp/")){
+    startDir = filename.split('/').slice(0,-1).join('/')
+  }
+  load_sketch(startDir);
+}
+
+document.getElementById("btn-eg").onclick = async function(){
+  // load_sketch((await WK.getBundlePaths()).resources+"/examples");
+  if (CML.getValue().trim().length){
+    // if (!confirm("Loading an example will overwrite the content of the current editor. However, you may UNDO this operation."))return;
+  }
+  let fold = (await WK.getBundlePaths()).resources+"/examples";
+  let out = await exec_1off("/bin/ls",["-1",fold]);
+  let names = out.split("\n").filter(x=>x.endsWith(".dh"));
+  let ans = await exec_1off("/usr/bin/osascript",["-e",`choose from list {${names.map(x=>('"'+x+'"')).join(',')}} with prompt "Load example:"`]);
+  if (ans == 'false'){
+    return;
+  }else{
+    let txt = (await fs.readFile(fold+"/"+ans.split('\n')[0])).toString();
+    CML.setValue(txt);
+  }
+}
+
+WK.onMenuEvent = function(e){
+  if (e == 'open'){
+    load_sketch();
+  }else if (e == 'save'){
+    save_sketch();
+  }
+}
 
 document.getElementById("sel-mode").onchange = function(){
   if (document.getElementById("sel-mode").value == "dbg"){
@@ -450,54 +540,6 @@ document.getElementById("sel-mode").onchange = function(){
     CMI.style.display="none";
     CMV.style.display="none";
   }
-}
-
-let extensions = {fragment:embed_glsl_frag,'gui/layout':embed_gui_layout,'gui/sync':embed_gui_sync}
-
-document.getElementById("btn-compile").onclick = function(){
-  CMR.innerHTML = "";
-
-  let pro = Object.assign({},process);
-  pro = Object.assign(pro,{
-    exit: function(){
-      throw 'up';
-    }
-  });
-  let parser = new PARSER({fs,path,process:pro,search_paths:['']},extensions);
-
-  fs.writeFileSync("/tmp/source.dh",CML.getValue());
-  
-  let olderror = console.error;
-  console.error=(x)=>{
-    let div = document.createElement("div");
-    div.innerHTML = x;
-    CMR.appendChild(div);
-  }
-  
-  let bad = 0;
-  try{
-    let toks = parser.tokenize("/tmp/source.dh");
-
-    let cst = parser.parse(toks);
-
-    let ast = parser.abstract(cst);
-
-    let scopes = parser.infertypes(ast);
-    let [instrs,layout] = parser.compile(ast,scopes);
-
-    let irtxt = parser.writeir(instrs);
-    let lotxt = parser.writelayout(layout);
-
-    let irlo = irtxt+lotxt;
-
-    fs.writeFileSync("build/ir.dsm",irlo);
-
-    CMR.innerHTML = irlo;
-  }catch(e){
-    bad = 1;
-  }
-  console.error = olderror;
-  return bad;
 }
 
 let childProcess = null;
@@ -529,6 +571,7 @@ function putout(txt){
 }
 
 function runbin(pth, args=[]){
+    
   if (childProcess){
     childProcess.kill('SIGKILL');
     childProcess = null;
@@ -536,9 +579,13 @@ function runbin(pth, args=[]){
   let firsttime = 1;
   
   putmsg(`invoking subprocess...`);
+  // putmsg(JSON.stringify([pth,args]))
 
   let buf = "";
-  childProcess = child_process.spawn(pth, args, {env: { ...process.env}});
+  childProcess = child_process.spawn(pth, args, {
+    cwd: filename.split("/").slice(0,-1).join("/"),
+  });
+
   childProcess.stdout.on('data', (data) => {
     if (firsttime){
       firsttime = 0;
@@ -555,12 +602,7 @@ function runbin(pth, args=[]){
       let addr = buf.match(/http:\/\/localhost:\d\d\d\d/g)[0];
       buf = "";
       if (addr){
-        if (popupWindow && !popupWindow.closed){  
-        }else{
-          popupWindow = window.open(addr);
-        }
-        popupWindow.location.href = addr;
-        popupWindow.focus();
+        child_process.spawn("/usr/bin/open",[addr]);
       }
     }
   });
@@ -786,8 +828,8 @@ function rundbg(pth, args=[]){
   putmsg(`invoking subprocess...`);
 
   childProcess = child_process.spawn(pth, args, {
-    env: { ...process.env},
-    stdio: 'pipe'
+    stdio: 'pipe',
+    cwd: filename.split("/").slice(0,-1).join("/"),
   });
   let buf = "";
   childProcess.stdout.on('data', (data)=>{
@@ -935,15 +977,20 @@ document.getElementById("btn-break").onclick = function(){
   bp_addr = addr;
 }
 
-document.getElementById("btn-run").onclick = function(){
+document.getElementById("btn-run").onclick = async function(){
   document.getElementById("btn-stop").onclick();
-  fs.writeFileSync("/tmp/source.dh",CML.getValue());
+  if (window.WK){
+    await fs.writeFile(filename,CML.getValue());
+  }else{
+    fs.writeFileSync(filename,CML.getValue());
+  }
+  
   let mode = document.getElementById("sel-mode").value;
   CMR.innerHTML = "";
   if (mode == 'dbg'){
-    rundbg('build/dither',['-xvt',mode,'/tmp/source.dh']);
+    rundbg('dither',['-xvt',mode,filename]);
   }else{
-    runbin('build/dither',['-xvt',mode,'/tmp/source.dh']);
+    runbin('dither',['-xvt',mode,filename]);
   }
 }
 
@@ -957,51 +1004,6 @@ document.getElementById("btn-stop").onclick = function(){
   }
 }
 
-
-CodeMirror.registerHelper("lint", "dither", function(str, options) {
-  let found = [];
-
-  let pro = Object.assign({},process);
-  pro = Object.assign(pro,{
-    exit: function(){
-      throw 'up';
-    }
-  });
-  let parser = new PARSER({fs,path,process:pro,search_paths:['']},extensions);
-
-  fs.writeFileSync("/tmp/lint.dh",CML.getValue());
-
-  let olderror = console.error;
-  let eidx = 0;
-  console.error = function(s){
-    if (!eidx){
-      let [err,loc] = s.split(` at file "/tmp/lint.dh" line `);
-      if (err.length && loc.length){
-        if (err.includes(`error] `)){
-          err = err.split('error] ').slice(1).join('error] ');
-        }
-        let [ln,col] = loc.split(" column ").map(x=>Number(x));
-        found.push({
-          from: CodeMirror.Pos(ln-1,col-1),
-          to: CodeMirror.Pos(ln-1,col+80),
-          message: err,
-          severity : "error"
-        });
-      }
-    }
-    eidx = (eidx+1)%3;
-  }
-  try{
-    let toks = parser.tokenize("/tmp/lint.dh");
-    let cst = parser.parse(toks);
-    let ast = parser.abstract(cst);
-    let scopes = parser.infertypes(ast);
-  }catch(e){
-    
-  }
-  console.error = olderror;
-  return found;
-});
 
 function get_completions(prefix, before){
   // console.log(prefix,"|",before);

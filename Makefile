@@ -64,15 +64,18 @@ run_c: build/config.h to_c
 	echo $$CFLAGS;\
 	gcc -include build/config.h -I. $(OPT) build/out.c $$CFLAGS -lm -o build/a.out && build/a.out;
 nwedit:
+	rm -rf build/nw
+	cp -r editor/app build/nw
+	echo '{"name":"ide","main":"index.html","window":{"width": 640,"height": 720}}' > build/nw/package.json
 	NWJS=../nwjs-sdk/nwjs.app;\
 	source config.env;\
 	/usr/libexec/PlistBuddy -c "Set :LSFileQuarantineEnabled false" "$$NWJS/Contents/Info.plist";\
 	trap '/usr/libexec/PlistBuddy -c "Set :LSFileQuarantineEnabled true" "$$NWJS/Contents/Info.plist"' EXIT;\
-	$$NWJS/Contents/MacOS/nwjs editor/nw
-gledit:
-	rm -rf /tmp/examples;\
-	cp -r examples /tmp/examples;\
-	gcc editor/gl/main.c $$([ "$$(uname)" == "Darwin" ] && echo "-framework OpenGL" || echo "-lGL -lGLEW -Wl,--export-dynamic") -lm -o build/gledit && build/gledit /tmp/examples/boids.dh;
+	$$NWJS/Contents/MacOS/nwjs build/nw
+wkedit:
+	cd editor/app;\
+	make all;\
+	make run;
 webedit:
 	node editor/site/make_site.js;\
 	npx html-minifier-terser build/site.html -o build/site.min.html --collapse-whitespace --minify-js --minify-css

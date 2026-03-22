@@ -1,5 +1,0 @@
-if [ "$(uname)" = "Darwin" ]; then
-  CFLAGS="$CFLAGS -framework OpenGL"
-else
-  CFLAGS="$CFLAGS -lGLEW -lGL"
-fi
