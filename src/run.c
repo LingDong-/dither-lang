@@ -206,6 +206,8 @@ int main(int argc, char** argv){
         memcpy(line+n,buffer,bytes);
         line[n+bytes] = 0;
       }else{
+        fflush(stdout);
+        fflush(stderr);
         const char *reply = "OK\n";
         send(sock, reply, (int)strlen(reply), 0);
       }

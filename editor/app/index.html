@@ -73,6 +73,21 @@
     .bigbtn:hover .tooltip {
       opacity: 1;
     }
+    .tabbtn {
+      width:96px;height:16px;
+      color:black;
+      font-family:sans-serif;font-size:12px;
+      border-radius: 3px 3px 0px 0px;
+      text-align: center;
+      padding-top:1px;
+      cursor:pointer;
+      font-weight: bold;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .hover-underline:hover{
+      text-decoration: underline;
+    }
     .dbg-hl {
       background: rgba(0,255,255,0.2);
     }
@@ -114,7 +129,7 @@
       overflow:scroll;white-space:nowrap;
       font-family:Menlo, monospace; font-size:13px;
       background-color: #252627!important;
-      color: #f8f8f8 !important;
+      color: #ded !important;
       filter: saturate(80%) hue-rotate(10deg);
     }
   </style>
@@ -310,10 +325,46 @@
         <div class="tooltip">Save</div>
       </div>
     </div>
-    <div id="cl" style="position:absolute;left:0px;top:30px;width:100%;height:calc(75% - 34px);"></div>
-    <div id="cr" class="log" aria-hidden="true" role="none" style="position:absolute;left:0px;top:75%;width:100%;height:25%;"></div>
-    <div id="ci" class="log" style="display:none;position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(40% - 34px);"></div>
-    <div id="cv" class="log" style="display:none;position:absolute;left:calc(50% + 4px);top:40%;width:calc(50% - 4px);height:calc(35% - 4px)"></div>
+
+      <div id="cl" style="position:absolute;left:0px;top:30px;width:100%;height:calc(75% - 34px);"></div>
+    </div>
+
+    <div id="btn-out" class="tabbtn" style="position:absolute;left:4px;top:75%;background:#555">Output</div>
+    <div id="cr" class="log" aria-hidden="true" role="none" style="position:absolute;left:0px;top:calc(75% + 16px);width:100%;height:calc(25% - 16px);"></div>
+
+    <div id="btn-repl" class="tabbtn" style="position:absolute;left:104px;top:75%;width:96px;height:16px;background:#333;">REPL</div>
+    <div id="cce" style="display:none;">
+      <div id="ce" class="log" aria-hidden="true" role="none" style="position:absolute;left:0px;top:calc(75% + 16px);width:100%;height:calc(25% - 40px);"></div>
+      <div style="position:absolute;left:0px;top:calc(100% - 20px);color:#ded;font-family: monospace;font-size:14px">&gt;&gt;&gt;</div>
+      <input id="inp-repl" class="log" autocorrect="off" autocapitalize="off" spellcheck="false" style="position:absolute;left:30px;top:calc(100% - 22px);width:calc(100% - 55px);height:20px;font-size:14px;background:#141414 !important;padding:0px;margin:0px;border:none"></input>
+      <div class="bigbtn" id="btn-send" style="position:absolute;right:0px;bottom:0px;margin:0px;border-radius:0px;opacity:0.5;pointer-events: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <path d="M18,4 20,4 20,15 11,15 11,20 4,14 11,8 11,13 18,13z" />
+          </g>
+        </svg>
+        <div class="tooltip">Open</div>
+      </div>
+    </div>
+
+    <div id="cicv" style="display:none">
+      <div id="ci" class="log" style="position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(40% - 34px);"></div>
+      <div style="font-size:12px;color:#555;position:absolute;left:calc(50% + 4px);top:40%;font-family:sans-serif;user-select: none;-webkit-user-select: none;">Variables</div>
+      <div style="font-size:12px;color:#555;position:absolute;right:2px;top:40%;height:16px;font-family:sans-serif;user-select: none;-webkit-user-select: none;">
+        <span id="btn-var" style="display:inline-block;cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" >
+            <g fill="none" stroke="#555" stroke-width="1" stroke-linejoin="round">
+              <path d="M1,1 9,1 9,9, 1,9z" />
+            </g>
+            <g id="chk-var" fill="none" stroke="#555" stroke-width="1" stroke-linejoin="round">
+              <path d="M2,4 5,7 10,0" />
+            </g>
+          </svg>
+          <span class="hover-underline">Filter internals</span>
+        </span>
+      </div>
+      <div id="cv" class="log" style="position:absolute;left:calc(50% + 4px);top:calc(40% + 16px);width:calc(50% - 4px);height:calc(35% - 20px)"></div>
+    </div>
   </body>
   <script>
 
@@ -321,15 +372,22 @@ let date = new Date();
 let filename = "/tmp/sketch_"+(date.getFullYear()).toString().slice(-2) + (date.getMonth()+1).toString().padStart(2,"0").slice(-2) + (date.getDate()).toString().padStart(2,"0").slice(-2) + "_" + String.fromCharCode(~~(Math.random()*26)+97) + String.fromCharCode(~~(Math.random()*26)+97) + String.fromCharCode(~~(Math.random()*26)+97) + ".dh";
 
 var API = {};
+var stdnames = {};
+
+function stdnames_from_api(){
+  return Object.fromEntries(Object.keys(API).filter(x=>!x.includes('-')).map(x=>[x,1]));
+}
 
 if (window.WK){
   ;(async function(){
     API = JSON.parse((await fs.readFile((await WK.getBundlePaths()).resources+"/api.json")).toString());
+    stdnames = stdnames_from_api();
   })();
 }else{
   window.fs= require('fs');
   window.child_process = require('child_process');
   API = JSON.parse(fs.readFileSync("../../doc/api.json").toString());
+  stdnames = stdnames_from_api();
 }
 
 
@@ -441,6 +499,7 @@ make_title(filename);
 var CMR = document.getElementById("cr");
 var CMI = document.getElementById("ci");
 var CMV = document.getElementById("cv");
+var CME = document.getElementById("ce");
 
 async function save_sketch(){
   // if (filename.startsWith((await WK.getBundlePaths()).resources)){
@@ -511,6 +570,8 @@ document.getElementById("btn-eg").onclick = async function(){
   }else{
     let txt = (await fs.readFile(fold+"/"+ans.split('\n')[0])).toString();
     CML.setValue(txt);
+    await exec_1off("/bin/mkdir",["-p","/tmp/examples"]);
+    await exec_1off("/bin/cp",["-r",fold+"/assets","/tmp/examples"]);
   }
 }
 
@@ -529,43 +590,166 @@ document.getElementById("sel-mode").onchange = function(){
     Array.from(document.getElementsByClassName("tooltip-a")).map(x=>x.style.display="none")
     Array.from(document.getElementsByClassName("tooltip-b")).map(x=>x.style.display="block")
     CML.setSize("50%",null);
-    CMI.style.display="block";
-    CMV.style.display="block";
+    document.getElementById("cicv").style.display="block"
+
   }else{
     document.getElementById("mb-dbg").style.display = "none";
     document.getElementById("mb-ddbg").style.display = "none";
     Array.from(document.getElementsByClassName("tooltip-a")).map(x=>x.style.display="block")
     Array.from(document.getElementsByClassName("tooltip-b")).map(x=>x.style.display="none")
     CML.setSize("100%",null);
-    CMI.style.display="none";
-    CMV.style.display="none";
+    document.getElementById("cicv").style.display="none"
   }
 }
 
+
 let childProcess = null;
+let replProcess = null;
+let replready = 0;
 let popupWindow = null;
 
-function putmsg(txt){
+
+function startRepl(){
+  putmsg("invoking subprocess...",CME);
+  replProcess = child_process.spawn("dither", ['-vi'], {
+    stdio: 'pipe',
+    cwd: filename.split("/").slice(0,-1).join("/"),
+  });
+  replProcess.stderr.on('data', (data) => {
+    putout(data.toString(),CME,"color:tomato")
+  });
+  replProcess.stdout.on('data', (data) => {
+    let txt = data.toString();
+    console.log(txt,txt.length,data);
+    
+    if (txt.endsWith('> \x1b[0m')){
+      replready = 1;
+      document.getElementById("btn-send").style.pointerEvents = "auto";
+      document.getElementById("btn-send").style.opacity = 1;
+    }
+    // txt = txt.replace(/\x1B\[[0-9;]*[mK]/g, '');
+    txt = ansi_color(txt);
+    putout(txt,CME);
+  });
+  replProcess.stdout.on('close', (code, signal) => {
+    let reason = `code ${code}`;
+    if (code === null){
+      reason = `signal ${signal}`;
+    }
+    putmsg(`subprocess exited with ${reason}, attempting restart...`,CME);
+    replProcess = null;
+    startPepl();
+  });
+}
+
+document.getElementById("btn-out").onclick = function(){
+  document.getElementById("cr").style.display = "block";
+  document.getElementById("cce").style.display = "none";
+  document.getElementById("btn-out").style.background = "#555"
+  document.getElementById("btn-repl").style.background = "#333"
+}
+document.getElementById("btn-repl").onclick = function(){
+  document.getElementById("cr").style.display = "none";
+  document.getElementById("cce").style.display = "block";
+  document.getElementById("btn-out").style.background = "#333"
+  document.getElementById("btn-repl").style.background = "#555";
+  if (!replProcess){
+    startRepl();
+  }
+}
+
+let replhist = [];
+let replhist_idx = -1;
+let replhist_tmp = "";
+
+function replsend(){
+  if (!replready) return;
+  replready = 0;
+  let txt = document.getElementById("inp-repl").value;
+  replhist.push(txt);
+  txt += "\n";
+  putout(txt,CME,"color:wheat");
+  document.getElementById("inp-repl").value = "";
+  replProcess.stdin.write(txt);
+  document.getElementById("btn-send").style.pointerEvents = "none";
+  document.getElementById("btn-send").style.opacity = 0.5;
+}
+
+document.getElementById("inp-repl").addEventListener('keydown', function(event) {
+  let input = document.getElementById("inp-repl");
+  if (event.key === 'Enter') {
+    replsend();
+  }else if (event.key == "ArrowUp"){
+    event.preventDefault();
+    if (replhist_idx == -1){
+      replhist_tmp = input.value;
+      replhist_idx = replhist.length-1;
+    }else if (replhist_idx > 0){
+      replhist_idx --;
+    }
+    input.value = replhist[replhist_idx];
+  }else if (event.key == "ArrowDown"){
+    event.preventDefault();
+    if (replhist_idx == -1) return;
+    if (replhist_idx < replhist.length -1){
+      replhist_idx ++;
+      input.value = replhist[replhist_idx];
+    }else{
+      replhist_idx = -1;
+      input.value = replhist_tmp;
+    }
+
+  }
+});
+document.getElementById("btn-send").onclick = replsend;
+
+
+document.getElementById("cl").addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.shiftKey) {
+    e.preventDefault();
+    document.getElementById("btn-run").onclick();
+  }else if (e.key === 'Enter' && e.altKey){
+    let txt = CML.getSelection() || CML.getLine(CML.getCursor().line);
+
+    e.preventDefault();
+    document.getElementById("btn-repl").onclick();
+    function behalf(){
+      if (replready){
+        document.getElementById("inp-repl").value = txt;
+        document.getElementById("btn-send").click();
+      }else{
+        setTimeout(behalf,200);
+      }
+    }
+    behalf();
+  }
+});
+
+function isAtBottom(div, threshold = 5) {
+  return div.scrollHeight - div.scrollTop - div.clientHeight <= threshold;
+}
+
+function putmsg(txt,par=CMR){
   let div = document.createElement("div");
   div.innerHTML = `[editor] ${txt}\n`;
-  CMR.appendChild(div);
-  // div.scrollIntoView();
-  CMR.scrollTop = CMR.scrollHeight; 
+  par.appendChild(div);
+  par.scrollTop = par.scrollHeight; 
 }
-function putout(txt){
+function putout(txt,par=CMR,sty=null){
+  let auto = isAtBottom(par);
   let ps = txt.split('\n');
   for (let i = 0; i < ps.length; i++){
     let span;
     if (ps[i].length){
       span = document.createElement("span");
+      if (sty) span.style = sty;
       span.innerHTML = ps[i];
-      CMR.appendChild(span);
+      par.appendChild(span);
     }
     if (i == ps.length-1){
-      // if (span) span.scrollIntoView();
-      CMR.scrollTop = CMR.scrollHeight; 
+      if (auto) par.scrollTop = par.scrollHeight; 
     }else{
-      CMR.appendChild(document.createElement("br"));
+      par.appendChild(document.createElement("br"));
     }
   }
 }
@@ -607,7 +791,8 @@ function runbin(pth, args=[]){
     }
   });
   childProcess.stderr.on('data', (data) => {
-    console.error(`stderr: ${data.toString()}`);
+    // console.error(`stderr: ${data.toString()}`);
+    putout(data.toString(),CMR,"color:tomato");
   });
   childProcess.on('close', (code, signal) => {
     let reason = `code ${code}`;
@@ -628,6 +813,7 @@ let bp_widget = null;
 let bp_mark = null;
 let bp_line = -1;
 let bp_addr = null;
+let dofiltvar = 1;
 
 function set_mb_dbg(){
   if (dbgready == 1){
@@ -683,6 +869,7 @@ function ansi_color(txt){
     "34": "#1bf",//blue
     "35": "#b9f",//magenta
     "36": "#6fdfcf",//cyan
+    "94": "#1bf"
   }
   let state = 0;
   txt = txt.replace(/\x1b\[(\d+)m/g, function(m,n){
@@ -704,6 +891,8 @@ function ansi_color(txt){
 }
 
 function parse_vars_print(txt){
+  let auto = isAtBottom(CMV);
+
   txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
   txt = txt.replace(/\x1b\[[0-9;]*[mK]/g, '');
   // txt = txt.replace(/\n/g, '</td></tr><tr><td>');
@@ -716,7 +905,7 @@ function parse_vars_print(txt){
   ]
   let lines = txt.split('\n').filter(x=>x.length);
   let hd = `<table style="font-size:12px;width:100%;border:1px solid #999;${lines.length?"border-collapse:collapse;":""}">`;
-  let out = `<div style="font-size:12px;font-weight:bold;color:#999">VARIABLES</div>`+hd;
+  let out = `<div style="font-size:12px;font-weight:bold;color:#999">BOTTOM</div>`+hd;
   
   for (let i = lines.length-1; i > 0; i--){
     if (splits.includes(lines[i]) || lines[i].split('\t').length >= 4){
@@ -734,6 +923,12 @@ function parse_vars_print(txt){
       continue;
     }
     let cells = lines[i].split('\t');
+    if (dofiltvar){
+      if (cells[0].startsWith("__r_")) continue;
+      if (cells[0].includes(".")){
+        if (stdnames[cells[0].split(".")[0]]) continue;
+      }
+    }
     out += `<tr>`;
     out += `<td style="color:#ded;border:1px solid #999">${cells[0]}</td>`;
     out += `<td style="color:#1bf;border:1px solid #999">${cells[1]}</td>`;
@@ -741,8 +936,14 @@ function parse_vars_print(txt){
     out += `</tr>`;
   }
   out += `</table>`;
+  out += `<div style="font-size:12px;font-weight:bold;color:#999">TOP</div>`
   CMV.innerHTML = out;
-  CMV.scrollTop = CMV.scrollHeight; 
+  if (auto) CMV.scrollTop = CMV.scrollHeight; 
+}
+
+document.getElementById("btn-var").onclick = function(){
+  dofiltvar = 1-dofiltvar;
+  document.getElementById("chk-var").setAttribute("stroke",dofiltvar?"#555":"none");
 }
 
 function unmark_bp(){
@@ -788,18 +989,31 @@ function clean_dbg_hl(){
 }
 
 function render_ins(){
-  let out = `<table>`;
+  let out = document.createElement("div");
   for (let k in curinsmap){
     let loc = curinsmap[k][0];
-    out += `<tr id="${k}" style="${loc[0]?"opacity:0.5":""}">`;
+    let div = document.createElement("div");
+    div.id = k;
+    if (loc[0]){
+      div.style.opacity = 0.5
+    }
     for (let i = 0; i < curinsmap[k][1].length; i++){
       let a = curinsmap[k][1][i];
-      out += `<td colspan="${Math.ceil(a.replace(/<[^>]+>/g, '').length/8)}" style="${(i==0)?"color:#f6a":""}">${a}</td>`;
+      let span = document.createElement("span");
+      span.style.display = "inline-block";
+      if (i == 0){
+        span.style.color = "#f6a";
+      }
+      span.innerHTML = a;
+      let p = (i == 0)?6:12;
+      let n = Math.ceil(span.innerText.length/p)*p;
+      span.style.width = (n*10)+"px";
+      div.appendChild(span)
     }
-    out += `</tr>`;
+    out.appendChild(div);
   }
-  out += `</table>`;
-  CMI.innerHTML = out;
+  CMI.innerHTML = "";
+  CMI.appendChild(out);
 }
 
 let prvinstr = null;
@@ -978,6 +1192,7 @@ document.getElementById("btn-break").onclick = function(){
 }
 
 document.getElementById("btn-run").onclick = async function(){
+  document.getElementById("btn-out").onclick();
   document.getElementById("btn-stop").onclick();
   if (window.WK){
     await fs.writeFile(filename,CML.getValue());

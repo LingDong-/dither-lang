@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#import <AVFoundation/AVFoundation.h>
 #include <signal.h>
 
 static NSString *const kBridgeJS = @""
@@ -695,7 +696,47 @@ static NSString *const kBridgeJS = @""
   }
 }
 
+- (void)requestCameraPermission:(id)sender {
+  AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+  switch (status) {
+    case AVAuthorizationStatusAuthorized:
+      NSLog(@"Camera already authorized.");
+      break;
+
+    case AVAuthorizationStatusNotDetermined: {
+      [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo
+                        completionHandler:^(BOOL granted) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          if (granted) {
+            NSLog(@"Camera access granted.");
+          } else {
+            NSLog(@"Camera access denied.");
+          }
+        });
+      }];
+      break;
+    }
+    case AVAuthorizationStatusDenied:
+    case AVAuthorizationStatusRestricted:
+      NSLog(@"Camera access previously denied/restricted.");
+        [[NSWorkspace sharedWorkspace] openURL:
+          [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Camera"]];
+        break;
+  }
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+  if (menuItem.action == @selector(requestCameraPermission:)) {
+    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+    return (status != AVAuthorizationStatusAuthorized);
+  }
+  return YES;
+}
+
+
 @end
+
+
 
 static void setupMenuBar(void) {
   NSMenu *menuBar = [NSMenu new];
@@ -704,6 +745,11 @@ static void setupMenuBar(void) {
   [menuBar addItem:appMenuItem];
   NSMenu *appMenu = [NSMenu new];
   [appMenu addItemWithTitle:@"About" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+  
+  [appMenu addItemWithTitle:@"Request Camera Permission"
+           action:@selector(requestCameraPermission:)
+           keyEquivalent:@""];
+
   [appMenu addItem:[NSMenuItem separatorItem]];
   [appMenu addItemWithTitle:@"Hide" action:@selector(hide:) keyEquivalent:@"h"];
   NSMenuItem *hideOthers = [appMenu addItemWithTitle:@"Hide Others"

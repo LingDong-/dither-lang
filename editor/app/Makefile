@@ -15,7 +15,7 @@ RES_DIR      := $(CONTENTS)/Resources
 EXECUTABLE   := $(BUILD_DIR)/$(APP_NAME)
 INFO_PLIST   := $(BUILD_DIR)/Info.plist
 CC           := clang
-BASE_FLAGS   := -g -O0 -fsanitize=address -fno-omit-frame-pointer -fobjc-arc -framework Cocoa -framework WebKit -framework UniformTypeIdentifiers -Wno-deprecated-declarations 
+BASE_FLAGS   := -g -O0 -fsanitize=address -fno-omit-frame-pointer -fobjc-arc -framework Cocoa -framework WebKit -framework UniformTypeIdentifiers -framework AVFoundation -Wno-deprecated-declarations 
 ifeq ($(ARCH),universal)
   ARCH_FLAGS := -arch x86_64 -arch arm64
 else ifeq ($(ARCH),x86_64)
@@ -52,10 +52,11 @@ $(INFO_PLIST): Makefile
       <key>NSHighResolutionCapable</key><true/>\
       <key>NSSupportsAutomaticGraphicsSwitching</key><true/>\
       <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>\
+			<key>NSCameraUsageDescription</key><string>For interactive experiences</string>\
     </dict>\
     </plist>' > $(INFO_PLIST)
 
-$(BUNDLE): $(INFO_PLIST) $(EXECUTABLE) $(WEB_FILES)
+$(BUNDLE): $(INFO_PLIST) $(EXECUTABLE) $(WEB_FILES) $(CLI_TOOL)
 	@rm -rf $(BUNDLE)
 	@mkdir -p $(MACOS_DIR)
 	@mkdir -p $(RES_DIR)
