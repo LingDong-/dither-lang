@@ -129,7 +129,8 @@ int main(int argc, char** argv){
     freeaddrinfo(res);
 #endif
     map_t* frame = frame_start();
-  
+    map_t lblmap = {0};
+
     char buffer[1024];
     char* line = NULL;
     int dbg = 0;
@@ -155,12 +156,12 @@ int main(int argc, char** argv){
             }else if (!strcmp(line,"$dbug")){
               dbg ^= 1;
             }
-          }else{
+          }else{ 
             FILE* fd;
             fd = tmpfile();
             fwrite(line,1,n+i+1,fd);
             rewind(fd);
-            list_t instrs = read_ir(fd);
+            list_t instrs = read_ir_update_labels(fd,&lblmap);
             // free_layouts(&(_G->layouts));
             // _G->layouts = read_layout(fd);
             map_t layouts = read_layout(fd);
@@ -182,13 +183,34 @@ int main(int argc, char** argv){
               free(m1->slots[k].data);
             }
             // map_nuke(m1);
+            // if (dbg) print_layouts(&(_G->layouts));
 
             if (dbg) print_instrs(&instrs);
             
-
             list_node_t* node = instrs.head;
+            term_t* insa = NULL;
+            map_t* cur_frame = (map_t*)(_G->vars.tail->data);
             while (node){
+              // if (dbg) print_instr(((instr_t*)(node->data)));
+
+              if ((map_t*)(_G->vars.tail->data) == cur_frame){
+                opran_t* a = ((instr_t*)(node->data))->a;
+                if (a && a->tag == OPRD_TERM){
+                  term_t* term = (term_t*)a;
+                  if (term->mode == TERM_IDEN){
+                    insa = term;
+                  }
+                }
+              }
               node = execute_instr(node);
+            }
+            if (insa){
+              var_t* v = find_var(&(insa->u.str));
+              str_t s = str_new();
+              printf("\x1b[2m%s = \x1b[0m",insa->u.str.data);
+              to_str(v->type->vart, &(v->u), &s);
+              printf("\x1b[2m%s\x1b[0m\n",s.data);
+              free(s.data);
             }
             // print_vars();
             // free_instrs(&instrs);

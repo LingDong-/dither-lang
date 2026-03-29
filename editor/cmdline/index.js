@@ -178,6 +178,8 @@ let parser = new PARSER(
   Object.assign({},embed_glsl,embed_gui),
 );
 
+// if (verbose) console.log(`[info] using temporary path: ${tmpth()}`)
+
 if (is_repl){
   const net = require('net');
   const readline = require('readline');
@@ -230,6 +232,7 @@ if (is_repl){
     let pr = '\x1b[94m'+(ansbuf.length?`${" ".repeat(np+4)}> `:`dh(${idx})> `)+'\x1b[0m';
     rl.question(pr,answer=>{
       if (answer.startsWith('$')){
+        if (answer == '$quit') process.exit(0);
         return cb(answer);
       }
       ansbuf += ' '+answer;
@@ -245,18 +248,26 @@ if (is_repl){
         let ast = parser.abstract(cst);
         if (ast.key == 'bloc'){
           for (let i = 0; i < ast.val.length; i++){
+            scostk = [0];
+            namesp = ['__0'];
             parser.infertypes(ast.val[i],scopes,scostk,namesp);
           }
           ast.typ = 'void';
           ast.sco = scostk.slice();
+          scostk = [0];
+          namesp = ['__0'];
         }else{
           parser.infertypes(ast,scopes,scostk,namesp);
+          scostk = [0];
+          namesp = ['__0'];
         }
         let [instrs,layout] = parser.compile(ast,scopes);
         let lo = parser.writelayout(layout);
         let ir = parser.writeir(instrs);
         cb(ir+lo);
       }catch(e){
+        scostk = [0];
+        namesp = ['__0'];
         if (verbose) console.log(`[info] evaluation failed, returning to prompt...`);
         return ask(cb);
       }

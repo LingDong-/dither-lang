@@ -272,7 +272,7 @@ void str_addch (str_t* s, char c){
 }
 
 int str_eq(str_t* s, const char* cs){
-  if (strncmp(s->data,cs,s->len) == 0){
+  if (strncmp(s->data,cs,s->len+1) == 0){
     return 1;
   }
   return 0;
@@ -312,12 +312,12 @@ void* map_get(map_t* m, str_t* s){
   if (m->slots[k].len){
     for (int i = 0; i < m->slots[k].len; i++){
       pair_t p = m->slots[k].data[i];
-      if (!memcmp(p.key, s->data, s->len+1)){
+      if (!strncmp(p.key, s->data, s->len+1)){
         return p.val;
       }
     }
   }
-  return NULL;
+  return NULL; 
 }
 
 void* map_overwrite(map_t* m, str_t* s, void* dataptr){
@@ -327,7 +327,7 @@ void* map_overwrite(map_t* m, str_t* s, void* dataptr){
   }
   if (m->slots[k].len){
     for (int i = 0; i < m->slots[k].len; i++){
-      if (!memcmp(m->slots[k].data[i].key, s->data, s->len)){
+      if (!strncmp(m->slots[k].data[i].key, s->data, s->len+1)){
         void* old = m->slots[k].data[i].val;
         m->slots[k].data[i].val = dataptr;
         return old;

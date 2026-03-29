@@ -41,7 +41,7 @@ std_all: build/config.h
 build/vm: $(wildcard src/*)
 	gcc -O3 src/run.c -lm -o build/vm;
 build/vm_dbg: $(wildcard src/*)
-	gcc -DDBG src/run.c -lm -o build/vm_dbg;
+	gcc $(OPT) src/run.c -lm -o build/vm_dbg;
 ir:
 	node src/parser.js $(src) -o build/ir.dsm --map build/ir.map;
 run_vm: build/vm build/vm_dbg ir

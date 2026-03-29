@@ -224,7 +224,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
           <polygon points="5,4 21,12 5,20" fill="#111"/>
         </svg>
-        <div class="tooltip tooltip-a">Run</div>
+        <div class="tooltip tooltip-a">Run (⇧↵)</div>
         <div class="tooltip tooltip-b" style="display:none">Start Debugger Session</div>
       </div>
 
@@ -235,7 +235,6 @@
         <div class="tooltip tooltip-a">Stop</div>
         <div class="tooltip tooltip-b" style="display:none">Exit Debugger Session</div>
       </div>
-
       <select id="sel-mode" class="" style="display:inline-block;width:120px;margin:0px;transform: translateY(-7px); height:23px; color:#000; text-align: left; border:none;margin-left:4px">
         <option value="vm">Interpreter</option>
         <option value="dbg">Debugger</option>
@@ -295,6 +294,16 @@
       </span>
     </div>
     <div id="mbr" style="position:absolute;right:10px;top:0px;height:30px;overflow:visible;user-select: none;-webkit-user-select: none;white-space: nowrap;text-align: right;display:inline-block">
+      <div class="bigbtn" id="btn-eval">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <path d="M10,6 8,3 16,3 14,6 14,10 20,18 20,20 4,20 4,18 10,10z"></path>
+          </g>
+        </svg>
+        <div class="tooltip">Eval Selection (⎇↵)</div>
+      </div>
+
+      
       <div class="bigbtn" id="btn-eg">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
           <g fill="#111">
@@ -631,14 +640,15 @@ function startRepl(){
     txt = ansi_color(txt);
     putout(txt,CME);
   });
-  replProcess.stdout.on('close', (code, signal) => {
+  replProcess.on('close', (code, signal) => {
     let reason = `code ${code}`;
     if (code === null){
       reason = `signal ${signal}`;
     }
     putmsg(`subprocess exited with ${reason}, attempting restart...`,CME);
     replProcess = null;
-    startPepl();
+    replready = 0;
+    startRepl();
   });
 }
 
@@ -663,13 +673,18 @@ let replhist_idx = -1;
 let replhist_tmp = "";
 
 function replsend(){
+  let txt = document.getElementById("inp-repl").value;
+  document.getElementById("inp-repl").value = "";
+  if (txt == '$kill'){
+    replProcess.kill('SIGKILL');
+    return;
+  }
   if (!replready) return;
   replready = 0;
-  let txt = document.getElementById("inp-repl").value;
   replhist.push(txt);
+  replhist_idx = -1;
   txt += "\n";
   putout(txt,CME,"color:wheat");
-  document.getElementById("inp-repl").value = "";
   replProcess.stdin.write(txt);
   document.getElementById("btn-send").style.pointerEvents = "none";
   document.getElementById("btn-send").style.opacity = 0.5;
@@ -703,25 +718,27 @@ document.getElementById("inp-repl").addEventListener('keydown', function(event) 
 });
 document.getElementById("btn-send").onclick = replsend;
 
+document.getElementById("btn-eval").onclick = function(){
+  let txt = CML.getSelection() || CML.getLine(CML.getCursor().line);
+  document.getElementById("btn-repl").onclick();
+  function behalf(){
+    if (replready){
+      document.getElementById("inp-repl").value = txt;
+      document.getElementById("btn-send").click();
+    }else{
+      setTimeout(behalf,200);
+    }
+  }
+  behalf();
+}
 
 document.getElementById("cl").addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && e.shiftKey) {
     e.preventDefault();
     document.getElementById("btn-run").onclick();
   }else if (e.key === 'Enter' && e.altKey){
-    let txt = CML.getSelection() || CML.getLine(CML.getCursor().line);
-
     e.preventDefault();
-    document.getElementById("btn-repl").onclick();
-    function behalf(){
-      if (replready){
-        document.getElementById("inp-repl").value = txt;
-        document.getElementById("btn-send").click();
-      }else{
-        setTimeout(behalf,200);
-      }
-    }
-    behalf();
+    document.getElementById("btn-eval").onclick();
   }
 });
 

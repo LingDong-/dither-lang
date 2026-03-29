@@ -966,10 +966,9 @@ list_node_t* find_label(map_t* lblmap, char* s){
   return map_get(lblmap,&t);
 }
 
-list_t read_ir(FILE* fd){
+
+list_t read_ir_update_labels(FILE* fd, map_t* lblmap){
   char c;
-  
-  map_t lblmap = {0};
 
   list_t l;
   list_init(&l);
@@ -1003,7 +1002,8 @@ list_t read_ir(FILE* fd){
           list_add(&l,ins);
           if (lbl.len){
             
-            map_add(&lblmap,&lbl,l.tail);
+            // map_add(lblmap,&lbl,l.tail);
+            map_overwrite(lblmap,&lbl,l.tail);
           }
           if (INSIS4("eoir")){
             break;
@@ -1034,13 +1034,13 @@ list_t read_ir(FILE* fd){
   while (n){
     instr_t* ins = (instr_t*)n->data;
     if (ins->a && ins->a->tag == OPRD_LABL){
-      ((label_t*)(ins->a))->ptr = find_label( &lblmap, ((label_t*)(ins->a))->str.data  );
+      ((label_t*)(ins->a))->ptr = find_label( lblmap, ((label_t*)(ins->a))->str.data  );
     }
     if (ins->b && ins->b->tag == OPRD_LABL){
-      ((label_t*)(ins->b))->ptr = find_label( &lblmap, ((label_t*)(ins->b))->str.data  );
+      ((label_t*)(ins->b))->ptr = find_label( lblmap, ((label_t*)(ins->b))->str.data  );
     }
     if (ins->c && ins->c->tag == OPRD_LABL){
-      ((label_t*)(ins->c))->ptr = find_label( &lblmap, ((label_t*)(ins->c))->str.data  );
+      ((label_t*)(ins->c))->ptr = find_label( lblmap, ((label_t*)(ins->c))->str.data  );
     }
     n = n->next;
   }
@@ -1048,6 +1048,15 @@ list_t read_ir(FILE* fd){
 #if DBG
   print_instrs(&l);
 #endif
+
+  return l;
+
+}
+
+list_t read_ir(FILE* fd){
+  map_t lblmap = {0};
+
+  list_t l = read_ir_update_labels(fd, &lblmap);
 
   for (int k = 0; k < NUM_MAP_SLOTS; k++){
     for (int i = 0; i < lblmap.slots[k].len;i++){
@@ -1702,7 +1711,16 @@ uint64_t get_val_int(term_t* a){
     var_t* v = find_var(&(a->u.str));
     return v->u.u64;
   }else if (a->mode == TERM_ADDR){
-    return *((uint64_t*)get_addr(a,NULL));
+    int n;
+    void* addr = get_addr(a,&n);
+    if (n > 4){
+      return *((uint64_t*)addr);
+    }else if (n > 2){
+      return *((uint32_t*)addr);
+    }else if (n > 1){
+      return *((uint16_t*)addr);
+    }
+    return *((uint8_t*)addr);
   }
   return a->u.u;
 }
