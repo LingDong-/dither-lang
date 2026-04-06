@@ -1440,6 +1440,21 @@ void to_str(int vart, void* u, str_t* s){
   return to_str_(vart,u,s,1);
 }
 
+void print_var(var_t* v){
+  printf("%.03s\t",vart_names+(v->type->vart*3));
+  print_type(v->type);
+  printf("\t");
+  str_t s = str_new();
+  if (v->type->mode == TYPM_NUMB || v->type->mode == TYPM_VOID){
+    to_str(v->type->vart, &(v->u), &s);
+  }else{
+    printf("%p\t",v->u.obj);
+    to_str(v->type->vart, &(v->u), &s);
+  }
+  printf("%s",s.data);
+  free(s.data);
+  printf("\n");
+}
 
 void print_vars(){
   printf("===============BEGIN===============\n");
@@ -1451,20 +1466,8 @@ void print_vars(){
       for (int i = 0; i < m->slots[k].len; i++){
         pair_t p = m->slots[k].data[i];
         var_t* v = (var_t*)(p.val);
-        printf("%s\t%.03s\t",p.key,vart_names+(v->type->vart*3));
-        // printf("%s\t",key.data);
-        print_type(v->type);
-        printf("\t");
-        str_t s = str_new();
-        if (v->type->mode == TYPM_NUMB || v->type->mode == TYPM_VOID){
-          to_str(v->type->vart, &(v->u), &s);
-        }else{
-          printf("%p\t",v->u.obj);
-          to_str(v->type->vart, &(v->u), &s);
-        }
-        printf("%s",s.data);
-        free(s.data);
-        printf("\n");
+        printf("%s\t",p.key);
+        print_var(v);
       }
     }
     e = e->next;

@@ -108,9 +108,9 @@ $(BUNDLE): $(INFO_PLIST) $(EXECUTABLE) $(BUILD_DIR)/index.html $(WEB_FILES) $(CL
 		filename=$$(basename "$$url"); \
 		cp "$(BUILD_DIR)/$$filename" "$(RES_DIR)/$$filename"; \
 	done < $(BUILD_DIR)/links.txt
-	@cp "$(CLI_TOOL)" "$(MACOS_DIR)/";
+	@cp -c "$(CLI_TOOL)" "$(RES_DIR)/";
 	@cp "$(EXECUTABLE)" "$(MACOS_DIR)/";
-	@chmod +x "$(MACOS_DIR)/$$(basename $(CLI_TOOL))";
+	@chmod +x "$(RES_DIR)/$$(basename $(CLI_TOOL))";
 	@cp $(INFO_PLIST) $(CONTENTS)/Info.plist
 	@echo -n "APPL????" > $(CONTENTS)/PkgInfo
 	@if [ -n "$(ICON_PNG)" ] && [ -f "$(ICON_PNG)" ]; then \
@@ -130,6 +130,7 @@ $(BUNDLE): $(INFO_PLIST) $(EXECUTABLE) $(BUILD_DIR)/index.html $(WEB_FILES) $(CL
 		rm -rf /tmp/_icon.iconset; \
 	fi
 	@find $(BUNDLE) -type f | sed 's/^/  /'
+	@codesign --deep --strict --force --verbose=4 --sign - $(BUNDLE)
 
 run: $(BUNDLE)
 	open $(BUNDLE)

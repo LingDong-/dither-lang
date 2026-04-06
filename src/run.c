@@ -71,8 +71,20 @@ int main(int argc, char** argv){
               break;
             }
           }
-        }else if (!strcmp(cmd,"dump")){
-          print_vars();
+        }else if (!strncmp(cmd,"dump",4)){
+          char* vname;
+          if (cmd[4]==0){
+            print_vars();
+          }else{
+            str_t vname;
+            vname.data = cmd+5;
+            vname.cap = vname.len = strlen(vname.data);
+            var_t* v = find_var(&vname);
+            if (v){
+              printf("%s\t",vname.data);
+              print_var(v);
+            }
+          }
         }else if (!strcmp(cmd,"list")){
           list_node_t* nn = instrs.head;
           while (nn){

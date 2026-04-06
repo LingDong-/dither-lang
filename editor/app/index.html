@@ -85,6 +85,17 @@
       user-select: none;
       -webkit-user-select: none;
     }
+    .tdbtn {
+      padding-right: 16px;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 10 L10 2 M4 2 H10 V8' fill='none' stroke='%23ded'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 4px center;
+      background-size: 10px 10px;
+      cursor: pointer;
+    }
+    .tdbtn:hover{
+      background-color: rgba(255,255,255,0.3);
+    }
     .hover-underline:hover{
       text-decoration: underline;
     }
@@ -135,6 +146,39 @@
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
   <style>
+    .cm-searching {
+      background-color: rgba(0,0,0,0);
+      border:1px solid white;
+    }
+    .CodeMirror-dialog {
+      position: absolute;
+      left: 0; right: 0;
+      background: inherit;
+      z-index: 15;
+      padding: .1em .8em;
+      overflow: hidden;
+      color: inherit;
+    }
+    .CodeMirror-dialog-top {
+      border-bottom: 1px solid #eee;
+      top: 0;
+    }
+    .CodeMirror-dialog-bottom {
+      border-top: 1px solid #eee;
+      bottom: 0;
+    }
+    .CodeMirror-dialog input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 20em;
+      color: inherit;
+      font-family: monospace;
+    }
+    .CodeMirror-dialog button {
+      font-size: 70%;
+    }
+
     .CodeMirror-scrollbar-filler{
       background: #252627;
     }
@@ -150,7 +194,7 @@
     .cm-s-theme .CodeMirror-gutters { color: #222; }
     .cm-s-theme .CodeMirror-cursor { border-left: solid thin #f8f8f0; }
     .cm-s-theme .CodeMirror-linenumber { color: #6D8A88; }
-    .cm-s-theme .CodeMirror-selected { background: rgba(255, 255, 255, 0.10); }
+    .cm-s-theme .CodeMirror-selected { background: rgba(255, 255, 255, 0.30); }
     .cm-s-theme .CodeMirror-line::selection, .cm-s-theme .CodeMirror-line > span::selection, .cm-s-theme .CodeMirror-line > span > span::selection { background: rgba(255, 255, 255, 0.10); }
     .cm-s-theme .CodeMirror-line::-moz-selection, .cm-s-theme .CodeMirror-line > span::-moz-selection, .cm-s-theme .CodeMirror-line > span > span::-moz-selection { background: rgba(255, 255, 255, 0.10); }
     .cm-s-theme span.cm-comment { color:  #777; }
@@ -201,6 +245,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/matchbrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/comment/comment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/search/search.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/search/searchcursor.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/dialog/dialog.min.js"></script>
   <style>.CodeMirror { height: 100%; }</style>
 </head>
 
@@ -377,6 +424,12 @@
   </body>
   <script>
 
+let ideas = {
+  "tech":["A machine-learning-based","A webcam-controlled","A keyboard-controlled","A mouse-driven","A physics-based","An L-system-based","A cellular-automata-based","A differential-growth-based","A fractal-based","A noise-based","A Perlin-noise-based","A flow-field-based","A particle-system-based","An agent-based","A flocking-based","A swarm-intelligence-based","A genetic-algorithm-based","An evolutionary","A neural-network-based","A computer-vision-based","A face-tracking-based","A hand-tracking-based","A pose-estimation-based","An optical-flow-based","An edge-detection-based","A color-tracking-based","A motion-detection-based","A microphone-controlled","An audio-reactive","A beat-detection-based","A pitch-tracking-based","A voice-controlled","An eye-tracking-based","A gesture-controlled","A slider-controlled","A knob-controlled","A depth-estimation-based","A data-driven","A weather-data-driven","A blob-tracking-based","A time-based","A calendar-driven","A ray-marching-based","A shader-based","A Dubins-path-based","A voxel-based","A grid-based","A hexagonal-grid-based","A Voronoi-based","A Delaunay-based","A wave-function-collapse-based","A Markov-chain-based","A random-walk-based","A Brownian-motion-based","A reaction-diffusion-based","A fluid-simulation-based","A cloth-simulation-based","A soft-body-based","A spring-mass-based","A verlet-integration-based","A inverse-kinematics-based","A procedural-generation-based","A recursive","A turtle-graphics-based","A space-colonization-based","A diffusion-limited-aggregation-based","A maze-generation-based","A pathfinding-based","A graph-traversal-based","A quadtree-based","A metaball-based","A marching-squares-based","A Fourier-transform-based","A convolution-based","A dithering-based","A halftone-based","A stippling-based","A force-directed","A gravity-based","An N-body-based","A collision-detection-based","A circle-packing-based","A sorting-algorithm-based","An interpolation-based","A Lorenz-attractor-based","A chaotic-system-based","A vector-graphics-based","A multi-view","A spirograph-based","A Lloyd-relaxation-based","A parametric-equation-based","A Bezier-curve-based","A spline-based","A Poisson-disk-based","A Unicode-based","A light-simulation-based","A morphology-based","A multi-touch-controlled","A MIDI-controlled","A geolocation-controlled","An ant-colony-based","A constraint-based"],
+  "art":["typography","calligraphy","glyph","alphabet","emoji","abstract art","geometric art","optical illusion","pixel art","glitch art","color","gradient","palette","iridescence","line","hatching","stipple","circle","spiral","helix","wave","ripple","impressionistic art","mandala","surreal art","symmetry","tessellation","pattern","ornament","texture","weaving","doodle","embroidery","handwriting","origami","mosaic","geometry","sphere","landscape","terrain","mountain","ocean","river","waterfall","rain","snowflake","cloud","fog","lightning","wind","figure","sunset","aurora","shadow","reflection","light","poem","fire","smoke","ink","marbling","tree","forest","garden","flower","leaf","creature","death","mirror","cell","love","image","ghost","negative-space","emotion","contour","transmutation","connection","organism","human-body","face","eye","hand","skeleton","constellation","ear","finger","space","cityscape","crystal","erosion","season","maze","cartography","architecture","lattice","clock","sonic","waveform","trail","dream","memory"],
+  "software":["visualization","animation","simulation","experiment","demo","sketch","prototype","study","exploration","toy","sandbox","playground","instrument","synthesizer","sequencer","sound-toy","archive","installation","exhibit","projection","light-show","performance-tool","screensaver","wallpaper","widget","painting","utility","predictor","generator","drawing-tool","painting-tool","print","puzzle","game","map","timepiece","software","editor","timer","dashboard","companion","experience","relaxation-tool","converter","screensaver","ambient-soundscape","terrarium","aquarium","viewer","lava-lamp","tool","tweaker","music-box","kaleidoscope","explorer","zoetrope","system","collage","maker","world","design-tool","environment","bot","plotter","room","ecosystem","catalog","encoder","object","eye-candy","piano","theremin","mixer","filter","calculator","processor","art","graph","morph","diagram","illustration","finder","sorter","optimizer","classifier","thingy","test","3D game","platform","font","graph-visualizer","timeline","recorder","book","gallery","player","machine","contraption","fidget-toy","postcard","detector","drawing","portrait","layout-tool"]
+};
+
 let date = new Date();
 let filename = "/tmp/sketch_"+(date.getFullYear()).toString().slice(-2) + (date.getMonth()+1).toString().padStart(2,"0").slice(-2) + (date.getDate()).toString().padStart(2,"0").slice(-2) + "_" + String.fromCharCode(~~(Math.random()*26)+97) + String.fromCharCode(~~(Math.random()*26)+97) + String.fromCharCode(~~(Math.random()*26)+97) + ".dh";
 
@@ -469,6 +522,13 @@ CodeMirror.defineSimpleMode("dsm", {
   ],
 });
 
+function inspire(){
+  function choice(l){
+    return l[~~(Math.random()*l.length)];
+  }
+  return choice(ideas.tech) + " " + choice(ideas.art) + " " + choice(ideas.software);
+}
+
 var CML = CodeMirror(document.getElementById("cl"), {
   lineNumbers:true,
   matchBrackets: true,
@@ -486,7 +546,8 @@ var CML = CodeMirror(document.getElementById("cl"), {
   },
 });
 CML.setSize(null,null);
-CML.setValue(``);
+CML.setValue('// '+inspire());
+
 let cleanGeneration = CML.changeGeneration();
 CML.on("change", () => {
   make_title();
@@ -673,7 +734,9 @@ let replhist_idx = -1;
 let replhist_tmp = "";
 
 function replsend(){
-  let txt = document.getElementById("inp-repl").value;
+  // if (txt===null){
+    txt = document.getElementById("inp-repl").value;
+  // }
   document.getElementById("inp-repl").value = "";
   if (txt == '$kill'){
     replProcess.kill('SIGKILL');
@@ -723,6 +786,7 @@ document.getElementById("btn-eval").onclick = function(){
   document.getElementById("btn-repl").onclick();
   function behalf(){
     if (replready){
+      //replsend(txt)
       document.getElementById("inp-repl").value = txt;
       document.getElementById("btn-send").click();
     }else{
@@ -907,6 +971,10 @@ function ansi_color(txt){
   return txt;
 }
 
+var watchvar = window.watchvar = null;
+var watchdat = window.watchdat = {};
+var watchabl = 0;
+
 function parse_vars_print(txt){
   let auto = isAtBottom(CMV);
 
@@ -921,7 +989,7 @@ function parse_vars_print(txt){
     "-----------------------------------"
   ]
   let lines = txt.split('\n').filter(x=>x.length);
-  let hd = `<table style="font-size:12px;width:100%;border:1px solid #999;${lines.length?"border-collapse:collapse;":""}">`;
+  let hd = `<table style="font-size:12px;width:100%;border:1px solid #999;${lines.some(x=>!splits.includes(x))?"border-collapse:collapse;":""}">`;
   let out = `<div style="font-size:12px;font-weight:bold;color:#999">BOTTOM</div>`+hd;
   
   for (let i = lines.length-1; i > 0; i--){
@@ -947,7 +1015,11 @@ function parse_vars_print(txt){
       }
     }
     out += `<tr>`;
-    out += `<td style="color:#ded;border:1px solid #999">${cells[0]}</td>`;
+    if (['I8','U8','I16','U16','I32','U32','I64','U64','F32','F64','VEC'].includes(cells[1])){
+      out += `<td class="tdbtn" style="color:#ded;border:1px solid #999" onmousedown="window.watchvar='${cells[0]}';window.watchabl=0;plot_var_print('${lines[i]}')">${cells[0]}</td>`;
+    }else{
+      out += `<td style="color:#ded;border:1px solid #999">${cells[0]}</td>`;
+    }
     out += `<td style="color:#1bf;border:1px solid #999">${cells[1]}</td>`;
     out += `<td style="color:#b9f;border:1px solid #999">${cells.slice(3).join('\t')}</td>`;
     out += `</tr>`;
@@ -957,6 +1029,130 @@ function parse_vars_print(txt){
   CMV.innerHTML = out;
   if (auto) CMV.scrollTop = CMV.scrollHeight; 
 }
+
+function make_color(idx){
+  let jsr = idx+0x5EED;
+  for (let i = 0; i < 10; i++){
+    jsr^=(jsr<<17);
+    jsr^=(jsr>>13);
+    jsr^=(jsr<<5);
+  }
+  jsr = ((jsr>>>0) % 0xffffff);
+  jsr &= 0x7f7f7f;
+  jsr |= 0x808080;
+  return '#'+ (jsr.toString(16).padStart(6,'0'));
+}
+
+function plot_var_print(txt){
+  txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
+  txt = txt.replace(/\x1b\[[0-9;]*[mK]/g, '');
+  
+  let out = `<div class="bigbtn" style="position:absolute;right:0px;top:5px;padding:0px;margin:0px;"
+    onmousedown="window.watchvar=null;window.watchdat={};parse_vars_print(atob('${btoa(txt)}'))">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+      <g stroke="#111" fill="none" stroke-width="4">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="6" y1="18" x2="18" y2="6"/>
+      </g>
+    </svg>
+    <div class="tooltip" style="left:auto;right:0px">Back</div>
+  </div>`
+
+  if (!txt.trim().length){
+    if (!CMV.getElementsByClassName("bigbtn").length){
+      CMV.innerHTML = out;
+    }
+    return;
+  }
+  out += `<div style="font-size:10px;position:absolute;left:0px;top:0px;z-index:1000">`
+  let rect = CMV.getBoundingClientRect();
+  let pad = 10;
+  let W = rect.width-pad*2;
+  let H = rect.height-pad*2;
+  let colors = {};
+  let cells = txt.split("\t");
+  let bad = 0;
+  if (cells[1] == 'VEC'){
+    let p = cells[4].trim().slice(1,-1).split(',').map(x=>Number(x));
+    let bad = 0;
+    for (let i = 0; i < p.length; i++){
+      let s = `${cells[0]}[${i}]`;
+      if (!watchdat[s]) watchdat[s] = [];
+      if (isNaN(p[i])){
+        bad = 1;
+      }
+    }
+    for (let i = 0; i < p.length; i++){
+      let s = `${cells[0]}[${i}]`;
+      if (!bad) watchdat[s].push(p[i]);
+      let c = make_color(i);
+      colors[s] = c;
+      out += `<span style="background:${c}">&nbsp;&nbsp;</span> ${s}<br>`;
+    }
+  
+  }else{
+    let s = cells[0];
+    if (!watchdat[s]) watchdat[s] = [];
+    let p = Number(cells[3]);
+    if (!isNaN(p)){
+      watchdat[cells[0]].push(p);
+    }
+    let c = make_color(0);
+    colors[s] = c;
+    out += `<span style="background:${make_color(0)}">&nbsp;&nbsp;</span> ${s}<br>`;
+  }
+  out += `</div>`;
+
+  let ymin = Infinity;
+  let ymax = -Infinity;
+  let xmax = 0;
+  for (let k in watchdat){
+    xmax = Math.max(xmax, watchdat[k].length);
+    for (let i = 0; i < watchdat[k].length; i++){
+      ymin = Math.min(ymin,watchdat[k][i]);
+      ymax = Math.max(ymax,watchdat[k][i]);
+    }
+  }
+  if (ymin == ymax){
+    ymin -=1;
+    ymax +=1;
+  }
+  let xscale = 1;
+  if (xmax < W-pad*2){
+    xscale = (W-pad*2)/xmax;
+    xmax = W-pad*2;
+  }
+  function preq(maxAbs, minDiff) {
+    let magnitude = Math.floor(Math.log10(maxAbs));
+    let r = Math.ceil(magnitude - Math.log10(minDiff) + 2);
+    return Math.min(Math.max(r,2),16);
+  }
+  let md = preq(Math.max(Math.abs(ymin),Math.abs(ymax)), (ymax-ymin)*0.1);
+
+  out += `<div id="scroller" style="position:absolute;width:100%;height:100%;left:0px;top:0px;overflow:scroll">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${xmax}" height="${H}" >`
+  for (let i = 0; i < 10; i++){
+    let y = (i/10)*(ymax-ymin)+ymin;
+    let cy = H-pad-((y-ymin)/(ymax-ymin))*(H-pad*2);
+    out += `<line x1="0" y1="${cy}" x2="${xmax}" y2="${cy}" stroke="#333"/>`;
+    let yf = y.toPrecision(md);
+    out += `<text x="${xmax}" y="${cy}" text-anchor="end" dominant-baseline="middle" font-size="10px" fill="#777">${yf}</text>`;
+  }
+  for (let k in watchdat){
+    for (let i = 0; i < watchdat[k].length; i++){
+      let y = watchdat[k][i];
+      let cy = H-pad-((y-ymin)/(ymax-ymin))*(H-pad*2);
+      out += `<circle cx="${i*xscale+pad}" cy="${cy}" r="1" fill="${colors[k]}"/>`;
+    }
+  }
+  out += `</svg></div>`
+  CMV.innerHTML = out;
+  CMV.querySelector("#scroller").scrollLeft = CMV.querySelector("#scroller").scrollWidth;
+}
+
+// CML.setSize("50%",null);
+// document.getElementById("cicv").style.display="block"
+// plot_var_print("");
 
 document.getElementById("btn-var").onclick = function(){
   dofiltvar = 1-dofiltvar;
@@ -1053,6 +1249,9 @@ function unhl_ins(){
 
 function rundbg(pth, args=[]){
   dbgready = 10;
+  watchabl = 0;
+  watchvar = null;
+  watchdat = {};
   set_mb_dbg();
 
   let firsttime = 1;
@@ -1066,7 +1265,7 @@ function rundbg(pth, args=[]){
   childProcess.stdout.on('data', (data)=>{
     let txt = data.toString();
     buf += txt;
-    console.log(txt);
+    // console.log(txt);
     if (dbgready == 20 || dbgready == 30 || dbgready == 0){
       txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
       putout(txt);
@@ -1085,10 +1284,19 @@ function rundbg(pth, args=[]){
         childProcess.stdin.write("peek\n");
         dbgready = 32;
       }else if (dbgready == 20 || dbgready == 30){
-        childProcess.stdin.write("dump\n");
+        if (watchvar == null){
+          childProcess.stdin.write("dump\n");
+        }else{
+          childProcess.stdin.write(`dump ${watchvar}\n`);
+          watchabl = 1;
+        }
         dbgready ++;
       }else if (dbgready == 21 || dbgready == 31){
-        parse_vars_print(buf);
+        if (watchvar == null || !watchabl){
+          parse_vars_print(buf);
+        }else{
+          plot_var_print(buf);
+        }
         childProcess.stdin.write("peek\n");
         dbgready ++;
       }else if (dbgready == 22 || dbgready == 32){

@@ -134,11 +134,11 @@ function miniServer(ENTRY_FILE){
   let PORT = 5555;
   function findAvailablePort(start, callback) {
     const server = net.createServer();
+    server.on('error', () => findAvailablePort(start + 1, callback));
     server.listen(start, () => {
       server.once('close', () => callback(start));
       server.close();
     });
-    server.on('error', () => findAvailablePort(start + 1, callback));
   }
   function startServer(port) {
     const server = http.createServer((req, res) => {
