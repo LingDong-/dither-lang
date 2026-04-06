@@ -195,6 +195,9 @@ if (is_repl){
   let namesp = ['__0']
   let idx = 0;
   function check_done(s){
+    if (!s.trim().length){
+      return false;
+    }
     let lvl=[0,0,0,0,0,0];
     let esc = 0;
     for (let i = 0; i < s.length; i++){

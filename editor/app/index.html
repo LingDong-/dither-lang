@@ -251,7 +251,7 @@
   <style>.CodeMirror { height: 100%; }</style>
 </head>
 
-  <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden">
+  <body style="background:#141414;margin:0px;width:100%;height:100%;overflow:hidden;">
     <div id="mb" style="position:absolute;left:0px;top:0px;width:100%;height:30px;overflow:visible;user-select: none;-webkit-user-select: none;white-space: nowrap;">
       
       <div class="bigbtn" id="btn-compile" style="display: none;">
@@ -426,8 +426,8 @@
 
 let ideas = {
   "tech":["A machine-learning-based","A webcam-controlled","A keyboard-controlled","A mouse-driven","A physics-based","An L-system-based","A cellular-automata-based","A differential-growth-based","A fractal-based","A noise-based","A Perlin-noise-based","A flow-field-based","A particle-system-based","An agent-based","A flocking-based","A swarm-intelligence-based","A genetic-algorithm-based","An evolutionary","A neural-network-based","A computer-vision-based","A face-tracking-based","A hand-tracking-based","A pose-estimation-based","An optical-flow-based","An edge-detection-based","A color-tracking-based","A motion-detection-based","A microphone-controlled","An audio-reactive","A beat-detection-based","A pitch-tracking-based","A voice-controlled","An eye-tracking-based","A gesture-controlled","A slider-controlled","A knob-controlled","A depth-estimation-based","A data-driven","A weather-data-driven","A blob-tracking-based","A time-based","A calendar-driven","A ray-marching-based","A shader-based","A Dubins-path-based","A voxel-based","A grid-based","A hexagonal-grid-based","A Voronoi-based","A Delaunay-based","A wave-function-collapse-based","A Markov-chain-based","A random-walk-based","A Brownian-motion-based","A reaction-diffusion-based","A fluid-simulation-based","A cloth-simulation-based","A soft-body-based","A spring-mass-based","A verlet-integration-based","A inverse-kinematics-based","A procedural-generation-based","A recursive","A turtle-graphics-based","A space-colonization-based","A diffusion-limited-aggregation-based","A maze-generation-based","A pathfinding-based","A graph-traversal-based","A quadtree-based","A metaball-based","A marching-squares-based","A Fourier-transform-based","A convolution-based","A dithering-based","A halftone-based","A stippling-based","A force-directed","A gravity-based","An N-body-based","A collision-detection-based","A circle-packing-based","A sorting-algorithm-based","An interpolation-based","A Lorenz-attractor-based","A chaotic-system-based","A vector-graphics-based","A multi-view","A spirograph-based","A Lloyd-relaxation-based","A parametric-equation-based","A Bezier-curve-based","A spline-based","A Poisson-disk-based","A Unicode-based","A light-simulation-based","A morphology-based","A multi-touch-controlled","A MIDI-controlled","A geolocation-controlled","An ant-colony-based","A constraint-based"],
-  "art":["typography","calligraphy","glyph","alphabet","emoji","abstract art","geometric art","optical illusion","pixel art","glitch art","color","gradient","palette","iridescence","line","hatching","stipple","circle","spiral","helix","wave","ripple","impressionistic art","mandala","surreal art","symmetry","tessellation","pattern","ornament","texture","weaving","doodle","embroidery","handwriting","origami","mosaic","geometry","sphere","landscape","terrain","mountain","ocean","river","waterfall","rain","snowflake","cloud","fog","lightning","wind","figure","sunset","aurora","shadow","reflection","light","poem","fire","smoke","ink","marbling","tree","forest","garden","flower","leaf","creature","death","mirror","cell","love","image","ghost","negative-space","emotion","contour","transmutation","connection","organism","human-body","face","eye","hand","skeleton","constellation","ear","finger","space","cityscape","crystal","erosion","season","maze","cartography","architecture","lattice","clock","sonic","waveform","trail","dream","memory"],
-  "software":["visualization","animation","simulation","experiment","demo","sketch","prototype","study","exploration","toy","sandbox","playground","instrument","synthesizer","sequencer","sound-toy","archive","installation","exhibit","projection","light-show","performance-tool","screensaver","wallpaper","widget","painting","utility","predictor","generator","drawing-tool","painting-tool","print","puzzle","game","map","timepiece","software","editor","timer","dashboard","companion","experience","relaxation-tool","converter","screensaver","ambient-soundscape","terrarium","aquarium","viewer","lava-lamp","tool","tweaker","music-box","kaleidoscope","explorer","zoetrope","system","collage","maker","world","design-tool","environment","bot","plotter","room","ecosystem","catalog","encoder","object","eye-candy","piano","theremin","mixer","filter","calculator","processor","art","graph","morph","diagram","illustration","finder","sorter","optimizer","classifier","thingy","test","3D game","platform","font","graph-visualizer","timeline","recorder","book","gallery","player","machine","contraption","fidget-toy","postcard","detector","drawing","portrait","layout-tool"]
+  "art":["typography","calligraphy","glyph","alphabet","emoji","abstract art","geometric art","optical illusion","pixel art","glitch art","color","gradient","palette","polygon","line","hatching","stipple","circle","spiral","helix","wave","ripple","impressionistic art","mandala","surreal art","symmetry","tessellation","pattern","ornament","texture","weaving","doodle","embroidery","handwriting","origami","mosaic","geometry","sphere","landscape","terrain","mountain","ocean","river","waterfall","rain","snowflake","cloud","fog","lightning","wind","figure","sunset","aurora","shadow","reflection","light","poem","fire","smoke","ink","marbling","tree","forest","garden","flower","leaf","creature","death","mirror","cell","love","image","ghost","negative-space","emotion","contour","transmutation","connection","organism","human-body","face","eye","hand","skeleton","constellation","ear","finger","space","cityscape","crystal","erosion","season","maze","cartography","architecture","lattice","clock","sonic","waveform","trail","dream","memory"],
+  "software":["visualization","animation","simulation","experiment","demo","sketch","prototype","study","exploration","toy","sandbox","playground","instrument","synthesizer","sequencer","sound-toy","archive","installation","exhibit","projection","light-show","performance-tool","screensaver","wallpaper","widget","painting","utility","predictor","generator","drawing-tool","painting-tool","print","puzzle","game","map","timepiece","software","editor","timer","dashboard","companion","experience","relaxation-tool","converter","app","ambient-soundscape","terrarium","aquarium","viewer","lava-lamp","tool","tweaker","music-box","kaleidoscope","explorer","zoetrope","system","collage","maker","world","design-tool","environment","bot","plotter","room","ecosystem","catalog","encoder","object","eye-candy","piano","theremin","mixer","filter","calculator","processor","art","graph","morph","diagram","illustration","finder","sorter","optimizer","classifier","thingy","test","3D game","platform","font","graph-visualizer","timeline","recorder","book","gallery","player","machine","contraption","fidget-toy","postcard","detector","drawing","portrait","layout-tool"]
 };
 
 let date = new Date();
@@ -1038,10 +1038,16 @@ function make_color(idx){
     jsr^=(jsr<<5);
   }
   jsr = ((jsr>>>0) % 0xffffff);
-  jsr &= 0x7f7f7f;
   jsr |= 0x808080;
   return '#'+ (jsr.toString(16).padStart(6,'0'));
 }
+
+let mouseX = 0;
+let mouseY = 0;
+document.addEventListener("mousemove",function(e){
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+})
 
 function plot_var_print(txt){
   txt = txt.replace(/\x1b\[94mdbg>\x1b\[0m/g,'');
@@ -1117,11 +1123,15 @@ function plot_var_print(txt){
     ymin -=1;
     ymax +=1;
   }
+  let xsp = 4;
+  xmax *= xsp;
   let xscale = 1;
   if (xmax < W-pad*2){
     xscale = (W-pad*2)/xmax;
     xmax = W-pad*2;
   }
+  xmax += pad*2;
+
   function preq(maxAbs, minDiff) {
     let magnitude = Math.floor(Math.log10(maxAbs));
     let r = Math.ceil(magnitude - Math.log10(minDiff) + 2);
@@ -1130,7 +1140,7 @@ function plot_var_print(txt){
   let md = preq(Math.max(Math.abs(ymin),Math.abs(ymax)), (ymax-ymin)*0.1);
 
   out += `<div id="scroller" style="position:absolute;width:100%;height:100%;left:0px;top:0px;overflow:scroll">
-    <svg xmlns="http://www.w3.org/2000/svg" width="${xmax}" height="${H}" >`
+    <svg id="scrollee" xmlns="http://www.w3.org/2000/svg" width="${xmax}" height="${H}" >`
   for (let i = 0; i < 10; i++){
     let y = (i/10)*(ymax-ymin)+ymin;
     let cy = H-pad-((y-ymin)/(ymax-ymin))*(H-pad*2);
@@ -1142,17 +1152,30 @@ function plot_var_print(txt){
     for (let i = 0; i < watchdat[k].length; i++){
       let y = watchdat[k][i];
       let cy = H-pad-((y-ymin)/(ymax-ymin))*(H-pad*2);
-      out += `<circle cx="${i*xscale+pad}" cy="${cy}" r="1" fill="${colors[k]}"/>`;
+      out += `<circle cx="${i*xscale*xsp+pad}" cy="${cy}" r="1" fill="${colors[k]}"/>`;
     }
   }
   out += `</svg></div>`
+  out += `<div id="watchdatcur" style="position:absolute;right:0px;bottom:0px;font-size:10px"></div>`;
   CMV.innerHTML = out;
-  CMV.querySelector("#scroller").scrollLeft = CMV.querySelector("#scroller").scrollWidth;
+  let a = CMV.querySelector("#scroller");
+  let b = CMV.querySelector("#scrollee");
+  a.scrollLeft = a.scrollWidth;
+  function showcur(){
+    let r = b.getBoundingClientRect();
+    let x = mouseX - r.left - pad;
+    let idx = Math.max(0,Math.round(x/xsp/xscale));
+    let wc = [];
+    for (let k in watchdat){
+      idx = Math.min(watchdat[k].length-1,idx)
+      wc.push(watchdat[k][idx]);
+    }
+    CMV.querySelector("#watchdatcur").innerHTML = `[${idx}]`+wc.join(",");
+  }
+  showcur();
+  a.addEventListener("mousemove",showcur);
 }
 
-// CML.setSize("50%",null);
-// document.getElementById("cicv").style.display="block"
-// plot_var_print("");
 
 document.getElementById("btn-var").onclick = function(){
   dofiltvar = 1-dofiltvar;
@@ -1237,7 +1260,8 @@ function hl_ins(addr){
   }
   let tr = document.getElementById(addr);
   tr.classList.add("dbg-hl");
-  tr.scrollIntoView();
+  // tr.scrollIntoView();
+  tr.scrollIntoViewIfNeeded()
   prvinstr = tr;
 }
 function unhl_ins(){
