@@ -59,6 +59,10 @@ function main(){
         if (x.startsWith("std/")){
           return new TextEncoder().encode(STD[x]);
         }
+        var xh = new XMLHttpRequest();
+        xh.open("GET",x,false);
+        xh.send(null);
+        return new TextEncoder().encode(xh.responseText);
       },
     }
     let path = {

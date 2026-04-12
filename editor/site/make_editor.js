@@ -325,9 +325,13 @@ function main(){
         }
         if (x.startsWith("std/")){
           return new TextEncoder().encode(STD[x]);
-        }else{
+        }else if (EXAMPLES[x]){
           return new TextEncoder().encode(EXAMPLES[x]);
         }
+        var xh = new XMLHttpRequest();
+        xh.open("GET",x,false);
+        xh.send(null);
+        return new TextEncoder().encode(xh.responseText);
       },
     }
     let path = pathrules;
@@ -619,9 +623,13 @@ b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{do
         }
         if (x.startsWith("std/")){
           return new TextEncoder().encode(STD[x]);
-        }else{
+        }else if (EXAMPLES[x]){
           return new TextEncoder().encode(EXAMPLES[x]);
         }
+        // var xh = new XMLHttpRequest();
+        // xh.open("GET",x,false);
+        // xh.send(null);
+        // return new TextEncoder().encode(xh.responseText);
       },
     }
     let path = pathrules;
