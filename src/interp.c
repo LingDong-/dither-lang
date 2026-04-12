@@ -2656,21 +2656,23 @@ void cast(term_t* a, term_t* b){
           int vm = ((type_t*)(v->type->u.elem.head->data))->vart;
           int um = ((type_t*)(u->type->u.elem.head->data))->vart;
 
-          if (vm == um){
+          if (vm == um && v->u.vec->n == u->u.vec->n){
             v->u.vec = u->u.vec;
           }else{
             for (int i = 0; i < v->u.vec->n; i++){
-              double bv;
-                   if (um == VART_U08) bv = ((uint8_t*) (u->u.vec->data))[i] ;
-              else if (um == VART_I08) bv = (( int8_t*) (u->u.vec->data))[i] ;
-              else if (um == VART_U16) bv = ((uint16_t*)(u->u.vec->data))[i];
-              else if (um == VART_I16) bv = (( int16_t*)(u->u.vec->data))[i];
-              else if (um == VART_U32) bv = ((uint32_t*)(u->u.vec->data))[i];
-              else if (um == VART_I32) bv = (( int32_t*)(u->u.vec->data))[i];
-              else if (um == VART_U64) bv = ((uint64_t*)(u->u.vec->data))[i];
-              else if (um == VART_I64) bv = (( int64_t*)(u->u.vec->data))[i];
-              else if (um == VART_F32) bv = ((float*)   (u->u.vec->data))[i];
-              else if (um == VART_F64) bv = ((double*)  (u->u.vec->data))[i];    
+              double bv = 0.0;
+              if (i < u->u.vec->n){
+                     if (um == VART_U08) bv = ((uint8_t*) (u->u.vec->data))[i];
+                else if (um == VART_I08) bv = (( int8_t*) (u->u.vec->data))[i];
+                else if (um == VART_U16) bv = ((uint16_t*)(u->u.vec->data))[i];
+                else if (um == VART_I16) bv = (( int16_t*)(u->u.vec->data))[i];
+                else if (um == VART_U32) bv = ((uint32_t*)(u->u.vec->data))[i];
+                else if (um == VART_I32) bv = (( int32_t*)(u->u.vec->data))[i];
+                else if (um == VART_U64) bv = ((uint64_t*)(u->u.vec->data))[i];
+                else if (um == VART_I64) bv = (( int64_t*)(u->u.vec->data))[i];
+                else if (um == VART_F32) bv = ((float*)   (u->u.vec->data))[i];
+                else if (um == VART_F64) bv = ((double*)  (u->u.vec->data))[i];   
+              } 
 
                    if (vm == VART_U08) ((uint8_t*)(v->u.vec->data))[i] = bv;
               else if (vm == VART_I08) (( int8_t*)(v->u.vec->data))[i] = bv;

@@ -978,8 +978,14 @@ var TO_C = function(cfg){
       }else if (tb.con == 'union'){
         o.push(`memcpy( &(${a}), &(${b}->data), ${type_size(ta)} );`);
       }else if (ta.con == 'vec' && tb.con == 'vec'){
-        for (let i = 0; i < vec_type_flat_n(ta); i++){
-          o.push(`${a}[${i}] = ${b}[${i}];`);
+        let na = vec_type_flat_n(ta);
+        let nb = vec_type_flat_n(tb);
+        for (let i = 0; i < na; i++){
+          if (i >= nb){
+            o.push(`${a}[${i}] = 0;`);
+          }else{
+            o.push(`${a}[${i}] = ${b}[${i}];`);
+          }
         }
       }else if (ta == 'char*' && tb == 'VOID_T'){
         o.push(`${a}=__gc_alloc(VART_STR,5);`);

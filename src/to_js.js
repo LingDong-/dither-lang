@@ -6,15 +6,16 @@ var TO_JS = function(cfg){
   var $caps = [];
   function $include(x){
     if (globalThis.__dh_intern_hooked_include){
-      return __dh_intern_hooked_include(x);
-    }else if (typeof module !== 'undefined'){
-      return require('fs').readFileSync(x).toString();
-    }else{
-      var xh = new XMLHttpRequest();
-      xh.open("GET",x,false);
-      xh.send(null);
-      return xh.responseText;
+      let y = __dh_intern_hooked_include(x);
+      if (y !== undefined) return y;
     }
+    if (typeof module !== 'undefined'){
+      return require('fs').readFileSync(x).toString();
+    }
+    var xh = new XMLHttpRequest();
+    xh.open("GET",x,false);
+    xh.send(null);
+    return xh.responseText;
   }
   function $is_ref(x){
     if (!x || !x.__type) return false;
@@ -356,7 +357,7 @@ var TO_JS = function(cfg){
         o.push(`${a} = $value(${b}.__val);`);
       }else if (ta.con == 'vec' && tb.con == 'vec'){
         for (let i = 0; i < vec_type_flat_n(ta); i++){
-          o.push(`${a}[${i}] = ${b}[${i}];`);
+          o.push(`${a}[${i}] = ${b}[${i}]??0;`);
         }
       }else if ($numtyps.has(ta) && tb == 'str'){
         if (ta == 'f32' || ta == 'f64'){
@@ -404,6 +405,12 @@ var TO_JS = function(cfg){
           s.push(`(${get_ptr(b)}[${i}] == ${get_ptr(c)}[${i}])`);
         }
         o.push(`${get_ptr(a)}=Number(${s.join('&&')});`);
+      }else if (op == 'neq' && tb.con == 'vec' && tc.con == 'vec'){
+        let s = [];
+        for (let i = 0; i < vec_type_flat_n(tb); i++){
+          s.push(`(${get_ptr(b)}[${i}] != ${get_ptr(c)}[${i}])`);
+        }
+        o.push(`${get_ptr(a)}=Number(${s.join('||')});`);
       }else{
         UNIMPL();
       }

@@ -404,9 +404,25 @@
     </div>
 
     <div id="cicv" style="display:none">
-      <div id="ci" class="log" style="position:absolute;left:calc(50% + 4px);top:30px;width:calc(50% - 4px);height:calc(40% - 34px);"></div>
-      <div style="font-size:12px;color:#555;position:absolute;left:calc(50% + 4px);top:40%;font-family:sans-serif;user-select: none;-webkit-user-select: none;">Variables</div>
-      <div style="font-size:12px;color:#555;position:absolute;right:2px;top:40%;height:16px;font-family:sans-serif;user-select: none;-webkit-user-select: none;">
+      <div id="ci" class="log" style="position:absolute;left:calc(50% + 4px);top:46px;width:calc(50% - 4px);height:4px;"></div>
+      <div id="cv" class="log" style="position:absolute;left:calc(50% + 4px);top:66px;width:calc(50% - 4px);height:calc(75% - 70px)"></div>
+      <div id="cit" style="font-size:12px;color:#555;position:absolute;left:calc(50% + 4px);top:30px;font-family:sans-serif;user-select: none;-webkit-user-select: none;">Instructions</div>
+      <div id="cvt" style="font-size:12px;color:#555;position:absolute;left:calc(50% + 4px);top:50px;font-family:sans-serif;user-select: none;-webkit-user-select: none;">Variables</div>
+
+      <div id="cib" style="font-size:12px;color:#555;position:absolute;right:2px;top:30px;height:16px;font-family:sans-serif;user-select: none;-webkit-user-select: none;">
+        <span id="btn-ins" style="display:inline-block;cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" >
+            <g fill="none" stroke="#555" stroke-width="1" stroke-linejoin="round">
+              <path d="M1,1 9,1 9,9, 1,9z" />
+            </g>
+            <g id="chk-ins" fill="none" stroke="none" stroke-width="1" stroke-linejoin="round">
+              <path d="M2,4 5,7 10,0" />
+            </g>
+          </svg>
+          <span class="hover-underline">Show Instructions</span>
+        </span>
+      </div>
+      <div id="cvb" style="font-size:12px;color:#555;position:absolute;right:2px;top:50px;height:16px;font-family:sans-serif;user-select: none;-webkit-user-select: none;">
         <span id="btn-var" style="display:inline-block;cursor: pointer;">
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" >
             <g fill="none" stroke="#555" stroke-width="1" stroke-linejoin="round">
@@ -416,10 +432,10 @@
               <path d="M2,4 5,7 10,0" />
             </g>
           </svg>
-          <span class="hover-underline">Filter internals</span>
+          <span class="hover-underline">Filter Internals</span>
         </span>
       </div>
-      <div id="cv" class="log" style="position:absolute;left:calc(50% + 4px);top:calc(40% + 16px);width:calc(50% - 4px);height:calc(35% - 20px)"></div>
+
     </div>
   </body>
   <script>
@@ -1180,6 +1196,25 @@ function plot_var_print(txt){
 document.getElementById("btn-var").onclick = function(){
   dofiltvar = 1-dofiltvar;
   document.getElementById("chk-var").setAttribute("stroke",dofiltvar?"#555":"none");
+}
+
+document.getElementById("btn-ins").onclick = function(){
+  let on = document.getElementById("chk-ins").getAttribute("stroke") == "none";
+  if (on){
+    document.getElementById("chk-ins").setAttribute("stroke","#555");
+    document.getElementById("cvb").style.top = "40%";
+    document.getElementById("cvt").style.top = "40%";
+    document.getElementById("cv").style.top = "calc(40% + 16px)";
+    document.getElementById("cv").style.height = "calc(35% - 20px)";
+    document.getElementById("ci").style.height = "calc(40% - 50px)";
+  }else{
+    document.getElementById("chk-ins").setAttribute("stroke","none");
+    document.getElementById("cvb").style.top = "50px";
+    document.getElementById("cvt").style.top = "50px";
+    document.getElementById("cv").style.top = "66px";
+    document.getElementById("cv").style.height = "calc(75% - 70px)";
+    document.getElementById("ci").style.height = "4px";
+  }
 }
 
 function unmark_bp(){
