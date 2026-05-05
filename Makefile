@@ -85,9 +85,9 @@ cmdline:
 	cd editor/cmdline;\
 	pkg package.json;\
 	sudo cp ../../build/dither /usr/local/bin
-cmdline_jsc:
+cmdline_%:
 	cd editor/cmdline;\
-	../../../nodeoff/jsc_pkg;\
+	../../../nodeoff/$*_pkg;\
 	sudo cp ../../build/dither /usr/local/bin
 profile: ir
 	FILENAME=$$(date +%s%N | shasum -a 256 | head -c 10).trace;\

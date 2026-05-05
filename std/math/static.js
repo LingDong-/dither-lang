@@ -32,6 +32,10 @@ globalThis.$math = new function(){
     let [y,x] = $pop_args(2);
     return Math.atan2(y,x);
   }
+  that.hypot = function(){
+    let [x,y] = $pop_args(2);
+    return Math.hypot(x,y);
+  }
   that.round = function(){
     let [x] = $pop_args(1);
     return Math.round(x);
@@ -55,6 +59,18 @@ globalThis.$math = new function(){
   that.tan = function(){
     let [x] = $pop_args(1);
     return Math.tan(x);
+  }
+  that.bitcast = function(){
+    let t = $args.at(-1).__type;
+    let [x] = $pop_args(1);
+    let buf = new ArrayBuffer(4);
+    let f = new Float32Array(buf);
+    let u = new Uint32Array(buf);
+    if (t == 'f32'){
+      f[0] = x; return u[0];
+    }else{
+      u[0] = x; return f[0];
+    }
   }
 }
 

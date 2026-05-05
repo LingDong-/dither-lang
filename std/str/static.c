@@ -24,6 +24,23 @@ void str__decode(){
   __put_ret(&(o));
 }
 
+void str__encode(){
+  char* __ARG(e);
+  char* __ARG(s);
+  __list_t* a;
+
+  int sn = strlen(s);
+
+  __list_t* lst = __gc_alloc(VART_LST, sizeof(__list_t));
+  lst->w = 1;
+  lst->t = VART_U08;
+  lst->data = (char*)malloc(sn);
+  memcpy(lst->data, s, sn);
+  lst->cap = sn;
+  lst->n = sn;
+  __put_ret(&lst);
+}
+
 
 void str__slice(){
   int __ARG(j);

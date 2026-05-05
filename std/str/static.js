@@ -20,6 +20,10 @@ globalThis.$str = new function(){
     }
     return new TextDecoder(e).decode(a);
   }
+  that.encode = function(){
+    let [s,e] = $pop_args(2);
+    return new TextEncoder(e).encode(s);
+  }
   that.slice = function(){
     let [a,i,j] = $pop_args(3);
     return a.slice(i,j);

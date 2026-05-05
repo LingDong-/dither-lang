@@ -47,4 +47,6 @@ namespace math {
   func linmap[T](x:T, ilo:T, ihi:T, olo:T, ohi:T):T{
     return olo + (ohi - olo) * ((x - ilo) / (ihi - ilo));
   }
+  func bitcast(x:u32):f32;
+  func bitcast(x:f32):u32;
 }

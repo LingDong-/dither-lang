@@ -1459,13 +1459,13 @@
   "str-decode::list(u8)*str": [
     "Decode a list of bytes into a string using given encoding",
     "list of bytes holding the encoded representation",
-    "encoding, e.g. utf-8, ascii",
+    "encoding, e.g. utf-8",
     "decoded string"
   ],
   "str-encode::str*str": [
     "Encode a string into a list of bytes using given encoding",
     "the string to be encoded",
-    "encoding, e.g. utf-8, ascii",
+    "encoding, e.g. utf-8",
     "encoded list of bytes"
   ],
   "str-join::str*list(str)": [

@@ -61,6 +61,17 @@ void math__atan2(){
 }
 
 
+void math__hypot(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y;
+  __pop_arg(&y, sizeof(y));
+  float z = hypotf(x,y);
+
+  __put_ret(&z);
+}
+
+
 void math__round(){
   float x;
   __pop_arg(&x, sizeof(x));
@@ -108,4 +119,11 @@ void math__tan(){
   __pop_arg(&x, sizeof(x));
   float y = tanf(x);
   __put_ret(&y);
+}
+
+
+void math__bitcast(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  __put_ret(&x);
 }

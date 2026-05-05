@@ -115,6 +115,11 @@ EXPORTED void math_exp(var_t* ret, gstate_t* _g){
   ret->u.f32 = y;
 }
 
+EXPORTED void math_bitcast(var_t* ret, gstate_t* _g){
+  float x = ARG_POP(_g,f32);
+  ret->u.f32 = x;
+}
+
 EXPORTED void lib_init_math(gstate_t* _g){
 
   register_cfunc(&(_g->cfuncs), "math.sin", math_sin);
@@ -132,5 +137,6 @@ EXPORTED void lib_init_math(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "math.exp", math_exp);
   register_cfunc(&(_g->cfuncs), "math.sqrt", math_sqrt);
   register_cfunc(&(_g->cfuncs), "math.tan", math_tan);
+  register_cfunc(&(_g->cfuncs), "math.bitcast", math_bitcast);
 
 }

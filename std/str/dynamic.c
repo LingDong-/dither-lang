@@ -41,6 +41,21 @@ EXPORTED void str_decode(var_t* ret,  gstate_t* _g){
   ret->u.str = s;
 }
 
+EXPORTED void str_encode(var_t* ret,  gstate_t* _g){
+  stn_t* e = ARG_POP(_g,str);
+  stn_t* s = ARG_POP(_g,str);
+
+  lst_t* a = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
+  a->data = (char*)malloc(s->n);
+  a->n = s->n;
+  a->w = 1;
+  a->type = ret->type;
+  a->cap = s->n; 
+  
+  memcpy(a->data, s->data, s->n);
+  ret->u.lst = a;
+}
+
 EXPORTED void str_slice(var_t* ret,  gstate_t* _g){
   int j = ARG_POP(_g,i32);
   int i = ARG_POP(_g,i32);
@@ -171,6 +186,7 @@ EXPORTED void lib_init_str(gstate_t* _g){
   QK_REG(length);
   QK_REG(chr);
   QK_REG(decode);
+  QK_REG(encode);
   QK_REG(slice);
   QK_REG(split);
   QK_REG(trim);
