@@ -323,4 +323,14 @@ void main() {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
+  that._read_pixels = function(){
+    let [fbo] = $pop_args(1);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[fbo]);
+    gl.bindTexture(gl.TEXTURE_2D, fbos[fbo]._tex);
+    let pixels = new Uint8Array(fbos[fbo]._w*fbos[fbo]._h*4);
+    gl.readPixels(0,0,fbos[fbo]._w, fbos[fbo]._h, gl.RGBA, gl.UNSIGNED_BYTE,pixels);
+    pixels = Array.from(pixels);
+    pixels.__dims = [fbos[fbo]._h,fbos[fbo]._w,4];
+    return pixels;
+  }
 }
