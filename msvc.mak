@@ -1,5 +1,5 @@
 !if "$(dbg)" == "1"
-OPT = /DDBG
+OPT = /DDBG /Zi /Od /fsanitize=address /Oy- 
 VM_CHOICE = vm_dbg.exe
 !else
 OPT = /O2
@@ -42,4 +42,4 @@ run_js: to_js
 	xcopy examples\assets "%TEMP%\site\examples\assets" /E /I /Y 
 	cd "%TEMP%\site"
 	echo ^<body^>^</body^>^<script src="out.js"^>^</script^> > index.html
-	npx http-server
+	python -m http.server 8080

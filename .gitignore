@@ -16,3 +16,4 @@ build/*
 third_party/*
 !third_party/pull.sh
 config.env
+*.pdb

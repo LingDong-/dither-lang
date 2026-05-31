@@ -267,8 +267,7 @@ globalThis.$img = new function(){
   }
   that.convert = function(){
     let [pix,flags,out] = $pop_args(3);
-
-    if (out.__dims.length == 3 && (out.__dims[2]==0||(out.__dims[0]==0&&out.dims[1]==0))){
+    if (out.__dims.length == 3 && (out.__dims[2]==0||(out.__dims[0]==0&&out.__dims[1]==0))){
       out.__dims[2] = 1;
       if (pix.__dims.length == 3){
         out.__dims[2] = pix.__dims[2];
@@ -397,6 +396,249 @@ globalThis.$img = new function(){
     }
   }
 
+  that.threshold = function(){
+    let [pix, thresh, flags] = $pop_args(5);
+    let w = pix.__dims[1];
+    let h = pix.__dims[0];
+    if ((flags & 0xff00) == THRESH_BINARY){
+      for (let i = 0; i < h; i++){
+        for (let j = 0; j < w; j++){
+          let b = pix[i*w+j] > thresh;
+          pix[i*w+j] = b ? 255 : 0;
+        }
+      }
+    }else if ((flags & 0xff00) == THRESH_AUTO){
+      let hsz = 256*4;
+      if (tmp_buf.byteLength < hsz){
+        tmp_buf = new ArrayBuffer(hsz);
+      }
+      let hist = new Int32Array(tmp_buf);
+      for (let i = 0; i < hist.length; i++){
+        hist[i] = 0;
+      }
+      for (let i = 0; i < h; i++){
+        for (let j = 0; j < w; j++){
+          let v = pix[i*w+j];
+          hist[v]++;
+        }
+      }
+      let total = w*h;
+      let sum = 0;
+      for (let i = 0; i < 256; i++) sum += i*hist[i];
+      let sumB = 0;
+      let wB = 0;
+      let maxVar = 0;
+      let threshold = 0;
+      for (let t = 0; t < 256; t++){
+        wB += hist[t];
+        if (wB == 0) continue;
+        let wF = total - wB;
+        if (wF == 0) break;
+        sumB += t * hist[t];
+        let mB = sumB / wB;
+        let mF = (sum - sumB) / wF;
+        let betweenVar = wB * wF * (mB-mF) * (mB-mF);
+        if (betweenVar > maxVar){
+          maxVar = betweenVar;
+          threshold = t;
+        }
+      }
+      thresh = threshold;
+      for (let i = 0; i < h; i++){
+        for (let j = 0; j < w; j++){
+          let b = pix[i*w+j] > thresh;
+          pix[i*w+j] = b ? 255 : 0;
+        }
+      }
+    }else if ((flags & 0xff00) == THRESH_ADAPTIVE){
+      let sz = w*h*2;
+      if (tmp_buf.byteLength < sz){
+        tmp_buf = new ArrayBuffer(sz);
+      }
+      let blurx = new Uint8Array(tmp_buf,0,w*h);
+      let blury = new Uint8Array(tmp_buf,w*h,w*h);
+      let sig = flags & 0xff;
+      let rad = sig*3;
+      let ksz = rad*2+1;
+      let kern = new Array(ksz);
+      for (let i = 0; i < ksz; i++){
+        kern[i] = Math.exp(-(i-rad)*(i-rad)/(2.0*sig*sig));
+      }
+      for (let i = 0; i < h; i++){
+        for (let j = 0; j < w; j++){
+          let n = 0;
+          let s = 0;
+          for (let k = j-rad; k <= j+rad; k++){
+            if (k < 0) continue;
+            if (k >= w) continue;
+            let ki = kern[k-j+rad];
+            s += pix[i*w+k]*ki;
+            n+=ki;
+          }
+          blurx[i*w+j] = s/n;
+        }
+      }
+      for (let i = 0; i < h; i++){
+        for (let j = 0; j < w; j++){
+          let n = 0;
+          let s = 0;       
+          for (let k = i-rad; k <= i+rad; k++){
+            if (k < 0) continue;
+            if (k >= h) continue;
+            let ki = kern[k-i+rad];
+            s += blurx[k*w+j]*ki;
+            n+=ki;
+          }
+          blury[i*w+j] = s/n;
+        }
+      }
+      for (let i = 0; i < h; i++){
+        for (let j = 0; j < w; j++){
+          let b = pix[i*w+j] > blury[i*w+j]+thresh;
+          pix[i*w+j] = b ? 255 : 0;
+          // pix[i*w+j] = blury[i*w+j];
+        }
+      }
+    }
+  }
+  function erode_or_dilate(pix,w,h,kern,rad,flags,out){
+    let ksz = rad*2+1;
+    let v0 = ((flags & 0xf0) == MORPH_DILATE) ? 0 : 255;
+    for (let i = 0; i < h; i++){
+      for (let j = 0; j < w; j++){
+        let v = v0;
+        for (let k = i-rad; k <= i+rad; k++){
+          if (k < 0) continue;
+          if (k >= h) continue;
+          for (let l = j-rad; l <= j+rad; l++){
+            if (l < 0) continue;
+            if (l >= w) continue;
+            let e = kern[ (k-i+rad) * ksz + (l-j+rad) ];
+            if (!e) continue;
+            if (v0){
+              v = Math.min(v,pix[k*w+l]);
+            }else{
+              v = Math.max(v,pix[k*w+l]);
+            }
+          }
+        }
+        out[i*w+j] = v;
+      }
+    }
+  }
+  function thinning_zs_iteration(im, W, H, iter) {
+    let diff = 0;
+    for (let i = 1; i < H-1; i++){
+      for (let j = 1; j < W-1; j++){
+        let p2 = im[(i-1)*W+j]   & 1;
+        let p3 = im[(i-1)*W+j+1] & 1;
+        let p4 = im[(i)*W+j+1]   & 1;
+        let p5 = im[(i+1)*W+j+1] & 1;
+        let p6 = im[(i+1)*W+j]   & 1;
+        let p7 = im[(i+1)*W+j-1] & 1;
+        let p8 = im[(i)*W+j-1]   & 1;
+        let p9 = im[(i-1)*W+j-1] & 1;
+        let A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) +
+                (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) +
+                (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
+                (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
+        let B  = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+        let m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
+        let m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
+        if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
+          im[i*W+j] |= 2;
+      }
+    }
+    for (let i = 0; i < H*W; i++){
+      let marker = im[i]>>1;
+      let old = im[i]&1;
+      im[i] = old & (!marker);
+      if ((!diff) && (im[i] != old)){
+        diff = 1;
+      }
+    }
+    return diff;
+  }
+  function thinning_zs(im, W, H){
+    let diff = 1;
+    do {
+      diff &= thinning_zs_iteration(im,W,H,0);
+      diff &= thinning_zs_iteration(im,W,H,1);
+    }while (diff);
+  }
+  that.morphology = function(){
+    let [pix,rad,flags,out] = $pop_args(4);
+    let w = pix.__dims[1];
+    let h = pix.__dims[0];
+    if (((flags & 0xf0) == MORPH_SKELETONIZE)){
+      let sz = w*h;
+      if (tmp_buf.byteLength < sz){
+        tmp_buf = new ArrayBuffer(sz);
+      }
+      buf = new Uint8Array(tmp_buf,0,w*h);
+      for (let i = 0; i < w*h; i++){
+        buf[i] = pix[i] > 128 ? 1 : 0;
+      }
+      thinning_zs(buf,w,h);
+      for (let i = 0; i < w*h; i++){
+        out[i] = buf[i]?255:0;
+      }
+      return;
+    }
 
+    let ksz = rad*2+1;
+    let sz = ksz*ksz;
+    let proc = out;
+    if (out == pix){
+      sz += w*h;
+    }
+    let inter = null;
+    let twostep = ((flags & 0xf0) == MORPH_OPEN) || ((flags & 0xf0) == MORPH_CLOSE);
+    if (twostep){
+      sz += w*h;
+    }
+    if (tmp_buf.byteLength < sz){
+      tmp_buf = new ArrayBuffer(sz);
+    }
+    sz = ksz*ksz;
+    if (out == pix){
+      proc = new Uint8Array(tmp_buf,sz);
+      sz += w*h;
+    }
+    if (twostep){
+      inter = new Uint8Array(tmp_buf,sz);
+    }
+
+    let kern = new Uint8Array(tmp_buf,0,ksz*ksz);
+
+    if ((flags & 0xf) == NORM_LINF){
+      for (let i = 0; i < ksz*ksz; i++) kern[i] = 1;
+    }else if ((flags & 0xf) == NORM_L1){
+      for (let i = 0; i < ksz; i++){
+        for (let j = 0; j < ksz; j++){
+          let d = Math.abs(i-rad)+Math.abs(j-rad);
+          kern[i*ksz+j] = (d <= rad);
+        }
+      }
+    }else if ((flags & 0xf) == NORM_L2){
+      for (let i = 0; i < ksz; i++){
+        for (let j = 0; j < ksz; j++){
+          let d = Math.hypot(i-rad,j-rad);
+          kern[i*ksz+j] = (d <= rad);
+        }
+      }
+    }
+    if ((flags & 0xf0) == MORPH_ERODE || (flags & 0xf0) == MORPH_DILATE){
+      erode_or_dilate(pix,w,h,kern,rad,flags,proc);
+    }else if ((flags & 0xf0) == MORPH_OPEN){
+      erode_or_dilate(pix,w,h,kern,rad,MORPH_ERODE,inter);
+      erode_or_dilate(inter,w,h,kern,rad,MORPH_DILATE,proc);
+    }else if ((flags & 0xf0) == MORPH_CLOSE){
+      erode_or_dilate(pix,w,h,kern,rad,MORPH_DILATE,inter);
+      erode_or_dilate(inter,w,h,kern,rad,MORPH_ERODE,proc);
+    }
+    if (out == proc) return;
+    for (let i = 0; i < w*h; i++) out[i] = proc[i];
+  }
 }
 

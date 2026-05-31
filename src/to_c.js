@@ -322,9 +322,9 @@ var TO_C = function(cfg){
         char vvt = *(top-=1);
         int sz;
         memcpy(&sz, (top-=4), 4);
-        void* p = (top-=sz);
+        void** p = (top-=sz);
         if (${collectible.map(x=>"vvt=="+x).join('||')}){
-          __gc_mark(p);
+          __gc_mark(*p);
         }
       }
     }else if (vt == VART_UON){
