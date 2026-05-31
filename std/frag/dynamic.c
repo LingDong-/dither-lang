@@ -99,6 +99,12 @@ EXPORTED void frag__read_pixels(var_t* ret, gstate_t* _g){
   ret->u.arr = arr;
 }
 
+EXPORTED void frag_resize(var_t* ret, gstate_t* _g){
+  int h = ARG_POP(_g,i32);
+  int w = ARG_POP(_g,i32);
+  frag_impl_resize(w,h);
+}
+
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "frag." QUOTE(name), frag_ ## name);
 
@@ -113,6 +119,7 @@ EXPORTED void lib_init_frag(gstate_t* _g){
   QK_REG(_write_pixels)
   QK_REG(_read_pixels)
   QK_REG(render)
+  QK_REG(resize)
 }
 
 

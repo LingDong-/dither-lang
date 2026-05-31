@@ -42,8 +42,6 @@
 #undef ARR_CLEAR
 #define ARR_CLEAR(dtype,name) {name.len = 0;}
 
-int width;
-int height;
 
 int is_stroke=1;
 int is_fill=1;
@@ -64,9 +62,6 @@ void drw_impl__size(int w, int h, uint64_t _ctx){
 
   CGContextSetRGBFillColor(*ctx, 1,1,1,1);
   CGContextSetRGBStrokeColor(*ctx, 0,0,0,1);
-
-  width = w;
-  height = h;
 
   ARR_INIT(CGContextRef,fbos);
   
@@ -170,7 +165,7 @@ void drw_impl_reset_matrix(){
 void drw_impl_background(float r, float g, float b, float a){
   CGContextSaveGState(*ctx);
   CGContextSetRGBFillColor(*ctx, r, g, b, a);
-  CGContextFillRect(*ctx, CGRectMake(0, 0, width, height));
+  CGContextFillRect(*ctx, CGRectMake(0, 0, CGBitmapContextGetWidth(*ctx), CGBitmapContextGetHeight(*ctx)));
   CGContextRestoreGState(*ctx);
 }
 
@@ -290,4 +285,9 @@ void drw_impl_text(char* str, float x, float y){
   }
   CGContextRestoreGState(*ctx);
   #pragma clang diagnostic pop
+}
+
+void drw_impl_resize(int w, int h){
+  void (**cb)(int,int) = (void (**)(int, int))( (char*)(ctx0) + sizeof(CGContextRef));
+  (*cb)(w,h);
 }

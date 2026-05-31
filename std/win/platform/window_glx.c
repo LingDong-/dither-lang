@@ -20,7 +20,7 @@ event_t out_buffer[MAX_EVENTS];
 int event_count = 0;
 
 void add_event(int type, int key, float x, float y) {
-  if (event_count && type == MOUSE_MOVED && event_buffer[event_count-1].type == type){
+  if (event_count && (type == MOUSE_MOVED || type == WINDOW_RESIZED) && event_buffer[event_count-1].type == type){
     event_buffer[event_count-1].x = x;
     event_buffer[event_count-1].y = y;
     return;

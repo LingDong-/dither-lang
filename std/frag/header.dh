@@ -25,4 +25,5 @@ namespace frag {
   func begin(prgm:i32){_begin(prgm,0)}
   func end();
   func render();
+  func resize(w:i32,h:i32);
 }

@@ -57,4 +57,5 @@ namespace drw {
   func poll():win.Event{_flush();return win.poll()};
   func _init_graphics(pg:Graphics,w:i32,h:i32);
   func create_graphics(w:i32,h:i32):Graphics{pg:=Graphics{};_init_graphics(pg,w,h);return pg;};
+  func resize(w:i32,h:i32);
 }

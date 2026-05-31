@@ -12,8 +12,10 @@ NSWindow *g_window = nil;
 
 NSView *g_cgView = nil;
 int width,height;
-CGContextRef cgCtx = NULL;
-CGContextRef cgNextCtx = NULL;
+struct {
+  CGContextRef cgCtx;
+  void (*resize)(int, int);
+} ctxpak;
 
 static NSEventModifierFlags prev_modifiers = 0;
 
@@ -25,8 +27,10 @@ event_t event_buffer[MAX_EVENTS];
 event_t out_buffer[MAX_EVENTS];
 int event_count = 0;
 
+
+
 void add_event(int type, int key, float x, float y) {
-  if (event_count && type == MOUSE_MOVED && event_buffer[event_count-1].type == type){
+  if (event_count && (type == MOUSE_MOVED || type == WINDOW_RESIZED) && event_buffer[event_count-1].type == type){
     event_buffer[event_count-1].x = x;
     event_buffer[event_count-1].y = y;
     return;
@@ -183,6 +187,11 @@ int map_unichar_to_keycode(unichar key) {
   [NSApp terminate:nil];
   return YES;
 }
+- (void)windowDidResize:(NSNotification *)notification {
+  NSWindow *window = [notification object];
+  NSSize newSize = [[window contentView] frame].size;
+  add_event(WINDOW_RESIZED, 0, newSize.width, newSize.height);
+}
 @end
 
 
@@ -195,25 +204,28 @@ int map_unichar_to_keycode(unichar key) {
   CGContextSaveGState(ctx);
   CGContextTranslateCTM(ctx,0,height);
   CGContextScaleCTM(ctx,1,-1);
-  CGImageRef img = CGBitmapContextCreateImage(cgCtx);
+  CGImageRef img = CGBitmapContextCreateImage(ctxpak.cgCtx);
   CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), img);
   CGImageRelease(img);
   CGContextRestoreGState(ctx);
 }
-- (void)setFrameSize:(NSSize)newSize {
-  [super setFrameSize:newSize];
-  width = newSize.width;
-  height = newSize.height;
+HANDLE_EVENTS
+@end
+
+
+void resize(int w, int h){
+  width = w;
+  height = h;
+  // [g_window setContentSize:NSMakeSize(width,height)];
+  [g_cgView setFrameSize:NSMakeSize(width,height)];
   size_t bytesPerPixel = 4;
   size_t bytesPerRow = width * bytesPerPixel;
   size_t bitsPerComponent = 8;
   CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-  cgNextCtx = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+  CGContextRelease(ctxpak.cgCtx);
+  ctxpak.cgCtx = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
   CGColorSpaceRelease(colorSpace);
 }
-HANDLE_EVENTS
-@end
-
 
 EXPORTED void** window_init(int _width, int _height) {
   width = _width;
@@ -251,6 +263,7 @@ EXPORTED void** window_init(int _width, int _height) {
 
     g_cgView = [[MyCGView alloc] initWithFrame:contentBounds];
 
+    // [g_cgView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
     [g_cgView setWantsLayer:YES];
     g_cgView.layer.backgroundColor = [[NSColor clearColor] CGColor];
 
@@ -263,10 +276,12 @@ EXPORTED void** window_init(int _width, int _height) {
     size_t bitsPerComponent = 8;
 
     CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-    cgCtx = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+    ctxpak.cgCtx = CGBitmapContextCreate(NULL, width, height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
     CGColorSpaceRelease(colorSpace);
   }
-  return (void**)&cgCtx;
+  ctxpak.resize = resize;
+
+  return (void**)&(ctxpak.cgCtx);
   
 }
 
@@ -274,12 +289,6 @@ EXPORTED void** window_init(int _width, int _height) {
 EXPORTED event_t* window_poll(int* out_count) {
   @autoreleasepool {
     
-    if (cgNextCtx){
-      CGContextRelease(cgCtx);
-      cgCtx = cgNextCtx;
-      cgNextCtx = NULL;
-      add_event(WINDOW_RESIZED, 0, width, height);
-    }
     [g_cgView setNeedsDisplay:YES];
     
     NSEvent *event;
@@ -304,7 +313,7 @@ EXPORTED event_t* window_poll(int* out_count) {
 }
 
 EXPORTED void window_exit(void) {
-  CGContextRelease(cgCtx);
+  CGContextRelease(ctxpak.cgCtx);
   [NSApp terminate:nil];
 }
 

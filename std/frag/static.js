@@ -323,4 +323,10 @@ void main() {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
+  that.resize = function(){
+    let [w,h] = $pop_args(2);
+    gl.canvas.width = w;
+    gl.canvas.height = h;
+    gl.viewport(0,0,w,h);
+  }
 }

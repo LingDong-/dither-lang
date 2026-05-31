@@ -217,6 +217,14 @@ EXPORTED void drw__flush(var_t* ret, gstate_t* _g){
 }
 
 
+
+EXPORTED void drw_resize(var_t* ret, gstate_t* _g){
+  int h = ARG_POP(_g,i32);
+  int w = ARG_POP(_g,i32);
+  drw_impl_resize(w,h);
+}
+
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "drw." QUOTE(name), drw_ ## name);
 
 EXPORTED void lib_init_drw(gstate_t* _g){
@@ -256,6 +264,8 @@ EXPORTED void lib_init_drw(gstate_t* _g){
   QK_REG(_write_pixels)
 
   QK_REG(_flush)
+
+  QK_REG(resize)
 }
 
 

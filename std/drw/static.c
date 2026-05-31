@@ -209,3 +209,9 @@ void drw__text(){
 void drw___flush(){
   drw_impl__flush();
 }
+
+void drw__resize(){
+  int __ARG(h);
+  int __ARG(w);
+  drw_impl_resize(w,h);
+}

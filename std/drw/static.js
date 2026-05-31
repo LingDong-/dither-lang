@@ -196,4 +196,9 @@ globalThis.$drw = new function(){
   that._flush = function(){
     
   }
+  that.resize = function(){
+    let [w,h] = $pop_args(2);
+    cnv.width = w;
+    cnv.height = h;
+  }
 }

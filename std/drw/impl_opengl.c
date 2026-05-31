@@ -770,3 +770,14 @@ void drw_impl_text(char* str, float x, float y){
   free(vertices);
 
 }
+
+
+void drw_impl_resize(int w, int h){
+  width = w;
+  height = h;
+  glViewport(0, 0, width, height);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0, width, height, 0, -1, 1);
+  glMatrixMode(GL_MODELVIEW);
+}

@@ -89,3 +89,9 @@ void frag___read_pixels(){
 
   __put_ret(&a); 
 }
+
+void frag__resize(){
+  int32_t __ARG(h);
+  int32_t __ARG(w);
+  frag_impl_resize(w,h);
+}

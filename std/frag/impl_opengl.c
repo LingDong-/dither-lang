@@ -454,3 +454,9 @@ void* frag_impl__read_pixels(int fbo, int* _w, int* _h){
 
   return (void*)pixels;
 }
+
+void frag_impl_resize(int w, int h){
+  width = w;
+  height = h;
+  glViewport(0,0,width,height);
+}
