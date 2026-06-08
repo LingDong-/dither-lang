@@ -28,7 +28,7 @@ event_t out_buffer[MAX_EVENTS];
 int event_count = 0;
 
 void add_event(int type, int key, float x, float y) {
-  if (event_count && type == MOUSE_M0VED && event_buffer[event_count-1].type == type){
+  if (event_count && (type == MOUSE_M0VED || type == WINDOW_RESIZED) && event_buffer[event_count-1].type == type){
     event_buffer[event_count-1].x = x;
     event_buffer[event_count-1].y = y;
     return;
@@ -52,6 +52,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   if (msg == WM_DESTROY) {
     PostQuitMessage(0);
     return 0;
+  }else if (msg == WM_SIZE){
+    width = LOWORD(lParam);
+    height = HIWORD(lParam);
+    add_event(
+      WINDOW_RESIZED,
+      0,
+      width,
+      height
+    );
   }
   return DefWindowProc(hwnd, msg, wParam, lParam);
 }
