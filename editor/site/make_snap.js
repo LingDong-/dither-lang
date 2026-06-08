@@ -1,6 +1,6 @@
 let TODOS = [
   // list here new examples that need to be snapped
-  "hilbertclip.dh"
+  "imgsink.dh"
 ]
 
 const fs = require('fs');

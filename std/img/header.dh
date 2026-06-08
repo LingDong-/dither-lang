@@ -25,11 +25,11 @@ namespace img {
   THRESH_ADAPTIVE:= 768;
   BYPROD_NONE    := 0;
   BYPROD_VORONOI := 4;
-  NORM_L1   := 1;
-  NORM_L2   := 0;
-  NORM_LINF := 2;
+  NORM_L1   := 1; // Manhattan
+  NORM_L2   := 0; // Euclidean
+  NORM_LINF := 2; // Chebyshev
   BORDER_ZERO := 0;
-  BORDER_COPY := 256;
+  BORDER_COPY := 16;
   COLOR_COPY    :=  0;
   COLOR_RGB_GRAY:=  1;
   COLOR_RGB_BGR :=  2;
@@ -43,9 +43,8 @@ namespace img {
   ALPHA_PREMUL     := 32;
   ALPHA_STRAIGHTEN := 48;
 
-
-  func dist_transform(pix:arr[u8,2],flags:i32,out:arr[f32,2]);
-  func dist_transform(pix:arr[u8,2],flags:i32):arr[f32,2]{
+  func dist_transform[T](pix:arr[T,2],flags:i32,out:arr[f32,2]);
+  func dist_transform[T](pix:arr[T,2],flags:i32):arr[f32,2]{
     out := arr[f32,2]{};
     dist_transform(pix,flags,out);
     return out;
@@ -57,14 +56,14 @@ namespace img {
     return out;
   }
   func morphology(pix:arr[u8,2],rad:i32,flags:i32,out:arr[u8,2]);
-  func morphology(pix:arr[u8,2],rad:i32,flags:i32){
+  func morphology(pix:arr[u8,2],rad:i32,flags:i32):arr[u8,2]{
     out := arr[u8,2]{};
     morphology(pix,rad,flags,out);
     return out;
   }
   func convolve(pix:arr[f32,2],kern:arr[f32,2],flags:i32,out:arr[f32,2]);
   func convolve(pix:arr[u8,2],kern:arr[f32,2],flags:i32,out:arr[u8,2]);
-  func convolve[T](pix:arr[T,2],kern:arr[f32,2],flags:i32){
+  func convolve[T](pix:arr[T,2],kern:arr[f32,2],flags:i32):arr[T,2]{
     out := arr[T,2]{};
     convolve(pix,kern,flags,out);
     return out;
@@ -72,4 +71,10 @@ namespace img {
   func threshold(pix:arr[u8,2],thresh:i32,flags:i32);
   func palette(pix:arr[u8,3],n:i32):list[vec[u8,3]];
   func find_contours(pix:arr[u8,2]):list[list[vec[f32,2]]];
+  func label_blobs(pix:arr[u8,2],out:arr[i32,2]);
+  func label_blobs(pix:arr[u8,2]):arr[i32,2]{
+    out := arr[i32,2]{};
+    label_blobs(pix,out);
+    return out;
+  }
 }

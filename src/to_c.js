@@ -322,7 +322,7 @@ var TO_C = function(cfg){
         char vvt = *(top-=1);
         int sz;
         memcpy(&sz, (top-=4), 4);
-        void** p = (top-=sz);
+        void** p = (void**)(top-=sz);
         if (${collectible.map(x=>"vvt=="+x).join('||')}){
           __gc_mark(*p);
         }
@@ -1331,7 +1331,7 @@ var TO_C = function(cfg){
         }else if (typ.con == 'arr'){
           let w = type_size(typ.elt[0]);
           let ndim = typ.elt[1];
-          let cnt = ins[3];
+          let cnt = Number(ins[3]);
 
           let is2d = cnt & (1<<30);
           let n = cnt;

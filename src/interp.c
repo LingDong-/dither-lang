@@ -590,6 +590,7 @@ opran_t* read_term(FILE* fd){
     int snn = (c >= 'A' || c == '*') ? 2 : (c=='.');
     term->u.str = str_new();
     word = &(term->u.str);
+    int str_offs = 0;
     do{
       if (c == '+' && (snn)){
         term->mode = TERM_ADDR;
@@ -597,6 +598,9 @@ opran_t* read_term(FILE* fd){
         term->u.addr.offs = str_new();
         word = &(term->u.addr.offs);
         c = fgetc(fd);
+        if (c == '"'){
+          str_offs = 1;
+        }
       }
       str_addch(word,c);
       c=fgetc(fd);
@@ -607,7 +611,12 @@ opran_t* read_term(FILE* fd){
           snn = 2;
         }
       }
-    }while (c!=' ' && c!= EOF && c!= '\n');
+      if (str_offs == 1){
+        if (c == '"') str_offs = 2;
+      }else if (str_offs == 2){
+        str_offs = 0;
+      }
+    }while (!(c == ' ' && str_offs==0) && c!= EOF && c!= '\n');
   }
   ungetc(c,fd);
   if (term->mode == TERM_IDEN){

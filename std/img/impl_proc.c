@@ -37,7 +37,7 @@
 #define MORPH_SKELETONIZE 80
 
 #define BORDER_ZERO 0
-#define BORDER_COPY 256
+#define BORDER_COPY 16
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -80,7 +80,15 @@ int CDT_Sep(int i, int u, int g_i, int g_u) {
   else
     return MIN(u-g_i, ((i+u)/2));
 }
-void img_impl_dist_transform(uint8_t* b, int m, int n, int flags, float* dt){
+inline int inttyp_pix_get(void* b, int idx, int dsize){
+  int r = 0;
+  memcpy(&r, b+(idx*dsize), dsize);
+  return r;
+}
+inline void inttyp_pix_set(void* b, int idx, int dsize, int val){
+  memcpy(b+(idx*dsize), &val, dsize);
+}
+void img_impl_dist_transform(void* b, int m, int n, int dsize, int flags, float* dt){
   int (*f)(int,int,int);
   int (*Sep)(int,int,int,int);
   if ((flags&MASK_NORM) == NORM_L1){
@@ -94,7 +102,7 @@ void img_impl_dist_transform(uint8_t* b, int m, int n, int flags, float* dt){
     Sep = CDT_Sep;
   }
   int do_voro = !!(flags&12);
-  int tsz = m*n*2+m*2+m*2+m*n*1;
+  int tsz = m*n*2+m*2+m*2+m*n*4;
   if (tmp_buf_len < tsz){
     tmp_buf_len = tsz;
     tmp_buf = realloc(tmp_buf,tsz);
@@ -102,19 +110,20 @@ void img_impl_dist_transform(uint8_t* b, int m, int n, int flags, float* dt){
   int16_t* g = (int16_t*)tmp_buf;
   int16_t* s = (int16_t*)(tmp_buf + (m*n*2));
   int16_t* t = (int16_t*)(tmp_buf + (m*n*2+m*2));
-  uint8_t* v = (uint8_t*)(tmp_buf + (m*n*2+m*2+m*2));
+  int* v = (int*)(tmp_buf + (m*n*2+m*2+m*2));
+
   for (int x = 0; x < m; x++) {
-    if (b[x + 0 * m]){
+    if (inttyp_pix_get(b, x + 0 * m, dsize)){
       g[x + 0 * m] = 0;
-      v[x + 0 * m] = b[x];
+      v[x + 0 * m] = inttyp_pix_get(b, x + 0 * m, dsize);
     }else{
-      g[x + 0 * m] = INT16_MAX;
+      g[x + 0 * m] = m+n;
       v[x + 0 * m] = 0;
     }
     for (int y = 1; y < n; y++) {
-      if (b[x + y * m]){
+      if (inttyp_pix_get(b, x + y * m, dsize)){
         g[x + y * m] = 0;
-        v[x + y * m] = b[x + y * m];
+        v[x + y * m] = inttyp_pix_get(b, x + y * m, dsize);
       }else{
         g[x + y * m] = 1 + g[x + (y - 1) * m];
         v[x + y * m] = v[x + (y - 1) * m];
@@ -123,7 +132,7 @@ void img_impl_dist_transform(uint8_t* b, int m, int n, int flags, float* dt){
     for (int y = n - 2; y >= 0; y--) {
       if (g[x + (y + 1) * m] < g[x + y * m]){
         g[x + y * m] = 1 + g[x + (y + 1) * m];
-        v[x + y * m] = 1 + v[x + (y + 1) * m];
+        v[x + y * m] = v[x + (y + 1) * m];
       }
     }
   }
@@ -152,7 +161,7 @@ void img_impl_dist_transform(uint8_t* b, int m, int n, int flags, float* dt){
       int d = f(u, s[q], g[s[q] + y * m]);
       dt[u + y * m] = d;
       if (f == EDT_f) dt[u + y * m] = sqrt(dt[u + y * m]);
-      if (do_voro) b[u + y * m] = v[s[q] + y * m];
+      if (do_voro) inttyp_pix_set(b, u + y * m, dsize, v[s[q] + y * m]);
       if (u == t[q]) q--;
     }
   }
@@ -606,8 +615,8 @@ void img_impl_morphology(uint8_t* pix, int w, int h, int rad, int flags, uint8_t
         for (int l = 0; l < kw; l++){\
           int ii = i+k-kx;\
           int jj = j+l-ky;\
-          int iii = MIN(MAX(ii,0),h);\
-          int jjj = MIN(MAX(jj,0),w);\
+          int iii = MIN(MAX(ii,0),h-1);\
+          int jjj = MIN(MAX(jj,0),w-1);\
           if (border || (iii==ii&&jjj==jj)){\
             s += pix[iii*w+jjj]*kern[k*kw+l];\
           }\
@@ -645,8 +654,8 @@ void img_impl_convolve_u8(uint8_t* pix, int w, int h, float* kern, int kw, int k
       }
     }
     int divisor = 16384 / extrema;
-    for (int i = 0; i < kw; i++){
-      for (int j = 0; j < kh; j++){
+    for (int i = 0; i < kh; i++){
+      for (int j = 0; j < kw; j++){
         k16[i*okw+j] = kern[i*kw+j]*divisor;
       }
     }
@@ -694,4 +703,414 @@ void img_impl_convolve_f32(float* pix, int w, int h, float* kern, int kw, int kh
   #endif
   if (out == proc) return;
   memcpy(out,proc,w*h*sizeof(float));
+}
+
+
+// https://github.com/LingDong-/PContour
+
+#define N_PIXEL_NEIGHBOR 8
+#define BAD_INT -666
+
+typedef struct {
+  int i;
+  int j;
+} IJ;
+
+typedef struct {
+  /** Vertices */
+  IJ* points;
+  int len;
+  int cap;
+  /** Unique ID, starts from 2 */
+  int id;
+  /** ID of parent contour, 0 means top-level contour */
+  int parent;
+  /** Is this contour a hole (as opposed to outline) */
+  char isHole;
+} Contour;
+
+// give pixel neighborhood counter-clockwise ID's for
+// easier access with findContours algorithm
+IJ neighborIDToIndex(int i, int j, int id){
+  switch (id){
+    case 0: {IJ ij = {i  , j+1};return ij;}
+    case 1: {IJ ij = {i-1, j+1};return ij;}
+    case 2: {IJ ij = {i-1, j  };return ij;}
+    case 3: {IJ ij = {i-1, j-1};return ij;}
+    case 4: {IJ ij = {i  , j-1};return ij;}
+    case 5: {IJ ij = {i+1, j-1};return ij;}
+    case 6: {IJ ij = {i+1, j  };return ij;}
+    case 7: {IJ ij = {i+1, j+1};return ij;}
+  };
+  IJ ij = {BAD_INT,BAD_INT};
+  return ij;
+}
+int neighborIndexToID(int i0, int j0, int i, int j){
+  int di = i - i0;
+  int dj = j - j0;
+  if (di == 0 && dj == 1){return 0;}
+  if (di ==-1 && dj == 1){return 1;}
+  if (di ==-1 && dj == 0){return 2;}
+  if (di ==-1 && dj ==-1){return 3;}
+  if (di == 0 && dj ==-1){return 4;}
+  if (di == 1 && dj ==-1){return 5;}
+  if (di == 1 && dj == 0){return 6;}
+  if (di == 1 && dj == 1){return 7;}
+  return -1;
+}
+
+// first counter clockwise non-zero element in neighborhood
+IJ ccwNon0(int* F, int w, int h, int i0, int j0, int i, int j, int offset){
+  int id = neighborIndexToID(i0,j0,i,j);
+  for (int k = 0; k < N_PIXEL_NEIGHBOR; k++){
+    int kk = (k+id+offset + N_PIXEL_NEIGHBOR*2) % N_PIXEL_NEIGHBOR;
+    IJ ij = neighborIDToIndex(i0,j0,kk);
+    if (F[ij.i*w+ij.j]!=0){
+      return ij;
+    }
+  }
+  IJ ij = {BAD_INT,BAD_INT};
+  return ij;
+}
+
+// first clockwise non-zero element in neighborhood
+IJ cwNon0(int* F, int w, int h, int i0, int j0, int i, int j, int offset){
+  int id = neighborIndexToID(i0,j0,i,j);
+  for (int k = 0; k < N_PIXEL_NEIGHBOR; k++){
+    int kk = (-k+id-offset + N_PIXEL_NEIGHBOR*2) % N_PIXEL_NEIGHBOR;
+    IJ ij = neighborIDToIndex(i0,j0,kk);
+    if (F[ij.i*w+ij.j]!=0){
+      return ij;
+    }
+  }
+  IJ ij = {BAD_INT,BAD_INT};
+  return ij;
+}
+
+/**
+ * Find contours in a binary image
+ * <p>
+ * Implements Suzuki, S. and Abe, K.
+ * Topological Structural Analysis of Digitized Binary Images by Border Following.
+ * <p>
+ * See source code for step-by-step correspondence to the paper's algorithm
+ * description.
+ * @param  F    The bitmap, stored in 1-dimensional row-major form.
+ *              0=background, 1=foreground, will be modified by the function
+ *              to hold semantic information
+ * @param  w    Width of the bitmap
+ * @param  h    Height of the bitmap
+ * @return      An array of contours found in the image.
+ * @see         Contour
+ */
+Contour* findContours(int* F, int w, int h, int* nret) {
+  // Topological Structural Analysis of Digitized Binary Images by Border Following.
+  // Suzuki, S. and Abe, K., CVGIP 30 1, pp 32-46 (1985)
+  Contour* contours = NULL;
+  int lencnt = 0;
+  int capcnt = 0;
+
+  int nbd = 1;
+  int lnbd = 1;
+  
+  // Without loss of generality, we assume that 0-pixels fill the frame
+  // of a binary picture
+  for (int i = 1; i < h-1; i++){
+    F[i*w] = 0; F[i*w+w-1]=0;
+  }
+  for (int i = 0; i < w; i++){
+    F[i] = 0; F[w*h-1-i]=0;
+  }
+
+  //Scan the picture with a TV raster and perform the following steps
+  //for each pixel such that fij # 0. Every time we begin to scan a
+  //new row of the picture, reset LNBD to 1.
+  for (int i = 1; i < h-1; i++) {
+    lnbd = 1;
+
+    for (int j = 1; j < w-1; j++) {
+      
+      int i2 = 0, j2 = 0;
+      if (F[i*w+j] == 0) {
+        continue;
+      }
+      //(a) If fij = 1 and fi, j-1 = 0, then decide that the pixel
+      //(i, j) is the border following starting point of an outer
+      //border, increment NBD, and (i2, j2) <- (i, j - 1).
+      if (F[i*w+j] == 1 && F[i*w+(j-1)] == 0) {
+        nbd ++;
+        i2 = i;
+        j2 = j-1;
+        
+        
+      //(b) Else if fij >= 1 and fi,j+1 = 0, then decide that the
+      //pixel (i, j) is the border following starting point of a
+      //hole border, increment NBD, (i2, j2) <- (i, j + 1), and
+      //LNBD + fij in case fij > 1.
+      } else if (F[i*w+j]>=1 && F[i*w+j+1] == 0) {
+        nbd ++;
+        i2 = i;
+        j2 = j+1;
+        if (F[i*w+j]>1) {
+          lnbd = F[i*w+j];
+        }
+        
+        
+      } else {
+        //(c) Otherwise, go to (4).
+        //(4) If fij != 1, then LNBD <- |fij| and resume the raster
+        //scan from pixel (i,j+1). The algorithm terminates when the
+        //scan reaches the lower right corner of the picture
+        if (F[i*w+j]!=1){lnbd = abs(F[i*w+j]);}
+        continue;
+        
+      }
+      //(2) Depending on the types of the newly found border
+      //and the border with the sequential number LNBD
+      //(i.e., the last border met on the current row),
+      //decide the parent of the current border as shown in Table 1.
+      // TABLE 1
+      // Decision Rule for the Parent Border of the Newly Found Border B
+      // ----------------------------------------------------------------
+      // Type of border B'
+      // \    with the sequential
+      //     \     number LNBD
+      // Type of B \                Outer border         Hole border
+      // ---------------------------------------------------------------
+      // Outer border               The parent border    The border B'
+      //                            of the border B'
+      //
+      // Hole border                The border B'      The parent border
+      //                                               of the border B'
+      // ----------------------------------------------------------------
+      
+      Contour B = {0};
+      IJ ij = {i,j};
+      B.points = (IJ*)malloc((B.cap=32)*sizeof(IJ));
+      B.points[B.len++] = ij;
+      B.isHole = (j2 == j+1);
+      B.id = nbd;
+      if (capcnt < lencnt + 1){
+        int hs = capcnt/2;
+        capcnt = lencnt + MAX(16,hs);
+        contours = (Contour*)realloc(contours, capcnt * sizeof(Contour));
+      }
+      contours[lencnt++] = B;
+
+      Contour B1;
+      for (int c = 0; c < lencnt; c++){
+        if (contours[c].id == lnbd){
+          B1 = contours[c];
+          break;
+        }
+      }
+      if (B1.isHole){
+        if (B.isHole){
+          B.parent = B1.parent;
+        }else{
+          B.parent = lnbd;
+        }
+      }else{
+        if (B.isHole){
+          B.parent = lnbd;
+        }else{
+          B.parent = B1.parent;
+        }
+      }
+      
+      //(3) From the starting point (i, j), follow the detected border:
+      //this is done by the following substeps (3.1) through (3.5).
+      
+      //(3.1) Starting from (i2, j2), look around clockwise the pixels
+      //in the neigh- borhood of (i, j) and tind a nonzero pixel.
+      //Let (i1, j1) be the first found nonzero pixel. If no nonzero
+      //pixel is found, assign -NBD to fij and go to (4).
+      int i1 = -1, j1 = -1;
+      IJ i1j1 = cwNon0(F,w,h,i,j,i2,j2,0);
+      if (i1j1.i == BAD_INT){
+        F[i*w+j] = -nbd;
+        //go to (4)
+        if (F[i*w+j]!=1){lnbd = abs(F[i*w+j]);}
+        continue;
+      }
+      i1 = i1j1.i; j1 = i1j1.j;
+      
+      // (3.2) (i2, j2) <- (i1, j1) ad (i3,j3) <- (i, j).
+      i2 = i1;
+      j2 = j1;
+      int i3 = i;
+      int j3 = j;
+      
+      
+      while (true){
+        //(3.3) Starting from the next elementof the pixel (i2, j2)
+        //in the counterclock- wise order, examine counterclockwise
+        //the pixels in the neighborhood of the current pixel (i3, j3)
+        //to find a nonzero pixel and let the first one be (i4, j4).
+        
+        IJ i4j4 = ccwNon0(F,w,h,i3,j3,i2,j2,1);
+        int i4 = i4j4.i;
+        int j4 = i4j4.j;
+        
+        if (contours[lencnt-1].cap < contours[lencnt-1].len + 1){
+          int hs = contours[lencnt-1].cap/2;
+          contours[lencnt-1].cap += MAX(32,hs);
+          contours[lencnt-1].points = (IJ*)realloc(contours[lencnt-1].points, contours[lencnt-1].cap * sizeof(IJ));
+        }
+        contours[lencnt-1].points[contours[lencnt-1].len++] = i4j4;
+        
+        //(a) If the pixel (i3, j3 + 1) is a O-pixel examined in the
+        //substep (3.3) then fi3, j3 <-  -NBD.
+        if (F[i3*w+j3+1] == 0){
+          F[i3*w+j3] = -nbd;
+          
+        //(b) If the pixel (i3, j3 + 1) is not a O-pixel examined
+        //in the substep (3.3) and fi3,j3 = 1, then fi3,j3 <- NBD.
+        }else if (F[i3*w+j3] == 1){
+          F[i3*w+j3] = nbd;
+        }else{
+          //(c) Otherwise, do not change fi3, j3.
+        }
+        
+        //(3.5) If (i4, j4) = (i, j) and (i3, j3) = (i1, j1)
+        //(coming back to the starting point), then go to (4);
+        if (i4 == i && j4 == j && i3 == i1 && j3 == j1){
+          if (F[i*w+j]!=1){lnbd = abs(F[i*w+j]);}
+          break;
+          
+        //otherwise, (i2, j2) + (i3, j3),(i3, j3) + (i4, j4),
+        //and go back to (3.3).
+        }else{
+          i2 = i3;
+          j2 = j3;
+          i3 = i4;
+          j3 = j4;
+        }
+      }
+    }
+  }
+  *nret = lencnt;
+  return contours;
+}
+
+
+float** img_impl_find_contours(uint8_t* pix, int w, int h, int* out_n, int** out_lens){
+  int sz = w*h*sizeof(int);
+  if (tmp_buf_len < sz){
+    tmp_buf_len = sz;
+    tmp_buf = realloc(tmp_buf,tmp_buf_len);
+  }
+  int* F = (int*)tmp_buf;
+  for (int i = 0; i < w*h; i++){
+    F[i] = !!(pix[i]);
+  }
+  int nret = 0;
+  Contour* contours = findContours(F, w, h, &nret);
+  float** out = (float**)malloc(nret*sizeof(float*));
+  int* lens = (int*)malloc(nret*sizeof(int));
+  static const float eps = 0.001;
+  int k = 0;
+  for (int i = 0; i < nret; i++){
+    int cnt = 0;
+    out[k] = (float*)malloc(contours[i].len*sizeof(float)*2);
+    for (int j = 0; j < contours[i].len; j++){
+      float x1 = contours[i].points[j].j;
+      float y1 = contours[i].points[j].i;
+      if (j == 0 || j == contours[i].len-1){
+        out[k][cnt*2+0] = x1;
+        out[k][cnt*2+1] = y1;
+        cnt++;
+      }else{
+        float x0 = out[k][(cnt-1)*2+0];
+        float y0 = out[k][(cnt-1)*2+1];
+        float x2 = contours[i].points[j+1].j;
+        float y2 = contours[i].points[j+1].i;
+        float cw = (((x1)-(x0))*((y2)-(y0)) - ((x2)-(x0))*((y1)-(y0)));
+        if (cw > eps || cw < -eps){
+          out[k][cnt*2+0] = x1;
+          out[k][cnt*2+1] = y1;
+          cnt++;
+        }
+      }
+    }
+    if (cnt >= 3){
+      lens[k++] = cnt;
+    }else{
+      free(out[k]);
+    }
+  }
+  *out_lens = lens;
+  *out_n = k;
+  return out;
+}
+
+int lbl_assoc(int* lbl_eq, int pw, int pn){
+  if (pw == pn) return pw;
+  if (!pw) return pn;
+  if (!pn) return pw;
+  int pa = pw;
+  int pb = pn;
+  if (pa > pb){
+    pa = pn;
+    pb = pw;
+  }
+  if (!lbl_eq[pb]){
+    lbl_eq[pb] = pa;
+    return pa;
+  }
+  int pc = lbl_eq[pb];
+  return (lbl_eq[pb] = lbl_assoc(lbl_eq,pa,pc));
+}
+
+void img_impl_label_blobs(uint8_t* pix, int w, int h, int* out){
+  int* lbl_eq = (int*)tmp_buf;
+
+  int lbl = 1;
+  for (int i = 0; i < h; i++){
+    for (int j = 0; j < w; j++){
+      if (pix[i*w+j]){
+        int pw = j ? out[i*w+j-1] : 0;
+        int pn = i ? out[i*w+j-w] : 0;
+        if (pw == 0 && pn == 0){
+          out[i*w+j] = lbl;
+          if (tmp_buf_len <= lbl*sizeof(int)){
+            tmp_buf_len = (lbl*2+1)*sizeof(int);
+            tmp_buf = realloc(tmp_buf,tmp_buf_len);
+            lbl_eq = (int*)tmp_buf;
+          }
+          lbl_eq[lbl] = 0;
+          lbl ++;
+        }else{
+          out[i*w+j] = lbl_assoc(lbl_eq,pw,pn);
+        }
+      }else{
+        out[i*w+j] = 0;
+      }
+    }
+  }
+  int* uniques = (int*)calloc(lbl,sizeof(int));
+  int nid = 1;
+  for (int i = 1; i < lbl; i++){
+    if (!lbl_eq[i]){
+      uniques[i] = nid++;
+    }
+  }
+  for (int i = 0; i < h; i++){
+    for (int j = 0; j < w; j++){
+      if (out[i*w+j]){
+        int ini = out[i*w+j];
+        int bot = ini;
+        while (lbl_eq[bot]){
+          bot = lbl_eq[bot];
+        }
+        if (bot != ini){
+          lbl_eq[ini] = bot;
+        }
+        out[i*w+j] = uniques[bot];
+        // out[i*w+j] = bot;
+      }
+    }
+  }
+  free(uniques);
+  
 }

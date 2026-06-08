@@ -76,11 +76,28 @@ EXPORTED void arr_shape(var_t* ret,  gstate_t* _g){
   ret->u.vec = vec;
 }
 
+EXPORTED void arr_copy(var_t* ret,  gstate_t* _g){
+
+  arr_t* a = ARG_POP(_g,arr);
+
+  arr_t* b = (arr_t*)gc_alloc_(_g,sizeof(arr_t)+a->ndim*4);
+  b->type = ret->type;
+  b->n = a->n;
+  b->w = a->w;
+  b->ndim = a->ndim;
+  b->data = malloc(b->w*b->n);
+  memcpy(b->data, a->data, b->w*b->n);
+  memcpy(b->dims, a->dims, b->ndim*4);
+
+  ret->u.arr = b;
+}
+
 
 EXPORTED void lib_init_arr(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "arr.reshape", arr_reshape);
   register_cfunc(&(_g->cfuncs), "arr.shape", arr_shape);
   register_cfunc(&(_g->cfuncs), "arr.make", arr_make);
+  register_cfunc(&(_g->cfuncs), "arr.copy", arr_copy);
 }
 
 

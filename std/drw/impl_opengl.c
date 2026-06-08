@@ -377,6 +377,9 @@ db6_t_arr_t tcbv = {0};
 ARR_DEF(GLfloat)
 GLfloat_arr_t vertices = {0};
 
+typedef struct { int len; int cap; GLdouble** data; } ptrlist_t;
+static ptrlist_t tcbv_ptrs = {0};
+
 int tess_mode = 0;
 
 void CALLBACK tessBeginCB(GLenum which){
@@ -408,17 +411,32 @@ void CALLBACK tessVertexCB2(const GLvoid *data){
   ARR_PUSH(GLfloat,vertices,y);
 }
 void CALLBACK tessCombineCB(const GLdouble newVtx[3], const GLdouble *nbrVtx[4], const GLfloat nbrWgh[4], GLdouble **outData){
-  db6_t nv;
-  int idx = tcbv.len;
-  ARR_PUSH(db6_t, tcbv, nv);
-  tcbv.data[idx].data[0] = newVtx[0];
-  tcbv.data[idx].data[1] = newVtx[1];
-  tcbv.data[idx].data[2] = newVtx[2];
-  tcbv.data[idx].data[3] = nbrWgh[0] * nbrVtx[0][3] +  nbrWgh[1] * nbrVtx[1][3] + nbrWgh[2] * nbrVtx[2][3] + nbrWgh[3] * nbrVtx[3][3];
-  tcbv.data[idx].data[4] = nbrWgh[0] * nbrVtx[0][4] +  nbrWgh[1] * nbrVtx[1][4] + nbrWgh[2] * nbrVtx[2][4] + nbrWgh[3] * nbrVtx[3][4];
-  tcbv.data[idx].data[5] = nbrWgh[0] * nbrVtx[0][5] +  nbrWgh[1] * nbrVtx[1][5] + nbrWgh[2] * nbrVtx[2][5] + nbrWgh[3] * nbrVtx[3][5];
-  *outData = tcbv.data[idx].data;
+  // db6_t nv;
+  // int idx = tcbv.len;
+  // ARR_PUSH(db6_t, tcbv, nv);
+  // tcbv.data[idx].data[0] = newVtx[0];
+  // tcbv.data[idx].data[1] = newVtx[1];
+  // tcbv.data[idx].data[2] = newVtx[2];
+  // tcbv.data[idx].data[3] = nbrWgh[0] * nbrVtx[0][3] +  nbrWgh[1] * nbrVtx[1][3] + nbrWgh[2] * nbrVtx[2][3] + nbrWgh[3] * nbrVtx[3][3];
+  // tcbv.data[idx].data[4] = nbrWgh[0] * nbrVtx[0][4] +  nbrWgh[1] * nbrVtx[1][4] + nbrWgh[2] * nbrVtx[2][4] + nbrWgh[3] * nbrVtx[3][4];
+  // tcbv.data[idx].data[5] = nbrWgh[0] * nbrVtx[0][5] +  nbrWgh[1] * nbrVtx[1][5] + nbrWgh[2] * nbrVtx[2][5] + nbrWgh[3] * nbrVtx[3][5];
+  // *outData = tcbv.data[idx].data;
+
+  GLdouble *v = (GLdouble*)malloc(3 * sizeof(GLdouble));
+  v[0] = newVtx[0];
+  v[1] = newVtx[1];
+  v[2] = newVtx[2];
+  *outData = v;
+  if (tcbv_ptrs.cap == 0) {
+    tcbv_ptrs.cap = 64;
+    tcbv_ptrs.data = (GLdouble**)malloc(tcbv_ptrs.cap * sizeof(GLdouble*));
+  } else if (tcbv_ptrs.len == tcbv_ptrs.cap) {
+    tcbv_ptrs.cap *= 2;
+    tcbv_ptrs.data = (GLdouble**)realloc(tcbv_ptrs.data, tcbv_ptrs.cap * sizeof(GLdouble*));
+  }
+  tcbv_ptrs.data[tcbv_ptrs.len++] = v;
 }
+
 void CALLBACK tessErrorCB(GLenum errorCode){
   const GLubyte *errorStr;
   errorStr = gluErrorString(errorCode);
@@ -447,6 +465,7 @@ void drw_impl_end_shape(int bclose){
       }else{
         tcbv.len = 0;
       }
+      tcbv_ptrs.len = 0;
       GLUtesselator * tess = gluNewTess();
       gluTessCallback(tess, GLU_TESS_BEGIN,  (void (CALLBACK*)())tessBeginCB);
       gluTessCallback(tess, GLU_TESS_END,    (void (CALLBACK*)())tessEndCB);
@@ -468,6 +487,8 @@ void drw_impl_end_shape(int bclose){
       gluTessEndContour(tess);
       gluTessEndPolygon(tess);
       gluDeleteTess(tess);
+      for (int i = 0; i < tcbv_ptrs.len; ++i) free(tcbv_ptrs.data[i]);
+      tcbv_ptrs.len = 0;
     }else if (poly.len == 3){
       GLfloat vs[] = {
         poly.data[0].x,poly.data[0].y,

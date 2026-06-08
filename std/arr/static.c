@@ -64,3 +64,15 @@ void arr__make(){
 
 }
 
+void arr__copy(){
+  __arr_t* __ARG(a);
+  __arr_t* b = __gc_alloc(VART_ARR, sizeof(__arr_t)+(a->ndim)*4);
+  b->ndim = a->ndim;
+  b->n = a->n;
+  b->w = a->w;
+  b->t = a->t;
+  b->data = malloc(b->w*b->n);
+  memcpy(b->data, a->data, b->w*b->n);
+  memcpy(b->dims, a->dims, b->ndim*4);
+  __put_ret(&b);
+}

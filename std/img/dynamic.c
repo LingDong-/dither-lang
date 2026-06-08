@@ -63,7 +63,7 @@ EXPORTED void img_dist_transform(var_t* ret, gstate_t* _g){
   }
   out->dims[0] = pix->dims[0];
   out->dims[1] = pix->dims[1];
-  img_impl_dist_transform((uint8_t*)(pix->data), pix->dims[1], pix->dims[0], flags, (float*)(out->data));
+  img_impl_dist_transform((void*)(pix->data), pix->dims[1], pix->dims[0], pix->w, flags, (float*)(out->data));
 }
 
 EXPORTED void img_convert(var_t* ret, gstate_t* _g){
@@ -142,6 +142,55 @@ EXPORTED void img_convolve(var_t* ret, gstate_t* _g){
   }
 }
 
+EXPORTED void img_find_contours(var_t* ret, gstate_t* _g){
+  arr_t* pix = ARG_POP(_g,arr);
+  int* lens;
+  int nret;
+  float** contours = img_impl_find_contours((uint8_t*)(pix->data),pix->dims[1],pix->dims[0],&nret, &lens);
+
+  lst_t* out = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
+  out->n = nret;
+  out->cap = nret;
+  out->w = sizeof(lst_t**);
+  out->type = ret->type;
+  out->data = malloc(sizeof(lst_t**)*nret);
+
+  for (int k = 0; k < nret; k++){
+    lst_t* l = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
+    l->n = lens[k];
+    l->cap = lens[k];
+    l->w = sizeof(vec_t**);
+    l->type = (type_t*)(ret->type->u.elem.head->data);
+    l->data = malloc(sizeof(vec_t**)*lens[k]);
+    for (int i = 0; i < lens[k]; i++){
+      vec_t* v = (vec_t*)gc_alloc_(_g,sizeof(vec_t)+(2*sizeof(float)));
+      v->n = 2;
+      v->w = sizeof(float);
+      v->type = (type_t*)(l->type->u.elem.head->data);
+      memcpy(v->data, contours[k] + (i*2), 2*sizeof(float));
+      ((vec_t**)(l->data))[i] = v;
+    }
+    ((lst_t**)(out->data))[k] = l;
+    free(contours[k]);
+  }
+  free(lens);
+  ret->u.lst = out;
+}
+
+
+EXPORTED void img_label_blobs(var_t* ret, gstate_t* _g){
+  arr_t* out = ARG_POP(_g,arr);
+  arr_t* pix = ARG_POP(_g,arr);
+  if (out->dims[0]*out->dims[1]<pix->dims[0]*pix->dims[1]){
+    out->n = pix->dims[0]*pix->dims[1];
+    out->data = realloc(out->data, out->n*sizeof(int));
+  }
+  out->dims[0] = pix->dims[0];
+  out->dims[1] = pix->dims[1];
+  img_impl_label_blobs((void*)(pix->data), pix->dims[1], pix->dims[0], (int*)(out->data));
+}
+
+
 
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "img." QUOTE(name), img_ ## name);
 
@@ -154,6 +203,8 @@ EXPORTED void lib_init_img(gstate_t* _g){
   QK_REG(threshold)
   QK_REG(morphology)
   QK_REG(convolve)
+  QK_REG(find_contours)
+  QK_REG(label_blobs)
 }
 
 

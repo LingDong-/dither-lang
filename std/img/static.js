@@ -100,7 +100,7 @@ globalThis.$img = new function(){
   const MORPH_CLOSE       =64
   const MORPH_SKELETONIZE =80
   const BORDER_ZERO =0
-  const BORDER_COPY =256
+  const BORDER_COPY =16
   const INT16_MAX =32767;
   const INT16_MIN =-32768;
   let tmp_buf = new ArrayBuffer(0);
@@ -148,20 +148,20 @@ globalThis.$img = new function(){
       Sep = CDT_Sep;
     }
     let do_voro = !!(flags&12);
-    let tsz = m*n*2+m*2+m*2+m*n*1;
+    let tsz = m*n*2+m*2+m*2+m*n*4;
     if (tmp_buf.byteLength < tsz){
       tmp_buf = new ArrayBuffer(tsz);
     }
     let g = new Int16Array(tmp_buf,0,m*n);
     let s = new Int16Array(tmp_buf,m*n*2,m);
     let t = new Int16Array(tmp_buf,m*n*2+m*2,m);
-    let v = new Uint8Array(tmp_buf,m*n*2+m*2+m*2,m*n);
+    let v = new Int32Array(tmp_buf,m*n*2+m*2+m*2,m*n);
     for (let x = 0; x < m; x++) {
       if (b[x + 0 * m]){
         g[x + 0 * m] = 0;
         v[x + 0 * m] = b[x];
       }else{
-        g[x + 0 * m] = INT16_MAX;
+        g[x + 0 * m] = m+n;
         v[x + 0 * m] = 0;
       }
       for (let y = 1; y < n; y++) {
@@ -176,7 +176,7 @@ globalThis.$img = new function(){
       for (let y = n - 2; y >= 0; y--) {
         if (g[x + (y + 1) * m] < g[x + y * m]){
           g[x + y * m] = 1 + g[x + (y + 1) * m];
-          v[x + y * m] = 1 + v[x + (y + 1) * m];
+          v[x + y * m] = v[x + (y + 1) * m];
         }
       }
     }
@@ -570,6 +570,9 @@ globalThis.$img = new function(){
     let [pix,rad,flags,out] = $pop_args(4);
     let w = pix.__dims[1];
     let h = pix.__dims[0];
+    out.__dims[0] = h;
+    out.__dims[1] = w;
+
     if (((flags & 0xf0) == MORPH_SKELETONIZE)){
       let sz = w*h;
       if (tmp_buf.byteLength < sz){
@@ -639,6 +642,406 @@ globalThis.$img = new function(){
     }
     if (out == proc) return;
     for (let i = 0; i < w*h; i++) out[i] = proc[i];
+  }
+  that.convolve = function(){
+    let [pix,kern,flags,out] = $pop_args(4);
+    let dtype = pix.__type.elt[0];
+    let dsize = (dtype == 'u8') ? 1 : 4;
+    let w = pix.__dims[1];
+    let h = pix.__dims[0];
+    out.__dims[0] = h;
+    out.__dims[1] = w;
+
+    let sz = w*h*dsize;
+    
+    if (tmp_buf.byteLength < sz){
+      tmp_buf = new ArrayBuffer(sz);
+    }
+    if (dtype == 'u8'){
+      proc = new Uint8Array(tmp_buf,0,w*h);
+    }else{
+      proc = new Float32Array(tmp_buf,0,w*h);
+    }
+    
+    let kw = kern.__dims[1];
+    let kh = kern.__dims[0];
+
+    let kx = ~~((kw-1)/2);
+    let ky = ~~((kh-1)/2);
+    let border = (flags&0xf0)==BORDER_COPY;
+    for (let i = 0; i < h; i++){
+      for (let j = 0; j < w; j++){
+        let s = 0.0;
+        for (let k = 0; k < kh; k++){
+          for (let l = 0; l < kw; l++){
+            let ii = i+k-kx;
+            let jj = j+l-ky;
+            let iii = Math.min(Math.max(ii,0),h-1);
+            let jjj = Math.min(Math.max(jj,0),w-1);
+            if (border || (iii==ii&&jjj==jj)){
+              s += pix[iii*w+jjj]*kern[k*kw+l];
+            }
+          }
+        }
+        proc[i*w+j] = s;
+      }
+    }
+    for (let i = 0; i < w*h; i++) out[i] = proc[i];
+  }
+
+  // https://gist.github.com/LingDong-/b99cdbe814e600d8152c0eefeef01ab3  
+  let N_PIXEL_NEIGHBOR = 8;
+  // give pixel neighborhood counter-clockwise ID's for
+  // easier access with findContour algorithm
+  function neighborIDToIndex(i, j, id){
+    if (id == 0){return [i,j+1];}
+    if (id == 1){return [i-1,j+1];}
+    if (id == 2){return [i-1,j];}
+    if (id == 3){return [i-1,j-1];}
+    if (id == 4){return [i,j-1];}
+    if (id == 5){return [i+1,j-1];}
+    if (id == 6){return [i+1,j];}
+    if (id == 7){return [i+1,j+1];}
+    return null;
+  }
+  function neighborIndexToID(i0, j0, i, j){
+    let di = i - i0;
+    let dj = j - j0;
+    if (di == 0 && dj == 1){return 0;}
+    if (di ==-1 && dj == 1){return 1;}
+    if (di ==-1 && dj == 0){return 2;}
+    if (di ==-1 && dj ==-1){return 3;}
+    if (di == 0 && dj ==-1){return 4;}
+    if (di == 1 && dj ==-1){return 5;}
+    if (di == 1 && dj == 0){return 6;}
+    if (di == 1 && dj == 1){return 7;}
+    return -1;
+  }
+
+  // first counter clockwise non-zero element in neighborhood
+  function ccwNon0(F, w, h, i0, j0, i, j, offset){
+    let id = neighborIndexToID(i0,j0,i,j);
+    for (let k = 0; k < N_PIXEL_NEIGHBOR; k++){
+      let kk = (k+id+offset + N_PIXEL_NEIGHBOR*2) % N_PIXEL_NEIGHBOR;
+      let ij = neighborIDToIndex(i0,j0,kk);
+      if (F[ij[0]*w+ij[1]]!=0){
+        return ij;
+      }
+    }
+    return null;
+  }
+
+  // first clockwise non-zero element in neighborhood
+  function cwNon0(F, w, h, i0, j0, i, j, offset){
+    let id = neighborIndexToID(i0,j0,i,j);
+    for (let k = 0; k < N_PIXEL_NEIGHBOR; k++){
+      let kk = (-k+id-offset + N_PIXEL_NEIGHBOR*2) % N_PIXEL_NEIGHBOR;
+      let ij = neighborIDToIndex(i0,j0,kk);
+      if (F[ij[0]*w+ij[1]]!=0){
+        return ij;
+      }
+    }
+    return null;
+  }
+  /**
+   * Find contours in a binary image
+   * <p>
+   * Implements Suzuki, S. and Abe, K.
+   * Topological Structural Analysis of Digitized Binary Images by Border Following.
+   * <p>
+   * See source code for step-by-step correspondence to the paper's algorithm
+   * description.
+   * @param  F    The bitmap, stored in 1-dimensional row-major form. 
+   *              0=background, 1=foreground, will be modified by the function
+   *              to hold semantic information
+   * @param  w    Width of the bitmap
+   * @param  h    Height of the bitmap
+   * @return      An array of contours found in the image.
+   * @see         Contour
+   */
+   function findContours(F, w, h) {
+    // Topological Structural Analysis of Digitized Binary Images by Border Following.
+    // Suzuki, S. and Abe, K., CVGIP 30 1, pp 32-46 (1985)
+    let nbd = 1;
+    let lnbd = 1;
+
+    let contours = [];
+    
+    // Without loss of generality, we assume that 0-pixels fill the frame 
+    // of a binary picture
+    for (let i = 1; i < h-1; i++){
+      F[i*w] = 0; F[i*w+w-1]=0;
+    }
+    for (let i = 0; i < w; i++){
+      F[i] = 0; F[w*h-1-i]=0;
+    }
+
+    //Scan the picture with a TV raster and perform the following steps 
+    //for each pixel such that fij # 0. Every time we begin to scan a 
+    //new row of the picture, reset LNBD to 1.
+    for (let i = 1; i < h-1; i++) {
+      lnbd = 1;
+
+      for (let j = 1; j < w-1; j++) {
+        
+        let i2 = 0, j2 = 0;
+        if (F[i*w+j] == 0) {
+          continue;
+        }
+        //(a) If fij = 1 and fi, j-1 = 0, then decide that the pixel 
+        //(i, j) is the border following starting point of an outer 
+        //border, increment NBD, and (i2, j2) <- (i, j - 1).
+        if (F[i*w+j] == 1 && F[i*w+(j-1)] == 0) {
+          nbd ++;
+          i2 = i;
+          j2 = j-1;
+          
+          
+        //(b) Else if fij >= 1 and fi,j+1 = 0, then decide that the 
+        //pixel (i, j) is the border following starting point of a 
+        //hole border, increment NBD, (i2, j2) <- (i, j + 1), and 
+        //LNBD + fij in case fij > 1.  
+        } else if (F[i*w+j]>=1 && F[i*w+j+1] == 0) {
+          nbd ++;
+          i2 = i;
+          j2 = j+1;
+          if (F[i*w+j]>1) {
+            lnbd = F[i*w+j];
+          }
+          
+          
+        } else {
+          //(c) Otherwise, go to (4).
+          //(4) If fij != 1, then LNBD <- |fij| and resume the raster
+          //scan from pixel (i,j+1). The algorithm terminates when the
+          //scan reaches the lower right corner of the picture
+          if (F[i*w+j]!=1){lnbd = Math.abs(F[i*w+j]);}
+          continue;
+          
+        }
+        //(2) Depending on the types of the newly found border 
+        //and the border with the sequential number LNBD 
+        //(i.e., the last border met on the current row), 
+        //decide the parent of the current border as shown in Table 1.
+        // TABLE 1
+        // Decision Rule for the Parent Border of the Newly Found Border B
+        // ----------------------------------------------------------------
+        // Type of border B'
+        // \    with the sequential
+        //     \     number LNBD
+        // Type of B \                Outer border         Hole border
+        // ---------------------------------------------------------------     
+        // Outer border               The parent border    The border B'
+        //                            of the border B'
+        //
+        // Hole border                The border B'      The parent border
+        //                                               of the border B'
+        // ----------------------------------------------------------------
+        
+        let B = {};
+        B.points = []
+        B.points.push([j,i]);
+        B.isHole = (j2 == j+1);
+        B.id = nbd;
+        contours.push(B);
+
+        let B0 = {}
+        for (let c = 0; c < contours.length; c++){
+          if (contours[c].id == lnbd){
+            B0 = contours[c];
+            break;
+          }
+        }
+        if (B0.isHole){
+          if (B.isHole){
+            B.parent = B0.parent;
+          }else{
+            B.parent = lnbd;
+          }
+        }else{
+          if (B.isHole){
+            B.parent = lnbd;
+          }else{
+            B.parent = B0.parent;
+          }
+        }
+        
+        //(3) From the starting point (i, j), follow the detected border: 
+        //this is done by the following substeps (3.1) through (3.5).
+        
+        //(3.1) Starting from (i2, j2), look around clockwise the pixels 
+        //in the neigh- borhood of (i, j) and tind a nonzero pixel. 
+        //Let (i1, j1) be the first found nonzero pixel. If no nonzero 
+        //pixel is found, assign -NBD to fij and go to (4).
+        let i1 = -1, j1 = -1;
+        let i1j1 = cwNon0(F,w,h,i,j,i2,j2,0);
+        if (i1j1 == null){
+          F[i*w+j] = -nbd;
+          //go to (4)
+          if (F[i*w+j]!=1){lnbd = Math.abs(F[i*w+j]);}
+          continue;
+        }
+        i1 = i1j1[0]; j1 = i1j1[1];
+        
+        // (3.2) (i2, j2) <- (i1, j1) ad (i3,j3) <- (i, j).
+        i2 = i1;
+        j2 = j1;
+        let i3 = i;
+        let j3 = j;
+        
+        while (true){
+
+          //(3.3) Starting from the next elementof the pixel (i2, j2) 
+          //in the counterclock- wise order, examine counterclockwise 
+          //the pixels in the neighborhood of the current pixel (i3, j3) 
+          //to find a nonzero pixel and let the first one be (i4, j4).
+          
+          let i4j4 = ccwNon0(F,w,h,i3,j3,i2,j2,1);
+   
+          var i4 = i4j4[0];
+          var j4 = i4j4[1];
+
+          contours[contours.length-1].points.push([j4,i4]);
+          
+          //(a) If the pixel (i3, j3 + 1) is a O-pixel examined in the
+          //substep (3.3) then fi3, j3 <-  -NBD.
+          if (F[i3*w+j3+1] == 0){
+            F[i3*w+j3] = -nbd;
+            
+          //(b) If the pixel (i3, j3 + 1) is not a O-pixel examined 
+          //in the substep (3.3) and fi3,j3 = 1, then fi3,j3 <- NBD.
+          }else if (F[i3*w+j3] == 1){
+            F[i3*w+j3] = nbd;
+          }else{
+            //(c) Otherwise, do not change fi3, j3.
+          }
+          
+          //(3.5) If (i4, j4) = (i, j) and (i3, j3) = (i1, j1) 
+          //(coming back to the starting point), then go to (4);
+          if (i4 == i && j4 == j && i3 == i1 && j3 == j1){
+            if (F[i*w+j]!=1){lnbd = Math.abs(F[i*w+j]);}
+            break;
+            
+          //otherwise, (i2, j2) + (i3, j3),(i3, j3) + (i4, j4), 
+          //and go back to (3.3).
+          }else{
+            i2 = i3;
+            j2 = j3;
+            i3 = i4;
+            j3 = j4;
+          }
+        }
+      }
+    }
+    return contours;
+  }
+
+  that.find_contours = function(){
+    let [pix] = $pop_args(1);
+    let h = pix.__dims[0];
+    let w = pix.__dims[1];
+    if (tmp_buf.byteLength < w*h*4){
+      tmp_buf = new ArrayBuffer(w*h*4);
+    }
+    let F = new Int32Array(tmp_buf,0,w*h);
+    for (let i = 0; i < w*h; i++){
+      F[i] = (pix[i])?1:0;
+    }
+    let contours = findContours(F, w, h);
+    let out = [];
+    const eps = 0.001;
+    for (let i = 0; i < contours.length; i++){
+      out.push([])
+      for (let j = 0; j < contours[i].points.length; j++){
+        let x1 = contours[i].points[j][0];
+        let y1 = contours[i].points[j][1];
+        if (j == 0 || j == contours[i].points.length-1){
+          out.at(-1).push([x1,y1])
+        }else{
+          let x0 = out.at(-1).at(-1)[0];
+          let y0 = out.at(-1).at(-1)[1];
+          let x2 = contours[i].points[j+1][0];
+          let y2 = contours[i].points[j+1][1];
+          let cw = (((x1)-(x0))*((y2)-(y0)) - ((x2)-(x0))*((y1)-(y0)));
+          if (cw > eps || cw < -eps){
+            out.at(-1).push([x1,y1]);
+          }
+        }
+      }
+      if (out.at(-1).length < 3){
+        out.pop();
+      }else{
+        out.at(-1).forEach(v=>v.__type = {con:'vec',elt:['f32',2]});
+        out.at(-1).__type = {con:'list',elt:[{con:'vec',elt:['f32',2]}]}
+      }
+    }
+    // console.log(out,contours);
+    return out;
+  }
+
+  function lbl_assoc(lbl_eq, pw, pn){
+    if (pw == pn) return pw;
+    if (!pw) return pn;
+    if (!pn) return pw;
+    let pa = pw;
+    let pb = pn;
+    if (pa > pb){
+      pa = pn;
+      pb = pw;
+    }
+    if (!lbl_eq[pb]){
+      lbl_eq[pb] = pa;
+      return pa;
+    }
+    let pc = lbl_eq[pb];
+    return (lbl_eq[pb] = lbl_assoc(lbl_eq,pa,pc));
+  }
+
+  that.label_blobs = function(){
+    let [pix,out] = $pop_args(2);
+    let h = out.__dims[0] = pix.__dims[0];
+    let w = out.__dims[1] = pix.__dims[1];
+    let lbl_eq = [0];
+    let lbl = 1;
+    for (let i = 0; i < h; i++){
+      for (let j = 0; j < w; j++){
+        if (pix[i*w+j]){
+          let pw = j ? out[i*w+j-1] : 0;
+          let pn = i ? out[i*w+j-w] : 0;
+          if (pw == 0 && pn == 0){
+            out[i*w+j] = lbl;
+            lbl_eq[lbl] = 0;
+            lbl++;
+          }else{
+            out[i*w+j] = lbl_assoc(lbl_eq,pw,pn);
+          }
+        }else{
+          out[i*w+j] = 0;
+        }
+      }
+    }
+    let uniques = new Array(lbl).fill(0);
+    let nid = 0;
+    for (let i = 1; i < lbl; i++){
+      if (!lbl_eq[i]){
+        uniques[i] = nid++;
+      }
+    }
+    for (let i = 0; i < h; i++){
+      for (let j = 0; j < w; j++){
+        if (out[i*w+j]){
+          let ini = out[i*w+j];
+          let bot = ini;
+          while (lbl_eq[bot]){
+            bot = lbl_eq[bot];
+          }
+          if (bot != ini){
+            lbl_eq[ini] = bot;
+          }
+          out[i*w+j] = uniques[bot];
+        }
+      }
+    }
   }
 }
 

@@ -600,7 +600,7 @@ var TO_JS = function(cfg){
           o.push(`var ${nom} = Object.assign(new Array(${ins[3]}).fill(0).map(_=>$value(${type_zero(typ.elt[0],1)})), {__type:${JSON.stringify(typ)}})`);
         }else if (typ.con == 'arr'){
           let ndim = typ.elt[1];
-          let cnt = ins[3];
+          let cnt = Number(ins[3]);
           let is2d = cnt & (1<<30);
           let n = cnt;
           let d0 = cnt;

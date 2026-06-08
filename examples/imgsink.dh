@@ -1,0 +1,161 @@
+include "std/io"
+include "std/img"
+include "std/drw"
+include "std/arr"
+include "std/dict"
+include "std/list"
+include "std/math"
+
+// a "kitchen-sink" example for the image processing routines
+// included with the "std/img" library, roughly organized in a
+// pipeline manner.
+
+// read image from file
+src := img.decode(io.read_file("examples/assets/manuscript.png"));
+// invert colors, keeping same datatype and dimensionality
+// try also: COLOR_RGB_HSV, COLOR_RGB_BGR
+inv := img.convert[u8,3,u8,3](src,img.COLOR_INVERT);
+// convert to grayscale, reducing dimensionality (arr[u8,3]->arr[u8,2])
+gray := img.convert[u8,3,u8,2](inv,img.COLOR_RGB_GRAY);
+
+// 1D Gaussian kernel for separate convolution
+kern := arr[f32,2]{0.0625, 0.25, 0.375, 0.25, 0.0625;};
+// vertical blur
+blur := img.convolve(gray, kern, img.BORDER_COPY);
+// reshape kernel into horizontal shape
+kern.reshape(kern.shape().yx);
+// horizontal blur, in place (by passing input as output argument)
+img.convolve(blur, kern, img.BORDER_COPY, blur);
+
+// convert to float representation (*1.0/255.0 implied)
+imgf := img.convert[u8,2,f32,2](blur,img.COLOR_COPY);
+// lapacian kernel
+kern = arr[f32,2]{0,-1,0; -1,4,-1; 0,-1,0;};
+edge := img.convolve(imgf, kern, img.BORDER_COPY);
+// re-normalize to roughly 0.0-1.0 for visualization
+for (i := 0; i < edge.shape()[0]; i++){
+  for (j := 0; j < edge.shape()[1]; j++) edge[i,j]=edge[i,j]*1.5+0.5;
+}
+
+// make a copy for applying Otsu's threshold in place
+th_auto := arr.copy(blur);
+// second argument (threshold value) not used, derived automatically
+// try THRESH_BINARY for manual setting
+img.threshold(th_auto, 128, img.THRESH_AUTO);
+
+// make a copy for applying adaptive threshold (Guassian)
+th_adap := arr.copy(blur);
+// second argument is bias value
+// lowest byte of third argument is radius (0-255)
+img.threshold(th_adap, 5, img.THRESH_ADAPTIVE|4);
+
+// skeletonization (aka thinning)
+skel := img.morphology(th_adap, 0, img.MORPH_SKELETONIZE);
+
+// border following (Suzuki, S. and Abe, K.)
+ctrs := img.find_contours(th_adap);
+
+// connected component labelling
+ids := img.label_blobs(th_adap);
+
+// make a copy for in-place voronoi
+voro := arr.copy(ids);
+// compute distance transform, opt-in for modifying input into voronoi
+// L2 norm = Euclidean distance, also try NORM_L1 and NORM_LINF
+dt := img.dist_transform(voro, img.NORM_L2|img.BYPROD_VORONOI);
+// normalize to roughly 0.0-1.0 for visualization
+for (i := 0; i < dt.shape()[0]; i++){
+  for (j := 0; j < dt.shape()[1]; j++) dt[i,j]=1.0-math.min(dt[i,j]*0.05,1.0);
+}
+
+// --- end of processing, start of visualization ---
+
+drw.size(1024,816);
+
+func pix_to_graphics[T,N](pix:arr[T,N]):drw.Graphics{
+  img.convert(pix,img.COLOR_COPY,src);
+  pg := drw.create_graphics(...src.shape().yx);
+  pg.write_pixels(src);
+  return pg;
+}
+
+func ids_to_pix(ids:arr[i32,2]):arr[u8,3]{
+  pix := arr.make[u8,3](src.shape(),255 as u8)
+  for (i := 0; i < ids.shape()[0]; i++){
+    for (j := 0; j < ids.shape()[1]; j++){
+      r : i32 = ids[i,j];
+      // use SHR3 for deterministic random-ish color
+      r^=(r<<17), r^=(r>>13), r^=(r<<5);
+      r^=(r<<17), r^=(r>>13), r^=(r<<5);
+      pix[i,j,0] = r&0xff;
+      pix[i,j,1] = (r>>8)&0xff;
+      pix[i,j,2] = (r>>16)&0xff;
+    }
+  }
+  return pix;
+}
+
+
+func polys_to_graphics(polys:list[list[vec[f32,2]]]):drw.Graphics{
+  pg := drw.create_graphics(...src.shape().yx);
+  pg.begin();
+  drw.stroke(1.0,0.0,0.0);
+  drw.fill(1.0,1.0,0.0)
+  drw.begin_shape();
+  for (i := 0; i < polys.length(); i++){
+    for (j := 0; j < polys[i].length(); j++){
+      drw.vertex(...polys[i][j]);
+    }
+    drw.next_contour(1);
+  }
+  drw.end_shape();
+  pg.end();
+  return pg;
+}
+
+
+labels := list[str]{
+  "Source",
+  "Invert",
+  "Grayscale",
+  "Blur (Gaussian)",
+  "Edge (Lapacian)",
+  "Threshold (Otsu)",
+  "Threshold (Adaptive)",
+  "Connected Component Labelling",
+  "Distance Transform",
+  "Voronoi",
+  "Skeletonization",
+  "Contours (Vectorize)"
+}
+
+graphics := list[drw.Graphics]{
+  pix_to_graphics(src),
+  pix_to_graphics(inv),
+  pix_to_graphics(gray),
+  pix_to_graphics(blur),
+  pix_to_graphics(edge),
+  pix_to_graphics(th_auto),
+  pix_to_graphics(th_adap),
+  pix_to_graphics(ids_to_pix(ids)),
+  pix_to_graphics(dt),
+  pix_to_graphics(ids_to_pix(voro)),
+  pix_to_graphics(skel),
+  polys_to_graphics(ctrs),
+}
+
+while (1){
+  drw.background(0.8);
+
+  for (i := 0; i < labels.length(); i++){
+    row := i / 4;
+    col := i % 4;
+    graphics[i].draw(col*256,row*272);
+    drw.fill(0);
+    drw.text(labels[i],col*256,row*272+272);
+  }
+
+  drw.poll();
+}
+
+

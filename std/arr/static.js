@@ -16,5 +16,11 @@ globalThis.$arr = new function(){
     let [x] = $pop_args(1);
     return x.__dims;
   }
+  that.copy = function(){
+    let [a] = $pop_args(1);
+    let b = a.slice();
+    b.__dims = a.__dims.slice();
+    return b;
+  }
 }
 
