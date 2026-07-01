@@ -80,12 +80,12 @@ int CDT_Sep(int i, int u, int g_i, int g_u) {
   else
     return MIN(u-g_i, ((i+u)/2));
 }
-inline int inttyp_pix_get(void* b, int idx, int dsize){
+int inttyp_pix_get(void* b, int idx, int dsize){
   int r = 0;
   memcpy(&r, b+(idx*dsize), dsize);
   return r;
 }
-inline void inttyp_pix_set(void* b, int idx, int dsize, int val){
+void inttyp_pix_set(void* b, int idx, int dsize, int val){
   memcpy(b+(idx*dsize), &val, dsize);
 }
 void img_impl_dist_transform(void* b, int m, int n, int dsize, int flags, float* dt){

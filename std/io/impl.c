@@ -38,12 +38,23 @@ void io_impl_write_file(char* s, void* data, int n){
 
 char* io_impl_read_file(char* s, int* n){
   FILE* fd = fopen(s, "rb");
-  fseek(fd, 0, SEEK_END);
-  long file_size = ftell(fd);
-  rewind(fd);
-  char *buffer = malloc(file_size);
-  volatile size_t _ = fread(buffer, 1, file_size, fd);
+  if (fd == NULL){
+    *n = 0;
+    return NULL;
+  }
+  size_t capacity = 4096;
+  size_t size = 0;
+  char *buffer = malloc(capacity);
+  size_t bytes_read;
+  while ((bytes_read = fread(buffer + size, 1, capacity - size, fd)) > 0) {
+    size += bytes_read;
+    if (size == capacity) {
+      capacity *= 2;
+      char *tmp = realloc(buffer, capacity);
+      buffer = tmp;
+    }
+  }
   fclose(fd);
-  *n = file_size;
+  *n = size;
   return buffer;
 }

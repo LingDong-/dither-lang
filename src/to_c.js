@@ -249,7 +249,11 @@ var TO_C = function(cfg){
     if (DBG_GC) printf("pop stack\\n");
     __vars_top = __vars_stack;
     __stack_top--;
-    __vars_stack = __stack[__stack_top-1];
+    if (__stack_top > 0){
+      __vars_stack = __stack[__stack_top-1];
+    }else{
+      __vars_stack = 0;
+    }
   }
   void __init_g(){
     __retpts = malloc(__retpts_cap*sizeof(ret_t));
@@ -1433,6 +1437,14 @@ var TO_C = function(cfg){
             o.push(`memcpy(${pa}, &${tmp}, ${nb});`);
             o.push(`__put_var(${varcnt++},${tmp});`);
           }else{
+            if (collectible.includes(vart(ta)) && !a.includes('+') && !a.startsWith('__r_')){
+              if (tmpdefs.includes(a)){
+                let tmp = shortid();
+                o.push(`if (${a} && ${b}){for (int ${tmp} = 0; ${tmp} < __vars_stack; ${tmp}++){`);
+                o.push(`  if ((void*)__vars[${tmp}]==(void*)${a}) __vars[${tmp}] = (uintptr_t)(void*)${b};`);
+                o.push(`}}`);
+              }
+            }
             o.push(`memcpy(${pa}, ${pb}, ${nb});`);
           }
         }

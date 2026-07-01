@@ -66,14 +66,27 @@ void dict__has(){
   // assert(dic->kw == sz);
 
   int32_t found = 0;
-
-  for (int i = 0; i < __NUM_DICT_SLOTS; i++){
-    for (int j = 0; j < dic->slots[i].n; j++){
-      int r = memcmp(((char*)(dic->slots[i].data) + (dic->kw+dic->vw) * j), item, sz);
-      if (r == 0){
-        found = 1;
-        goto done;
-      }
+  int s;
+  if (dic->kt == VART_STR){
+    s = __hash(*(char**)item, strlen(*(char**)item));
+  }else{
+    s = __hash((void*)item, dic->kw);
+  }
+  if (! dic->slots[s].cap){
+    found = 0;
+    goto done;
+  }
+  for (int i = 0; i < dic->slots[s].n; i++){
+    void* k = dic->slots[s].data + ((dic->kw+dic->vw)*i);
+    int ok = 0;
+    if (dic->kt == VART_STR){
+      ok = strcmp(* ((char**)k), * ((char**)item)) == 0;
+    }else{
+      ok = memcmp(k,item,dic->kw) == 0;
+    }
+    if (ok){
+      found = 1;
+      goto done;
     }
   }
 done:

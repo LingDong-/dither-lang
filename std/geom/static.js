@@ -262,10 +262,10 @@ globalThis.$geom = new function(){
     function impl(points,start,end,eps){
       let n_points = end - start;
       if (n_points <= 2){
-        return point_list_typed([
-          points[0].slice(),
-          points[1].slice()
-        ]);
+        return [
+          points[start].slice(),
+          points[start+1].slice()
+        ];
       }
       let dmax = 0;
       let argmax = -1;
