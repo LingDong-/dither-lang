@@ -82,11 +82,11 @@ int CDT_Sep(int i, int u, int g_i, int g_u) {
 }
 int inttyp_pix_get(void* b, int idx, int dsize){
   int r = 0;
-  memcpy(&r, b+(idx*dsize), dsize);
+  memcpy(&r, ((char*)b)+(idx*dsize), dsize);
   return r;
 }
 void inttyp_pix_set(void* b, int idx, int dsize, int val){
-  memcpy(b+(idx*dsize), &val, dsize);
+  memcpy(((char*)b)+(idx*dsize), &val, dsize);
 }
 void img_impl_dist_transform(void* b, int m, int n, int dsize, int flags, float* dt){
   int (*f)(int,int,int);
@@ -942,7 +942,7 @@ Contour* findContours(int* F, int w, int h, int* nret) {
       int j3 = j;
       
       
-      while (true){
+      while (1){
         //(3.3) Starting from the next elementof the pixel (i2, j2)
         //in the counterclock- wise order, examine counterclockwise
         //the pixels in the neighborhood of the current pixel (i3, j3)
