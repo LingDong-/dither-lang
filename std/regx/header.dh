@@ -1,0 +1,5 @@
+namespace regx {
+  func test(s:str,re:str):i32;
+  func find(s:str,re:str):list[tup[i32,list[str]]];
+  func replace(s:str,re:str,rep:str):str;
+}

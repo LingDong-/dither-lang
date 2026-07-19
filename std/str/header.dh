@@ -10,6 +10,6 @@ namespace str {
   func split(s:str,delim:str):list[str];
   func join(s:str,ss:list[str]):str;
   func trim(s:str,cs:str,end:i32):str;
-  func pad(s:str,n:i32,cs:str,end:i32);
-  func affixed(s:str,cs:str,end:i32);
+  func pad(s:str,n:i32,cs:str,end:i32):str;
+  func affixed(s:str,cs:str,end:i32):i32;
 }

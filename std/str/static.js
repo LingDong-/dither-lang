@@ -1,6 +1,9 @@
 globalThis.$str = new function(){
   var that = this;
 
+  const LEADING = 1;
+  const TRAILING = 2;
+
   that.length = function(){
     let [s] = $pop_args(1);
     return s.length;
@@ -47,6 +50,22 @@ globalThis.$str = new function(){
   that.join = function(){
     let [s,a] = $pop_args(2);
     return a.join(s);
+  }
+  that.affixed = function(){
+    let [s,cs,end] = $pop_args(3);
+    if (end == LEADING){
+      return Number(s.startsWith(cs));
+    }else{
+      return Number(s.endsWith(cs));
+    }
+  }
+  that.pad = function(){
+    let [s,n,cs,end] = $pop_args(4);
+    if (end == LEADING){
+      return s.padStart(n,cs);
+    }else{
+      return s.padEnd(n,cs);
+    }
   }
 }
 

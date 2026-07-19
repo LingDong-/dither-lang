@@ -1,4 +1,8 @@
 //
+
+#define LEADING  1
+#define TRAILING 2
+
 void str__length(){
   char* __ARG(s); 
   int32_t l = strlen(s);
@@ -157,4 +161,57 @@ void str__join(){
   o[n] = 0;
   __put_ret(&o);
 
+}
+
+void str__affixed(){
+  int __ARG(end);
+  char* __ARG(cs);
+  char* __ARG(s);
+
+  int sn = strlen(s);
+  int csn = strlen(cs);
+
+  int i0 = 0;
+  if (end == TRAILING){
+    i0 = sn - csn;
+  }
+  for (int i = 0; i < csn; i++){
+    if (cs[i] != s[i0+i]){
+      int r = 0;
+      __put_ret(&r);
+      return;
+    }
+  }
+  int r = 1;
+  __put_ret(&r);
+  return;
+}
+
+void str__pad(){
+  int __ARG(end);
+  char* __ARG(cs);
+  int __ARG(n);
+  char* __ARG(s);
+
+  int sn = strlen(s);
+  int csn = strlen(cs);
+
+  if (n < sn) n = sn;
+
+  char* o = __gc_alloc(VART_STR,n+1);
+
+  int i0 = 0;
+  int i1 = n-sn;
+  int i2 = i1;
+  if (end == TRAILING){
+    i0 = sn;
+    i1 = n;
+    i2 = 0;
+  }
+  memcpy(o + i2, s, sn);
+  for (int i = i0; i < i1; i++){
+    o[i] = cs[(i-i0)%csn];
+  }
+
+  __put_ret(&o);
 }

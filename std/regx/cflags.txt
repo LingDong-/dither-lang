@@ -1,0 +1,1 @@
+CFLAGS="$CFLAGS $(g++ -std=c++17 -c $DITHER_ROOT/std/regx/impl_cppstd.cpp) $DITHER_ROOT/std/regx/impl_cppstd.o -lstdc++"
