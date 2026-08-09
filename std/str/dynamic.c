@@ -10,6 +10,9 @@
 #endif
 #endif
 
+#define LEADING  1
+#define TRAILING 2
+
 #define QUOTED(x) QUOTE(x)
 #define QUOTE(x) #x
 
@@ -180,6 +183,53 @@ EXPORTED void str_join(var_t* ret,  gstate_t* _g){
   ret->u.str=o;
 }
 
+EXPORTED void str_affixed(var_t* ret, gstate_t* _g){
+  int end = ARG_POP(_g,i32);
+  stn_t* cs = ARG_POP(_g,str);
+  stn_t* s = ARG_POP(_g,str);
+  
+  int i0 = 0;
+  if (end == TRAILING){
+    i0 = s->n - cs->n;
+  }
+  for (int i = 0; i < cs->n; i++){
+    if (cs->data[i] != s->data[i0+i]){
+      ret->u.i32 = 0;
+      return;
+    }
+  }
+  ret->u.i32 = 1;
+}
+
+EXPORTED void str_pad(var_t* ret, gstate_t* _g){
+  int end = ARG_POP(_g,i32);
+  stn_t* cs = ARG_POP(_g,str);
+  int n = ARG_POP(_g,i32);
+  stn_t* s = ARG_POP(_g,str);
+  
+  if (n < s->n) n = s->n;
+
+  stn_t* o = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+n+1);
+
+  int i0 = 0;
+  int i1 = n-s->n;
+  int i2 = i1;
+  if (end == TRAILING){
+    i0 = s->n;
+    i1 = n;
+    i2 = 0;
+  }
+  memcpy((o->data) + i2, s->data, s->n);
+  for (int i = i0; i < i1; i++){
+    o->data[i] = cs->data[(i-i0)%cs->n];
+  }
+  o->data[n] = 0;
+  o->n = n;
+  o->w = 1;
+  o->type = ret->type;
+  ret->u.str = o;
+}
+
 #define QK_REG(name) register_cfunc(&(_g->cfuncs), "str." QUOTE(name), str_ ## name);
 
 EXPORTED void lib_init_str(gstate_t* _g){
@@ -191,6 +241,8 @@ EXPORTED void lib_init_str(gstate_t* _g){
   QK_REG(split);
   QK_REG(trim);
   QK_REG(join);
+  QK_REG(affixed);
+  QK_REG(pad);
 }
 
 
