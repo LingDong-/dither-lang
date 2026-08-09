@@ -312,17 +312,20 @@ typedef struct{
   map_t cfuncs;
   retp_t_arr_t ret_pts;
   uintptr_t_arr_t args;
+  int argc;
+  char** argv;
 } gstate_t;
 
 gstate_t _Gdat = {0};
 gstate_t* _G = &(_Gdat);
 
-void global_init(){
+void global_init(int argc, char** argv){
   memset(_G,0,sizeof(_Gdat));
-
   list_init(&_G->vars);
   ARR_INIT(uintptr_t, _G->args);
   ARR_INIT(retp_t, _G->ret_pts);
+  _G->argc = argc;
+  _G->argv = argv;
 }
 
 void* gc_alloc_(gstate_t* _g, int sz){

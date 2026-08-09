@@ -669,16 +669,16 @@
     "",
     ""
   ],
-  "guts": [
+  "sys": [
     "Runtime internals"
   ],
-  "guts-gc::": [
+  "sys-gc::": [
     "Trigger garbage collection as soon as possible"
   ],
-  "guts-gc_off::": [
+  "sys-gc_off::": [
     "Disable garbage collection"
   ],
-  "guts-gc_on::": [
+  "sys-gc_on::": [
     "Enable garbage collection"
   ],
   "img": [

@@ -4,7 +4,7 @@ include "std/io"
 include "std/arr"
 include "std/time"
 include "std/drw"
-include "std/guts"
+include "std/sys"
 
 // floyd-steinberg dither demo
 
@@ -22,7 +22,7 @@ func quant(x:f32):f32{
   return math.round(x*nlvl)/nlvl;
 }
 
-guts.gc_off();
+sys.gc_off();
 
 swap := 0
 next := {0.,0.,0.}
@@ -46,7 +46,7 @@ for (y:=0; y<H; y++){
 }
 
 fstein.reshape({0,0});
-guts.gc_on();
+sys.gc_on();
 
 drw.size(W*scl,H*scl)
 

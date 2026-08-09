@@ -27,6 +27,7 @@ globalThis.$drw = new function(){
     pg.w = w;
     pg.h = h;
     pg.fbo = fbos.length-1;
+    pg.__canvas = c;
   }
   that._begin_fbo = function(){
     let [fbo] = $pop_args(1);

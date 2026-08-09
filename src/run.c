@@ -14,6 +14,8 @@ int main(int argc, char** argv){
   char* pth_map = NULL;
   char* pth_tcp = NULL;
   int do_step = 0;
+  int c_arg = 0;
+  char** v_arg = NULL;
   for (int i = 1; i < argc; i++){
     if (strcmp(argv[i],"--map")==0){
       pth_map = argv[++i];
@@ -21,13 +23,19 @@ int main(int argc, char** argv){
       pth_tcp = argv[++i];
     }else if (strcmp(argv[i],"--step")==0){
       do_step = 1;
+    }else if (strcmp(argv[i],"--arg")==0){
+      c_arg = atoi(argv[++i]);
+      v_arg = (char**)malloc(sizeof(char*)*c_arg);
+      for (int j = 0; j < c_arg; j++){
+        v_arg[j] = argv[++i];
+      }
     }else{
       pth_inp = argv[i];
     }
   }
 
   FILE* fd;
-  global_init();
+  global_init(c_arg,v_arg);
 
   if (pth_tcp == NULL){
     fd = fopen(pth_inp,"rb");
@@ -163,7 +171,7 @@ int main(int argc, char** argv){
               print_vars();
             }else if (!strcmp(line,"$nuke")){
               global_exit();
-              global_init();
+              global_init(c_arg,v_arg);
               frame = frame_start();
             }else if (!strcmp(line,"$dbug")){
               dbg ^= 1;

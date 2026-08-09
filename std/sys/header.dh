@@ -1,6 +1,7 @@
 
-namespace guts {
+namespace sys {
   func gc_on();
   func gc_off();
   func gc();
+  func argv():list[str];
 }

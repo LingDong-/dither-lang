@@ -783,8 +783,16 @@ var TO_JS = function(cfg){
         console.log(ins)
       }
     }
-    o.push(`default:$goto=0;break;}}})()`);
-    o.unshift(`(async function (){`)
+    let tmp = shortid();
+    o.push(
+      `default:$goto=0;break;}}})`,
+      `if (!globalThis.__dh_intern_module) globalThis['${tmp}']();`
+    );
+    o.unshift(
+      `globalThis[globalThis.__dh_intern_module ?? '${tmp}']=(`,
+      `async function (){`,
+      `var $argv = Array.from(arguments);`
+    )
     o.unshift(lib);
     return o.join('\n')
   }

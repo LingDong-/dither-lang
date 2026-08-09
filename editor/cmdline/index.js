@@ -21,7 +21,7 @@ let version = "v0.0.1"
 let help = `
 The DITHER Programming Language ${version}
 usage:
-    dither [options] file.dh
+    dither [options] file.dh [arguments]
 options:
     --target,  -t name : compile backend: vm/c/js/html
     --output,  -o path : output path
@@ -49,14 +49,20 @@ let inc_pth = [];
 let inp_pth = null;
 let map_pth = tmpth('ir.map');
 let did_info = 0;
+let did_inp = 0;
 let is_repl = 0;
 if (args.length == 0){
   console.log(help);
 }
+let user_argv = [];
 
 fs.mkdirSync(tmpth(), { recursive: true });
 
 for (let i = 0; i < args.length; i++){
+  if (did_inp){
+    user_argv.push(args[i]);
+    continue;
+  }
   if (args[i] == '--execute' || args[i] == '-x'){
     do_run = 1;
   }else if (args[i] == '--target' || args[i] == '-t'){
@@ -78,8 +84,12 @@ for (let i = 0; i < args.length; i++){
     is_repl = 1;
   }else{
     inp_pth = args[i];
+    did_inp = 1;
   }
 }
+
+let user_argc = user_argv.length;
+let user_argstr = user_argv.map(x=>JSON.stringify(x)).join(' ');
 
 if (inp_pth == null && !is_repl){
   if (!did_info){
@@ -327,12 +337,12 @@ if (is_repl){
       if (_WIN32){
         fs.writeFileSync(tmpth('vm.exe'), fs.readFileSync(__dirname+'\\..\\..\\build\\vm.exe'), { mode: 0o755 });
         if (verbose) console.log("[info] compiled, running...");
-        let cmd = `${tmpth('vm.exe')} ${out_pth} --map ${tmpth('ir.map')} ${step}`;
+        let cmd = `${tmpth('vm.exe')} ${out_pth} --map ${tmpth('ir.map')} ${step} --arg ${user_argc} ${user_argstr}`;
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }else{
         fs.writeFileSync(tmpth('vm'), fs.readFileSync(__dirname+'/../../build/vm'), { mode: 0o755 });
         if (verbose) console.log("[info] compiled, running...");
-        let cmd = `${tmpth('vm')} ${out_pth} --map ${tmpth('ir.map')} ${step}`;
+        let cmd = `${tmpth('vm')} ${out_pth} --map ${tmpth('ir.map')} ${step} --arg ${user_argc} ${user_argstr}`;
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }
     }
@@ -368,7 +378,7 @@ if (is_repl){
         let vcvars = get_vs();
         fs.writeFileSync(tmpth('config.h'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.h'), { mode: 0o755 });
         fs.writeFileSync(tmpth('config.bat'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.bat'), { mode: 0o755 })
-        let cmd = `call ${tmpth('config.bat')} >nul && "${vcvars}" && cl /I. /FI ${tmpth('config.h')} /Fe:${tmpth('a.exe')} /Fo:"%TEMP%\\a.obj" /w /O2 ${out_pth} ${verbose?'&& echo [info] C compiled, running...':''} && ${tmpth('a.exe')}`;
+        let cmd = `call ${tmpth('config.bat')} >nul && "${vcvars}" && cl /I. /FI ${tmpth('config.h')} /Fe:${tmpth('a.exe')} /Fo:"%TEMP%\\a.obj" /w /O2 ${out_pth} ${verbose?'&& echo [info] C compiled, running...':''} && ${tmpth('a.exe')} ${user_argstr}`;
         if (verbose) console.log("[info] compiling with cl.exe...");
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }else{
@@ -380,7 +390,7 @@ if (is_repl){
         if (__APPLE__){
           xattr = ` && xattr -cr ${tmpth('a.out')} `;
         }
-        let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${cflags} ${out_pth} -o ${tmpth('a.out')} ${xattr} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')}`;
+        let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${cflags} ${out_pth} -o ${tmpth('a.out')} ${xattr} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')} ${user_argstr}`;
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }
     }
@@ -390,6 +400,7 @@ if (is_repl){
     fs.writeFileSync(out_pth,to_js.transpile(ir,layout));
     if (do_run){
       if (verbose) console.log("[info] compiled, running...");
+      process.argv = [process.argv[0],out_pth,...user_argv];
       eval(fs.readFileSync(out_pth).toString());
     }
   }else if (targ == 'html'){

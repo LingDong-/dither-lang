@@ -561,6 +561,9 @@ var TO_C = function(cfg){
     dic->n++;
     return (char*)k + dic->kw;
   }
+  
+  int __g_argc = 0;
+  char** __g_argv = NULL;
   `
   let intmap = {
     'i8':'int8_t',
@@ -1252,7 +1255,8 @@ var TO_C = function(cfg){
           if (infun){
             o.push(`}`)
           }
-          o.push(`int main(){`);
+          o.push(`int main(int argc, char** argv){`);
+          o.push(`__g_argc = argc-1; __g_argv = argv+1;`);
           o.push(`__init_g();`);
           o.push(`__push_stack();`);
           infun = 0;
