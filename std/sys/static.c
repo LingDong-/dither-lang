@@ -1,5 +1,6 @@
 //
 #include <stdio.h>
+#include "impl.h"
 
 void sys__gc_on(){
   __gc_off = 0;
@@ -32,4 +33,25 @@ void sys__argv(){
   lst->cap = sn;
   lst->n = sn;
   __put_ret(&lst);
+}
+
+void sys__platform(){
+  char p[128];
+  strcpy(p,"c@");
+  impl_platform(p+strlen(p));
+
+  char* s0 = __gc_alloc(VART_STR, strlen(p)+1); 
+  strcpy(s0, p);
+
+  __put_ret(&s0);
+}
+
+void sys__getenv(){
+  char* __ARG(s);
+  char* p = getenv(s);
+  
+  char* s0 = __gc_alloc(VART_STR, strlen(p)+1); 
+  strcpy(s0, p);
+
+  __put_ret(&s0);
 }

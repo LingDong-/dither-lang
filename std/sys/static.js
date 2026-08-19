@@ -18,5 +18,12 @@ globalThis.$sys = new function(){
     }
     return [];
   }
+  that.platform = function(){
+    return "js@" + navigator.userAgent;
+  }
+  that.getenv = function(){
+    let name = $pop_args(1);
+    return (globalThis.ENV ?? globalThis.__dh_intern_env ?? {})[name] ?? "";
+  }
 }
 

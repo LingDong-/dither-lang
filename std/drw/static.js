@@ -34,7 +34,7 @@ globalThis.$drw = new function(){
     ctx = fbos[fbo].getContext('2d');
   }
   that._end_fbo = function(){
-    ctx = cnv.getContext('2d');
+    if (cnv) ctx = cnv.getContext('2d');
   }
   that._read_pixels = function(){
     let [fbo] = $pop_args(1);

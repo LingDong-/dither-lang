@@ -1,0 +1,76 @@
+include "std/img"
+include "std/io"
+include "std/list"
+include "std/arr"
+include "std/math"
+include "std/frag"
+include "std/win"
+include "std/vec"
+include "std/time"
+
+// demo to showcase combination of std/img routines (CPU) +
+// custom fragment shader (GPU) for image processing,
+// w/ mouse interaction
+
+src := img.decode(io.read_file("examples/assets/manuscript.png"));
+
+gray := img.convert[u8,3,u8,2](src,img.COLOR_RGB_GRAY);
+img.threshold(gray, 192, img.THRESH_AUTO);
+
+dt := img.dist_transform(gray, img.NORM_L2);
+for (i := 0; i < dt.shape()[0]; i++){
+  for (j := 0; j < dt.shape()[1]; j++) dt[i,j]=math.min(dt[i,j]*0.1,1.0)**0.01;
+}
+img.convert(dt,img.COLOR_COPY,src);
+
+resolution := src.shape().yx;
+frag.init(win.init(...resolution,win.CONTEXT_3D));
+image := frag.texture(...src.shape().yx);
+image.write_pixels(src);
+
+shader := frag.program(embed (func(
+  @builtin frag_coord:vec[f32,4],
+  @varying uv:vec[f32,2],
+  @uniform image:frag.Texture,
+  @uniform resolution:vec[f32,2],
+  @uniform mouse:vec[f32,2],
+):vec[f32,4]{
+  step := {1.0,1.0}/resolution.xy;
+  zscl := 1.0;
+  xy0 := uv;
+  xy1 := uv + {step.x,0.0};
+  xy2 := uv + {0.0,step.y};
+
+  p0 := {...xy0,image.sample(xy0).g*zscl};
+  p1 := {...xy1,image.sample(xy1).g*zscl};
+  p2 := {...xy2,image.sample(xy2).g*zscl};
+
+  nml := -(p2-p1).cross(p1-p0).dir();
+  // color := nml * 0.5 + 0.5;
+
+  ld := {mouse.x - resolution.x * 0.5, resolution.y * 0.5 - mouse.y, 10.0}.dir();
+  ndl := math.max(0.0, nml.dot(ld) * 0.7 + 0.3);
+  color := {0.1,0.2,0.3} * (1.0-ndl) + {1.0,0.7,0.4} * ndl;
+
+  if (p0.z < 0.001) color *= 0.1;
+
+  return {color.r,color.g,color.b,1.0};
+}) as "fragment");
+
+
+mouse := {0.0,0.0};
+while (1){
+  time.fps(120);
+
+  frag.begin(shader);
+  frag.uniform("image", image);
+  frag.uniform("resolution", resolution as vec[f32,2]);
+  frag.uniform("mouse", mouse);
+  frag.render();
+  frag.end();
+  
+  e := win.poll();
+  if (e.type == win.MOUSE_MOVED){
+    mouse = {e.x, e.y};
+  }
+}

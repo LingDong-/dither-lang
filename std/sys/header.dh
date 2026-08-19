@@ -4,4 +4,6 @@ namespace sys {
   func gc_off();
   func gc();
   func argv():list[str];
+  func platform():str;
+  func getenv(name:str):str;
 }

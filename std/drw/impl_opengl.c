@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -83,13 +84,29 @@ color_t color_stroke;
 int is_stroke=1;
 int is_fill=1;
 
-GLint fbo_zero;
+GLint fbo_zero = 0;
+int did_init = 0;
 
-void drw_impl__size(int w, int h, uint64_t ctx){
+void init_gl(){
   #if !defined(__APPLE__)
   glewInit();
   #endif
-  
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // glEnable(GL_MULTISAMPLE);
+
+  glLineWidth(1);
+  glPointSize(1);
+
+  color_fill.r=1, color_fill.g=1, color_fill.b=1, color_fill.a=1;
+  color_stroke.r=0, color_stroke.g=0, color_stroke.b=0, color_stroke.a=1;
+  did_init = 1;
+}
+
+void drw_impl__size(int w, int h, uint64_t ctx){
+  if (!did_init) init_gl();
+
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo_zero);
 
   glViewport(0, 0, w, h);
@@ -98,17 +115,6 @@ void drw_impl__size(int w, int h, uint64_t ctx){
   glOrtho(0, w, h, 0, -1, 1);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  // glEnable(GL_MULTISAMPLE);
-
-  glLineWidth(1);
-  glPointSize(1);
-
-  color_fill.r=1, color_fill.g=1, color_fill.b=1, color_fill.a=1;
-  color_stroke.r=0, color_stroke.g=0, color_stroke.b=0, color_stroke.a=1;
 
   width = w;
   height = h;
@@ -119,6 +125,7 @@ void drw_impl__flush(){
 }
 
 void drw_impl__init_graphics(void* data, int w, int h){
+  if (!did_init) init_gl();
 
   glEnable(GL_TEXTURE_2D);
 

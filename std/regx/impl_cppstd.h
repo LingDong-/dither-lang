@@ -14,3 +14,7 @@ char* regx_impl_replace(const char* str, const char* re, const char* rep);
 #endif
 
 #endif
+
+#ifdef _WIN32
+#pragma comment(lib, __FILE__ ".lib")
+#endif

@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include "../../src/interp.c"
+#include "impl.h"
+
 
 #ifndef EXPORTED
 #ifdef _WIN32
@@ -46,12 +48,44 @@ EXPORTED void sys_argv(var_t* ret, gstate_t* _g){
 
 }
 
+EXPORTED void sys_platform(var_t* ret, gstate_t* _g){
+  char p[128];
+  strcpy(p,"vm@");
+  impl_platform(p+strlen(p));
+
+  stn_t* s0 = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+strlen(p)+1);
+  s0->n = strlen(p);
+  s0->w = 1;
+  s0->type = ret->type;
+  strcpy(s0->data, p);
+
+  ret->u.str = s0;
+}
+
+EXPORTED void sys_getenv(var_t* ret, gstate_t* _g){
+  stn_t* s = ARG_POP(_g,str);
+
+  char* p = getenv(s->data);
+  if (p == NULL) p = "";
+
+  stn_t* s0 = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+strlen(p)+1);
+  s0->n = strlen(p);
+  s0->w = 1;
+  s0->type = ret->type;
+  strcpy(s0->data, p);
+
+  ret->u.str = s0;
+}
+
+
 
 EXPORTED void lib_init_sys(gstate_t* _g){
-  register_cfunc(&(_g->cfuncs), "sys.gc_on", sys_gc_on );
-  register_cfunc(&(_g->cfuncs), "sys.gc_off",sys_gc_off);
-  register_cfunc(&(_g->cfuncs), "sys.gc",    sys_gc    );
-  register_cfunc(&(_g->cfuncs), "sys.argv",  sys_argv  );
+  register_cfunc(&(_g->cfuncs), "sys.gc_on",   sys_gc_on );
+  register_cfunc(&(_g->cfuncs), "sys.gc_off",  sys_gc_off);
+  register_cfunc(&(_g->cfuncs), "sys.gc",      sys_gc    );
+  register_cfunc(&(_g->cfuncs), "sys.argv",    sys_argv  );
+  register_cfunc(&(_g->cfuncs), "sys.platform",sys_platform  );
+  register_cfunc(&(_g->cfuncs), "sys.getenv",  sys_getenv  );
 }
 
 

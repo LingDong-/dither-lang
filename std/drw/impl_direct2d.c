@@ -111,35 +111,8 @@ ID2D1RenderTarget* ctx;
 
 ID2D1StrokeStyle *stroke_style = NULL;
 
-void drw_impl__size(int w, int h, uint64_t _hwnd){
-  hwnd = (HWND)(void*)(uintptr_t)_hwnd;
-  width = w;
-  height = h;
+void init_d2d(){
   IDXGIDevice* dxgiDevice = NULL;
-
-  // DXGI_SWAP_CHAIN_DESC sd = {
-  //   .BufferCount = 2,
-  //   .BufferDesc = {
-  //     .Width = w,
-  //     .Height = h,
-  //     .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
-  //     .RefreshRate = { 0, 1 }  // No fixed refresh
-  //   },
-  //   .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-  //   .OutputWindow = hwnd,
-  //   .SampleDesc = { 1, 0 },
-  //   .Windowed = TRUE,
-  //   .SwapEffect = DXGI_SWAP_EFFECT_DISCARD,
-  //   .Flags = 0
-  // };
-  // UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-  // D3D_FEATURE_LEVEL featureLevel;
-  // D3D11CreateDeviceAndSwapChain(
-  //   NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
-  //   createDeviceFlags, NULL, 0,
-  //   D3D11_SDK_VERSION, &sd,
-  //   &swapChain, &d3dDevice, &featureLevel, &d3dContext
-  // );
 
   UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
   D3D_FEATURE_LEVEL featureLevel;
@@ -149,35 +122,6 @@ void drw_impl__size(int w, int h, uint64_t _hwnd){
     D3D11_SDK_VERSION,
     &d3dDevice, &featureLevel, &d3dContext
   );
-  d3dDevice->lpVtbl->QueryInterface(d3dDevice, &IID_IDXGIDevice, (void**)&dxgiDevice);
-  IDXGIAdapter* dxgiAdapter = NULL;
-  dxgiDevice->lpVtbl->GetAdapter(dxgiDevice, &dxgiAdapter);
-  IDXGIFactory2* dxgiFactory = NULL;
-  dxgiAdapter->lpVtbl->GetParent(dxgiAdapter, &IID_IDXGIFactory2, (void**)&dxgiFactory);
-  DXGI_SWAP_CHAIN_DESC1 sd = {
-    .Width  = w,
-    .Height = h,
-    .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
-    .Stereo = FALSE,
-    .SampleDesc = { 1, 0 },
-    .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-    .BufferCount = 2,
-    .Scaling     = DXGI_SCALING_NONE,
-    .SwapEffect  = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
-    .AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED,
-    .Flags = 0
-  };
-  dxgiFactory->lpVtbl->CreateSwapChainForHwnd(
-    dxgiFactory,
-    (IUnknown*)d3dDevice,
-    hwnd,
-    &sd,
-    NULL,    // pFullscreenDesc
-    NULL,    // pRestrictToOutput
-    &swapChain    // IDXGISwapChain1*
-  );
-  dxgiFactory->lpVtbl->Release(dxgiFactory);
-  dxgiAdapter->lpVtbl->Release(dxgiAdapter);
 
   D2D1_FACTORY_OPTIONS opts = {0};
   D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &IID_ID2D1Factory1, &opts, (void**)&d2dFactory);
@@ -185,21 +129,7 @@ void drw_impl__size(int w, int h, uint64_t _hwnd){
   ID2D1Factory1_CreateDevice(d2dFactory, dxgiDevice, &d2dDevice);
   ID2D1Device_CreateDeviceContext(d2dDevice, D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &d2dContext);
   dxgiDevice->lpVtbl->Release(dxgiDevice);
-  IDXGISurface* dxgiSurface = NULL;
-  swapChain->lpVtbl->GetBuffer(swapChain, 0, &IID_IDXGISurface, (void**)&dxgiSurface);
-  D2D1_BITMAP_PROPERTIES1 bp = {
-    .pixelFormat = {
-      .format = DXGI_FORMAT_B8G8R8A8_UNORM,
-      .alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED
-    },
-    .dpiX = 96.0f,
-    .dpiY = 96.0f,
-    .bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW
-  };
-  d2dContext->lpVtbl->CreateBitmapFromDxgiSurface(d2dContext, dxgiSurface, &bp, &d2dTargetBitmap);
-  dxgiSurface->lpVtbl->Release(dxgiSurface);
-
-  d2dContext->lpVtbl->SetTarget(d2dContext, (ID2D1Image*)d2dTargetBitmap);
+  
   ctx = (ID2D1RenderTarget*)d2dContext;
 
   DWriteCreateFactory(
@@ -233,8 +163,67 @@ void drw_impl__size(int w, int h, uint64_t _hwnd){
   ID2D1Factory1_CreateStrokeStyle(
     d2dFactory, &props, NULL, 0, &stroke_style
   );
-
+  
   ctx->lpVtbl->CreateSolidColorBrush(ctx,&color_stroke,NULL,&brush);
+}
+
+
+void drw_impl__size(int w, int h, uint64_t _hwnd){
+  hwnd = (HWND)(void*)(uintptr_t)_hwnd;
+  width = w;
+  height = h;
+
+  init_d2d();
+
+  IDXGIDevice* dxgiDevice = NULL;
+  IDXGIAdapter* dxgiAdapter = NULL;
+  IDXGIFactory2* dxgiFactory = NULL;
+  d3dDevice->lpVtbl->QueryInterface(d3dDevice, &IID_IDXGIDevice, (void**)&dxgiDevice);
+  dxgiDevice->lpVtbl->GetAdapter(dxgiDevice, &dxgiAdapter);
+  dxgiAdapter->lpVtbl->GetParent(dxgiAdapter, &IID_IDXGIFactory2, (void**)&dxgiFactory);
+
+  DXGI_SWAP_CHAIN_DESC1 sd = {
+    .Width  = w,
+    .Height = h,
+    .Format = DXGI_FORMAT_B8G8R8A8_UNORM,
+    .Stereo = FALSE,
+    .SampleDesc = { 1, 0 },
+    .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+    .BufferCount = 2,
+    .Scaling     = DXGI_SCALING_NONE,
+    .SwapEffect  = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+    .AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED,
+    .Flags = 0
+  };
+  dxgiFactory->lpVtbl->CreateSwapChainForHwnd(
+    dxgiFactory,
+    (IUnknown*)d3dDevice,
+    hwnd,
+    &sd,
+    NULL,    // pFullscreenDesc
+    NULL,    // pRestrictToOutput
+    &swapChain    // IDXGISwapChain1*
+  );
+  dxgiFactory->lpVtbl->Release(dxgiFactory);
+  dxgiAdapter->lpVtbl->Release(dxgiAdapter);
+
+
+  IDXGISurface* dxgiSurface = NULL;
+  swapChain->lpVtbl->GetBuffer(swapChain, 0, &IID_IDXGISurface, (void**)&dxgiSurface);
+  D2D1_BITMAP_PROPERTIES1 bp = {
+    .pixelFormat = {
+      .format = DXGI_FORMAT_B8G8R8A8_UNORM,
+      .alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED
+    },
+    .dpiX = 96.0f,
+    .dpiY = 96.0f,
+    .bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW
+  };
+  d2dContext->lpVtbl->CreateBitmapFromDxgiSurface(d2dContext, dxgiSurface, &bp, &d2dTargetBitmap);
+  dxgiSurface->lpVtbl->Release(dxgiSurface);
+
+  
+  d2dContext->lpVtbl->SetTarget(d2dContext, (ID2D1Image*)d2dTargetBitmap);
   ctx->lpVtbl->BeginDraw(ctx);
 }
 
@@ -243,8 +232,6 @@ void drw_impl__flush(){
   swapChain->lpVtbl->Present(swapChain, 0, 0); 
   ctx->lpVtbl->BeginDraw(ctx); 
 }
-
-
 
 
 fbo_t createBuffer(
@@ -296,6 +283,7 @@ fbo_t createBuffer(
 }
 
 void drw_impl__init_graphics(void* data, int w, int h){
+  if (d3dDevice == NULL) init_d2d();
   fbo_t offscreen = createBuffer(d3dDevice,d2dContext,w,h);
   ARR_PUSH(fbo_t,fbos,offscreen);
   ((int32_t*)(data))[2] = fbos.len-1;
@@ -531,9 +519,7 @@ void drw_impl_reset_matrix(){
 
 void drw_impl_background(float r, float g, float b, float a){
   D2D1_COLOR_F c = {r,g,b,a};
-  ID2D1SolidColorBrush_SetColor(brush,&c);
-  D2D1_RECT_F rect = {0,0,width,height};
-  ctx->lpVtbl->FillRectangle(ctx,&rect,brush);
+  ctx->lpVtbl->Clear(ctx, &c);
 }
 
 
