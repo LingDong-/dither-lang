@@ -57,8 +57,6 @@ CGContextRef_arr_t fbos;
 int did_init = 0;
 
 void init_cg(){
-  CGContextSetRGBFillColor(*ctx, 1,1,1,1);
-  CGContextSetRGBStrokeColor(*ctx, 0,0,0,1);
 
   ARR_INIT(CGContextRef,fbos);
   did_init = 1;
@@ -68,6 +66,9 @@ void drw_impl__size(int w, int h, uint64_t _ctx){
 
   ctx0 = (void**)(uintptr_t)_ctx;
   ctx = ctx0;
+
+  CGContextSetRGBFillColor(*ctx, 1,1,1,1);
+  CGContextSetRGBStrokeColor(*ctx, 0,0,0,1);
   
   if (!did_init) init_cg();
 }

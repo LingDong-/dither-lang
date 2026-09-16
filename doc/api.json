@@ -2,6 +2,11 @@
   "arr": [
     "Multidimensional homogeneous fixed-size mutable array"
   ],
+  "arr-copy:T*U:arr(T,U)": [
+    "Duplicates (shallow copy) an array.",
+    "array to be duplicated",
+    "new array with same contents"
+  ],
   "arr-make:T*U:vec(i32,U)*T": [
     "Generate an array given a shape and a filler item",
     "desired array shape",
@@ -210,6 +215,11 @@
   ],
   "drw-reset_matrix::": [
     "Reset transformation matrix to identity matrix"
+  ],
+  "drw-resize::i32*i32": [
+    "Resize main drawing surface (call in response to win.WINDOW_RESIZED event)",
+    "new width",
+    "new height"
   ],
   "drw-rotate_deg::f32": [
     "Rotate subsequent drawings by modifying the current transformation matrix.",
@@ -421,13 +431,13 @@
     "Stop rendering with current shader program onto current texture"
   ],
   "frag-FILTER_LINEAR": [
-    ""
+    "Flag for texture with (bi)linear sampling"
   ],
   "frag-FILTER_MIPMAP": [
-    ""
+    "Flag for texture with mipmaps"
   ],
   "frag-FILTER_NEAREST": [
-    ""
+    "Flag for texture with nearest neighbor sampling"
   ],
   "frag-init::u64": [
     "Initialize the library. Required before calling any other functions from the library.",
@@ -441,12 +451,17 @@
   "frag-render::": [
     "Draw a rectangle filling the entire texture with the current shader program."
   ],
+  "frag-resize::i32*i32": [
+    "Resize main drawing surface (call in response to win.WINDOW_RESIZED event)",
+    "new width",
+    "new height"
+  ],
   "frag-texture::i32*i32*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Create a new texture, with flag(s). The texture can be used as both sampler and render target.",
+    "desired width",
+    "desired height",
+    "bitwise OR of flags, e.g.&nbsp;FILTER_MIPMAP|WRAP_REPEAT",
+    "a new texture"
   ],
   "frag-texture::i32*i32": [
     "Create a new texture. The texture can be used as both sampler and render target.",
@@ -479,307 +494,296 @@
     "the desired value"
   ],
   "frag-WRAP_CLAMP": [
-    ""
+    "Flag for texture with clamp wrap mode"
   ],
   "frag-WRAP_REPEAT": [
-    ""
+    "Flag for texture with repeat wrap mode"
   ],
   "geom": [
-    ""
+    "Computational geometry helper routines."
   ],
   "geom-bbox:N:list(vec(f32,N))*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Compute bounding box of some points (2D or 3D). Specify axis-aligned (AABB) or oriented (OBB) and algorithm via the flags argument.",
+    "points in question",
+    "flags, see MODE_ORIENTED and MODE_ALIGNED",
+    "tuple of center, extent (half-dimension), and axis (rotation matrix)"
   ],
   "geom-BY_COUNT": [
-    ""
+    "Flag for resampling by count"
   ],
   "geom-BY_SPACING": [
-    ""
+    "Flag for resampling by spacing"
   ],
   "geom-clip::list(vec(f32,2))*list(vec(f32,2))*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Clip a polyline by a polygon, retrieving parts of the polyline either inside or outside of the polygon. (2D hidden line removal)",
+    "polyline to be clipped",
+    "polygon to clip the polyline with",
+    "OP_INCLUDE or OP_EXCLUDE",
+    "list of polylines as result of clipping"
   ],
   "geom-convex_hull::list(vec(f32,2))": [
-    "",
-    "",
-    ""
+    "Compute (2D) convex hull of a list of points",
+    "points in question",
+    "a polygon that is the convex hull of the given points"
   ],
   "geom-curve:N:list(vec(f32,N))*list(f32)*f32*i32": [
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Evaluate a single point on a curve (any-D). Supports Quadratic/Cubic Bezier, Catmull-Rom, B-splines etc.",
+    "vertices / control points",
+    "list of parameters (specific for the curve type, use empty list for defaults)",
+    "interpolant / parameter value",
+    "specify curve type. e.g. TYPE_BEZIER|ORD_CUBIC",
+    "a point on the curve at given t"
   ],
   "geom-delaunay::list(vec(f32,2))": [
-    "",
-    "",
-    ""
+    "Compute Delaunay triangulation of some (2D) points.",
+    "points in question",
+    "flat list of triangle indices"
   ],
   "geom-LHS_LINE": [
-    ""
+    "Flag for line_intersect indicating first point pair represents a line (open at both ends)"
   ],
   "geom-LHS_RAY": [
-    ""
+    "Flag for line_intersect indicating first point pair represents a ray (open at second end)"
   ],
   "geom-LHS_SEGMENT": [
-    ""
+    "Flag for line_intersect indicating first point pair represents a segment (closed at both ends)"
   ],
   "geom-line_intersect:N:vec(f32,N)*vec(f32,N)*vec(f32,N)*vec(f32,N)*i32": [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Compute (2D or 3D) line/segment/ray intersection. For 3D, this computes closest point for non-parallel inputs (caller is responsible for verifying the closest distance is under their epsilon to count as intersection). Returns either coordinates or interpolants, specified by flags argument.",
+    "first point on first line (LHS)",
+    "second point on first line",
+    "first point on second line (RHS)",
+    "second point on second line",
+    "flags, e.g. LHS_RAY|RHS_SEGMENT|RET_POINTS",
+    "first element of tuple: whether there is intersection (0 or 1); second element: vector either holding point or parameter of intersection."
   ],
   "geom-MODE_ALIGNED": [
-    ""
+    "Flag for bbox specifying axis-aligned mode (AABB)"
   ],
   "geom-MODE_ORIENTED": [
-    ""
+    "Flag for bbox specifying oriented mode (OBB). Specify effort via bitwise OR with 0 (faster) or 1 (finer)."
   ],
   "geom-MODE_POLYGON": [
-    ""
+    "Flag for resample indicating input is a polygon (implicitly closed)"
   ],
   "geom-MODE_POLYLINE": [
-    ""
+    "Flag for resample indicating input is a polyline"
   ],
   "geom-OP_EXCLUDE": [
-    ""
+    "Flag for clip indicating parts inside the region should be removed"
   ],
   "geom-OP_INCLUDE": [
-    ""
+    "Flag for clip indicating parts outside the region should be removed"
   ],
   "geom-ORD_CUBIC": [
-    ""
+    "Flag specifying cubic (3rd order) curves"
   ],
   "geom-ORD_QUADRATIC": [
-    ""
+    "Flag specifying quadratic (2nd order) curves"
   ],
   "geom-poly_resample::list(vec(f32,2))*f32*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Resample a (2D) polyline or polygon by point count or spacing between points.",
+    "polyline or polygon in question",
+    "either point count or spacing between points depending on flags argument",
+    "e.g. MODE_POLYGON|BY_SPACING or MODE_POLYLINE|BY_COUNT, etc.",
+    "new poly as result of resampling"
   ],
   "geom-poly_simplify::list(vec(f32,2))*f32": [
-    "",
-    "",
-    "",
-    ""
+    "Simplify/approximate a (2D) polyline, reducing number of points at the price of fine details.",
+    "polyline to be approximated",
+    "epsilon, maximum tolerable error from the original, smaller number keeps more details",
+    "new polyline as result of simplification"
   ],
   "geom-pt_in_poly::vec(f32,2)*list(vec(f32,2))": [
-    "",
-    "",
-    "",
-    ""
+    "Point-in-polygon test (2D). Checks whether a polygon contains a point.",
+    "point in question",
+    "polygon in question",
+    "0 for not in polygon, 1 for in polygon"
   ],
   "geom-RET_PARAMS": [
-    ""
+    "Flag for line_intersect specifying the output vector to be parameters (interpolants) instead of coordinates. For 3D line intersection, the last component of the output vector will be unused."
   ],
   "geom-RET_POINTS": [
-    ""
+    "Flag for line_intersect specifying the output vector to be points (coordinates) instead of parameters"
   ],
   "geom-RHS_LINE": [
-    ""
+    "Flag for line_intersect indicating second point pair represents a line (open at both ends)"
   ],
   "geom-RHS_RAY": [
-    ""
+    "Flag for line_intersect indicating second point pair represents a ray (open at second end)"
   ],
   "geom-RHS_SEGMENT": [
-    ""
+    "Flag for line_intersect indicating second point pair represents a segment (closed at both ends)"
   ],
   "geom-triangulate::list(vec(f32,2))": [
-    "",
-    "",
-    ""
+    "Basic (2D) polygon triangulation. Split a concave polygon into triangles.",
+    "polygon in question",
+    "flat list of triangle indices"
   ],
   "geom-TYPE_BEZIER": [
-    ""
+    "Flag specifying Bezier curve type (optional params are rational weights)"
   ],
   "geom-TYPE_BSPLINE": [
-    ""
+    "Flag specifying B-spline curve type (optional params are weights)"
   ],
   "geom-TYPE_CATROM": [
-    ""
+    "Flag specifying Catmull-Rom curve type (optional param is alpha)"
   ],
   "geom-voronoi::list(vec(f32,2))": [
-    "",
-    "",
-    ""
+    "Compute (2D) Voronoi diagram from some points.",
+    "points in question",
+    "a list of polygons representing cell borders"
   ],
   "gui": [
-    ""
+    "Minimalistic graphical user interface for tweaking parameters. Use in conjunction with macros to automatically generate from / sync with variables in a program."
   ],
   "gui-field::str*str": [
-    "",
-    "",
-    ""
+    "Append a text field to the GUI.",
+    "name of GUI element",
+    "default value"
   ],
   "gui-get:T:str": [
-    "",
-    "",
-    ""
+    "Retrieve the value from a GUI element (e.g. get[f32](\"my_slider\")).",
+    "name of GUI element",
+    "the value"
   ],
   "gui-init::": [
-    ""
+    "Initialize GUI pane (must be called before other functions from the library)"
   ],
   "gui-poll::": [
-    ""
+    "Update GUI pane and listen for user events (non-blocking, call in main loop)"
   ],
   "gui-set:T:str*T": [
-    "",
-    "",
-    ""
+    "Set the value for a GUI element.",
+    "name of GUI element",
+    "desired value"
   ],
   "gui-slider::str*f32*f32*f32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Append a slider (for floating-point values) to the GUI.",
+    "name of GUI element",
+    "default value",
+    "minimum value",
+    "maximum value"
   ],
   "gui-slider::str*i32*i32*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Append a slider (for integer values) to the GUI.",
+    "name of GUI element",
+    "default value",
+    "minimum value",
+    "maximum value"
   ],
   "gui-slider:T*N:str*vec(T,N)*vec(T,N)*vec(T,N)": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Append a slider (for vector / multi-component values) to the GUI.",
+    "name of GUI element",
+    "default value",
+    "minimum value",
+    "maximum value"
   ],
   "gui-toggle::str*i32": [
-    "",
-    "",
-    ""
-  ],
-  "sys": [
-    "Runtime internals"
-  ],
-  "sys-gc::": [
-    "Trigger garbage collection as soon as possible"
-  ],
-  "sys-gc_off::": [
-    "Disable garbage collection"
-  ],
-  "sys-gc_on::": [
-    "Enable garbage collection"
+    "Append a toggle (Boolean on/off) to the GUI",
+    "name of GUI element",
+    "default value"
   ],
   "img": [
     "Imaging library"
   ],
   "img-ALPHA_COPY": [
-    ""
+    "Flag for keeping alpha channel during conversion"
   ],
   "img-ALPHA_DROP": [
-    ""
+    "Flag for discarding alpha channel during conversion"
   ],
   "img-ALPHA_PREMUL": [
-    ""
+    "Flag for converting non-pre-multiplied-alpha image to pre-multiplied-alpha image"
   ],
   "img-ALPHA_STRAIGHTEN": [
-    ""
+    "Flag for converting pre-multiplied-alpha image to non-pre-multiplied-alpha image"
   ],
   "img-BORDER_COPY": [
-    ""
+    "Flag for border policy: copy edge pixels"
   ],
   "img-BORDER_ZERO": [
-    ""
+    "Flag for border policy: fill with zeros"
   ],
   "img-BYPROD_NONE": [
-    ""
+    "Flag for distance transform specifying no byproduct needed"
   ],
   "img-BYPROD_VORONOI": [
-    ""
+    "Flag for distance transform specifying Voronoi diagram as byproduct"
   ],
   "img-COLOR_COPY": [
-    ""
+    "Flag for copying the color channels during conversion"
   ],
   "img-COLOR_HSV_RGB": [
-    ""
+    "Flag for converting HSV (hue-saturation-value) image to RGB (red-green-blue) image"
   ],
   "img-COLOR_INVERT": [
-    ""
+    "Flag for inverting the color channels (\"film negative\") during conversion"
   ],
   "img-COLOR_LIN_SRGB": [
-    ""
+    "Flag for converting linear RGB to sRGB"
   ],
   "img-COLOR_RGB_BGR": [
-    ""
+    "Flag for converting RGB to BGR (and vice versa) by swapping first and third color channels"
   ],
   "img-COLOR_RGB_GRAY": [
-    ""
+    "Flag for converting RGB image to grayscale with luminosity formula"
   ],
   "img-COLOR_RGB_HSV": [
-    ""
+    "Flag for converting RGB&nbsp;image to HSV (hue-saturation-value)&nbsp;image"
   ],
   "img-COLOR_SRGB_LIN": [
-    ""
+    "Flag for converting sRGB to linear RGB"
   ],
   "img-convert:T*N*U*M:arr(T,N)*i32*arr(U,M)": [
-    "",
-    "",
-    "",
-    ""
+    "Image color, color-space and datatype conversion routine (output-parameter)",
+    "input image",
+    "e.g. COLOR_INVERT|ALPHA_DROP",
+    "supply image to hold output"
   ],
   "img-convert:T*N*U*M:arr(T,N)*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Image color, color-space and datatype conversion routine&nbsp;(return-output)&nbsp;",
+    "input image",
+    "e.g. COLOR_INVERT|ALPHA_DROP",
+    "new image"
   ],
   "img-convolve::arr(f32,2)*arr(f32,2)*i32*arr(f32,2)": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Apply convolution to (single channel floating-point) image, given kernel. (output-parameter)",
+    "input image",
+    "kernel",
+    "e.g. BORDER_COPY",
+    "supply image to hold output (can be same as input)"
   ],
   "img-convolve::arr(u8,2)*arr(f32,2)*i32*arr(u8,2)": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Apply convolution to (single channel uint8) image, given (float) kernel. (output-parameter)",
+    "input image",
+    "kernel",
+    "e.g. BORDER_COPY",
+    "supply image to hold output (can be same as input)"
   ],
   "img-convolve:T:arr(T,2)*arr(f32,2)*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Apply convolution to image, given kernel. (return-output)",
+    "input image",
+    "kernel",
+    "e.g. BORDER_COPY",
+    "new image"
   ],
   "img-decode::list(u8)": [
     "Decode an image stored in a supported format (PNG, JPG, ...). The format is automatically detected",
     "list of bytes holding the image in its encoded form",
     "array of pixels (RGBA 0-255)"
   ],
-  "img-dist_transform::arr(u8,2)*i32*arr(f32,2)": [
-    "",
-    "",
-    "",
-    ""
+  "img-dist_transform:T:arr(T,2)*i32*arr(f32,2)": [
+    "Compute distance transform (DT) for image. Optionally (BYPROD_VORONOI flag) also compute raster Voronoi diagram, mutating input image by spreading foreground labels. (output-parameter)",
+    "input image, non-zero values represent foreground / object pixels",
+    "e.g. NORM_L2|BYPROD_NONE",
+    "supply image to hold output"
   ],
-  "img-dist_transform::arr(u8,2)*i32": [
-    "",
-    "",
-    "",
-    ""
+  "img-dist_transform:T:arr(T,2)*i32": [
+    "Compute distance transform (DT) for image. Optionally (BYPROD_VORONOI flag) also compute raster Voronoi diagram, mutating input image by spreading foreground labels. (return-output)",
+    "input image, non-zero values represent foreground / object pixels",
+    "e.g. NORM_L2|BYPROD_NONE",
+    "distance transform"
   ],
   "img-encode::str*arr(u8,3)": [
     "Encode an image to a supported format (PNG, JPG, ...)",
@@ -788,81 +792,92 @@
     "list of bytes holding the encoded form"
   ],
   "img-find_contours::arr(u8,2)": [
-    "",
-    "",
-    ""
+    "Trace contours / outlines from a binary image (\"vectorize\")",
+    "input image, non-zero values represent foreground / object pixels",
+    "list of polygons"
   ],
   "img-get:T*N:arr(T,3)*i32*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Get pixel color at specified coordinate on an image.",
+    "input image",
+    "horizontal coordinate",
+    "vertical coordinate",
+    "color as a vector"
+  ],
+  "img-label_blobs::arr(u8,2)*arr(i32,2)": [
+    "Connected-Component-Labelling (CCL). Each (4-)connected blob in the image is given a different integer label. (output-parameter)",
+    "input image, non-zero values represent foreground / object pixels",
+    "supply image to hold output"
+  ],
+  "img-label_blobs::arr(u8,2)": [
+    "Connected-Component-Labelling (CCL). Each (4-)connected blob in the image is given a different integer label. (return-output)",
+    "input image, non-zero values represent foreground / object pixels",
+    "new image"
   ],
   "img-MORPH_CLOSE": [
-    ""
+    "Flag for morphological close operation"
   ],
   "img-MORPH_DILATE": [
-    ""
+    "Flag for morphological dilation operation"
   ],
   "img-MORPH_ERODE": [
-    ""
+    "Flag for morphological erosion operation"
   ],
   "img-MORPH_OPEN": [
-    ""
+    "Flag for morphological open operation"
   ],
   "img-MORPH_SKELETONIZE": [
-    ""
+    "Flag for morphological thinning / skeletonize operation"
   ],
   "img-morphology::arr(u8,2)*i32*i32*arr(u8,2)": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Apply image morphology (erosion, dilation, etc.) (output-parameter)",
+    "input image",
+    "radius",
+    "e.g. MORPH_ERODE|NORM_L2 (distance metric determines kernel shape)",
+    "supply image to hold output (can be same as input)"
   ],
   "img-morphology::arr(u8,2)*i32*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Apply image morphology (erosion, dilation, etc.) (return-output)",
+    "input image",
+    "radius",
+    "e.g. MORPH_ERODE|NORM_L2 (distance metric determines kernel shape)",
+    "new image"
   ],
   "img-NORM_L1": [
-    ""
+    "Distance metric for L^1 norm (Manhattan distance)"
   ],
   "img-NORM_L2": [
-    ""
+    "Distance metric for L^2 norm (Euclidean distance)"
   ],
   "img-NORM_LINF": [
-    ""
+    "Distance metric for L^inf norm (Chebychev distance)"
   ],
   "img-palette::arr(u8,3)*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Find top-N most prominent colors of image.",
+    "input image",
+    "desired number of colors in palette",
+    "palette as a list of colors"
   ],
   "img-set:T*N:arr(T,3)*i32*i32*vec(T,N)": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Set pixel color at specified coordinate on an image.",
+    "image to modify",
+    "horizontal coordinate",
+    "vertical coordinate",
+    "desired color as a vector"
   ],
   "img-THRESH_ADAPTIVE": [
-    ""
+    "Flag for specifying adaptive threshold (bitwise OR with kernel size 0-255)"
   ],
   "img-THRESH_AUTO": [
-    ""
+    "Flag for specifying binary threshold with automatically optimized threshold value"
   ],
   "img-THRESH_BINARY": [
-    ""
+    "Flag for specifying binary threshold"
   ],
   "img-threshold::arr(u8,2)*i32*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Apply threshold to (single channel) image (grayscale to binary) with a selection of strategies. Modifies in-place.",
+    "input image",
+    "desired threshold value (ignored for THRESH_AUTO)",
+    "e.g.&nbsp;THRESH_ADAPTIVE|5"
   ],
   "io": [
     "Input/output library: File and console I/O"
@@ -889,10 +904,10 @@
     "Ordered, variable-size collection of homogeneous items"
   ],
   "list-concat:T:list(T)*list(T)": [
-    "",
-    "",
-    "",
-    ""
+    "Create a new list that is the concatenation of two lists, in order (shallow copy)",
+    "first list",
+    "second list",
+    "new list"
   ],
   "list-erase:T:list(T)*i32*i32": [
     "Remove elements in a given index range from a list",
@@ -902,10 +917,10 @@
     "new length of list"
   ],
   "list-filter:T:list(T)*func(tup(T),i32)": [
-    "",
-    "",
-    "",
-    ""
+    "Apply a function to each element of a list and return a new list containing elements of the original list which the function returns non-zero values for. Shallow copy; The original list is not modified",
+    "list whose elements will be input to the function, in order",
+    "the function to apply to each element",
+    "new list"
   ],
   "list-insert:T:list(T)*i32*T": [
     "Insert an element before a given index into a list",
@@ -943,8 +958,8 @@
     "new length of list"
   ],
   "list-reverse:T:list(T)": [
-    "",
-    ""
+    "Reverse the order of the elements in a list, in place",
+    "list to modify"
   ],
   "list-slice:T:list(T)*i32*i32": [
     "Shallow copy a portion of a list into a new list",
@@ -954,18 +969,18 @@
     "new list containing the sliced elements"
   ],
   "list-slice:T:list(T)": [
-    "",
-    "",
-    ""
+    "Shallow copy a list",
+    "list to be copied",
+    "new list"
   ],
   "list-sort:T:list(T)*func(tup(T),f32)": [
-    "",
-    "",
-    ""
+    "Sort a list with a key function, in ascending order, in-place.",
+    "list to sort",
+    "key function, returns a float which will be used to compare elements"
   ],
   "list-sort:T:list(T)": [
-    "",
-    ""
+    "Sort a list, in ascending order, in-place.",
+    "list to sort (elements will be castable to float for comparison)"
   ],
   "math": [
     "Math library"
@@ -1001,6 +1016,16 @@
     "dividend",
     "divisor",
     "output"
+  ],
+  "math-bitcast::u32": [
+    "Reinterpret the raw bit representation of a u32 as a f32",
+    "the u32",
+    "the f32"
+  ],
+  "math-bitcast::f32": [
+    "Reinterpret the raw bit representation of a f32 as a u32",
+    "the f32",
+    "the u32"
   ],
   "math-ceil::f32": [
     "Ceiling (round up)",
@@ -1062,7 +1087,7 @@
     "output"
   ],
   "math-INF": [
-    ""
+    "Infinity"
   ],
   "math-lerp:T:T*T*f32": [
     "Liner interpolation",
@@ -1271,10 +1296,10 @@
     "View matrix (as in model-view-projection) of the camera"
   ],
   "rdr-CULL_FRUSTUM": [
-    ""
+    "Flag for Mesh.mode to indicate the mesh should be frustum-culled (skip rendering when outside view of camera)"
   ],
   "rdr-DIRTY_BOUNDS": [
-    ""
+    "Flag for Mesh.update() to indicate mesh bounding volume needs to be recalculated (needed for frustum-culled meshes only)"
   ],
   "rdr-DIRTY_COLORS": [
     "Flag for Mesh.update() to indicate mesh colors are modified"
@@ -1340,8 +1365,8 @@
     "transformation (a.k.a. model as in model-view-projection) matrix"
   ],
   "rdr-Mesh-draw::list(vec(f32,4,4))": [
-    "",
-    ""
+    "Draw the mesh multiple times (efficiently via instancing), given a list of transformations",
+    "list of transformation matrices"
   ],
   "rdr-Mesh-indices": [
     "Vertex index buffer, specifying vertex winding. Zero-indexed. Optionally empty."
@@ -1384,6 +1409,28 @@
     "Draw text using built-in monospace fixed-size pixel font",
     "string containing text to draw",
     "transformation matrix"
+  ],
+  "regx": [
+    "Regular expressions library"
+  ],
+  "regx-find::str*str": [
+    "Find all occurrences of a pattern in a string",
+    "the string to search in",
+    "the regular expression to search for",
+    "list of found instances where each element is a tuple of: integer index in the string for the start of the match, and list of strings which is the matched string followed by all captured groups"
+  ],
+  "regx-replace::str*str*str": [
+    "Replace all occurrences of a pattern in a string",
+    "the string to search in",
+    "the regular expression to search for",
+    "the string to replace with",
+    "new string after replacement"
+  ],
+  "regx-test::str*str": [
+    "Check whether a string fully matches a pattern",
+    "string to check",
+    "the pattern to check the string with",
+    "1 if full match, 0 otherwise"
   ],
   "req": [
     "Network client library for HTTP etc."
@@ -1446,10 +1493,11 @@
     "Immutable sequence of characters"
   ],
   "str-affixed::str*str*i32": [
-    "",
-    "",
-    "",
-    ""
+    "Check whether a string is prefixed or suffixed with another string",
+    "string to check",
+    "the proposed prefix or suffix",
+    "which end, LEADING or TRAILING",
+    "1 if affixed, 0 otherwise"
   ],
   "str-chr::u32": [
     "Create a string holding 1 character given a code point",
@@ -1469,13 +1517,13 @@
     "encoded list of bytes"
   ],
   "str-join::str*list(str)": [
-    "",
-    "",
-    "",
-    ""
+    "Use a string as delimiter to join a list of strings together",
+    "the delimiter to put between the strings",
+    "list of strings to join",
+    "the joined string"
   ],
   "str-LEADING": [
-    ""
+    "Flag representing the concept of the start of a string"
   ],
   "str-length::str": [
     "Retrieve length of a string",
@@ -1488,34 +1536,60 @@
     "the code point"
   ],
   "str-pad::str*i32*str*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Pad a string at either end to a given length with a repeated string",
+    "string to be padded",
+    "desired final total length",
+    "string used as padding",
+    "which end, LEADING or TRAILING",
+    "the padded string"
   ],
   "str-slice::str*i32*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Copy a portion of a string into a new string",
+    "string to copy from",
+    "start index (inclusive)",
+    "end index (exclusive)",
+    "new string"
   ],
   "str-split::str*str": [
-    "",
-    "",
-    "",
-    ""
+    "Split a string into a list of strings given a delimiter",
+    "string to be splitted",
+    "the delimiter",
+    "list of substrings after splitting"
   ],
   "str-TRAILING": [
-    ""
+    "Flag representing the concept of the end of a string"
   ],
   "str-trim::str*str*i32": [
-    "",
-    "",
-    "",
-    "",
-    ""
+    "Remove any of the given characters from either end of a string, repeatedly until that end of the string no longer starts or ends with any of the given characters",
+    "string to trim",
+    "string containing set of all characters to evict, e.g. \" \\t\\n\"",
+    "which end, LEADING or TRAILING",
+    "new string"
+  ],
+  "sys": [
+    "Runtime internals"
+  ],
+  "sys-argv::": [
+    "Retrieve commandline arguments (user arguments only, excluding program and script path, as the existence and value of both would depend on compile target)",
+    "list of strings passed to the program from commandline"
+  ],
+  "sys-gc::": [
+    "Trigger garbage collection as soon as possible"
+  ],
+  "sys-gc_off::": [
+    "Disable garbage collection"
+  ],
+  "sys-gc_on::": [
+    "Enable garbage collection"
+  ],
+  "sys-getenv::str": [
+    "Retrieve environment variable by name",
+    "name of environment variable",
+    "value of environment variable"
+  ],
+  "sys-platform::": [
+    "Retrieve string containing information about compile target and underlying system",
+    "platform info string"
   ],
   "time": [
     "Library for time-related functions"
@@ -1758,6 +1832,9 @@
     "an event"
   ],
   "win-WHEEL_SCROLLED": [
-    ""
+    "Event type for scrolling"
+  ],
+  "win-WINDOW_RESIZED": [
+    "Event type for user resizing application window"
   ]
 }

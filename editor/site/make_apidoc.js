@@ -142,11 +142,15 @@ function get_api(id,n){
   if (!API[id][n]){
     return ""
   }
-  return API[id][n];
+  return API[id][n].replace(/\]\(/,"]&lpar;");
 }
 
 let L = "";
 let R = "";
+let MD = `#!/usr/bin/env bash
+awk -v q=$1 '/^## /{p=index($0,q)>0} p' $0
+exit 0\n\n`;
+
 function render(pth,idens){
   let dep = pth.split('-').length;
   function clean(x){
@@ -169,15 +173,22 @@ function render(pth,idens){
     }else{
       R += `font-weight:bold;`
     }
+    MD += "## "+pth.split('-').slice(1).concat([nom]).join(".")
 
     R += `" onclick="window.location.href='#${id}'">${nom}</span>`;
+
     if (tag == 'typd'){
       R += `<span style="${tagstyle}">type</span>`
+      MD += "\n\n(type)"
+    }else if (tag == 'nmsp'){
+      MD += "\n\n(namespace)"
     }else if (tag == 'decl'){
       R += ':'
       R += `<span style="${tagstyle}">${typ}</span>`;
+      MD += `:${typ}`
       if (val){
         R += '='+val;
+        MD += '='+val;
       }
     }else if (tag == 'func'){
       if (idens[i].tem.length){
@@ -187,6 +198,7 @@ function render(pth,idens){
           R += `<span style="${tagstyle}">${idens[i].tem[j]}</span>`
         }
         R += ']'
+        MD += "\\["+idens[i].tem.join(",")+"]"
       }
       R += `(`
       for (let j = 0; j < idens[i].arg.length; j++){
@@ -195,14 +207,18 @@ function render(pth,idens){
         R += `${a}:<span style="${tagstyle}">${t}</span>`
       }
       R += `):`;
-      R += `<span style="${tagstyle}">${idens[i].ret}</span>`
+      R += `<span style="${tagstyle}">${idens[i].ret}</span>`;
+      MD += "("+idens[i].arg.map(x=>x[1]).join(",")+"):"+idens[i].ret
     }
     R += `</summary>`;
+    MD += "\n\n"
 
     if (tag == 'nmsp' || tag == 'typd'){
+      let a = get_api(id,0)
       R += `<div style="margin:10px">
-        <div ${attr_edit} style="background:whitesmoke" id="${id}@0">${get_api(id,0)}</div>
+        <div ${attr_edit} style="background:whitesmoke" id="${id}@0">${a}</div>
       </div>`
+      MD += a+"\n\n"
       L += `<details style="margin-left:20px"><summary><a href="#${id}">${nom}</a></summary>`;
       render(id,idens[i].val);
       L += `</details>\n`
@@ -219,26 +235,36 @@ function render(pth,idens){
       R += `<div style="margin:10px">`
       if (tag == 'decl'){
         // R += `<div style="${smallhd}">DESCRIPTION</div>`
-        R += `<div ${attr_edit} style="background:whitesmoke" id="${id}@0">${get_api(id,0)}</div>`
+        let a = get_api(id,0)
+        R += `<div ${attr_edit} style="background:whitesmoke" id="${id}@0">${a}</div>`
+        MD += a+"\n\n"
       }else if (tag == 'func'){
         // R += `<div style="${smallhd}">DESCRIPTION</div>`
-        R += `<div ${attr_edit} style="background:whitesmoke" id="${id}@0">${get_api(id,0)}</div>`
+        let a = get_api(id,0)
+        R += `<div ${attr_edit} style="background:whitesmoke" id="${id}@0">${a}</div>`
         R += `<div style="${smallhd}">PARAMETERS</div>`
         R += `<table>`
+        MD += a+"\n\nparameters:\n\n"
         for (let j = 0; j < idens[i].arg.length; j++){
           let [a,t] = idens[i].arg[j];
+          let b = get_api(id,j+1)
           R += `<tr>`;
           R += `<td style="min-width:50px;">${a}</td>`
           R += `<td style="min-width:50px;"><span style="${tagstyle}">${t}</span></td>`
-          R += `<td style="min-width:50px;background:whitesmoke" ${attr_edit} id="${id}@${j+1}">${get_api(id,j+1)}</td>`
+          R += `<td style="min-width:50px;background:whitesmoke" ${attr_edit} id="${id}@${j+1}">${b}</td>`
           R += `</tr>`
+          MD += `- **${a}:${t}** ${b}\n`
         }
         R += `</table>`
         R += `<div style="${smallhd}">RETURNS</div>`
         R += `<span style="${tagstyle}">${idens[i].ret}</span>`;
+        MD += '\nreturns:\n\n- **'+idens[i].ret+"**"
         if (idens[i].ret != 'void'){
-          R += `<span ${attr_edit} id="${id}@${idens[i].arg.length+1}"style="display:inline-block;background:whitesmoke;min-width:50px;">${get_api(id,idens[i].arg.length+1)}</span>`
+          let a = get_api(id,idens[i].arg.length+1)
+          R += `<span ${attr_edit} id="${id}@${idens[i].arg.length+1}"style="display:inline-block;background:whitesmoke;min-width:50px;">${a}</span>`
+          MD += " "+a;
         }
+        MD+="\n\n"
         
        
       }
@@ -331,3 +357,4 @@ a:active {
 
 </html>`;
 fs.writeFileSync("build/api.html",html)
+fs.writeFileSync("build/api.md",MD)
