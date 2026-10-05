@@ -384,14 +384,14 @@ if (is_repl){
       }else{
         fs.writeFileSync(tmpth('config.env'), fs.readFileSync(__dirname+'/../../config.env'), { mode: 0o755 })
         let c = `cd ${tmpth()} && source config.env && eval $(head -n 1 "${out_pth}" | cut -c 3-) && echo $CFLAGS`
-        let cflags = execSync(c).toString().replace(/\n/g,' ');
+        let cflags = execSync(c,{shell:'/bin/bash'}).toString().replace(/\n/g,' ');
         fs.writeFileSync(tmpth('config.h'), fs.readFileSync(__dirname+'/../../build/config.h'), { mode: 0o755 });
         let xattr = "";
         if (__APPLE__){
           xattr = ` && xattr -cr ${tmpth('a.out')} `;
         }
-        let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${cflags} ${out_pth} -o ${tmpth('a.out')} ${xattr} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')} ${user_argstr}`;
-        execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
+        let cmd = `gcc -include ${tmpth('config.h')} -I${tmpth()} -O3 ${out_pth} ${cflags} -o ${tmpth('a.out')} -lm ${xattr} ${verbose?'&& echo "[info] C compiled, running..."':''} && ${tmpth('a.out')} ${user_argstr}`;
+        execSync(cmd,{shell:'/bin/bash',stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
       }
     }
   }else if (targ == 'js'){
