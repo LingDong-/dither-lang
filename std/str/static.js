@@ -10,11 +10,11 @@ globalThis.$str = new function(){
   }
   that.chr = function(){
     let [i] = $pop_args(1);
-    return String.fromCharCode(i);
+    return String.fromCodePoint(i);
   }
   that.ord = function(){
-    let [s] = $pop_args(1);
-    return s.charCodeAt(0);
+    let [s,i] = $pop_args(2);
+    return s.codePointAt(i)??0;
   }
   that.decode = function(){
     let [a,e] = $pop_args(2);

@@ -107,6 +107,13 @@ void math__exp(){
   __put_ret(&y);
 }
 
+void math__ln(){
+  float x;
+  __pop_arg(&x, sizeof(x));
+  float y = logf(x);
+  __put_ret(&y);
+}
+
 void math__sqrt(){
   float x;
   __pop_arg(&x, sizeof(x));

@@ -52,6 +52,10 @@ globalThis.$math = new function(){
     let [x] = $pop_args(1);
     return Math.exp(x);
   }
+  that.ln = function(){
+    let [x] = $pop_args(1);
+    return Math.log(x);
+  }
   that.sqrt = function(){
     let [x] = $pop_args(1);
     return Math.sqrt(x);

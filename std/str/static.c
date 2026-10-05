@@ -1,5 +1,7 @@
 //
 
+#include "impl.h"
+
 #define LEADING  1
 #define TRAILING 2
 
@@ -10,12 +12,26 @@ void str__length(){
 }
 
 void str__chr(){
-  int32_t __ARG(a); 
-  char* o = __gc_alloc(VART_STR,2);
+  uint32_t __ARG(a); 
+  char* o = __gc_alloc(VART_STR,5);
 
-  o[0] = a;
+  str_impl_utf8_encode(&a, (unsigned char*)(o));
     
   __put_ret(&(o));
+}
+
+void str__ord(){
+  int32_t __ARG(idx); 
+  char* __ARG(s);
+
+  uint32_t u = 0;
+  char* ch = s;
+  for (int i = 0; i <= idx; i++){
+    ch = str_impl_utf8_decode(ch,&u);
+    if (!u) break;
+  }
+
+  __put_ret(&(u));
 }
 
 void str__decode(){

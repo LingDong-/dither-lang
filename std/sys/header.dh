@@ -1,9 +1,13 @@
 
 namespace sys {
+  STDOUT_INHERIT := 0
+  STDOUT_PIPE    := 1
+  STDOUT_IGNORE  := 2
   func gc_on();
   func gc_off();
   func gc();
   func argv():list[str];
   func platform():str;
   func getenv(name:str):str;
+  func command(cmd:str,flags:i32):tup[i32,list[u8]];
 }

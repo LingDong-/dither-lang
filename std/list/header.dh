@@ -52,4 +52,10 @@ namespace list {
       i1--;
     }
   }
+  func index[T](a:list[T],x:T):i32{
+    for (i := 0; i < a.length(); i++){
+      if (a[i] == x) return i;
+    }
+    return -1;
+  }
 }

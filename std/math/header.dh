@@ -11,6 +11,7 @@ namespace math {
   func atan2(x:f32,y:f32):f32;
   func acos(x:f32):f32;
   func exp(x:f32):f32;
+  func ln(x:f32):f32;
   func tan(x:f32):f32;
   func sqrt(x:f32):f32;
   func hypot(x:f32,y:f32):f32;
@@ -20,6 +21,7 @@ namespace math {
   func cos[N](x:vec[f32,N]):vec[f32,N]{return x.map(cos);};
   func acos[N](x:vec[f32,N]):vec[f32,N]{return x.map(acos);};
   func exp[N](x:vec[f32,N]):vec[f32,N]{return x.map(exp);};
+  func ln[N](x:vec[f32,N]):vec[f32,N]{return x.map(ln);};
   func tan[N](x:vec[f32,N]):vec[f32,N]{return x.map(tan);};
   func sqrt[N](x:vec[f32,N]):vec[f32,N]{return x.map(sqrt);};
   func abs[N](x:vec[f32,N]):vec[f32,N]{return x.map(abs);};

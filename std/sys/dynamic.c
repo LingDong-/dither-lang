@@ -77,7 +77,27 @@ EXPORTED void sys_getenv(var_t* ret, gstate_t* _g){
   ret->u.str = s0;
 }
 
+EXPORTED void sys_command(var_t* ret, gstate_t* _g){
+  int32_t flags = ARG_POP(_g, i32);
+  stn_t* cmd = ARG_POP(_g,str);
+  int st;
+  int len;
 
+  char* p = sys_impl_command(cmd->data,flags,&len,&st);
+  
+  lst_t* lst = (lst_t*)gc_alloc_(_g,sizeof(lst_t));
+  lst->w = 1;
+  lst->type = (type_t*)(ret->type->u.elem.tail->data);
+  lst->cap = len;
+  lst->n = len;
+  lst->data = p;
+
+  tup_t* tup = gc_alloc_(_g,sizeof(tup_t)+12);
+  tup->type = ret->type;
+  ((int32_t*)(tup->data))[0] = st;
+  ((lst_t**)(((char*)(tup->data))+4))[0] = lst;
+  ret->u.tup = tup;
+}
 
 EXPORTED void lib_init_sys(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "sys.gc_on",   sys_gc_on );
@@ -86,6 +106,7 @@ EXPORTED void lib_init_sys(gstate_t* _g){
   register_cfunc(&(_g->cfuncs), "sys.argv",    sys_argv  );
   register_cfunc(&(_g->cfuncs), "sys.platform",sys_platform  );
   register_cfunc(&(_g->cfuncs), "sys.getenv",  sys_getenv  );
+  register_cfunc(&(_g->cfuncs), "sys.command", sys_command  );
 }
 
 

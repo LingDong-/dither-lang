@@ -1,6 +1,7 @@
 //
 
 #include "../../src/interp.c"
+#include "impl.h"
 
 #ifndef EXPORTED
 #ifdef _WIN32
@@ -24,12 +25,27 @@ EXPORTED void str_length(var_t* ret,  gstate_t* _g){
 EXPORTED void str_chr(var_t* ret,  gstate_t* _g){
   uint32_t a = ARG_POP(_g,u32);
 
-  stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+1+1);
-  s->n = 1;
+  stn_t* s = (stn_t*)gc_alloc_(_g,sizeof(stn_t)+4+1);
+  str_impl_utf8_encode(&a, (unsigned char*)(s->data));
+
+  s->n = s->data[3] ? 4 : (s->data[2] ? 3 : (s->data[1] ? 2 : s->data[0] ? 1 : 0));
   s->w = 1;
   s->type = ret->type;
-  s->data[0] = a;
+
   ret->u.str = s;
+}
+
+EXPORTED void str_ord(var_t* ret,  gstate_t* _g){
+  int32_t idx = ARG_POP(_g,i32);
+  stn_t* s = ARG_POP(_g,str);
+
+  uint32_t u = 0;
+  char* ch = s->data;
+  for (int i = 0; i <= idx; i++){
+    ch = str_impl_utf8_decode(ch,&u);
+    if (!u) break;
+  }
+  ret->u.u32 = u;
 }
 
 EXPORTED void str_decode(var_t* ret,  gstate_t* _g){
@@ -235,6 +251,7 @@ EXPORTED void str_pad(var_t* ret, gstate_t* _g){
 EXPORTED void lib_init_str(gstate_t* _g){
   QK_REG(length);
   QK_REG(chr);
+  QK_REG(ord);
   QK_REG(decode);
   QK_REG(encode);
   QK_REG(slice);
