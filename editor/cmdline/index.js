@@ -380,7 +380,7 @@ if (is_repl){
         if (verbose) console.log("[info] finding msvc installation...");
         let vcvars = get_vs();
         fs.writeFileSync(tmpth('config.h'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.h'), { mode: 0o755 });
-        fs.writeFileSync(tmpth('config.bat'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.bat'), { mode: 0o755 })
+        fs.writeFileSync(tmpth('config.bat'), fs.readFileSync(__dirname+'\\..\\..\\build\\config.bat')+`\nset DITHER_ROOT=${tmpth()}`, { mode: 0o755 })
         let cmd = `call ${tmpth('config.bat')} >nul && "${vcvars}" && cl /I. /FI ${tmpth('config.h')} /Fe:${tmpth('a.exe')} /Fo:"%TEMP%\\a.obj" /w /O2 ${out_pth} ${verbose?'&& echo [info] C compiled, running...':''} && ${tmpth('a.exe')} ${user_argstr}`;
         if (verbose) console.log("[info] compiling with cl.exe...");
         execSync(cmd,{stdio:'inherit',env: { ...process.env, DITHER_ROOT: tmpth() }});
