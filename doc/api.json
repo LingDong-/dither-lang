@@ -922,6 +922,12 @@
     "the function to apply to each element",
     "new list"
   ],
+  "list-index:T:list(T)*T": [
+    "Find index of the first occurrence of value in the list, returns -1 if not present",
+    "list to search in",
+    "value to look for",
+    "the index, -1 for not found"
+  ],
   "list-insert:T:list(T)*i32*T": [
     "Insert an element before a given index into a list",
     "list to modify",
@@ -1104,6 +1110,16 @@
     "oncoming lower end",
     "oncoming higher end",
     "remapped value"
+  ],
+  "math-ln::f32": [
+    "Natural logarithm (base e)",
+    "input",
+    "output"
+  ],
+  "math-ln:N:vec(f32,N)": [
+    "Element-wise natural Log of a vector",
+    "input",
+    "output"
   ],
   "math-max::f32*f32": [
     "Maximum of two numbers",
@@ -1535,6 +1551,12 @@
     "string containing the 1 character",
     "the code point"
   ],
+  "str-ord::str*i32": [
+    "Find code point of a character at given index in a string",
+    "string",
+    "index of character",
+    "the code point"
+  ],
   "str-pad::str*i32*str*i32": [
     "Pad a string at either end to a given length with a repeated string",
     "string to be padded",
@@ -1573,6 +1595,12 @@
     "Retrieve commandline arguments (user arguments only, excluding program and script path, as the existence and value of both would depend on compile target)",
     "list of strings passed to the program from commandline"
   ],
+  "sys-command::str*i32": [
+    "",
+    "",
+    "",
+    ""
+  ],
   "sys-gc::": [
     "Trigger garbage collection as soon as possible"
   ],
@@ -1590,6 +1618,15 @@
   "sys-platform::": [
     "Retrieve string containing information about compile target and underlying system",
     "platform info string"
+  ],
+  "sys-STDOUT_IGNORE": [
+    ""
+  ],
+  "sys-STDOUT_INHERIT": [
+    ""
+  ],
+  "sys-STDOUT_PIPE": [
+    ""
   ],
   "time": [
     "Library for time-related functions"

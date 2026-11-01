@@ -1,0 +1,116 @@
+<program> ::= <stmts>
+<stmts> ::= <ws> ( <stmt> <ws> )*
+
+<ws> ::= <wsitem>*
+<wsr> ::= <wsitem>+
+<wsitem> ::= " " | "\n" | <linecomment> | <blockcomment>
+<linecomment> ::= "//" <anychar>*
+<blockcomment> ::= "/*" <bcitem>* "*/"
+<bcitem> ::= <nostar> | "\n" | "*" <nostarslash>
+<nostar> ::= <letter> | <digit> | <punctnostar> | " " | "'" | "\"" | "\\"
+<nostarslash> ::= <letter> | <digit> | <punctnostarslash> | " " | "'" | "\"" | "\\" | "\n"
+
+<letter> ::= [a-z] | [A-Z]
+<digit> ::= [0-9]
+<hexdigit> ::= [0-9] | [a-f] | [A-F]
+<punct> ::= "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~"
+<punctnostar> ::= "!" | "#" | "$" | "%" | "&" | "(" | ")" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~"
+<punctnostarslash> ::= "!" | "#" | "$" | "%" | "&" | "(" | ")" | "+" | "," | "-" | "." | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~"
+<punctnopct> ::= "!" | "#" | "$" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~"
+<punctnopctbrace> ::= "!" | "#" | "$" | "&" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "|" | "}" | "~"
+<anychar> ::= <letter> | <digit> | <punct> | " " | "'" | "\"" | "\\"
+
+<ident> ::= <idstart> <idchar>*
+<idstart> ::= <letter> | "_"
+<idchar> ::= <letter> | <digit> | "_"
+<qualname> ::= <ident> ( "." <ident> )*
+
+<number> ::= <float> | <int>
+<int> ::= "0x" <hexdigit>+ | <digit>+
+<float> ::= <digit>+ "." <digit>*
+
+<string> ::= "\"" <ditem>* "%"? "\""
+<ditem> ::= <dplain> | <escape> | <interp> | "%" <pcttail>
+<dplain> ::= <letter> | <digit> | <punctnopct> | " " | "\n" | "'"
+<pcttail> ::= <letter> | <digit> | <punctnopctbrace> | " " | "\n" | "'" | <escape>
+<escape> ::= "\\" ( "n" | "t" | "r" | "0" | "\\" | "\"" | "'" )
+<interp> ::= "%{" <ws> <expr> <ws> "}"
+
+<sqstring> ::= "'" <sqitem>* "'"
+<sqitem> ::= <letter> | <digit> | <punct> | " " | "\n" | "\"" | <escape>
+
+<type> ::= <qualname> ( <ws> "[" <ws> <targs> <ws> "]" )?
+<targs> ::= <targ> ( <ws> "," <ws> <targ> )* ( <ws> "," )?
+<targ> ::= <type> | <int>
+<tparams> ::= "[" <ws> <tparam> ( <ws> "," <ws> <tparam> )* <ws> "]"
+<tparam> ::= <type> ( <ws> "=" <ws> <type> )?
+
+<hint> ::= "@" <ident> ( "[" <ws> <exprlist> <ws> "]" )?
+<hints> ::= ( <hint> <wsr> )*
+
+<stmt> ::= ";" | <block> | <funcdecl> | <typedef> | <namespace> | <ifstmt> | <forstmt> | <whilestmt> | <dostmt> | <simplestmt> ( <ws> ";" )?
+<simplestmt> ::= <include> | "break" | "continue" | "return" ( <ws> <expr> )? | <destructure> | <vardecl> | <exprstmt>
+<block> ::= "{" <stmts> "}"
+<include> ::= "include" <wsr> <string>
+<namespace> ::= "namespace" <wsr> <ident> <ws> <block>
+<exprstmt> ::= <expr> ( <ws> "," <ws> <expr> )*
+
+<vardecl> ::= <hints> <ident> <ws> ":" ( <ws> <type> )? <ws> "=" <ws> <expr> | <hints> <ident> <ws> ":" <ws> <type>
+<destructure> ::= <lvpattern> <ws> ( ":=" | "=" ) <ws> <expr>
+<lvpattern> ::= "[" <ws> <lvlist> <ws> "]" | "(" <ws> "{" <ws> <lvlist> <ws> "}" <ws> ")"
+<lvlist> ::= <postfix> ( <ws> "," <ws> <postfix> )* ( <ws> "," )?
+
+<ifstmt> ::= "if" <ws> "(" <ws> <expr> <ws> ")" <ws> <stmt> ( <ws> "else" <ws> <stmt> )?
+<whilestmt> ::= "while" <ws> "(" <ws> <expr> <ws> ")" <ws> <stmt>
+<dostmt> ::= "do" <ws> <block> <ws> "while" <ws> "(" <ws> <expr> <ws> ")" ( <ws> ";" )?
+<forstmt> ::= "for" <ws> "(" <ws> <forinit>? <ws> ";" <ws> <expr>? <ws> ";" <ws> <exprstmt>? <ws> ")" <ws> <stmt>
+<forinit> ::= <vardecl> | <exprstmt>
+
+<funcdecl> ::= "func" <wsr> <ident> <ws> <tparams>? <ws> "(" <ws> <params> <ws> ")" <ws> ( ":" <ws> <type> <ws> )? <block> ( <ws> ";" )?
+<funcexpr> ::= "func" <ws> <tparams>? <ws> "(" <ws> <params> <ws> ")" <ws> ( ":" <ws> <type> <ws> )? <block>
+<params> ::= ( <param> ( <ws> "," <ws> <param> )* ( <ws> "," )? )?
+<param> ::= <hints> <ident> <ws> ":" <ws> <type>
+
+<typedef> ::= "typedef" <wsr> <ident> <ws> <tparams>? <ws> "=" <ws> ( <classbody> | <type> ) ( <ws> ";" )?
+<classbody> ::= "{" <ws> ( <member> <ws> )* "}"
+<member> ::= ";" | <funcdecl> | <field> ( <ws> ";" )?
+<field> ::= <ident> <ws> ":" ( <ws> <type> )? <ws> "=" <ws> <expr> | <ident> <ws> ":" <ws> <type>
+
+<expr> ::= <assign>
+<assign> ::= <ternary> ( <ws> <assignop> <ws> <assign> )?
+<assignop> ::= "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "**=" | "@*=" | "<?=" | ">?=" | "&=" | "|=" | "^=" | "<<=" | ">>="
+<ternary> ::= <orexpr> ( <ws> "?" <ws> <expr> <ws> ":" <ws> <ternary> )?
+<orexpr> ::= <andexpr> ( <ws> "||" <ws> <andexpr> )*
+<andexpr> ::= <borexpr> ( <ws> "&&" <ws> <borexpr> )*
+<borexpr> ::= <xorexpr> ( <ws> "|" <ws> <xorexpr> )*
+<xorexpr> ::= <bandexpr> ( <ws> "^" <ws> <bandexpr> )*
+<bandexpr> ::= <eqexpr> ( <ws> "&" <ws> <eqexpr> )*
+<eqexpr> ::= <relexpr> ( <ws> ( "==" | "!=" ) <ws> <relexpr> )*
+<relexpr> ::= <shiftexpr> ( <ws> ( "<=" | ">=" | "<" | ">" ) <ws> <shiftexpr> )*
+<shiftexpr> ::= <addexpr> ( <ws> ( "<<" | ">>" ) <ws> <addexpr> )*
+<addexpr> ::= <mulexpr> ( <ws> ( "+" | "-" ) <ws> <mulexpr> )*
+<mulexpr> ::= <castexpr> ( <ws> ( "@*" | "*" | "/" | "%" ) <ws> <castexpr> )*
+<castexpr> ::= <unary> ( <wsr> "as" <wsr> <type> )*
+<unary> ::= ( ( "-" | "!" | "~" ) <ws> )* <power>
+<power> ::= <postfix> ( <ws> "**" <ws> <unary> )?
+<postfix> ::= <primary> <postfixop>* ( <ws> ( "++" | "--" ) )?
+<postfixop> ::= "." <ident> | "[" <ws> <exprlist> <ws> "]" | "(" <ws> <args> <ws> ")"
+<exprlist> ::= <expr> ( <ws> "," <ws> <expr> )* ( <ws> "," )?
+<args> ::= ( <arg> ( <ws> "," <ws> <arg> )* ( <ws> "," )? )?
+<arg> ::= "..." <ws> <expr> | <expr>
+
+<primary> ::= <number> | <string> | <sqstring> | <typedliteral> | <vecliteral> | <tupleliteral> | "(" <ws> <expr> <ws> ")" | <funcexpr> | <embedexpr> | "." <ident> | <ident>
+
+<vecliteral> ::= "{" <ws> <rows> <ws> "}"
+<rows> ::= <row> ( <ws> ";" <ws> <row> )* ( <ws> ";" )?
+<row> ::= <vitem> ( <ws> "," <ws> <vitem> )* ( <ws> "," )?
+<vitem> ::= "..." <ws> <expr> | <expr>
+
+<tupleliteral> ::= "[" <ws> ( <expr> ( <ws> "," <ws> <expr> )* ( <ws> "," )? )? <ws> "]"
+
+<typedliteral> ::= <type> <ws> "{" <ws> <litbody>? <ws> "}"
+<litbody> ::= <litrow> ( <ws> ";" <ws> <litrow> )* ( <ws> ";" )?
+<litrow> ::= <lititem> ( <ws> "," <ws> <lititem> )* ( <ws> "," )?
+<lititem> ::= "..." <ws> <expr> | <expr> ( <ws> ":" <ws> <expr> )?
+
+<embedexpr> ::= "embed" ( <wsr> <ident> | <ws> "(" <ws> <expr> <ws> ")" ) <wsr> "as" <wsr> <string>

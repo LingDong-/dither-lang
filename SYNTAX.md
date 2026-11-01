@@ -362,8 +362,8 @@ typedef P[T] = {
     return this.x + .y + z;
   }
 }
-p := P[f32]{1.0, 2.0};
-q := P[str]{"hello", "world"};
+p := P[f32]{x:1.0, y:2.0};
+q := P[str]{x:"hello", y:"world"};
 ```
 
 You can also use `typedef` to make an alias for a type, for example:
@@ -595,3 +595,30 @@ while (1){
 snd.exit();
 ```
 See examples for more usage.
+
+# Appendix
+
+## Operator Precedence
+
+1. `[]`, `()`, `{}`, `.`
+1. `u++`, `u--`
+1. `++u`, `--u`, `+u`, `-u`, `~`, `!`, `...`
+1. `@`
+1. `as`, `is`
+1. `embed`
+1. `**`
+1. `*`, `/`, `%`, `@*`
+1. `+`, `-`
+1. `<<`, `>>`
+1. `<`, `<=`, `>`, `>=`
+1. `==`, `!=`
+1. `&`
+1. `^`
+1. `|`
+1. `&&`
+1. `||`
+1. `a?b:c`
+1. `func`
+1. `:`
+1. `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`, `<?=`, `>?=`, `@*=`, `**=`
+1. `,`

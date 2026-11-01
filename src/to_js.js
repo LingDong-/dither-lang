@@ -442,7 +442,7 @@ var TO_JS = function(cfg){
         }else if (t.con == 'tup'){
           return `${v}[${idx}]`;
         }else if (t == 'str'){
-          return `${v}.charCodeAt(${idx})`;
+          return `$unwrap(${v}).charCodeAt(${idx})`;
         }else if (typeof t == 'string'){
           return `${v}["${idx}"]`;
         }else{

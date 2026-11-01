@@ -103,7 +103,11 @@ var embed_glsl_frag = {
       }else if (['+u','-u','++u','--u'].includes(ast.key)){
         o += `${ast.key.slice(0,-1)}${docompile(ast.val)}`
       }else if (ast.key == '%'){
-        o += `${printtype(ast.typ)}(mod(float(${docompile(ast.lhs)}),float(${docompile(ast.rhs)})))`;
+        let lhs = docompile(ast.lhs);
+        let rhs = docompile(ast.rhs);
+        if (ast.lhs.typ == 'i32') lhs = `float(${lhs})`
+        if (ast.rhs.typ == 'i32') rhs = `float(${rhs})`
+        o += `${printtype(ast.typ)}(mod(${lhs},${rhs}))`;
       }else if (ast.key == '**'){
         o += `pow(${docompile(ast.lhs)},${docompile(ast.rhs)})`;
       }else if (ast.key == '@*'){
@@ -117,7 +121,11 @@ var embed_glsl_frag = {
           if (ast.fun.rhs.val == 'sample' && ast.fun.lhs.typ.endsWith(".Texture")){
             o += `texture2D(${ast.fun.lhs.val},${ast.arg.map(docompile).join(',')})`;
           }else if (ast.fun.lhs.val == 'math'){
-            o += `${ast.fun.rhs.val[0].ipl.nom.val}(${ast.arg.map(docompile).join(',')})`
+            if (ast.fun.rhs.val[0].ipl.nom.val == 'atan2'){
+              o += `atan(${ast.arg.map(docompile).join(',')})`
+            }else{
+              o += `${ast.fun.rhs.val[0].ipl.nom.val}(${ast.arg.map(docompile).join(',')})`
+            }
           }else if (ast.fun.lhs.val == 'vec'){
             let nom = ast.fun.rhs.val[0].ipl.nom.val;
             if (nom == 'mag'){

@@ -340,7 +340,7 @@
         </div>
       </span>
     </div>
-    <div id="mbr" style="position:absolute;right:10px;top:0px;height:30px;overflow:visible;user-select: none;-webkit-user-select: none;white-space: nowrap;text-align: right;display:inline-block">
+    <div id="mbr" style="position:absolute;right:5px;top:0px;height:30px;overflow:visible;user-select: none;-webkit-user-select: none;white-space: nowrap;text-align: right;display:inline-block">
       <div class="bigbtn" id="btn-eval">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
           <g fill="#111">
@@ -379,6 +379,14 @@
           </g>
         </svg>
         <div class="tooltip">Save</div>
+      </div>
+      <div class="bigbtn" id="btn-export">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" >
+          <g fill="#111">
+            <path d="M4.04 6.6L6.98 4.9L14.94 9.49L12 11.19ZM9.06 3.7L12 2L19.96 6.6L17.02 8.29ZM12.7 12.4L15.64 10.71L15.64 15.1L17.72 13.9L17.72 9.51L20.66 7.81L20.66 17L12.7 21.6ZM3.34 7.81L11.3 12.4L11.3 21.6L3.34 17ZM7.32 14.7L7.32 17.9L10.09 19.5L10.09 16.3Z"/>
+          </g>
+        </svg>
+        <div class="tooltip" style="left:-40px">Export .app</div>
       </div>
     </div>
 
@@ -1501,6 +1509,86 @@ document.getElementById("btn-stop").onclick = function(){
     childProcess.kill('SIGKILL');
     childProcess = null;
   }
+}
+
+document.getElementById("btn-export").onclick = async function(){
+  let res = await WK.saveFileDialog({startDir:"~/Documents",defaultName:filename.split("/").at(-1).replace(/.dh$/,'.app')});
+  if (!res) return;
+
+  let savename = res.split("/").at(-1).replace(/.app$/,"");
+  savename = savename.replace(/[ "'\*\.]/g,'_')
+
+  document.getElementById("btn-out").onclick();
+  document.getElementById("btn-stop").onclick();
+  if (window.WK){
+    await fs.writeFile(filename,CML.getValue());
+  }else{
+    fs.writeFileSync(filename,CML.getValue());
+  }
+
+  if (childProcess){
+    childProcess.kill('SIGKILL');
+    childProcess = null;
+  }
+  putmsg(`invoking subprocess...`);
+
+  let buf = "";
+  childProcess = child_process.spawn('dither', ['-xvt','c',filename], {
+    cwd: filename.split("/").slice(0,-1).join("/"),
+  });
+  childProcess.stdout.on('data', function(data){
+    let txt = data.toString();
+    putout(txt);
+    buf += txt;
+    if (buf.includes(`[info] C compiled`)){
+
+      putmsg(`detectd successful compilation. now packaging...`);
+
+      let p = child_process.spawn("/usr/bin/make", [`APP_NAME=${savename}`], {
+        stdio: 'pipe',
+        cwd: '/tmp/dither',
+      });
+      p.stdout.on('data',function(x){
+        putmsg(x);
+      })
+      p.stderr.on('data',function(x){
+        putmsg(x);
+      })
+      p.on('close', (code, signal) => {
+        if (code == 0){
+          putmsg(`now copying...`);
+          let q = child_process.spawn("/bin/cp", ['-r',`/tmp/dither/${savename}.app`,res.split('/').slice(0,-1).join('/')]);
+          q.stdout.on('data',function(x){
+            putmsg(x);
+          })
+          q.stderr.on('data',function(x){
+            putmsg(x);
+          })
+          q.on('close', (code, signal) =>{
+            let reason = `code ${code}`;
+            if (code === null){
+              reason = `signal ${signal}`;
+            }
+            putmsg(`copy exited with ${reason}.`)
+          })
+        }else{
+          putmsg(`exit ${code} (${reason})`)
+        }
+      });
+      
+    }
+  });
+  childProcess.stderr.on('data', (data) => {
+    putout(data.toString(),CMR,"color:tomato");
+  });
+  childProcess.on('close', (code, signal) => {
+    let reason = `code ${code}`;
+    if (code === null){
+      reason = `signal ${signal}`;
+    }
+    putmsg(`subprocess exited with ${reason}.`);
+    childProcess = null;
+  });
 }
 
 

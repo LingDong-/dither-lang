@@ -956,9 +956,16 @@ var PARSER = function(sys,extensions={}){
   function abstype(cst){
     if (cst == null) return null;
     if (cst.key == 'subs'){
+      if (cst.con && !cst.lhs){
+        cst.lhs = cst.con;
+        cst.rhs = cst.idx;
+      }
       if (cst.lhs.tag == 'keywr') cst.lhs.tag = 'ident';
       if (cst.lhs.tag != 'ident') mkerr('syntax','expected identifier for type annotation',cst.lhs.pos);
-      let rhs = untree(cst.rhs);
+      let rhs = cst.rhs;
+      if (!cst.idx){
+        rhs = untree(rhs);
+      }
       let rrhs = [];
       for (let i = 0; i < rhs.length; i++){
         if (rhs[i].key != 'noop'){
